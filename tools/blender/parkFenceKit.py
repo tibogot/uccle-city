@@ -14,7 +14,7 @@ Pieces (one object per piece and LOD, "<piece>_lod<k>"):
              of bars at 12.5 cm, cast lance finials, two flat rails. No post: it runs between piers.
   pf_bars    a 2.5 m module of the plain bar fence (x 0..2.5, z 0 = the ground line), a square post at x = 0 (0.4 m into
              the ground), 20 mm bars at 12 cm up to a capping rail at 1.6 m, a bottom rail.
-  pf_mesh    a 2.5 m module of welded mesh (200 x 50 mm, 5 mm wires) with its round post at x = 0 (into the ground)
+  pf_mesh    a 2.5 m module of welded mesh (200 x 50 mm, 6 mm wires) with its round post at x = 0 (into the ground)
              and the clips; the mesh from 5 cm over the ground line to 1.8 m.
   pf_post    the post alone (a run's free end), round, capped.
   pf_pier    a stone pier, 0.7 x 0.7 x 3.0 m nominal (the viewer scales it): a base block, a rusticated shaft (banded
@@ -52,6 +52,7 @@ STEEL = K.mat("steel_dark", (0.05, 0.05, 0.052), 0.4, 0.7)
 STONE = K.mat("stone", (0.55, 0.53, 0.49), 0.85)
 CAP = K.mat("stone_cap", (0.5, 0.49, 0.46), 0.8)
 W = 2.5                 # the panel module
+MESH_WIRE = 0.006       # the welded mesh's wires (heavy park panels: 6 mm; tools/audit/parkFenceCheck.mjs MESH)
 
 
 def tick(s): print(f"[{time.time() - T0:6.1f}s] {s}", flush=True)
@@ -158,8 +159,8 @@ def pf_mesh():
     while x <= x1 + 1e-6: vx.append(x); x += 0.05
     hz = [z0, z0 + 0.05] + [z0 + 0.2 * k for k in range(1, 9)] + [z1 - 0.05, z1]
     hz = sorted(set(round(z, 4) for z in hz if z <= z1 + 1e-6))
-    for x in vx: bar(P, PAINT, x, 0.003, z0 - 0.01, z1 + 0.01, 0.005, 0.005, (z0 + 0.1,), cham=0.0, caps=False)
-    for z in hz: rail(P, PAINT, x0 - 0.01, x1 + 0.01, -0.003, z - 0.0025, z + 0.0025, 0.005, 0.0)
+    for x in vx: bar(P, PAINT, x, 0.0035, z0 - 0.01, z1 + 0.01, MESH_WIRE, MESH_WIRE, (z0 + 0.1,), cham=0.0, caps=False)
+    for z in hz: rail(P, PAINT, x0 - 0.01, x1 + 0.01, -0.0035, z - MESH_WIRE / 2, z + MESH_WIRE / 2, MESH_WIRE, 0.0)
     # clips on the post (4) holding the panel
     for z in (0.25, 0.75, 1.25, 1.7):
         box(P, STEEL, (0.035, 0, z), (0.04, 0.02, 0.05), 0.003)

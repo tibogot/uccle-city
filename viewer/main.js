@@ -1006,6 +1006,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // a tree on measured ground stands on it (in its pit, viewer/surfaces.js), not on the terrain carved under it
   const treeGround = fit ? (x, z) => (fit.classAt(x, z) >= 0 ? hm.surface(x, z) + CARVE + fit.lift(x, z) : hm.surface(x, z)) : undefined;
   if (feats?.trees) feats.trees = cityFuel.treesClear(feats.trees);   // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
+  if (PARKFENCE && feats?.trees) feats.trees = await parkFence.treesClear(feats.trees);   // (parkfence) no trunk in a park entrance's opening
   const fo = featureObjects(feats, hm, bounds, d.road.surfaceStats ? 0.02 : 0.012, treeGround);
   own.features.add(fo);
   await frame("rails");
@@ -1050,7 +1051,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // station stop on the Carsoel deck, citydefects 2026-11-16; ?bridgeplan=old as before)
   const deckAt = (x, z) => { for (const e of bridgeDeckRefs.values()) { const y = e.fn(x, z); if (y != null) return y; } return null; };
   const tramSurface = BRIDGE_PLAN ? (x, z) => deckAt(x, z) ?? hm.surface(x, z) + CARVE : (x, z) => hm.surface(x, z) + CARVE;
-  const tram = buildTram(feats, tramSurface, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on, fit, driven: drivenAt });
+  const tram = buildTram(feats, tramSurface, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on, fit, driven: drivenAt, keepOut: PARKFENCE ? await parkFence.keepOutTest() : null });   // (parkfence: no tram pole in a park entrance's approach)
   await split("tram");
   own.features.add(tram.group);
   // citydefects: the baked data layers' points that stand in a driven lane go onto the sidewalk behind the nearest kerb

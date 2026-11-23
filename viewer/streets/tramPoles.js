@@ -52,7 +52,16 @@ export function tramPoleSites(tram, inB, opts = {}) {
       if (acc < POLE_STEP) continue;
       acc = 0;
       const nx = -(bz - az) / L, nz = (bx - ax) / L;
-      const site = poleSite(bx, bz, nx, nz, opts);
+      let site = poleSite(bx, bz, nx, nz, opts);
+      // (claude/parkfence round 2) a pole in a park entrance's approach (opts.keepOut, viewer/parkFence.js: a tram pole
+      // stood 6 m in front of Wolvendael's main gate, in the walk through it) slides along its track, 2 m steps to 10 m
+      if (site && opts.keepOut?.(site.x, site.z)) {
+        site = null;
+        for (const sh of [2, -2, 4, -4, 6, -6, 8, -8, 10, -10]) {
+          const tx = bx + ((bx - ax) / L) * sh, tz = bz + ((bz - az) / L) * sh, q = poleSite(tx, tz, nx, nz, opts);
+          if (q && !opts.keepOut(q.x, q.z)) { site = q; break; }
+        }
+      }
       if (!site) continue;
       const { x: px, z: pz } = site;
       if (!onBridge && inB(px, pz) && !poles.some((p) => (p.x - px) ** 2 + (p.z - pz) ** 2 < 64)) poles.push({ x: px, z: pz, yaw: Math.atan2(site.nx, site.nz), arm: site.arm, tx: bx, tz: bz });

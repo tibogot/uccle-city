@@ -38,7 +38,10 @@ export const TYPES = {
 };
 export const MODULE = 2.5;                 // the kit's panel module (m)
 const PIER_GAP = 0.02;                     // a leaf's hinge gap at the pier face
-const INSET_MAX = 4;                       // m: how far a run may move into the park off a carriageway
+const INSET_MAX = 4;
+const TREE_CLEAR = 0.45;                    // m: a panel keeps this far from a trunk's centre (at least its radius + 0.15)
+/** a tree-field trunk's radius (viewer/drive/colliders.js: the car's circle) */
+export const trunkR = (t) => Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10)));                       // m: how far a run may move into the park off a carriageway
 
 /** a PUBLIC carriageway at (x, z): the drawn carriageway (viewer/streets/carriageway.js inside, 0.1 m in) within an OSM
  *  road's half width + 2 m of its centre line. A measured roadway patch away from every road is a park's own drive
@@ -152,7 +155,8 @@ export async function build() {
     const bdoc = J(`data/tiles/${T}/buildings.json`);
     const hide = new Set(J("tools/boot3/entries.json").find((e) => !e.lite)?.entry?.hide || []);
     const bl = bdoc.buildings.filter((b) => b.footprint && !hide.has(b.attrs?.BU_ID) && !hide.has(b.id));
-    const c = { driven: st.driven, fp: footprintIndex(bl) };
+    const trees = (J(`data/tiles/${T}/features.json`).trees || []).map((t) => ({ x: t.x, z: t.z, r: trunkR(t), id: t.id, source: t.source }));
+    const c = { driven: st.driven, fp: footprintIndex(bl), trees };
     city.set(T, c);
     return c;
   };
@@ -193,6 +197,7 @@ export async function build() {
     const typeAt = (s) => { for (const q of secs) { const v = s < q.s0 ? s + A.L : s; if (v >= q.s0 && v <= q.s1) return q.type; } return obs.default; };
     const panels = [], posts = [], piers = [], leaves = [], gaps = [], plinths = [];
     let insetTotal = 0;
+    const treeCuts = [];
     const tile = (p) => tileOf(p[0], p[1]);
     // the panel check against the drawn city: building footprint (0.3 m) or carriageway under it
     const blocked = async (a, b) => {
@@ -292,6 +297,46 @@ export async function build() {
           count++;
         }
         insetTotal += insetM;
+        // (round 2) A TREE ON THE LINE: the tree field's trunks (data/tiles/<T>/features.json trees: the UrbIS canopy
+        // model's measured crowns, a few OSM trees; a trunk was drawn through the mesh) are not moved: the run stops
+        // short of the trunk on both sides (TREE_CLEAR from its centre, at least its radius + 0.15 m), the cut ends get a
+        // post, as a real fence round an old tree; the trunk closes the gap (it is the car's collider already)
+        for (let j = 0; j < runPanels.length; j++) {
+          const pn = runPanels[j]; if (!pn) continue;
+          const cuts = [];
+          const L = Math.hypot(pn.b[0] - pn.a[0], pn.b[1] - pn.a[1]), ux = (pn.b[0] - pn.a[0]) / L, uz = (pn.b[1] - pn.a[1]) / L;
+          for (const T2 of new Set([tile(pn.a), tile(pn.b)])) {
+            const cc = await cityOf(T2); if (!cc) continue;
+            for (const t of cc.trees) {
+              const s = (t.x - pn.a[0]) * ux + (t.z - pn.a[1]) * uz, dperp = Math.abs(-(t.x - pn.a[0]) * uz + (t.z - pn.a[1]) * ux);
+              const clear = Math.max(TREE_CLEAR, t.r + 0.15);
+              if (dperp >= clear || s < -clear || s > L + clear) continue;
+              const h = Math.sqrt(clear * clear - dperp * dperp);
+              cuts.push([s - h, s + h, t]);
+            }
+          }
+          if (!cuts.length) continue;
+          cuts.sort((p, q) => p[0] - q[0]);
+          const pieces = []; let from = 0;
+          for (const [c0, c1, t] of cuts) {
+            if (c0 > from + 0.3) pieces.push([from, c0]);
+            from = Math.max(from, c1);
+            treeCuts.push({ tree: t.id, at: P2([t.x, t.z]), r: r2(t.r) });
+            gaps.push({ a: P2([pn.a[0] + ux * Math.max(0, c0), pn.a[1] + uz * Math.max(0, c0)]), b: P2([pn.a[0] + ux * Math.min(L, c1), pn.a[1] + uz * Math.min(L, c1)]), reason: "tree", t: pn.t });
+          }
+          if (L > from + 0.3) pieces.push([from, L]);
+          const repl = [];
+          pieces.forEach(([f0, f1], q) => {
+            if (q > 0) repl.push(0);
+            const a = P2([pn.a[0] + ux * f0, pn.a[1] + uz * f0]), b = P2([pn.a[0] + ux * f1, pn.a[1] + uz * f1]);
+            repl.push({ ...pn, a, b, t: tile([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]) });
+          });
+          if (pieces.length && pieces[0][0] > 0) repl.unshift(0);
+          if (pieces.length && pieces[pieces.length - 1][1] < L) repl.push(0);
+          if (!pieces.length) repl.push(0);
+          runPanels.splice(j, 1, ...repl);
+          j += repl.length - 1;
+        }
         // posts (mesh / bars: at every panel joint and the free ends; a run end at an entrance pier needs none),
         // piers (grand: every pierEvery panels and at the ends), plinths (grand / wall: under every panel)
         runPanels.forEach((pn, j) => {
@@ -307,8 +352,9 @@ export async function build() {
           }
           if (T.pierEvery) {
             const u = [pn.b[0] - pn.a[0], pn.b[1] - pn.a[1]], l = Math.hypot(...u) || 1;
-            if ((j % T.pierEvery === 0 && !(j === 0 && atEntrance0)) || (!prev && j > 0)) piers.push({ at: pn.a, dir: P2([u[0] / l, u[1] / l]), w: T.pier[0], h: T.pier[1], stone, t: tile(pn.a) });
-            if (!next && !(atEntrance1 && j === runPanels.length - 1)) piers.push({ at: pn.b, dir: P2([u[0] / l, u[1] / l]), w: T.pier[0], h: T.pier[1], stone, t: tile(pn.b) });
+            // (a tree gap is 0, a blocked one null: the plinth stops at a trunk with no pier, a real one after a gap gets one)
+            if ((j % T.pierEvery === 0 && !(j === 0 && atEntrance0) && prev !== 0) || (prev === null && j > 0)) piers.push({ at: pn.a, dir: P2([u[0] / l, u[1] / l]), w: T.pier[0], h: T.pier[1], stone, t: tile(pn.a) });
+            if (next !== 0 && !next && !(atEntrance1 && j === runPanels.length - 1)) piers.push({ at: pn.b, dir: P2([u[0] / l, u[1] / l]), w: T.pier[0], h: T.pier[1], stone, t: tile(pn.b) });
           }
           pn.paint = T.paint ?? 0; pn.h = T.h; pn.plinth = T.plinth || 0;
         });
@@ -317,11 +363,11 @@ export async function build() {
     }
     // ---- report
     const panelM = panels.reduce((s, p) => s + Math.hypot(p.b[0] - p.a[0], p.b[1] - p.a[1]), 0) + plinths.filter((q) => q.h > 1).reduce((s, p) => s + Math.hypot(p.b[0] - p.a[0], p.b[1] - p.a[1]), 0);
-    say(`${park}: ring ${A.L.toFixed(0)} m, ${ents.length} entrances, ${panels.length} panels (${panelM.toFixed(0)} m), ${plinths.length} plinths, ${posts.length} posts, ${piers.length} piers, ${leaves.length} leaves, inset ${insetTotal.toFixed(0)} m, ${gaps.length} gaps (${gaps.map((g) => g.reason).join(",")})`);
+    say(`${park}: ring ${A.L.toFixed(0)} m, ${ents.length} entrances, ${panels.length} panels (${panelM.toFixed(0)} m), ${plinths.length} plinths, ${posts.length} posts, ${piers.length} piers, ${leaves.length} leaves, inset ${insetTotal.toFixed(0)} m, ${treeCuts.length} trees cut round, ${gaps.length} gaps (${gaps.map((g) => g.reason).join(",")})`);
     out.parks[park] = {
       ring: rings[park].map(P2), length: r2(A.L), stone,
       entrances: ents.map((e) => ({ osm: e.osm, inset: e.inset, ...(e.pierSkipped ? { pierSkipped: e.pierSkipped } : {}), ...(e.opensOnto ? { opensOnto: e.opensOnto } : {}), name: e.name || "", at: e.at, s: r2(e.s), kind: e.kind, state: e.state, w: e.w, pier: e.pier, half: r2(e.half), from: e.from, ways: e.ways, note: e.note || "" })),
-      panels, plinths, posts, piers, leaves, gaps,
+      panels, plinths, posts, piers, leaves, gaps, treeCuts,
     };
   }
   return out;

@@ -19,12 +19,12 @@
 //               entrances stay open;
 //   night       nothing glows, no light (fixed light count).
 import * as THREE from "three/webgpu";
-import { attribute, vec3, float, mix, smoothstep, length, positionWorld, select, fract, floor, sin, dot, texture, uv, uniformArray } from "three/tsl";
+import { attribute, vec3, float, mix, smoothstep, length, positionWorld, select, fract, floor, sin, dot, texture, uv, uniformArray, cameraPosition, normalWorld, normalize, abs, pow } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise, rampTo, SMOOTH } from "./lodFade.js";
 import { ironCards, NEAR, BAND, CARD_IN, CARD_DEPTH_CUT } from "./thinBars.js";
 import { atlasTexture } from "./thinCards.js";
-import { tileItems, boxSoup, docTiles, IRON, STONE, PIECES } from "./parkFenceLayout.js";
+import { tileItems, boxSoup, docTiles, IRON, STONE, PIECES, entranceZones, inZone, treesOutOfEntrances } from "./parkFenceLayout.js";
 import { wxMat } from "./weather/cityWeatherize.js";
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search : "");
@@ -33,6 +33,8 @@ export const PARKFENCE = qs.get("parkfence") !== "0";
 /** the stone's LOD bands (m: switch 0 -> 1, switch 1 -> 2, end), the ironwork's card end, its shadow's end */
 export const STONE_BANDS = [30, 90, 420];
 export const CARD_END = 240, SHADOW_END = 25;
+/** the card's grazing floor (cos of the view angle): at most 1 / GRAZE_MIN x the coverage's optical depth */
+export const GRAZE_MIN = 0.2;
 const SLOT = { iron_paint: 0, iron_tip: 1, steel_dark: 2, stone: 3, stone_cap: 4 };
 const lin = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
 // paints (linear rgb, roughness): black wrought iron, the parks' dark green
@@ -142,7 +144,12 @@ function cardMaterial(tex) {
   m.colorNode = mix(Pn.xyz, vec3(0.04, 0.04, 0.042), steel).mul(mix(float(1), ao, 0.75));
   m.aoNode = ao; m.roughnessNode = mix(Pn.w, float(0.42), steel); m.metalnessNode = float(0.2);
   const d = length(positionWorld.sub(lodEye));
-  m.opacityNode = T.a.mul(smoothstep(CARD_IN[0], CARD_IN[1], d));
+  // (round 2) the coverage at the view angle: T.a is the bars' / wires' share of the card seen square on (box mips:
+  // the true mean over the pixel); seen at a grazing angle the gaps close (a wire grid's open share foreshortens, its
+  // wires' depth fills them): 1 - (1 - a)^(1 / cos), cos floored at GRAZE_MIN. A far mesh reads as a dark veil, not
+  // as nothing (the 30 m mesh run showed only its posts).
+  const cosV = abs(dot(normalize(normalWorld), normalize(cameraPosition.sub(positionWorld)))).max(GRAZE_MIN);
+  m.opacityNode = float(1).sub(pow(float(1).sub(T.a.min(0.999)), float(1).div(cosV))).mul(smoothstep(CARD_IN[0], CARD_IN[1], d));
   m.maskNode = keepBand(smoothstep(CARD_END * 0.85, CARD_END, d), float(1.01), ditherNoise());
   m.name = "parkfence-iron-card";
   return m;
@@ -181,7 +188,7 @@ class Stage {
 }
 
 export const parkFence = {
-  doc: null, docP: null, clearIdx: null, tiles: new Map(), group: null, stages: null, roots: new Map(), stats: { instances: 0, draws: 0, tris: 0, tiles: 0 },
+  doc: null, docP: null, clearIdx: null, keepIdx: null, tiles: new Map(), group: null, stages: null, roots: new Map(), stats: { instances: 0, draws: 0, tris: 0, tiles: 0 },
   /** the line's plan (once) */
   loadDoc(base = new URL("../", import.meta.url)) {
     return (this.docP ??= fetch(new URL("data/parkfence/parkfence.json", base)).then((r) => (r.ok ? r.json() : null)).then((d) => (this.doc = d)).catch(() => null));
@@ -209,6 +216,21 @@ export const parkFence = {
       }
       return false;
     });
+  },
+  /** (x, z) -> true in an open entrance's approach: the opening (between the piers, + 0.3 m each side) from 1.5 m inside
+   *  the park to APPROACH m out (tram poles keep out of it: viewer/streets/tramPoles.js opts.keepOut; the gate row
+   *  checks every prop and tree against the opening) */
+  async keepOutTest() {
+    const doc = await this.loadDoc(); if (!doc) return null;
+    if (this.keepIdx) return this.keepIdx;
+    const zones = entranceZones(doc);
+    return (this.keepIdx = (x, z) => zones.some((q) => inZone(q, x, z)));
+  },
+  /** main.js, a tile's tree list before the tree field and its colliders: no trunk in an open entrance's opening */
+  async treesClear(trees) {
+    const doc = await this.loadDoc(); if (!doc) return trees;
+    this.zones ??= entranceZones(doc);
+    return treesOutOfEntrances(trees, this.zones).trees;
   },
   /** the collider roots' names (viewer/heroColliders.js HERO_ROOTS), one per park and tile */
   async rootNames() {

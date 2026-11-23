@@ -182,3 +182,50 @@ export function docTiles(doc) {
   }
   return out;
 }
+
+/** the open entrances' approach zones: { c (the opening's centre), u (along the line), n (out of the park), half (along),
+ *  inside (m into the park), out (m out) }; the opening = the band out 0..0 (the gate row) */
+export const APPROACH = 8;
+export function entranceZones(doc, { out = APPROACH, inside = 1.5, pad = 0.3 } = {}) {
+  const zones = [];
+  for (const park of Object.values(doc.parks)) {
+    for (const e of park.entrances) {
+      if (e.state !== "open") continue;
+      // the line's direction at the entrance from its two piers (else the nearest panel)
+      const pr = park.piers.filter((q) => q.ent === e.osm);
+      let u = pr[0]?.dir;
+      if (!u) { let best = null, bd = 1e9; for (const p of park.panels) { const d = Math.hypot(p.a[0] - e.at[0], p.a[1] - e.at[1]); if (d < bd) { bd = d; best = p; } } u = best ? [best.n[1], -best.n[0]] : [1, 0]; }
+      // out of the park: the panels' outward normal near it
+      let n = null, bd = 1e9;
+      for (const p of park.panels) { const d = Math.hypot(p.a[0] - e.at[0], p.a[1] - e.at[1]); if (d < bd) { bd = d; n = p.n; } }
+      if (!n) continue;
+      zones.push({ c: e.at, u, n, half: e.w / 2 + pad, pw: e.pier?.[0] ?? 0.5, inside, out, osm: e.osm });
+    }
+  }
+  return zones;
+}
+export function inZone(q, x, z) {
+  const dx = x - q.c[0], dz = z - q.c[1];
+  const a = dx * q.u[0] + dz * q.u[1], o = dx * q.n[0] + dz * q.n[1];
+  return Math.abs(a) <= q.half && o >= -q.inside && o <= q.out;
+}
+
+/** (round 2) the tree field's trunks out of the open entrances' openings: a tree whose trunk (the UrbIS canopy model's
+ *  crown apex: the real trunk stands beside the gate, the crown over it) falls in an opening moves along the line past
+ *  the pier on its side, and r + 0.5 m off the line on its side (inside the park when on it). Pure: the city (main.js,
+ *  before the tree field, its colliders) and the gate row run the same. trees: [{ x, z, height }] (copied when moved) */
+export function treesOutOfEntrances(trees, zones) {
+  let moved = 0;
+  const out = trees.map((t) => {
+    for (const q of zones) {
+      if (!inZone({ ...q, out: 1.5 }, t.x, t.z)) continue;
+      const r = Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10)));
+      const dx = t.x - q.c[0], dz = t.z - q.c[1], a = dx * q.u[0] + dz * q.u[1], o = dx * q.n[0] + dz * q.n[1];
+      const a2 = (a < 0 ? -1 : 1) * (q.half + q.pw + r + 0.3), o2 = (o > 0.05 ? 1 : -1) * (r + 0.5);
+      moved++;
+      return { ...t, x: +(q.c[0] + q.u[0] * a2 + q.n[0] * o2).toFixed(2), z: +(q.c[1] + q.u[1] * a2 + q.n[1] * o2).toFixed(2), movedFrom: [t.x, t.z] };
+    }
+    return t;
+  });
+  return { trees: out, moved };
+}

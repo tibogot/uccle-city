@@ -30,7 +30,7 @@ const rows = [];
 const check = (name, ok, info = "") => { rows.push([name, ok ? "PASS" : "FAIL", info]); };
 
 /** ceilings (set 2026-11-23 on the first build; a rise is a regression to look at) */
-const CEIL = { gapBuildingM: 5, gapRoadM: 5, viewTris: 140000, pieceTris: { pf_rail: 4000, pf_bars: 1300, pf_mesh: 1800, pf_post: 300, pf_gate2: 8000, pf_gate1: 2400, pf_pier: 1700, pf_plinth: 1000 }, meshes: 18 };
+const CEIL = { gapBuildingM: 5, gapRoadM: 5, treeCuts: 100, cardCov: 0.3, viewTris: 140000, pieceTris: { pf_rail: 4000, pf_bars: 1300, pf_mesh: 1800, pf_post: 300, pf_gate2: 8000, pf_gate1: 2400, pf_pier: 1700, pf_plinth: 1000 }, meshes: 18 };
 
 const { build, arc, publicRoad, toLocal } = await imp("tools/parkfence/build.mjs");
 const L = await imp("viewer/parkFenceLayout.js");
@@ -62,7 +62,7 @@ for (const T of tiles) {
   };
   console.log = () => {};
   let st; try { st = await streetTile(T); } finally { console.log = realLog; }
-  city.set(T, { g, driven: st.driven, fp: footprintIndex(bDoc.buildings.filter((b) => b.footprint)) });
+  city.set(T, { g, st, driven: st.driven, fp: footprintIndex(bDoc.buildings.filter((b) => b.footprint)) });
 }
 const manifest = J("data/tiles/manifest.json");
 const tileOf = (x, z) => manifest.tiles.find((t) => x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1])?.name;
@@ -75,6 +75,7 @@ const paths = area.filter((e) => e.type === "way" && e.tags?.highway).map((w) =>
 const segX = (a, b, c, d) => { const o = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])); return o(a, b, c) !== o(a, b, d) && o(c, d, a) !== o(c, d, b) && o(a, b, c) !== 0; };
 const dSeg = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz || 1e-9, t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)); return Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dz * t); };
 
+const TRUNK_MIN = 0.3;
 const kit = J("models/parkfence/parkfence.json").pieces;
 const tris0 = Object.fromEntries(L.PIECES.map((p) => [p, kit[`${p}_lod0`]?.triangles ?? 0]));
 const report = { parks: {} };
@@ -98,6 +99,35 @@ for (const [name, park] of Object.entries(doc.parks)) {
   Object.assign(R, { ringM: +A.L.toFixed(0), entranceM: entM, gapBuildingM: gapB, gapRoadM: gapR, uncoveredM: uncovered });
   check(`${name}: the line covers the boundary but the entrances / listed gaps`, uncovered === 0, `${uncovered} m uncovered ${where.join(" ")}; entrances ${entM} m, gaps: building ${gapB} m, carriageway ${gapR} m of ${A.L.toFixed(0)} m`);
   check(`${name}: gap metres under the ceilings`, gapB <= CEIL.gapBuildingM && gapR <= CEIL.gapRoadM, `building ${gapB} <= ${CEIL.gapBuildingM}, carriageway ${gapR} <= ${CEIL.gapRoadM}`);
+  // ---- (round 2) trunks: 0 tree-field trunks within TRUNK_MIN of a drawn panel / plinth (the run stops round them)
+  {
+    let near = 0; const at = [];
+    const trees = [...new Set(tiles)].flatMap((T) => (J(`data/tiles/${T}/features.json`).trees || []));
+    for (const t of trees) for (const [a, b] of drawn) if (dSeg([t.x, t.z], a, b) < TRUNK_MIN) { near++; if (at.length < 4) at.push(`${t.id} ${t.x},${t.z}`); break; }
+    R.trunksOnLine = near; R.treeCuts = park.treeCuts?.length ?? 0;
+    check(`${name}: no tree trunk within ${TRUNK_MIN} m of a drawn panel`, !near && R.treeCuts <= CEIL.treeCuts, `${near} trunks ${at.join("; ")}; ${R.treeCuts} trees the line stops round (<= ${CEIL.treeCuts})`);
+  }
+  // ---- (round 2) entrances clear: no tree or tram pole in an open entrance's opening (between the piers, 1.5 m either
+  // side of the line), no tram pole in its approach (to APPROACH m out: viewer/streets/tramPoles.js keepOut)
+  {
+    const zones = L.entranceZones({ parks: { [name]: park } });
+    const opening = zones.map((q) => ({ ...q, out: 1.5 }));
+    const { tramPoleSites } = await imp("viewer/streets/tramPoles.js");
+    const { keepOut } = { keepOut: (x, z) => zones.some((q) => L.inZone(q, x, z)) };
+    const bad2 = [];
+    for (const T of tiles) {
+      const st = city.get(T)?.st; if (!st) continue;
+      const tb = manifest.tiles.find((t) => t.name === T).bounds, inB = (x, z) => x >= tb.x[0] && x <= tb.x[1] && z >= tb.z[0] && z <= tb.z[1];
+      const tram = (st.feats.lines || []).filter((l) => l.kind === "tram");
+      for (const p of tramPoleSites(tram, inB, { fit: st.fit, driven: st.driven, keepOut })) if (zones.some((q) => L.inZone(q, p.x, p.z))) bad2.push(`tram pole ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+      // (the city moves a trunk out of an opening before the tree field: viewer/parkFenceLayout.js treesOutOfEntrances)
+      const tr = L.treesOutOfEntrances(st.feats.trees || [], L.entranceZones(doc));
+      R.treesMoved = (R.treesMoved || 0) + tr.moved;
+      for (const t of tr.trees) if (opening.some((q) => L.inZone(q, t.x, t.z))) bad2.push(`tree ${t.id}`);
+    }
+    R.entrancePropsIn = bad2;
+    check(`${name}: entrances clear (no tram pole in an approach, no tree in an opening)`, !bad2.length, bad2.join("; ") || `${zones.length} open entrances`);
+  }
   // ---- 3. clear: carriageway, buildings, paths
   let onRoad = 0, inBuilding = 0, crossPath = 0; const bad = [], closedOnPath = [];
   const closedLeaves = park.leaves.filter((q) => !q.open).map((q) => [q.hinge, [q.hinge[0] + q.dir[0] * q.w, q.hinge[1] + q.dir[1] * q.w]]);
@@ -190,6 +220,38 @@ for (const [name, park] of Object.entries(doc.parks)) {
   check(`${name}: contact with the drawn ground (0 floating, 0 buried beyond tolerance)`, !floatN && !buryN && !plinthBad && !pierBad && !leafBad, `${nPanel} bare panels: floating ${floatN}, buried ${buryN}; plinths out ${plinthBad}; piers ${pierBad}; leaves ${leafBad} ${contactBad.join("; ")}`);
   check(`${name}: colliders match the drawn line`, !colMiss && !colShort && !colAcross, `missing ${colMiss}, under 1.3 m ${colShort}, across an open entrance ${colAcross}`);
   report.parks[name] = R;
+}
+// ---- (round 2) the far mesh: the card's coverage at 30 / 60 / 120 m (the mip the GPU samples there) against the
+// modelled mesh's analytic share (6 mm wires, 50 mm across, 200 mm up + the edge pairs), within +-CEIL.cardCov
+{
+  const { ironCards, PXM } = await imp("viewer/thinBars.js");
+  let res = null, why = "";
+  try {
+    // the kit's pf_mesh_lod0 straight from the GLB (positions + indices of every primitive; the node at the origin)
+    const glb = fs.readFileSync(path.join(ROOT, "models/parkfence/parkfence.glb"));
+    const jl = glb.readUInt32LE(12), G = JSON.parse(glb.subarray(20, 20 + jl).toString()), bin = 20 + jl + 8;
+    const acc = (ai) => { const A = G.accessors[ai], V = G.bufferViews[A.bufferView], n = { SCALAR: 1, VEC3: 3 }[A.type], o = bin + (V.byteOffset || 0) + (A.byteOffset || 0);
+      const T = { 5126: Float32Array, 5125: Uint32Array, 5123: Uint16Array }[A.componentType]; return Array.from(new T(glb.buffer.slice(glb.byteOffset + o, glb.byteOffset + o + A.count * n * T.BYTES_PER_ELEMENT))); };
+    const node = G.nodes.find((q) => q.name === "pf_mesh_lod0");
+    const Pa = [], Ia = [];
+    for (const pr of G.meshes[node.mesh].primitives) { const base = Pa.length / 3; Pa.push(...acc(pr.attributes.POSITION)); for (const k of acc(pr.indices)) Ia.push(k + base); }
+    const P = new Float32Array(Pa), I = new Uint32Array(Ia), S = new Float32Array(P.length / 3).fill(0.99);
+    const TEX = 160, C = ironCards({ pf_mesh: { pos: P, index: I, slot: S } }, { tipSlot: 1, steelSlot: 2, tex: TEX, width: 2048 });
+    const card = C.cards.pf_mesh, [u0, v0] = [card.pos[0], card.pos[1]], [u1, v1] = [card.pos[6], card.pos[7]];
+    // the mesh region (no post, no ground part): x 0.15 .. 2.40, y 0.1 .. 1.75, in level-0 texels of the cell
+    const cell = { x0: Math.round(card.uv[0] * C.atlas.width), y0: Math.round(card.uv[1] * C.atlas.height), W: Math.round((card.uv[2] - card.uv[0]) * C.atlas.width), H: Math.round((card.uv[5] - card.uv[1]) * C.atlas.height) };
+    const reg = [0.15, 0.1, 2.4, 1.75].map((q, k) => (k % 2 === 0 ? (q - u0) / (u1 - u0) * cell.W + cell.x0 : (q - v0) / (v1 - v0) * cell.H + cell.y0));
+    const meanAt = (lv) => { const L2 = C.atlas.levels[lv], f = 2 ** lv; let sum = 0, n = 0; for (let y = Math.ceil(reg[1] / f); y < Math.floor(reg[3] / f); y++) for (let x = Math.ceil(reg[0] / f); x < Math.floor(reg[2] / f); x++) { sum += L2.data[(y * L2.width + x) * 4 + 3]; n++; } return n ? sum / n / 255 : NaN; };
+    // analytic: 6 mm verticals every 50 mm; horizontals: 12 wires of 6 mm over the 1.75 m panel height
+    const W_ = 0.006, cv = W_ / 0.05, ch = (12 * W_) / 1.75, analytic = 1 - (1 - cv) * (1 - ch);
+    res = { analytic: +analytic.toFixed(3), at: {} };
+    for (const d of [30, 60, 120]) { const lv = Math.max(0, Math.min(C.atlas.levels.length - 1, Math.floor(Math.log2((TEX * d) / PXM)))); res.at[d] = { level: lv, mean: +meanAt(lv).toFixed(3) }; }
+  } catch (e) { why = e.message; }
+  const ok = res && Object.values(res.at).every((q) => Math.abs(q.mean / res.analytic - 1) <= CEIL.cardCov);
+  check("far mesh: the card's coverage at 30 / 60 / 120 m = the modelled mesh's (+-30 %)", !!ok, res ? `analytic ${res.analytic}; ${Object.entries(res.at).map(([d, q]) => `${d} m (mip ${q.level}) ${q.mean}`).join(", ")}` : why);
+  report.cardCoverage = res;
+  const src = fs.readFileSync(path.join(ROOT, "viewer/parkFence.js"), "utf8");
+  check("far mesh: the card thickens at grazing angles (1 - (1 - a)^(1 / cos))", /pow\(float\(1\)\.sub\(T\.a/.test(src) && /GRAZE_MIN = 0\.2/.test(src), "viewer/parkFence.js cardMaterial");
 }
 // ---- 6. budget
 const meshes = L.IRON.length * 2 + L.STONE.length * 3;
