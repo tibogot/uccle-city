@@ -19,6 +19,11 @@
 //   3. instanceStream (?streamcopy=old): the flat gather gives the same back arrays, counts, logs and multi-draw runs
 //      as the old gather on a synthetic source (short and long runs); multiDraw chunk() gives the same chunks for flat
 //      and paired runs
+//   5. round 2 (claude/allocrate2): the villa's drive deck (?villadeck=old) = the old closure on the real villa.json at
+//      100k points; the landmark blockers' flat rect merge (?blockkeys=old) = the string-keyed one (walls, top, low);
+//      surfaceLayers (?surfout=old) the same layers with and without a reused answer; the heap drop's bounds
+//      (?fastbounds=old) = three's computeBoundingBox / Sphere bit for bit; carFleet's placeCars (?fleetopt=old) car by
+//      car in the fleet test (4); tramline's index snap / yAlong / update scratch (?tramalloc=old) by text
 //   4. text: carFleet's flat jobs (?fleetflat=old), heroColliders' one sample function (?blockflat=old), lighting's paced
 //      meter (?meterpace=old); readRenderTargetPixelsAsync only at the listed (non per-frame) call sites; the features rows
 import fs from "node:fs";
@@ -162,8 +167,9 @@ const fresh = async (rel, search) => { globalThis.location.search = search; try 
     return { F, M };
   };
   performance.now = () => clock;
-  try {
-    const NEW = await mkFleet(""), OLD = await mkFleet("?fleetflat=old");
+  try { for (const [newQ, oldQ] of [["", "?fleetflat=old"], ["?fleetrun=2", "?fleetopt=old"]]) {
+    clock = 1000;
+    const NEW = await mkFleet(newQ), OLD = await mkFleet(oldQ);
     const scene = new THREE.Scene();
     const tiles = [];
     let s2 = 4242;
@@ -203,8 +209,8 @@ const fresh = async (rel, search) => { globalThis.location.search = search; try 
       frames++; drawnMax = Math.max(drawnMax, NEW.F.stats.drawn);
       if (a !== b) { diffs++; firstDiff ??= f; }
     }
-    ok(diffs === 0 && drawnMax > 30, `carFleet: the flat jobs give the old batches car by car (count, matrix, paint, fade, stats) over ${frames} frames with tiles leaving / coming back, a late type, a hidden car, a jump (drawn up to ${drawnMax}; frames differing ${diffs}${firstDiff != null ? ", first " + firstDiff : ""})`);
-  } finally { performance.now = realNow; }
+    ok(diffs === 0 && drawnMax > 30, `carFleet (${oldQ}): the default fleet gives the old batches car by car (count, matrix, paint, fade, stats) over ${frames} frames with tiles leaving / coming back, a late type, a hidden car, a jump (drawn up to ${drawnMax}; frames differing ${diffs}${firstDiff != null ? ", first " + firstDiff : ""})`);
+  } } finally { performance.now = realNow; }
 }
 
 // ------------------------------------------------------------------ 5. text: the other fixes, the readbacks, the rows
@@ -224,8 +230,147 @@ const fresh = async (rel, search) => { globalThis.location.search = search; try 
   const extra = found.filter((p) => !ALLOWED.has(p));
   ok(!extra.length, `readRenderTargetPixelsAsync only at the listed non-per-frame sites (${found.length} files${extra.length ? "; NEW: " + extra.join(", ") + " (pace it, then list it here)" : ""})`);
   const feats = src("viewer/features.js");
-  for (const k of ["ringtest", "liftcache", "streamcopy", "fleetflat", "meterpace", "blockflat"]) ok(new RegExp(`old\\("${k}", "perf"`).test(feats), `features.js: a row for ?${k}=old`);
+  for (const k of ["ringtest", "liftcache", "streamcopy", "fleetflat", "meterpace", "blockflat", "villadeck", "blockkeys", "tramalloc", "surfout", "fleetopt", "fastbounds", "allocsmall"]) ok(new RegExp(`old\\("${k}", "perf"`).test(feats), `features.js: a row for ?${k}=old`);
   ok(fs.existsSync(path.join(ROOT, "tools/perf/allocSample.mjs")), "tools/perf/allocSample.mjs (the sampler) present");
+}
+
+// ------------------------------------------------------------------ 6. round 2 (claude/allocrate2)
+{
+  const THREE = await import("three/webgpu");
+  // 6a. the villa's drive deck: the real villa.json and frame; the old closure copied from villaCity.js (before the fix)
+  {
+    const VD = await fresh("../../viewer/villa/villaDeck.js", ""), VO = await fresh("../../viewer/villa/villaDeck.js", "?villadeck=old");
+    ok(VD.VILLA_DECK === true && VO.VILLA_DECK === false, "villaDeck: on by default (?villadeck=old)");
+    const { drivePlane, LIFT } = await import("../../viewer/villa/villaGroundsGeom.js");
+    const notes = JSON.parse(src("models/villa/villa.json")), pl = notes.placement;
+    const rootM = new THREE.Matrix4().compose(new THREE.Vector3(...pl.city_local_position), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), pl.rotation_y_rad), new THREE.Vector3(1, 1, 1));
+    const inv = rootM.clone().invert(), q = new THREE.Vector3();
+    const dp = notes.drive_plane, dRings = dp.zones.map((z) => notes.grounds[z]);
+    const inRingUW = (r, u, w) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [ui, wi] = r[i], [uj, wj] = r[j]; if ((wi > w) !== (wj > w) && u < ((uj - ui) * (w - wi)) / (wj - wi) + ui) c = !c; } return c; };
+    const onDriveOld = (x, z) => { q.set(x, 0, z).applyMatrix4(inv); return dRings.some((r) => inRingUW(r, q.x, q.z)) ? q.x : null; };
+    const deckOld = (x, z) => { const u = onDriveOld(x, z); return u == null ? null : drivePlane(dp, u) + LIFT; };
+    const deck = VD.makeDriveDeck(dp, dRings, rootM, inv);
+    const cx = pl.city_local_position[0], cz = pl.city_local_position[2];
+    let diff = 0, on = 0, n = 0;
+    for (let t = 0; t < 100000; t++) {
+      const far = t % 10 === 0, x = cx + (rnd() - 0.5) * (far ? 4000 : 120), z = cz + (rnd() - 0.5) * (far ? 4000 : 120);
+      const a = deck(x, z), b = deckOld(x, z), ua = deck.onDrive(x, z), ub = onDriveOld(x, z);
+      if (a !== b || ua !== ub) diff++;
+      if (b != null) on++;
+      n++;
+    }
+    ok(diff === 0 && on > 200, `villaDeck: the drive deck and onDrive = the old closures at ${n} points round the villa and across the city (${on} on the drive; diffs ${diff})`);
+    const vc = src("viewer/villa/villaCity.js");
+    ok(/const fastDeck = VILLA_DECK \? makeDriveDeck\(dp, dRings, m\.rootM, inv\) : null;/.test(vc) && /const onDrive = fastDeck \? fastDeck\.onDrive :/.test(vc) && /const driveDeck = fastDeck \|\|/.test(vc), "villaCity.js: world.decks gets the boxed deck, onDrive its test (?villadeck=old: the closures)");
+  }
+  // 6b. the landmark blockers' rect merge: flat lists = string keys (walls, heights top / low, decks)
+  {
+    const HN = await fresh("../../viewer/heroColliders.js", ""), HO = await fresh("../../viewer/heroColliders.js", "?blockkeys=old");
+    const soup = (seed0) => {
+      let sd = seed0; const r = () => ((sd = (sd * 1103515245 + 12345) >>> 0) / 4294967296);
+      const T = [];
+      for (let w = 0; w < 14; w++) {                       // walls: vertical quads, some sloped tops, a few at height
+        const x = r() * 40, z = r() * 40, a = r() * Math.PI, L = 2 + r() * 10, y0 = r() < 0.3 ? 3 + r() * 3 : r() * 0.5, h = 0.5 + r() * 4;
+        const dx = Math.cos(a) * L, dz = Math.sin(a) * L;
+        T.push(x, y0, z, x + dx, y0, z + dz, x + dx, y0 + h, z + dz, x, y0, z, x + dx, y0 + h, z + dz, x, y0 + h * (0.5 + r()), z);
+      }
+      return T;
+    };
+    const ground = (x, z) => 0.3 * Math.sin(x / 7) + 0.2 * Math.cos(z / 5) + (x > 25 ? 2.5 : 0);
+    const layers = (x, z) => ({ top: ground(x, z) + (z > 30 ? 4 : 0), low: z > 30 ? ground(x, z) : NaN, deck: z > 30 && x < 20 });
+    let diffs = 0, rects = 0;
+    for (let k = 0; k < 6; k++) {
+      const T = soup(1000 + k);
+      const a = [HN.carBlockersSync(T, ground), HN.layeredBlockersSync(T, layers)], b = [HO.carBlockersSync(T, ground), HO.layeredBlockersSync(T, layers)];
+      if (JSON.stringify(a) !== JSON.stringify(b)) diffs++;
+      rects += a[0].length + a[1].length;
+    }
+    ok(diffs === 0 && rects > 100, `heroColliders: the flat rect merge = the string-keyed one (walls, top, low, decks; 6 soups, ${rects} rects, same order; soups differing ${diffs})`);
+    const hc = src("viewer/heroColliders.js");
+    ok(/const BLOCK_KEYS = new URLSearchParams\(location\.search\)\.get\("blockkeys"\) !== "old";/.test(hc) && /if \(BLOCK_KEYS\) \{/.test(hc) && /L\[2\] = l\.top; L\[3\] = l\.low; L\[4\] = l\.deck \? 1 : 0;/.test(hc), "heroColliders: BLOCK_KEYS (?blockkeys=old); layerFns copies the fields into a Float64Array (layers() may reuse its answer; no double in a closure context)");
+  }
+  // 6c. surfaceLayers: the same layers, a reused answer
+  {
+    const SN = await fresh("../../viewer/drive/surfaceLayers.js", ""), SO = await fresh("../../viewer/drive/surfaceLayers.js", "?surfout=old");
+    ok(SN.SURF_OUT === true && SO.SURF_OUT === false, "surfaceLayers: SURF_OUT on by default (?surfout=old)");
+    const hm = { surface: (x, z) => 0.5 * Math.sin(x / 9) + 0.3 * Math.cos(z / 4) };
+    const d1 = (x, z) => (x > 0 && x < 30 && z > 0 && z < 8 ? 6 + x * 0.01 : null);
+    const d2 = (x, z) => (x > 20 && x < 60 && z > 4 && z < 12 ? hm.surface(x, z) + 0.12 + (x < 40 ? 0.8 : 2.2) : null); d2.osm = true;
+    const decks = [d1, d2], out = { top: 0, low: NaN, deck: false };
+    let diff = 0, lows = 0;
+    for (let t = 0; t < 20000; t++) {
+      const x = rnd() * 80 - 10, z = rnd() * 20 - 4;
+      const o = SO.surfaceLayers(decks, hm, null, x, z), a = SN.surfaceLayers(decks, hm, null, x, z), b = SN.surfaceLayers(decks, hm, null, x, z, out);
+      const same = (p) => Object.is(p.top, o.top) && Object.is(p.low, o.low) && p.deck === o.deck;
+      if (!same(a) || !same(b) || b !== out) diff++;
+      if (Number.isFinite(o.low)) lows++;
+    }
+    ok(diff === 0 && lows > 100, `surfaceLayers: the same top / low / deck as the old path at 20000 points, with and without a reused answer (${lows} with a low layer; diffs ${diff})`);
+    ok(/const layersOut = \{ top: 0, low: NaN, deck: false \};/.test(src("viewer/drive/driveMode.js")), "driveMode.groundLayers: one reused answer");
+  }
+  // 6d. the heap drop's bounds = three's, bit for bit
+  {
+    const FN = await fresh("../../viewer/fastBounds.js", "");
+    ok(FN.FAST_BOUNDS === true, "fastBounds: on by default (?fastbounds=old)");
+    let diff = 0, n = 0;
+    const cases = [];
+    for (let k = 0; k < 30; k++) { const c = k === 0 ? 0 : 1 + Math.floor(rnd() * 3000), s = k % 5 === 4 ? 4 : 3, a = new Float32Array(c * s); for (let i = 0; i < a.length; i++) a[i] = (rnd() - 0.5) * 2000; cases.push(new THREE.BufferAttribute(a, s)); }
+    { const a = new Int16Array(300).map(() => Math.floor((rnd() - 0.5) * 60000)); cases.push(new THREE.BufferAttribute(a, 3, true)); }   // (normalized: three's own)
+    { const ib = new THREE.InterleavedBuffer(new Float32Array(600).map(() => rnd() * 100), 6); cases.push(new THREE.InterleavedBufferAttribute(ib, 3, 0)); }
+    for (const p of cases) {
+      const g1 = new THREE.BufferGeometry(), g2 = new THREE.BufferGeometry();
+      g1.setAttribute("position", p); g2.setAttribute("position", p);
+      FN.computeBox(g1); FN.computeSphere(g1); g2.computeBoundingBox(); g2.computeBoundingSphere();
+      const v = (g) => [...g.boundingBox.min.toArray(), ...g.boundingBox.max.toArray(), ...g.boundingSphere.center.toArray(), g.boundingSphere.radius];
+      const A = v(g1), B = v(g2);
+      if (A.some((x, i) => !Object.is(x, B[i]))) diff++;
+      n++;
+    }
+    ok(diff === 0, `fastBounds: computeBox / computeSphere = three's computeBoundingBox / Sphere bit for bit (${n} geometries: empty, itemSize 3 and 4, normalized, interleaved; diffs ${diff})`);
+    const hd = src("viewer/heapDrop.js");
+    ok(/if \(!g\.boundingBox\) computeBox\(g\);/.test(hd) && /if \(!g\.boundingSphere\) computeSphere\(g\);/.test(hd), "heapDrop.js tick: the bounds through fastBounds.js");
+    ok(/if \(k === "computeBoundingBox" \? fastBox\(this\) : fastSphere\(this\)\) return;\n      return f\.apply\(this, arguments\);/.test(hd), "heapDrop.js: its computeBoundingBox / Sphere wrapper takes the fast path first (three's own for what fastBounds does not cover)");
+  }
+  // 6e. tramline (a three + model module: by text)
+  {
+    const tl = src("viewer/tramline.js");
+    ok(/export const TRAM_ALLOC = .*get\("tramalloc"\) !== "old";/.test(tl), "tramline: TRAM_ALLOC (?tramalloc=old)");
+    ok(/if \(TRAM_ALLOC\) \{ await snapShapeFlat\(s, snap, loaded\); s\.snapNext = snap; continue; \}/.test(tl) && !/const \[|for \(const \[/.test(tl.slice(tl.indexOf("const snapShapeFlat"), tl.indexOf("const snapTileNow"))), "tramline snap: snapShapeFlat by index reads (no destructuring)");
+    ok(/const yAlong = TRAM_ALLOC\s*\? \(shape, q\) => \{ let s = 0; for \(let k = 0; k < 5; k\+\+\) \{ atInto\(shape, q \+ TAP_O\[k\], yA\);/.test(tl), "tramline yAlong: index taps into a scratch (atInto)");
+    ok(/if \(TRAM_ALLOC\) \{ atInto\(shapes\[t\.shape\], d, uA\); x = uA\[0\]; z = uA\[1\]; \}/.test(tl), "tramline update: the trip's point into a scratch");
+    ok(/if \(FLEET_OPT && !jobs\) \{/.test(src("viewer/carFleet.js")), "carFleet: the car loop in placeCars (?fleetopt=old)");
+  }
+}
+
+// 6f. the villa's tree clear: the far pre-test keeps the same trees
+{
+  const PN = await fresh("../../viewer/villa/villaPlot.js", ""), PO = await fresh("../../viewer/villa/villaPlot.js", "?villadeck=old");
+  const [ox, oz] = PN.FRAME.origin, trees = [];
+  for (let t = 0; t < 20000; t++) { const far = t % 4 === 0, a = rnd() * 6.283, d = far ? 60 + rnd() * 900 : rnd() * 95; trees.push({ x: ox + Math.cos(a) * d, z: oz + Math.sin(a) * d, crown: t % 3 ? 1 + rnd() * 9 : undefined }); }
+  const A = PN.villaTreesClear(trees), B = PO.villaTreesClear(trees);
+  ok(PN.VILLA_DECK === true && PO.VILLA_DECK === false && A.length === B.length && A.every((t, i) => t === B[i]) && A.length < trees.length - 100, `villaPlot villaTreesClear: the far pre-test keeps the same ${A.length} of ${trees.length} trees in the same order (?villadeck=old: every tree tested)`);
+  const far = trees.filter((t) => Math.hypot(t.x - ox, t.z - oz) > 200);
+  const C = PN.villaTreesClear(far);
+  ok(C.length === far.length && C !== far, "villaPlot villaTreesClear: a tile far from the villa keeps every tree (a new array, as filter gave)");
+}
+
+// 6g. the small ones (?allocsmall=old): driveHeight's corners in a module function (= the closure, both layers), the
+// park fence stages' index loop, the tram update's index loop
+{
+  const CN = await fresh("../../viewer/drive/colliders.js", ""), CO = await fresh("../../viewer/drive/colliders.js", "?allocsmall=old");
+  const cols = 40, rows = 30, Y = new Float32Array(cols * rows).map(() => 100 + rnd() * 5);
+  const d1 = new Uint16Array(cols * rows).map(() => Math.floor(rnd() * 40)), d2 = new Uint16Array(cols * rows).map(() => (rnd() < 0.3 ? 65535 : 500 + Math.floor(rnd() * 300)));
+  const hm = { h: { x0: -10, z0: 5, step: 1, cols, rows }, y: Y };
+  let diff = 0, n = 0;
+  for (let t = 0; t < 20000; t++) {
+    const x = -14 + rnd() * 48, z = 1 + rnd() * 38, near = t % 3 === 0 ? null : 100 + rnd() * 10, del = t % 2 ? { delta: d1, delta2: d2 } : d1;
+    if (!Object.is(CN.driveHeight(hm, del, x, z, near), CO.driveHeight(hm, del, x, z, near))) diff++;
+    n++;
+  }
+  ok(diff === 0, `colliders driveHeight: the module corner function = the old closure at ${n} points (one and two layers, near or not, outside the grid; diffs ${diff})`);
+  const pf = src("viewer/parkFence.js"), tl = src("viewer/tramline.js");
+  ok(/const ALLOC_SMALL = qs\.get\("allocsmall"\) !== "old";/.test(pf) && /if \(ALLOC_SMALL\) for \(let li = 0; li < list\.length; li\+\+\) \{/.test(pf), "parkFence Stage.fill: an index loop (?allocsmall=old: for-of)");
+  ok(/for \(let ti = 0, tn = trips\.length; ti < tn; ti\+\+\) \{\n      const t = trips\[ti\];\n      const st = t\.stops/.test(tl), "tramline update: the trips by index");
 }
 
 console.log(fails ? `allocrate: ${fails} FAIL` : "allocrate: all checks pass");

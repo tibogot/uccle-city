@@ -15,9 +15,11 @@ const map = {
 const code = `
 const MAP = ${JSON.stringify(Object.fromEntries(Object.entries(map).map(([k, v]) => [k, pathToFileURL(path.join(THREE, v)).href])))};
 const ADDONS = ${JSON.stringify(pathToFileURL(path.join(THREE, "examples/jsm")).href + "/")};
+const SRC = ${JSON.stringify(pathToFileURL(path.join(THREE, "src")).href + "/")};
 export async function resolve(spec, ctx, next) {
   if (MAP[spec]) return { url: MAP[spec], shortCircuit: true };
   if (spec.startsWith("three/addons/")) return { url: ADDONS + spec.slice(13), shortCircuit: true };
+  if (spec.startsWith("three/src/")) return { url: SRC + spec.slice(10), shortCircuit: true };   // (viewer/rail/railData.js: earcut)
   return next(spec, ctx);
 }`;
 register("data:text/javascript," + encodeURIComponent(code));

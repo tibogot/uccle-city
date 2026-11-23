@@ -5,6 +5,8 @@
 //                 plants' shrubs / beds are cleared inside it (main.js clearRings); the villa draws its own boundary
 //   - BUILT_RINGS the house, the terrace, the front strip (wall, forecourt, drive) and the hedges: no LiDAR tree there
 //                 (the garden's trees elsewhere on the plot stay), no grass blade through the paving
+// (claude/allocrate2: the far-tree pre-test of villaTreesClear; ?villadeck=old = every tree tested, as villaDeck.js)
+export const VILLA_DECK = typeof location === "undefined" || new URLSearchParams(location.search).get("villadeck") !== "old";
 export const VILLA_ON = typeof location === "undefined" || new URLSearchParams(location.search).get("villa") !== "0";
 export const FRAME = { origin: [909.874, 2037.15], rotationY: -2.624849841366921 };
 const ca = Math.cos(FRAME.rotationY), sa = Math.sin(FRAME.rotationY);
@@ -50,8 +52,17 @@ export function crownHits(t) {
  *  rest of the garden keeps its trees) */
 export function villaTreesClear(trees) {
   if (!VILLA_ON || !trees?.length) return trees;
-  return trees.filter((t) => !BUILT_RINGS.some((r) => inRing(r, t.x, t.z)) && !crownHits(t));
+  if (!VILLA_DECK) return trees.filter((t) => !BUILT_RINGS.some((r) => inRing(r, t.x, t.z)) && !crownHits(t));
+  // (claude/allocrate2, ?villadeck=old: every tree of every tile through the ring tests, a toFrame array + a closure a
+  // tree, ~20 KB a frame flying) a tree further from the frame origin than the whole plot + its crown + 1 m hits
+  // nothing: kept without a test; the rest as before
+  let far = 0;
+  for (let i = 0; i < trees.length; i++) { const t = trees[i], dx = t.x - FRAME.origin[0], dz = t.z - FRAME.origin[1], r = PLOT_R + (t.crown ?? CROWN_DEFAULT) + CROWN_MARGIN + 1; if (dx * dx + dz * dz > r * r) far++; }
+  if (far === trees.length) return trees.slice();
+  return trees.filter((t) => { const dx = t.x - FRAME.origin[0], dz = t.z - FRAME.origin[1], r = PLOT_R + (t.crown ?? CROWN_DEFAULT) + CROWN_MARGIN + 1; return dx * dx + dz * dz > r * r || (!BUILT_RINGS.some((q) => inRing(q, t.x, t.z)) && !crownHits(t)); });
 }
+/** the plot's (and so every built ring's / crown rect's) furthest corner from the frame origin, m */
+const PLOT_R = Math.max(...[PLOT_UW.u0, PLOT_UW.u1].flatMap((u) => [PLOT_UW.w0, PLOT_UW.w1].map((w) => Math.hypot(u, w))), ...CROWN_UW.flatMap(([u0, u1, w0, w1]) => [Math.hypot(u0, w0), Math.hypot(u1, w0), Math.hypot(u1, w1), Math.hypot(u0, w1)]), ...BUILT_UW.flatMap(([u0, u1, w0, w1]) => [Math.hypot(u0, w0), Math.hypot(u1, w0), Math.hypot(u1, w1), Math.hypot(u0, w1)]));
 /** a flat proxy of the built rings on the ground (the grass field's "solids": no blade through the paving / garage) */
 export function villaGrassSolid(THREE, surface, bounds) {
   if (!VILLA_ON) return null;

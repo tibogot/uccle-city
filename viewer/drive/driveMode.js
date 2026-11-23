@@ -228,7 +228,9 @@ export class Driver {
     this.ground = (x, z) => moverGroundY(this.world.decks, this.world.at(x, z), x, z, this.groundHint ?? (this.on && this.state ? this.state.y : null));
     // drivecheck (rule 27 provisional): the place's surface layers with no car in them (surfaceLayers.js): what
     // the hero colliders measure their car band from (heroColliders.js; ?heroground=old: this.ground, the car's layer)
-    this.groundLayers = (x, z) => { const t = this.world.at(x, z); return surfaceLayers(this.world.decks, t.hm, t.drive?.ground, x, z); };
+    // (?surfout=old: a new answer a point; the reader, heroColliders.js layerFns, takes its fields at once)
+    const layersOut = { top: 0, low: NaN, deck: false };
+    this.groundLayers = (x, z) => { const t = this.world.at(x, z); return surfaceLayers(this.world.decks, t.hm, t.drive?.ground, x, z, layersOut); };
     this.sets = (x, z, r) => {
       const out = this._sets ||= [];
       out.length = 0;

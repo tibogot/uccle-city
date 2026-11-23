@@ -757,12 +757,22 @@ export function tramPlatformSurface(feats, hm, ground, bounds, carve) {
 /** Height of the drivable surface at (x, z) (bilinear over the 1 m grid): hm = the tile's Heightmap, delta from
  *  driveGround (or the { delta, delta2 } object). near = the car's height: where the grid has two layers (a street under
  *  a deck) each corner takes the layer nearer to it. */
+// (claude/allocrate2, rule alloc-rate; ?allocsmall=old: a closure v(k) a call, ~17 KB a frame flying) one grid corner of
+// driveHeight: the same expression as its v(k), a module function (no closure, no context)
+const ALLOC_SMALL = new URLSearchParams(globalThis.location?.search || "").get("allocsmall") !== "old";
+function layerY(Y, d1, d2, near, k) {
+  const a = Y[k] + d1[k] * 0.01;
+  if (!d2 || near == null || d2[k] === 65535) return a;
+  const b = Y[k] + d2[k] * 0.01;
+  return Math.abs(b - near) < Math.abs(a - near) ? b : a;
+}
 export function driveHeight(hm, delta, x, z, near = null) {
   const d2 = delta?.delta2, d1 = delta?.delta ?? delta;
   const h = hm.h, Y = hm.y;
   const c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1), r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1);
   const c0 = Math.min(Math.floor(c), h.cols - 2), r0 = Math.min(Math.floor(r), h.rows - 2);
   const fc = c - c0, fr = r - r0, i = r0 * h.cols + c0, j = i + h.cols;
+  if (ALLOC_SMALL) return (layerY(Y, d1, d2, near, i) * (1 - fc) + layerY(Y, d1, d2, near, i + 1) * fc) * (1 - fr) + (layerY(Y, d1, d2, near, j) * (1 - fc) + layerY(Y, d1, d2, near, j + 1) * fc) * fr;
   const v = (k) => {
     const a = Y[k] + d1[k] * 0.01;
     if (!d2 || near == null || d2[k] === 65535) return a;

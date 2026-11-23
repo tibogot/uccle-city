@@ -30,6 +30,7 @@ import { wxMat } from "./weather/cityWeatherize.js";
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search : "");
 /** ?parkfence=0: no park fences (as before) */
 export const PARKFENCE = qs.get("parkfence") !== "0";
+const ALLOC_SMALL = qs.get("allocsmall") !== "old";
 /** the stone's LOD bands (m: switch 0 -> 1, switch 1 -> 2, end), the ironwork's card end, its shadow's end */
 export const STONE_BANDS = [30, 90, 420];
 export const CARD_END = 240, SHADOW_END = 25;
@@ -173,7 +174,14 @@ class Stage {
   fill(list, eye) {
     const M = this.mesh.instanceMatrix.array, Vv = this.var.array;
     let n = 0;
-    for (const it of list) {
+    // (claude/allocrate2, ?allocsmall=old: for-of, an array iterator a stage a frame: ~19 KB a frame on the police drive)
+    if (ALLOC_SMALL) for (let li = 0; li < list.length; li++) {
+      const it = list[li];
+      const d = Math.hypot(it.c[0] - eye.x, it.c[1] - eye.y, it.c[2] - eye.z);
+      if (d - it.r > this.hi || d + it.r < this.lo || n >= this.cap) continue;
+      M.set(it.m, n * 16); Vv.set(it.v, n * 4); n++;
+    }
+    else for (const it of list) {
       const d = Math.hypot(it.c[0] - eye.x, it.c[1] - eye.y, it.c[2] - eye.z);
       if (d - it.r > this.hi || d + it.r < this.lo || n >= this.cap) continue;
       M.set(it.m, n * 16); Vv.set(it.v, n * 4); n++;

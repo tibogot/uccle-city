@@ -27,6 +27,8 @@ const BAND_OLD = new URLSearchParams(location.search).get("colband") === "old";
 // function for the whole walk, the corners in its outer variables: a landmark's tens of thousands of triangles made
 // ~60 KB of garbage a frame of the falcon flight while their colliders were built (tools/perf/allocSample.mjs)
 const BLOCK_FLAT = new URLSearchParams(location.search).get("blockflat") !== "old";
+// (claude/allocrate2, rule alloc-rate) the rect merge without string keys; ?blockkeys=old = the Set / Map of strings
+const BLOCK_KEYS = new URLSearchParams(location.search).get("blockkeys") !== "old";
 /** drivecheck (docs/DRIVECHECK.md, rule 27 provisional; ?heroground=old: as before): the car band (0.30-1.30 m over the
  *  drive surface) was measured from driveMode.ground, which answers with the surface layer NEAREST THE CAR (state.y): built
  *  in a poll while the car drove elsewhere, a car lower than ~73 m made the Verrewinkel bridge's band start on the
@@ -97,15 +99,56 @@ export function layeredBlockersSync(T, layers, opts = {}) {
 }
 /** top / low / deck of layers(x, z), the last point's answer kept (the lattice asks each point twice in a row) */
 function layerFns(layers) {
-  let lx = NaN, lz = NaN, l = null;
-  const at = (x, z) => { if (x !== lx || z !== lz) { lx = x; lz = z; l = layers(x, z); } return l; };
-  return [(x, z) => at(x, z).top, (x, z) => { const v = at(x, z).low; return Number.isFinite(v) ? v : Infinity; }, (x, z) => at(x, z).deck];
+  // (the fields copied at once: layers() may reuse one answer object, driveMode.groundLayers, claude/allocrate2)
+  // (in a Float64Array, not in let variables: a double stored in a closure's context is a new heap number each time)
+  const L = new Float64Array([NaN, NaN, 0, NaN, 0]);   // x, z, top, low, deck
+  const at = (x, z) => { if (x !== L[0] || z !== L[1]) { L[0] = x; L[1] = z; const l = layers(x, z); L[2] = l.top; L[3] = l.low; L[4] = l.deck ? 1 : 0; } };
+  return [(x, z) => { at(x, z); return L[2]; }, (x, z) => { at(x, z); return Number.isFinite(L[3]) ? L[3] : Infinity; }, (x, z) => { at(x, z); return L[4] === 1; }];
 }
 // heights: null = walls with no height (as before); "top" = base at the rect's lowest sample (a car on a layer under it
 // passes, carEnv heightClear); "low" = top at the rect's highest sample (a car on a layer over it passes). A rect then
 // merges only cells of one 0.5 m height step, so its span stays the wall's own.
 // deckAt(x, z) -> true on a road deck: there the band is measured from the deck (and the street that joins it level),
 // never from the cutting / ground beside or under it (drivecheck, rule 27).
+// (BLOCK_KEYS) one triangle of blockerSteps' walk: the same samples, in the same order, as its loop (sampleT, the band
+// rows); the triangle and its step counts in _TR, the sample in sampleTri (module functions: no closure, no context)
+const _TR = new Float64Array(11);
+function walkTri(T, t, S) {
+  const ax = T[t], ay = T[t + 1], az = T[t + 2], bx = T[t + 3], by = T[t + 4], bz = T[t + 5], cx = T[t + 6], cy = T[t + 7], cz = T[t + 8];
+  const G = S.G, gx = S.gx, gz = S.gz, x0 = S.x0, z0 = S.z0, b0 = S.b0, b1 = S.b1;
+  const mx = (ax + bx + cx) / 3, mz = (az + bz + cz) / 3;
+  const g = G[Math.min(gz - 1, Math.max(0, Math.round((mz - z0) / 0.5))) * gx + Math.min(gx - 1, Math.max(0, Math.round((mx - x0) / 0.5)))];
+  if (Math.min(ay, by, cy) > g + b1 + 1 || Math.max(ay, by, cy) < g + b0 - 1) return;
+  const n1 = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay, bz - az) / STEP)), n2 = Math.max(1, Math.ceil(Math.hypot(cx - ax, cy - ay, cz - az) / STEP));
+  _TR[0] = ax; _TR[1] = ay; _TR[2] = az; _TR[3] = bx; _TR[4] = by; _TR[5] = bz; _TR[6] = cx; _TR[7] = cy; _TR[8] = cz; _TR[9] = n1; _TR[10] = n2;
+  if (BAND_OLD) { for (let i = 0; i <= n1; i++) for (let j = 0; j <= n2; j++) sampleTri(S, i, j); return; }
+  let gLo = Infinity, gHi = -Infinity;
+  const li0 = Math.max(0, Math.round((Math.min(ax, bx, cx) - x0) / 0.5) - 1), li1 = Math.min(gx - 1, Math.round((Math.max(ax, bx, cx) - x0) / 0.5) + 1);
+  const lk0 = Math.max(0, Math.round((Math.min(az, bz, cz) - z0) / 0.5) - 1), lk1 = Math.min(gz - 1, Math.round((Math.max(az, bz, cz) - z0) / 0.5) + 1);
+  for (let k = lk0; k <= lk1; k++) for (let i = li0; i <= li1; i++) { const v = G[k * gx + i]; if (v < gLo) gLo = v; if (v > gHi) gHi = v; }
+  const yLo = gLo + b0 - 1e-4, yHi = gHi + b1 + 1e-4, dY = cy - ay;
+  for (let i = 0; i <= n1; i++) {
+    const u = i / n1, yU = ay + (by - ay) * u;
+    let ja = 0, jb = n2;
+    if (Math.abs(dY) < 1e-9) { if (yU < yLo - 1e-3 || yU > yHi + 1e-3) { ja = 1; jb = 0; } }
+    else { const p = (yLo - yU) * n2 / dY, q = (yHi - yU) * n2 / dY; ja = Math.max(0, Math.floor(Math.min(p, q)) - 1); jb = Math.min(n2, Math.ceil(Math.max(p, q)) + 1); }
+    for (let j = ja; j <= jb; j++) sampleTri(S, i, j);
+    for (let j = Math.max(jb + 1, Math.floor((1 - u) * n2)); j <= n2; j++) if (u + j / n2 > 1) sampleTri(S, i, j);
+  }
+}
+function sampleTri(S, i, j) {
+  const R = _TR, n1 = R[9], n2 = R[10];
+  let u = i / n1, w = j / n2;
+  if (u + w > 1) { if (u + w > 1 + 1 / Math.max(n1, n2)) return; const s = u + w; u /= s; w /= s; }
+  const ax = R[0], ay = R[1], az = R[2];
+  const x = ax + (R[3] - ax) * u + (R[6] - ax) * w, y = ay + (R[4] - ay) * u + (R[7] - ay) * w, z = az + (R[5] - az) * u + (R[8] - az) * w;
+  const G = S.G, gx = S.gx, gz = S.gz, x0 = S.x0, z0 = S.z0;
+  const h = y - G[Math.min(gz - 1, Math.max(0, Math.round((z - z0) / 0.5))) * gx + Math.min(gx - 1, Math.max(0, Math.round((x - x0) / 0.5)))];
+  if (h < S.b0 || h > S.b1) return;
+  const ci = Math.floor((x - x0) / CELL), ck = Math.floor((z - z0) / CELL), nx = S.nx;
+  if (ci >= 0 && ck >= 0 && ci < nx && ck < S.nz) { const q = ck * nx + ci; S.grid[q] = 1; const lo = S.lo; if (lo) { const hi = S.hi; if (y < lo[q]) lo[q] = y; if (y > hi[q]) hi[q] = y; } }
+}
+
 function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall, heights = null, deckAt = null } = {}) {
   const b = boxOf(T), x0 = b.x0 - 0.5, z0 = b.z0 - 0.5;
   const nx = Math.ceil((b.x1 + 0.5 - x0) / CELL), nz = Math.ceil((b.z1 + 0.5 - z0) / CELL);
@@ -163,7 +206,15 @@ function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall, heights = nul
       const ci = Math.floor((x - x0) / CELL), ck = Math.floor((z - z0) / CELL);
       if (ci >= 0 && ck >= 0 && ci < nx && ck < nz) { const q = ck * nx + ci; grid[q] = 1; if (lo) { if (y < lo[q]) lo[q] = y; if (y > hi[q]) hi[q] = y; } }
   };
-  for (let t = 0; t < T.length; t += 9) {
+  // (claude/allocrate2, ?blockkeys=old: the walk below) the triangles walked by walkTri: a small function of its own
+  // with the triangle in a typed array, so no double lives in this generator's context (each `ax = T[t]` there was a
+  // new heap number: ~70 KB a frame flying with the rect merge's strings)
+  const S = BLOCK_KEYS ? { grid, lo, hi, G, gx, gz, x0, z0, nx, nz, b0: band[0], b1: band[1] } : null;
+  if (S) for (let t = 0; t < T.length; t += 9) {
+    if ((SLICE_OLD ? (t & 0x3fff) === 0 : (++nTri & 63) === 0) && performance.now() - slice > (HERO_POLL ? POLL_MS : 6)) { yield; slice = performance.now(); }
+    walkTri(T, t, S);
+  }
+  else for (let t = 0; t < T.length; t += 9) {
     // (perf audit 2026-11-14: was `(t & 0x3fff) === 0` with t stepping by 9 = a time check every 16,384 triangles: one
     // landmark slice ran 90-120 ms. Now every 64 triangles; ?heroslice=old: as before)
     if ((SLICE_OLD ? (t & 0x3fff) === 0 : (++nTri & 63) === 0) && performance.now() - slice > (HERO_POLL ? POLL_MS : 6)) { yield; slice = performance.now(); }
@@ -198,22 +249,48 @@ function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall, heights = nul
     }
   }
   // rectangles: runs along x per row, then equal runs of consecutive rows merged
-  const runs = new Map();          // "i0,i1" -> open rect { i0, i1, k0, k1 }
   const rects = [];
   const step = !heights ? null : heights === "low" ? (q) => Math.floor(hi[q] / 0.5) : (q) => Math.floor(lo[q] / 0.5);
-  for (let k = 0; k <= nz; k++) {
-    const row = new Set();
-    if (k < nz) for (let i = 0; i < nx; i++) {
-      if (!grid[k * nx + i]) continue;
-      let j = i;
-      if (step) { const s0 = step(k * nx + i); while (j + 1 < nx && grid[k * nx + j + 1] && step(k * nx + j + 1) === s0) j++; row.add(`${i},${j},${s0}`); }
-      else { while (j + 1 < nx && grid[k * nx + j + 1]) j++; row.add(`${i},${j}`); }
-      i = j;
+  if (BLOCK_KEYS) {
+    // (claude/allocrate2, ?blockkeys=old: a Set of `${i},${j},${s}` strings a row and a Map of them, split back with
+    // .map(Number): ~105 KB a frame of the falcon flight. Here the open rects in a list kept in the old Map's order (a
+    // run that goes on keeps its place, a new one goes to the end), a row's runs in flat Int32Arrays found by i0)
+    const rI0 = new Int32Array(nx), rI1 = new Int32Array(nx), rS = new Float64Array(nx), rowAt = new Int32Array(nx), used = new Uint8Array(nx);
+    const open = [];
+    for (let k = 0; k <= nz; k++) {
+      let n = 0;
+      if (k < nz) for (let i = 0; i < nx; i++) {
+        if (!grid[k * nx + i]) continue;
+        let j = i, s0 = 0;
+        if (step) { s0 = step(k * nx + i); while (j + 1 < nx && grid[k * nx + j + 1] && step(k * nx + j + 1) === s0) j++; }
+        else while (j + 1 < nx && grid[k * nx + j + 1]) j++;
+        rI0[n] = i; rI1[n] = j; rS[n] = s0; rowAt[i] = ++n;
+        i = j;
+      }
+      let w = 0;
+      for (let o = 0; o < open.length; o++) {
+        const r = open[o], q = rowAt[r.i0] - 1;
+        if (q >= 0 && rI1[q] === r.i1 && rS[q] === r.s) { r.k1 = k; used[q] = 1; open[w++] = r; } else rects.push(r);
+      }
+      open.length = w;
+      for (let q = 0; q < n; q++) { if (!used[q]) open.push({ i0: rI0[q], i1: rI1[q], k0: k, k1: k, s: rS[q] }); used[q] = 0; rowAt[rI0[q]] = 0; }
     }
-    for (const [key, r] of runs) if (!row.has(key)) { rects.push(r); runs.delete(key); }
-    for (const key of row) {
-      const r = runs.get(key);
-      if (r) r.k1 = k; else { const [i0, i1] = key.split(",").map(Number); runs.set(key, { i0, i1, k0: k, k1: k }); }
+  } else {
+    const runs = new Map();          // "i0,i1" -> open rect { i0, i1, k0, k1 }
+    for (let k = 0; k <= nz; k++) {
+      const row = new Set();
+      if (k < nz) for (let i = 0; i < nx; i++) {
+        if (!grid[k * nx + i]) continue;
+        let j = i;
+        if (step) { const s0 = step(k * nx + i); while (j + 1 < nx && grid[k * nx + j + 1] && step(k * nx + j + 1) === s0) j++; row.add(`${i},${j},${s0}`); }
+        else { while (j + 1 < nx && grid[k * nx + j + 1]) j++; row.add(`${i},${j}`); }
+        i = j;
+      }
+      for (const [key, r] of runs) if (!row.has(key)) { rects.push(r); runs.delete(key); }
+      for (const key of row) {
+        const r = runs.get(key);
+        if (r) r.k1 = k; else { const [i0, i1] = key.split(",").map(Number); runs.set(key, { i0, i1, k0: k, k1: k }); }
+      }
     }
   }
   return rects.map(({ i0, i1, k0, k1 }) => {
