@@ -100,9 +100,10 @@ export function layeredBlockersSync(T, layers, opts = {}) {
 /** top / low / deck of layers(x, z), the last point's answer kept (the lattice asks each point twice in a row) */
 function layerFns(layers) {
   // (the fields copied at once: layers() may reuse one answer object, driveMode.groundLayers, claude/allocrate2)
-  let lx = NaN, lz = NaN, lt = 0, ll = NaN, ld = false;
-  const at = (x, z) => { if (x !== lx || z !== lz) { lx = x; lz = z; const l = layers(x, z); lt = l.top; ll = l.low; ld = l.deck; } };
-  return [(x, z) => { at(x, z); return lt; }, (x, z) => { at(x, z); return Number.isFinite(ll) ? ll : Infinity; }, (x, z) => { at(x, z); return ld; }];
+  // (in a Float64Array, not in let variables: a double stored in a closure's context is a new heap number each time)
+  const L = new Float64Array([NaN, NaN, 0, NaN, 0]);   // x, z, top, low, deck
+  const at = (x, z) => { if (x !== L[0] || z !== L[1]) { L[0] = x; L[1] = z; const l = layers(x, z); L[2] = l.top; L[3] = l.low; L[4] = l.deck ? 1 : 0; } };
+  return [(x, z) => { at(x, z); return L[2]; }, (x, z) => { at(x, z); return Number.isFinite(L[3]) ? L[3] : Infinity; }, (x, z) => { at(x, z); return L[4] === 1; }];
 }
 // heights: null = walls with no height (as before); "top" = base at the rect's lowest sample (a car on a layer under it
 // passes, carEnv heightClear); "low" = top at the rect's highest sample (a car on a layer over it passes). A rect then

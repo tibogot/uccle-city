@@ -459,7 +459,9 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
     drawn.n = 0; nearN = 0;
     fleet?.begin(camera, camPos);
     running = 0;
-    for (const t of trips) {
+    // (claude/allocrate2: an index loop, the same trips in the same order; was for-of, an iterator a frame)
+    for (let ti = 0, tn = trips.length; ti < tn; ti++) {
+      const t = trips[ti];
       const st = t.stops, first = st[0][2], last = st[st.length - 1][1];
       const tt = T >= first && T <= last ? T : Tn >= first && Tn <= last ? Tn : -1;
       if (tt < 0) continue;

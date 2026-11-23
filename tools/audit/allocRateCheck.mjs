@@ -230,7 +230,7 @@ const fresh = async (rel, search) => { globalThis.location.search = search; try 
   const extra = found.filter((p) => !ALLOWED.has(p));
   ok(!extra.length, `readRenderTargetPixelsAsync only at the listed non-per-frame sites (${found.length} files${extra.length ? "; NEW: " + extra.join(", ") + " (pace it, then list it here)" : ""})`);
   const feats = src("viewer/features.js");
-  for (const k of ["ringtest", "liftcache", "streamcopy", "fleetflat", "meterpace", "blockflat", "villadeck", "blockkeys", "tramalloc", "surfout", "fleetopt", "fastbounds"]) ok(new RegExp(`old\\("${k}", "perf"`).test(feats), `features.js: a row for ?${k}=old`);
+  for (const k of ["ringtest", "liftcache", "streamcopy", "fleetflat", "meterpace", "blockflat", "villadeck", "blockkeys", "tramalloc", "surfout", "fleetopt", "fastbounds", "allocsmall"]) ok(new RegExp(`old\\("${k}", "perf"`).test(feats), `features.js: a row for ?${k}=old`);
   ok(fs.existsSync(path.join(ROOT, "tools/perf/allocSample.mjs")), "tools/perf/allocSample.mjs (the sampler) present");
 }
 
@@ -287,7 +287,7 @@ const fresh = async (rel, search) => { globalThis.location.search = search; try 
     }
     ok(diffs === 0 && rects > 100, `heroColliders: the flat rect merge = the string-keyed one (walls, top, low, decks; 6 soups, ${rects} rects, same order; soups differing ${diffs})`);
     const hc = src("viewer/heroColliders.js");
-    ok(/const BLOCK_KEYS = new URLSearchParams\(location\.search\)\.get\("blockkeys"\) !== "old";/.test(hc) && /if \(BLOCK_KEYS\) \{/.test(hc) && /lt = l\.top; ll = l\.low; ld = l\.deck;/.test(hc), "heroColliders: BLOCK_KEYS (?blockkeys=old); layerFns copies the fields (layers() may reuse its answer)");
+    ok(/const BLOCK_KEYS = new URLSearchParams\(location\.search\)\.get\("blockkeys"\) !== "old";/.test(hc) && /if \(BLOCK_KEYS\) \{/.test(hc) && /L\[2\] = l\.top; L\[3\] = l\.low; L\[4\] = l\.deck \? 1 : 0;/.test(hc), "heroColliders: BLOCK_KEYS (?blockkeys=old); layerFns copies the fields into a Float64Array (layers() may reuse its answer; no double in a closure context)");
   }
   // 6c. surfaceLayers: the same layers, a reused answer
   {
@@ -352,6 +352,25 @@ const fresh = async (rel, search) => { globalThis.location.search = search; try 
   const far = trees.filter((t) => Math.hypot(t.x - ox, t.z - oz) > 200);
   const C = PN.villaTreesClear(far);
   ok(C.length === far.length && C !== far, "villaPlot villaTreesClear: a tile far from the villa keeps every tree (a new array, as filter gave)");
+}
+
+// 6g. the small ones (?allocsmall=old): driveHeight's corners in a module function (= the closure, both layers), the
+// park fence stages' index loop, the tram update's index loop
+{
+  const CN = await fresh("../../viewer/drive/colliders.js", ""), CO = await fresh("../../viewer/drive/colliders.js", "?allocsmall=old");
+  const cols = 40, rows = 30, Y = new Float32Array(cols * rows).map(() => 100 + rnd() * 5);
+  const d1 = new Uint16Array(cols * rows).map(() => Math.floor(rnd() * 40)), d2 = new Uint16Array(cols * rows).map(() => (rnd() < 0.3 ? 65535 : 500 + Math.floor(rnd() * 300)));
+  const hm = { h: { x0: -10, z0: 5, step: 1, cols, rows }, y: Y };
+  let diff = 0, n = 0;
+  for (let t = 0; t < 20000; t++) {
+    const x = -14 + rnd() * 48, z = 1 + rnd() * 38, near = t % 3 === 0 ? null : 100 + rnd() * 10, del = t % 2 ? { delta: d1, delta2: d2 } : d1;
+    if (!Object.is(CN.driveHeight(hm, del, x, z, near), CO.driveHeight(hm, del, x, z, near))) diff++;
+    n++;
+  }
+  ok(diff === 0, `colliders driveHeight: the module corner function = the old closure at ${n} points (one and two layers, near or not, outside the grid; diffs ${diff})`);
+  const pf = src("viewer/parkFence.js"), tl = src("viewer/tramline.js");
+  ok(/const ALLOC_SMALL = qs\.get\("allocsmall"\) !== "old";/.test(pf) && /if \(ALLOC_SMALL\) for \(let li = 0; li < list\.length; li\+\+\) \{/.test(pf), "parkFence Stage.fill: an index loop (?allocsmall=old: for-of)");
+  ok(/for \(let ti = 0, tn = trips\.length; ti < tn; ti\+\+\) \{\n      const t = trips\[ti\];\n      const st = t\.stops/.test(tl), "tramline update: the trips by index");
 }
 
 console.log(fails ? `allocrate: ${fails} FAIL` : "allocrate: all checks pass");
