@@ -1527,6 +1527,7 @@ function litWindows(f, out) {
 // viewer/facadeGeom.js
 var PARTY_PROBE = 0.35;
 var STREET_REACH = 30;
+var SHED_PARTY = 997;
 function hash01(str) {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
@@ -2279,7 +2280,14 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
     }
     for (const f of live) {
-      const { tx, tz, u0, u1, cx, cz, top, width, partyH, street, topMin } = f.pre;
+      const { tx, tz, u0, u1, cx, cz, top, width, topMin } = f.pre;
+      let { partyH, street } = f.pre;
+      const shed = !!look?.shed && !landmark && partyH < 999;
+      if (shed) {
+        partyH = SHED_PARTY;
+        street = 0;
+        stats.shedFaces = (stats.shedFaces || 0) + 1;
+      }
       const faceEaves = landmark ? top - base : Number.isFinite(topMin) ? Math.max(eaves, topMin - base) : eaves;
       const party = partyH > 0 ? 1 : 0;
       stats.faces++;
@@ -2331,8 +2339,12 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           stats.shops++;
         }
       }
+      if (shed) {
+        shopU = 0;
+        shopW = 0;
+      }
       const faceH = top - base;
-      if (partyH < 999 && width > 1.2 && faceH > 3) {
+      if ((partyH < 999 || shed) && width > 1.2 && faceH > 3) {
         const seen = /* @__PURE__ */ new Set();
         for (const { p } of f.tris) for (let e = 0; e < 3; e++) {
           const A = p[e], B = p[(e + 1) % 3];
@@ -2342,7 +2354,9 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           if (L2 < 0.6 || seen.has(key2)) continue;
           seen.add(key2);
           const col2 = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
-          if (btype === TYPE.NINETIES) {
+          if (shed) {
+            addStrip(SD, "cu", A, B, top + 0.01, 0.14, 0.05, f.nx, f.nz, [0.06, 0.062, 0.065]);
+          } else if (btype === TYPE.NINETIES) {
             const fc2 = [[0.62, 0.58, 0.48], [0.075, 0.05, 0.035], [0.36, 0.365, 0.36], [0.2, 0.1, 0.048]][Math.floor(typedCode(style) % 12 / 3)] || [0.62, 0.58, 0.48];
             addStrip(SD, "cu", A, B, top - 0.02, 0.2, 0.36, f.nx, f.nz, fc2);
           } else if (btype === TYPE.CURTAIN) {
@@ -2429,7 +2443,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         }
       }
       const bsl = look?.bayScale, bs = bsl && f.nx * bsl[1] + f.nz * bsl[2] > 0.85 ? bsl[0] : 1;
-      const k = kit && bs === 1 ? kit.face({
+      const k = kit && bs === 1 && !shed ? kit.face({
         key,
         building: b,
         doorFace: f === doorFace,
@@ -2471,12 +2485,12 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           stats.doorsOff = (stats.doorsOff || 0) + 1;
         }
       }
-      const cel = !landmark && partyH < 999 ? cellarOf(f, base, u0, width, tx, tz) : 0;
+      const cel = !landmark && !shed && partyH < 999 ? cellarOf(f, base, u0, width, tx, tz) : 0;
       if (cel > 1.5) {
         stats.cellarFaces = (stats.cellarFaces || 0) + 1;
         if (cel > 2.4) stats.lowerGround = (stats.lowerGround || 0) + 1;
       }
-      if (cls && btype && partyH < 999 && bs === 1) typeDetails(f, { btype, street: streetA, kitOn: !!k?.on, width, faceEaves, base, u0, tx, tz, rnd, key, shopW });
+      if (cls && btype && !shed && partyH < 999 && bs === 1) typeDetails(f, { btype, street: streetA, kitOn: !!k?.on, width, faceEaves, base, u0, tx, tz, rnd, key, shopW });
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
         T4.aCel.push(cel);
         T4.position.push(q[0], q[1], q[2]);
@@ -2487,7 +2501,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         T4.aFN.push(f.nx, f.nz, shopU * bs, bs === 1 ? shopW : shopW % 10 * bs + 10 * Math.floor(shopW / 10));
         if (T4 === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
       }
-      if (!landmark && partyH < 999) {
+      if (!landmark && !shed && partyH < 999) {
         let dd = 0, nq = 0;
         for (const { p } of f.tris) for (const q of p) {
           dd += q[0] * f.nx + q[2] * f.nz;
@@ -2896,7 +2910,8 @@ function farBuildings(doc, P, I2, opts = {}) {
       const faceEaves = landmark ? top - base : Number.isFinite(topMin) ? Math.max(eaves, topMin - base) : eaves;
       const ob = width > 0.3 ? otherAt(mx + f.nx * PROBE, mz + f.nz * PROBE, bi) : -1;
       const same2 = ob >= 0 && b.attrs?.BU_ID && B[ob].attrs?.BU_ID === b.attrs.BU_ID;
-      const partyH = ob < 0 ? 0 : same2 || landmark ? Math.max(0.01, B[ob].top - base) : 999;
+      const partyH0 = ob < 0 ? 0 : same2 || landmark ? Math.max(0.01, B[ob].top - base) : 999;
+      const partyH = look?.shed && !landmark && partyH0 < 999 ? 997 : partyH0;
       stats.faces++;
       if (partyH) stats.party++;
       const gable = top - base > faceEaves + 0.3 ? 1 : 0;
@@ -22049,6 +22064,7 @@ var lookSet = (looks, entry) => {
     }
     if (entry.cortenbosch === false && (v.set === "cortenbosch" || v.set === "cortenbosch2")) continue;
     if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
+    if (entry.carrefour === false && v.set === "carrefour") continue;
     out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
   }
   return out;
@@ -23099,4 +23115,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "6c4ebbe5d136d072";
+self.__TILE_CODE_HASH = "8f334c189c30a544";
