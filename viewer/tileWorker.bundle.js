@@ -18957,6 +18957,7 @@ var AX_JUMP = 1.5;
 var SUPPORT = 0.5;
 var SLIP = 1.5;
 var RAY2 = 4;
+var KERB_RUN = 2;
 var PARK_CLEAR = 1.13;
 var BOX_HW = 0.925;
 var BOX_HL = 2.365;
@@ -18997,7 +18998,7 @@ function box3(v, w) {
 var measured = (E, i) => E.drive.confL[i] <= CONF.D && E.drive.confR[i] <= CONF.D;
 var validAt = (E, i) => measured(E, i) || E.axConf[i] === CONF.E;
 var isX = (E, i) => E.lanes.conf[i] === CONF.X || E.axConf[i] === CONF.X;
-function laneProfile(E, d, r, m, mo, cars = [], K2 = null, inB = null, drv = null) {
+function laneProfile(E, d, r, m, mo, cars = [], K2 = null, inB = null, drv = null, stats = null) {
   const n = E.n, D = E.lanes.D, raw = new Float64Array(n).fill(NaN);
   let any = false;
   for (let i = 0; i < n; i++) {
@@ -19087,6 +19088,16 @@ function laneProfile(E, d, r, m, mo, cars = [], K2 = null, inB = null, drv = nul
     if (dr < RAY2) kA[i] = v[i] - dr + KERB_CLEAR;
     if (dl < RAY2) kB[i] = v[i] + dl - KERB_CLEAR;
   }
+  for (const K22 of [kA, kB]) for (let i = 0; i < n; ) {
+    if (!Number.isFinite(K22[i])) {
+      i++;
+      continue;
+    }
+    let j = i;
+    while (j + 1 < n && Number.isFinite(K22[j + 1])) j++;
+    if (E.s[j] - E.s[i] < KERB_RUN - 1e-6) for (let k = i; k <= j; k++) K22[k] = K22 === kA ? -Infinity : Infinity;
+    i = j + 1;
+  }
   const bA = new Float64Array(n).fill(-Infinity), bB = new Float64Array(n).fill(Infinity);
   if (inB) for (let i = 0; i < n; i++) {
     if (measured(E, i)) continue;
@@ -19153,6 +19164,30 @@ function laneProfile(E, d, r, m, mo, cars = [], K2 = null, inB = null, drv = nul
     else need[i] = 0;
   }
   if (anyNeed) {
+    const up = [], dn = [];
+    for (let k = 0; k < n; k++) {
+      if (!measured(E, k)) continue;
+      const lo = E.axOff[k] + E.drive.offR[k], hi = E.axOff[k] + E.drive.offL[k], m2 = (lo + hi) / 2, f = narrowF(hi - lo, two0);
+      let a = lo + KERB_CLEAR, b = hi - KERB_CLEAR;
+      if (a > b) a = b = m2;
+      else {
+        const t = CENTRE_FREE * (1 - f);
+        a = m2 + (a - m2) * f - t;
+        b = m2 + (b - m2) * f + t;
+      }
+      up.push([E.s[k], Math.max(0, b - v[k]), k]);
+      dn.push([E.s[k], Math.max(0, v[k] - a), k]);
+    }
+    if (up.length) for (let i = 0; i < n; i++) {
+      if (!need[i] || lbC[i] > -Infinity || ubC[i] < Infinity) continue;
+      const L2 = need[i] > 0 ? up : dn;
+      let cap2 = Infinity;
+      for (const [sk, r2, k] of L2) if (k !== i) cap2 = Math.min(cap2, r2 + OFF_SLOPE * Math.max(0, Math.abs(E.s[i] - sk) - 4 * OFF_H));
+      if (Math.abs(need[i]) > cap2) {
+        need[i] = Math.sign(need[i]) * cap2;
+        if (stats) stats.capped = (stats.capped || 0) + 1;
+      }
+    }
     const p = laneOffsetProfile(need, E.s);
     v = v.map((x, i) => x + p[i]);
   }
@@ -19238,6 +19273,15 @@ function kerbIndex(lines, C = 4) {
         if (Math.hypot(x - ax - dx * u, z - az - dz * u) < r) return true;
       }
       return false;
+    },
+    /** the distance to the nearest line within R (R when none is nearer) */
+    dist(x, z, R2) {
+      let m = R2;
+      for (const id of cells(x - R2, z - R2, x + R2, z + R2)) {
+        const [ax, az, bx, bz] = segs[id], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-12, u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
+        m = Math.min(m, Math.hypot(x - ax - dx * u, z - az - dz * u));
+      }
+      return m;
     },
     ray(x, z, nx, nz, R2) {
       let best = Infinity;
@@ -19488,7 +19532,7 @@ function modelLaneStage(net, model, paths, parked = null, kerbs = null, inBuildi
     stats.cars = (stats.cars || 0) + cars.length;
     const profOf = (d, r) => {
       const k = `${d}|${r}`;
-      if (!profs.has(k)) profs.set(k, laneProfile(E, d, r, d > 0 ? mF : mB, d > 0 ? mB : mF, r === 0 ? cars : [], K2, inBuilding0, drivable));
+      if (!profs.has(k)) profs.set(k, laneProfile(E, d, r, d > 0 ? mF : mB, d > 0 ? mB : mF, r === 0 ? cars : [], K2, inBuilding0, drivable, stats));
       return profs.get(k);
     };
     const partS = (part) => {
@@ -19548,7 +19592,7 @@ function modelLaneStage(net, model, paths, parked = null, kerbs = null, inBuildi
         if (E.axConf[i] === CONF.E && bodyIn(i)) eIn++;
         else if (validAt(E, i) && !dual(i)) sup++;
       }
-      if (!tot || sup < SUPPORT * tot || eIn >= 2) {
+      if (!tot || sup < SUPPORT * tot) {
         stats.unsupported = (stats.unsupported || 0) + 1;
         continue;
       }
@@ -19574,7 +19618,20 @@ function modelLaneStage(net, model, paths, parked = null, kerbs = null, inBuildi
         stats.lanesKept++;
         continue;
       }
-      newPts.set(p.id, laneLine(E, prof, sa, sb, d));
+      const LL = laneLine(E, prof, sa, sb, d);
+      if (eIn >= 2 && inBuilding0) {
+        let hit = 0;
+        for (let k = 1; k + 1 < LL.length && hit < 2; k++) {
+          const a = LL[k - 1], b = LL[k + 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / l, nz = (b[0] - a[0]) / l;
+          if ([0, BODY, -BODY].some((w) => inBuilding0(LL[k][0] + nx * w, LL[k][1] + nz * w))) hit++;
+        }
+        if (hit >= 2) {
+          stats.unsupported = (stats.unsupported || 0) + 1;
+          stats.eBuilding = (stats.eBuilding || 0) + 1;
+          continue;
+        }
+      }
+      newPts.set(p.id, LL);
       covered.add(p.id);
       stats.lanes++;
     }
@@ -19657,6 +19714,25 @@ function modelLaneStage(net, model, paths, parked = null, kerbs = null, inBuildi
         }
       }
       if (!changed) break;
+    }
+    if (cut.size) {
+      const trkOf = (c, withCut) => {
+        const a = byO.get(c.prev[0]), b = byO.get(c.next[0]);
+        return g2Turn(withCut ? trimmed(a) : a.pts, withCut ? trimmed(b) : b.pts, jOf.get(c.nodeId) ?? null, inBuilding, drivable).trk;
+      };
+      const helped = /* @__PURE__ */ new Set();
+      for (const c of turnsJ) {
+        const ka = key(c.prev[0], 1), kb = key(c.next[0], 0);
+        if (!cut.get(ka) && !cut.get(kb)) continue;
+        if (trkOf(c, true) < trkOf(c, false)) {
+          helped.add(ka);
+          helped.add(kb);
+        }
+      }
+      for (const k2 of [...cut.keys()]) if (!helped.has(k2)) {
+        cut.delete(k2);
+        stats.cutsUndone = (stats.cutsUndone || 0) + 1;
+      }
     }
     for (const [k2, m] of cut) {
       if (!m) continue;
@@ -19777,7 +19853,7 @@ var KINK_DEG = 8;
 var KINK_REACH = 3;
 var KINK_ITER = 30;
 var JOIN_TOL = 0.05;
-function roundKinks(paths, keep = null) {
+function roundKinks(paths, keep = null, pinned = null, pinKeep = null) {
   const P = paths.length, base = new Int32Array(P + 1);
   for (let i = 0; i < P; i++) base[i + 1] = base[i] + paths[i].pts.length;
   const N2 = base[P];
@@ -19845,6 +19921,10 @@ function roundKinks(paths, keep = null) {
       }
     }
   }
+  const pin = new Uint8Array(M2);
+  if (pinned) {
+    for (let i = 0; i < P; i++) if (pinned(paths[i])) for (let k = base[i]; k < base[i + 1]; k++) pin[node[k]] = 1;
+  }
   const free = [];
   for (let n = 0; n < M2; n++) if (dist3[n] <= KINK_REACH && ins[n].length && outs[n].length) free.push(n);
   let X = Float64Array.from(x), Z = Float64Array.from(z);
@@ -19864,9 +19944,10 @@ function roundKinks(paths, keep = null) {
       }
       nX[n] = X[n] + 0.5 * (sx / c - X[n]);
       nZ[n] = Z[n] + 0.5 * (sz / c - Z[n]);
-      if (keep && !keep(X[n], Z[n], nX[n], nZ[n])) {
+      const ok = pin[n] && pinKeep ? (a, b, c2, d) => (!keep || keep(a, b, c2, d)) && pinKeep(a, b, c2, d) : keep;
+      if (ok && !ok(X[n], Z[n], nX[n], nZ[n])) {
         let f = 0.5;
-        while (f > 0.1 && !keep(X[n], Z[n], X[n] + (nX[n] - X[n]) * f, Z[n] + (nZ[n] - Z[n]) * f)) f *= 0.5;
+        while (f > 0.1 && !ok(X[n], Z[n], X[n] + (nX[n] - X[n]) * f, Z[n] + (nZ[n] - Z[n]) * f)) f *= 0.5;
         if (f <= 0.1) f = 0;
         nX[n] = X[n] + (nX[n] - X[n]) * f;
         nZ[n] = Z[n] + (nZ[n] - Z[n]) * f;
@@ -19924,7 +20005,14 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     return d1 >= TP_HALF + TP_FIT * 0.5 || d1 >= parked.dist(x0, z0);
   } : null;
   const tK = performance.now();
-  const src = roundKinks(fitted, keepClear);
+  const KI = covered && net.streetKerbs?.length ? kerbIndex(net.streetKerbs) : null;
+  const bodyIn = opts.inBuilding ? (x, z) => [[0, 0], [0.9, 0], [-0.9, 0], [0, 0.9], [0, -0.9]].some(([a, b]) => opts.inBuilding(x + a, z + b)) : null;
+  const kerbOk = KI ? (x0, z0, x1, z1) => {
+    const d1 = KI.dist(x1, z1, KERB_CLEAR + 0.5);
+    return d1 >= KERB_CLEAR || d1 >= KI.dist(x0, z0, KERB_CLEAR + 0.5);
+  } : null;
+  const kerbKeep = covered && (kerbOk || bodyIn) ? (x0, z0, x1, z1) => (!kerbOk || kerbOk(x0, z0, x1, z1)) && (!bodyIn || !bodyIn(x1, z1) || bodyIn(x0, z0)) : null;
+  const src = roundKinks(fitted, keepClear, covered ? (p) => p.kind === "lane" && covered.has(p.id) : null, kerbKeep);
   fitStats.kinkMs = Math.round(performance.now() - tK);
   if (opts.model) fitStats.turnsRepaired = repairTurns(src.map((p, i) => p === fitted[i] ? src[i] = { ...p, pts: p.pts.map((v) => [v[0], v[1]]) } : p), blockedTest(opts.inBuilding ?? null, feats?.trees ?? null), grid ? drivableOn(grid) : null);
   if (opts.trace) {
@@ -19935,6 +20023,23 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
   if (parked && TP) {
     const tC = performance.now();
     const drop2 = /* @__PURE__ */ new Set();
+    if (covered) for (const p of src) {
+      if (p.kind !== "lane" || !covered.has(p.id)) continue;
+      const q = p.pts;
+      for (let k = 1; k < q.length; k++) {
+        const a = q[k - 1], b = q[k], L2 = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L2 / 0.5));
+        if (!parked.anyNear((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, L2 / 2 + 5.5)) continue;
+        for (let m = 0; m <= n; m++) {
+          const t = m / n;
+          parked.each(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, LANE_PARK_DROP, (ci) => {
+            if (!drop2.has(ci)) {
+              drop2.add(ci);
+              fitStats.laneClearDropped = (fitStats.laneClearDropped || 0) + 1;
+            }
+          });
+        }
+      }
+    }
     for (const p of src) {
       const q = p.pts;
       let any = false;
@@ -20363,6 +20468,7 @@ var TP_FIT = 0.15;
 var RAMP = 0.2;
 var TP_BOX_HW = 0.925;
 var TP_BOX_HL = 2.365;
+var LANE_PARK_DROP = TP_HALF + TP_FIT - 0.05;
 var TP_WB = 2.8;
 var TP_BODY_HL = 2.37;
 function boxesOverlap(b, c) {
@@ -22952,4 +23058,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "bbf73c8dffc3edd5";
+self.__TILE_CODE_HASH = "572ea2a0fcef64e0";
