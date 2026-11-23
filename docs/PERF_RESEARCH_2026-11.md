@@ -235,3 +235,18 @@ it must never grow); that would take the main pass from 3 to 2 buffers, for very
 - GPU limits and pipelines: https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits ;
   https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/createRenderPipelineAsync ;
   https://chromium.googlesource.com/chromium/src/+/HEAD/gpu/command_buffer/service/gpu_persistent_cache.cc
+
+## What helps perf most: the coordinator's answer to the owner (2026-11-23)
+
+Asked "reducing shaders? cars? trees?". The answer, ranked, from what is measured so far:
+
+1. **Throwaway memory (GC):** the biggest cause of stutter; one small piece of code (the villa deck) doubled it. Round 2 cut the falcon's by 71 %. Measure memory at every merge (gate row `allocbudget`).
+2. **Shadows:** redrawing the sun shadows is one of the costliest parts of a frame. Shadow stand-ins (simple shapes, slop-newyork), shorter shadow reach and fewer updates: about 1 ms.
+3. **Draw calls / objects per frame:** the CPU cost per object is bigger than the GPU's. Merge things that share a look. The indirect pool went from about 65 buffers to 3; more can be gained the same way.
+4. **Shaders:** fewer materials mostly help LOADING and first-view hitches, not the steady frame rate. 264 landmark materials could share (idea 4, 1-3 s of loading).
+5. **Trees:** don't cut the count; far trees are already cheap. The cost is close-up leaf overdraw: tune the LOD distances.
+6. **Cars:** parked cars are almost free (instanced), and traffic is about 1 us per car per step. Cutting them gains little: not a pick.
+7. **RAM (police about 1 GB):** mostly tile data. Unload far tiles sooner and reuse their buffers; that also shrinks the big GC drops.
+8. **Resolution:** render slightly below screen size; dynamic resolution already does this when frames get slow.
+
+**First step:** a clean CPU/GPU-split measurement of the police game on a quiet machine. Bet: CPU and GC (1, 3) matter more than the GPU; shadows (2) are the biggest GPU item.
