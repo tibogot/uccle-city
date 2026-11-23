@@ -12,7 +12,7 @@
 //                 within 3.5 m of the pole, median <= 2 m)
 //               - an ambulance on a run: the cars ahead of it slow and pull right, the crossing traffic holds
 //               - no service vehicle stuck: the longest standstill (not a planned stop) <= 90 s, none removed as stuck
-//               - the step's cost with the mix <= 1.10 x without it (same tiles, same seed, interleaved runs)
+//               - the step's cost with the mix <= 1.15 x without it (COST_MAX) (same tiles, same seed, interleaved runs)
 //   node --import ./tools/road_audit/register.mjs tools/audit/trafmixGate.mjs [--old] [--quiet] [--secs 240]
 //   --old: ?trafmix=old (the mix as before): must FAIL (no patrols, no buses, no emergency yield).
 import { join } from "node:path";
@@ -492,12 +492,16 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
   // enough), the MEDIAN of the counted reads is judged, and too few clean reads is an honest FAIL 'too noisy to
   // measure: rerun on a quiet machine', never a fake regression)
   const TWIN_TOL = 0.04, clean = (r) => Math.abs(r.twin - 1) <= TWIN_TOL;
+  // (coordinator 2026-11-23, rule timing-rows: COST_MAX 1.10 -> 1.15. claude/allocrate2 timed the SAME sim code (old vs
+  // new colliders.js, the only changed module the sim loads) A B B A in one quiet session: clean reads 1.03-1.18 on both;
+  // the true ratio sits ~1.08, so a 1.10 median was a coin toss on this laptop. 1.15 still fails a mix that got ~7 % dearer)
+  const COST_MAX = 1.15;
   const reads = [];
   let MT = null;
   for (let k = 0; k < 6 && !TRAFMIX_OLD; k++) {
     reads.push(cpuAB({ make, reps: 4, rounds: 30, batches: 3 }));
     const ok = reads.filter(clean);
-    if (ok.length === 1 && ok[0].ratio <= 1.10 && reads.length === 1) { MT = ok[0]; break; }
+    if (ok.length === 1 && ok[0].ratio <= COST_MAX && reads.length === 1) { MT = ok[0]; break; }
     if (ok.length >= 3) { MT = [...ok].sort((p, q) => p.ratio - q.ratio)[1]; break; }
   }
   if (TRAFMIX_OLD) { MT = cpuAB({ make, reps: 4, rounds: 30, batches: 3 }); reads.push(MT); }
@@ -510,7 +514,7 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
   // dropped. Ceiling 1.3 x the foundation's 509)
   const clamps = A.stats.parkClamped || 0;
   check("wide vehicles clamped beside parked cars", clamps <= PARK_CLAMP_MAX, `parkClamped ${clamps} (ceiling ${PARK_CLAMP_MAX}: 1.3 x claude/foundation 358ec924's 509; claude/lanes5 before its fix 2,796)`);
-  check("sim cost", TRAFMIX_OLD || (!noisy && ratio <= 1.10), `${noisy ? `TOO NOISY TO MEASURE: rerun on a quiet machine (no clean read: twin within ${TWIN_TOL} of 1 in ${reads.filter(clean).length} of ${reads.length}): ` : ""}${reads.length > 1 ? `reads x${reads.map((r) => `${r.ratio.toFixed(3)}${clean(r) ? "" : `(twin ${r.twin.toFixed(3)}: noisy)`}`).join(" / ")}, median of the clean ones: ` : ""}${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
+  check("sim cost", TRAFMIX_OLD || (!noisy && ratio <= COST_MAX), `${noisy ? `TOO NOISY TO MEASURE: rerun on a quiet machine (no clean read: twin within ${TWIN_TOL} of 1 in ${reads.filter(clean).length} of ${reads.length}): ` : ""}${reads.length > 1 ? `reads x${reads.map((r) => `${r.ratio.toFixed(3)}${clean(r) ? "" : `(twin ${r.twin.toFixed(3)}: noisy)`}`).join(" / ")}, median of the clean ones: ` : ""}${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
 }
 console.log(fails ? `${fails} trafmix check(s) FAILED${OLD ? " (?trafmix=old: expected)" : ""}` : "all trafmix checks pass");
 process.exitCode = fails ? 1 : 0;
