@@ -108,3 +108,14 @@ bumper ~0.2 m off it (KIND wall); out through the open main gate it passes.
 - Trees of the tree field stand on the line in places (a trunk through the mesh): a tree clear along the line would be
   the trees' job.
 - The police game's own car was not driven separately (same driver, same colliders as the drive car used).
+
+## 7. Round 2 (coordinator review, 2026-11-23)
+
+| fix | why | rule / check (row `parkfence`) |
+|---|---|---|
+| far mesh reads as a veil | the card was right but faint: 5 mm wires at 50 x 200 mm = 12 % coverage, dark green on dark grass, gone past ~25 m (only the posts) | 6 mm wires (heavy park panels: 15.6 % analytic); the card's opacity 1 - (1 - a)^(1 / cos) (the gaps close at grazing angles, GRAZE_MIN 0.2); check: the card's mip mean at 30 / 60 / 120 m (mips 2 / 3 / 4: 0.151 / 0.153 / 0.155) vs the analytic 0.156, +-30 % |
+| trunks through the fence | the tree field's trunks (UrbIS canopy-model crown apexes: measured, not generated) stood on the line | build.mjs stops the run round each trunk (>= max(0.45, r + 0.15) m from its centre), a post at each cut end, the trunk closes the gap (it is the car's collider); 87 trees (63 Wolvendael, 24 Sauvagère); check: 0 trunks within 0.3 m of a drawn panel |
+| the pole in the main gate | a tram catenary pole (viewer/streets/tramPoles.js, every 32 m, generated) stood 6.2 m out in front of the Avenue Wolvendael gate, in the walk through it (the car hit it); a traffic sign (UrbIS data) 4 m out stays | tram poles keep out of every open entrance's approach (the opening + 0.3 m, 1.5 m in to 8 m out) and slide along their track (2 m steps); trunks in an opening move past the pier (3 trees: the playground gate, the Crabbegat lane); check: no tram pole in an approach, no trunk in an opening |
+| "floating doors and windows" at the Sauvagère | not a city defect: the 30 m shot's camera (100.4, 1200.3) stood INSIDE UrbIS building 1716006 (solid 536016); walls draw front faces only (rule faces-out), the openings kit's frames are double-sided, so from inside only the frames show. From outside the building is whole (round2/sauvagere-building1716006-from-outside.jpg) | debug/quick.js view() / shot() flag a camera inside a building (roofAt over the eye): `insideBuilding` + a console warning; the old shots are renamed INVALID-camera-inside-building-*; a city-wide "opening with no wall" census was not added: no such opening was found |
+
+Shots retaken (served with tools/tour/serve.mjs, the worktree's fresh worker): `uccle-parkfence-ab/round2/`.
