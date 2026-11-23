@@ -1,0 +1,27 @@
+{
+  "_": "Parc de Wolvendael: what stands on its boundary, from the OSM park polygon (way 14384466), the OSM gate nodes and a look-only Street View check (Google, Apr 2024 car imagery + a Jan 2017 user sphere; nothing stored, traced or shipped). Our own words and city coordinates (x, z m). tools/parkfence/build.mjs reads it.",
+  "park": "wolvendael",
+  "osm": { "polygon": "way/14384466" },
+  "default": "mesh",
+  "stone": 0,
+  "fenceTypes": {
+    "mesh": "dark green welded-mesh panels, ~1.8 m, on round green posts every ~2.5 m (the Dieweg forecourt and lawn sides); at the west corner the same line is green chain-link on posts with braces. Read as one type: a green mesh panel.",
+    "grand": "the Avenue Wolvendael frontage at the main gate: a dressed pale stone plinth ~0.8 m with a black wrought-iron railing on it, square bars ~12 cm apart, spear tops, two flat rails; ~1.8 m of iron over the plinth; rusticated pale stone piers (~0.7 m square, ~3.2 m) at the gate and every few bays"
+  },
+  "hedges": "the playground entrance on Avenue Paul Stroobant: a clipped hedge ~1.5 m on the street side with the green mesh at the gate (we draw the mesh; the hedge is not part of this kit)",
+  "sections": [
+    { "type": "grand", "from": [-372, 155], "to": [-421, 111], "note": "Avenue Wolvendael either side of the main gate (Street View 2024: plinth + spear railing + stone piers, then green mesh further on)" }
+  ],
+  "entrances": [
+    { "osm": "node/4689177219", "at": [-94.6, 267.1], "kind": "double", "state": "open", "width": 4.4, "pier": [0.75, 3.0], "name": "Dieweg tram terminus gate", "note": "the big gate at the end of the Dieweg tram loop: a cobbled forecourt leads to two tall pale stone piers and a black iron double gate swung open into the park; green mesh either side" },
+    { "osm": "node/140289825", "at": [-397.8, 134.1], "kind": "double", "state": "open", "width": 4.0, "pier": [0.8, 3.3], "name": "Avenue Wolvendael main gate", "note": "rusticated pale stone piers with moulded caps, black iron double gate open, the tram stop Wolvendael in front" },
+    { "osm": "node/5762015318", "at": [-549.4, -112.9], "kind": "double", "state": "open", "width": 3.2, "pier": [0.65, 2.5], "name": "west corner gate", "note": "sandstone piers with caps, an ornate scrolled iron double gate open; green chain-link either side" },
+    { "osm": "node/140289709", "at": [-475.1, -205.3], "kind": "single", "state": "open", "width": 1.2, "pier": [0.5, 2.2], "note": "OSM gate (opening hours), not checked on Street View: a pedestrian gate" },
+    { "osm": "node/5762014646", "at": [-487.5, -371.8], "kind": "single", "state": "open", "width": 1.2, "pier": [0.5, 2.2], "note": "OSM gate, not checked: a pedestrian gate" },
+    { "osm": "node/5765797505", "at": [-457.4, -457.8], "kind": "double", "state": "open", "width": 3.6, "pier": [0.65, 2.5], "note": "OSM gate on the service lane (Allée Jacques Brel): a double gate, open" },
+    { "osm": "node/5762015257", "at": [-239.6, -202.1], "kind": "double", "state": "open", "width": 3.2, "pier": [0.6, 2.4], "note": "OSM gate where the Allée José Dierickx and a footway enter" },
+    { "osm": "node/5762015260", "at": [-241.3, -193.6], "kind": "double", "state": "closed", "width": 3.0, "pier": [0.6, 2.4], "note": "OSM gate access=no: a service gate, kept closed" },
+    { "osm": "node/10738040739", "at": [-290.5, -159.7], "kind": "single", "state": "open", "width": 1.2, "pier": [0.5, 2.2], "note": "OSM gate on a path" },
+    { "osm": "node/5762015331", "at": [-86.0, 65.7], "kind": "single", "state": "open", "width": 1.4, "pier": [0.5, 2.2], "note": "the playground entrance on Avenue Paul Stroobant: a green mesh gate in a clipped hedge, open" }
+  ]
+}

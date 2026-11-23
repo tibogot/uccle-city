@@ -61,6 +61,7 @@ import { setCompileFlush, openBootPipelines, warmBoot, precompile, shareShadowNo
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { buildGrounds } from "./grounds.js";
 import { lyceeFront } from "./lyceeFront.js";
+import { parkFence, PARKFENCE } from "./parkFence.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
@@ -1007,6 +1008,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // a tree on measured ground stands on it (in its pit, viewer/surfaces.js), not on the terrain carved under it
   const treeGround = fit ? (x, z) => (fit.classAt(x, z) >= 0 ? hm.surface(x, z) + CARVE + fit.lift(x, z) : hm.surface(x, z)) : undefined;
   if (feats?.trees) feats.trees = villaTreesClear(cityFuel.treesClear(feats.trees));   // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js) nor in the villa's house / terrace / drive (viewer/villa/villaPlot.js)
+  if (PARKFENCE && feats?.trees) feats.trees = await parkFence.treesClear(feats.trees);   // (parkfence) no trunk in a park entrance's opening
   const fo = featureObjects(feats, hm, bounds, d.road.surfaceStats ? 0.02 : 0.012, treeGround);
   own.features.add(fo);
   await frame("rails");
@@ -1051,7 +1053,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // station stop on the Carsoel deck, citydefects 2026-11-16; ?bridgeplan=old as before)
   const deckAt = (x, z) => { for (const e of bridgeDeckRefs.values()) { const y = e.fn(x, z); if (y != null) return y; } return null; };
   const tramSurface = BRIDGE_PLAN ? (x, z) => deckAt(x, z) ?? hm.surface(x, z) + CARVE : (x, z) => hm.surface(x, z) + CARVE;
-  const tram = buildTram(feats, tramSurface, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on, fit, driven: drivenAt });
+  const tram = buildTram(feats, tramSurface, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on, fit, driven: drivenAt, keepOut: PARKFENCE ? await parkFence.keepOutTest() : null });   // (parkfence: no tram pole in a park entrance's approach)
   await split("tram");
   own.features.add(tram.group);
   // citydefects: the baked data layers' points that stand in a driven lane go onto the sidewalk behind the nearest kerb
@@ -1092,7 +1094,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
   // (citydefects) no generated plant in a yard / gate mouth (data/overrides.json plantsClear; ?plantsclear=old)
   const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : [], villaClearRings());   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
-  const inClear = (x, z) => clearRings.some((r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; });
+  const pfClear = PARKFENCE ? await parkFence.clearTest() : null;   // (parkfence) no garden piece / generated plant on a park's fence line
+  const inClear = (x, z) => !!pfClear?.(x, z) || clearRings.some((r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; });
   // (policefeel 2026-11-17: the garden pieces too, as plantsClear's _doc says: a garden wall + pillar + hedge stood across
   // the police station's vehicle gate)
   // (falcon2, ?gardenslice=old: in one go): in <= 3 ms slices (cityGardens.addTileSliced, viewer/slices.js)
@@ -1110,6 +1113,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (cortenbosch) the Lycée Français's front: railing, gate, flag poles, lettering (viewer/lyceeFront.js; tile F7)
   const lycee = CORTENBOSCH ? lyceeFront.tile(entry.name, own.features, (x, z) => hm.surface(x, z)) : null;
   if (lycee) say(`lycée front: ${lycee.panels} railing panels, ${lycee.tris} triangles (viewer/lyceeFront.js)`);
+  // (parkfence) the Parc de Wolvendael's and the Parc de la Sauvagère's fences and gates on this tile's drawn ground
+  // (viewer/parkFence.js: instanced, the colliders a hero root per park and tile; ?parkfence=0 none)
+  if (PARKFENCE) parkFence.tile(entry.name, gardenGround).then((c) => { if (c) say(`park fences: ${Object.entries(c).map(([k, v]) => `${k} ${Object.entries(v).filter(([, n]) => n).map(([q, n]) => `${n} ${q}`).join(" ")}`).join("; ")} (viewer/parkFence.js)`); }).catch((e) => say(`park fences failed: ${e.message}`));
   if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
   // (vivier) no generated plant on a road deck: the bank under the Vivier d'Oie deck grew box balls up through its slab
   if (VIVIER && bridgeDeckRefs.size && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (deckY(P[o], P[o + 1]) == null) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
@@ -1529,6 +1535,7 @@ async function main() {
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   // ... and the Lycée Français's three (viewer/lyceeFront.js: once tile F7 has built the poles; ?cortenbosch=old none)
   if (CORTENBOSCH && params.get("flags") !== "0") lyceeFront.flags({ scene, updaters, renderer, compiler: heroCompiler, params, log }).catch((e) => log(`lycée flags failed: ${e.message}`));
+  if (PARKFENCE) parkFence.start({ scene, updaters, world, compiler: heroCompiler, log }).catch((e) => log(`park fences failed: ${e.message} (?parkfence=0: none)`));
   if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: heroCompiler, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   // the tram tracks' smooth vertical profile, before the first tile's rails (?trackprofile=0: the old per-point ground)
   // the tile worker starts on the start tile and its ring NOW (the hide list and the ponds are complete): it builds them
@@ -1738,7 +1745,7 @@ async function main() {
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
   // (cortenbosch2) the Lycée Français's railing, sliding gate and flag poles (viewer/lyceeFront.js, tile F7) collide like the
   // landmarks: car blocks from their triangles in the 0.3-1.3 m band, the triangles for walk / third person
-  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
+  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); if (PARKFENCE) for (const n of await parkFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
   else {
     if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});
     for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);

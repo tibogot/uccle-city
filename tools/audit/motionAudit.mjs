@@ -42,7 +42,7 @@ const STATIC = {
   "gardens/cityGardens.js": "gardens: per tile", "grass/grassField.js": "grass trunks: once (grass default off)",
   "impostorKit/sources/stylizedTrees.js": "impostor bake source: one identity instance", "impostors.js": "impostor bake: identity instance",
   "lamps.js": "street lamps: per tile", "nightLights/cityNight.js": "night light cards: on change", "nightLights/nightStreet.js": "night lab street: once",
-  "parkKit.js": "park kit: per tile", "parkPlants.js": "park plants: per tile", "plants/cityPlants.js": "plants: per tile",
+  "parkKit.js": "park kit: per tile", "parkFence.js": "park fences: per tile, placed once (gates drawn open, never animated)", "parkPlants.js": "park plants: per tile", "plants/cityPlants.js": "plants: per tile",
   "police/props.js": "police cones / standing cars: on job change (the cars are rigid meshes: ObjectMotionMatrix)",
   "rail/railway.js": "railway kit: once", "stops/cityStops.js": "STIB stops: per tile", "streetFit.js": "kerb fit: per tile",
   "streetkit/cityStreetKit.js": "street kit: per tile", "streetlife/streetlife.js": "shop fronts / signs: per tile",
