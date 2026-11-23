@@ -112,10 +112,11 @@ export function layoutShop(p, f, frame, lit, env) {
   const { box, label, prop, shop, windows, night, used, hash01, pick, add, twoLines, yawTo, WIN_STRIDE } = env;
   const { X, Y, Z } = frame;
   const base = [f.x, f.y, f.z], id = p.id;
-  const W = Math.max(2.0, Math.min(f.w, 9.9));
-  const yaw = yawTo(f.nx, f.nz);
   // curated (data/shops/terraces.json "front": checked on Street View): family, paint / canvas (palette index), awning
   const cf = env.cur?.front || {};
+  // (claude/carrefour) a curated width (front.w: a supermarket's glazed run) may pass the street fronts' 9.9 m
+  const W = Math.max(2.0, Math.min(f.w, cf.w ? 40 : 9.9));
+  const yaw = yawTo(f.nx, f.nz);
   const { lowFloor, fasciaY, dH, classic } = frontFamily(p, f, env.cur, hash01);
   const paint = cf.paint != null ? (classic ? CLASSIC : MODERN)[cf.paint] : classic ? pick(CLASSIC, id, "p") : pick(MODERN, id, "p");
   const lightbox = cf.lightbox ?? (!classic && hash01(id + "lb") < 0.35);
@@ -207,6 +208,18 @@ export function layoutShop(p, f, frame, lit, env) {
     const c = sign === "backlit" ? ink : sign === "lightbox" ? [0.95, 0.95, 0.92] : [1.0, 0.8, 0.55], k = sign === "spots" ? 0.8 : 1;
     const o = at(0, fasciaY + 0.35, 0.5);
     night.lights?.push(1, o[0], o[1], o[2], Z[0], Z[2], W / 2, 0.3, c[0] * k * lit, c[1] * k * lit, c[2] * k * lit);
+  }
+  // (curated) a flat cantilevered CANOPY over the whole front (a supermarket's: the Carrefour Market by Square Marlow):
+  // { out (m from the wall), y (underside, m over the shop floor), t (slab), edge (fascia band height), board (its
+  // colour), under (the soffit's) }: a slab and its front band, boxes of the layout (no new piece, no new draw)
+  if (cf.canopy) {
+    const c = cf.canopy, out = c.out ?? 3, y0 = c.y ?? 3.1, t = c.t ?? 0.3, eh = c.edge ?? 0.55, wc = W + (c.extra ?? 0.4);
+    const down = [0, -1, 0];
+    // the slab: frame (X, Z, -Y), right-handed (X x Z = -Y for X = (nz, 0, -nx), Z = (nx, 0, nz))
+    box(at(0, y0 + t / 2, out / 2), X, Z, down, wc, out, t, { board: c.under ?? c.board ?? [0.3, 0.28, 0.25], rough: 0.7 });
+    box(at(0, y0 + eh / 2 - 0.05, out + 0.03), X, Y, Z, wc + 0.06, eh, 0.06, { board: c.board ?? [0.3, 0.28, 0.25], rough: 0.6, kind: 2 });
+    if (c.stripe) box(at(0, y0 + eh / 2 - 0.05, out + 0.065), X, Y, Z, wc + 0.06, c.stripe[1] ?? 0.06, 0.01, { board: c.stripe[0], rough: 0.5, kind: 2 });
+    if (lit > 0) night.lights?.push(1, ...at(0, y0 - 0.1, out * 0.6), Z[0], Z[2], W / 2, 0.3, 0.9 * lit, 0.88 * lit, 0.8 * lit);
   }
   // ---- awning (food and fresh shops), the name on its valance
   const awn = cf.awning ?? ((AWNING_KINDS.has(p.kind) || AWNING_CATS.has(p.cat)) && !lowFloor && hash01(id + "aw") < 0.8);

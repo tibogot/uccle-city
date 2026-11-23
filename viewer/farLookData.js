@@ -145,7 +145,9 @@ export function farBuildings(doc, P, I, opts = {}) {
       // up to its top
       const ob = width > 0.3 ? otherAt(mx + f.nx * PROBE, mz + f.nz * PROBE, bi) : -1;
       const same = ob >= 0 && b.attrs?.BU_ID && B[ob].attrs?.BU_ID === b.attrs.BU_ID;
-      const partyH = ob < 0 ? 0 : (same || landmark) ? Math.max(0.01, B[ob].top - base) : 999;
+      const partyH0 = ob < 0 ? 0 : (same || landmark) ? Math.max(0.01, B[ob].top - base) : 999;
+      // (claude/carrefour) a curated retail box (look.shed): the near tile's plain clad wall far too (facadeGeom.js SHED_PARTY)
+      const partyH = look?.shed && !landmark && partyH0 < 999 ? 997 : partyH0;
       stats.faces++; if (partyH) stats.party++;
       const gable = top - base > faceEaves + 0.3 ? 1 : 0;      // the face rises over its eaves line (a gable): no eaves band
       const fbv = [style, partyH, btype + 8 * gable, rnd];
