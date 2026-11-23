@@ -43,7 +43,7 @@ export function unlinkAll(wt) {
   }
   const left = findLinks(wt);
   for (const t of targets) t.after = t.target ? countFiles(t.target) : 0;
-  const changed = targets.filter((t) => t.after !== t.before);
+  const changed = targets.filter((t) => t.after < t.before);   // (fewer files = deleted through the link; more = someone writing there meanwhile, e.g. a fetch)
   const ok = left.length === 0 && changed.length === 0;
   if (left.length) log.push(`REFUSED: ${left.length} link(s) still inside: ${left.join(", ")}`);
   for (const t of changed) log.push(`REFUSED: link target ${t.target} had ${t.before} files, now ${t.after}`);
@@ -62,6 +62,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(im
   const rm = spawnSync("git", ["worktree", "remove", "--force", wt], { cwd: repo, encoding: "utf8" });
   process.stdout.write(rm.stdout + rm.stderr);
   if (rm.status !== 0) { console.error(`git worktree remove failed (links are already gone, so a plain delete of ${wt} is now safe)`); process.exit(1); }
-  for (const t of r.targets) if (t.target) { const n = countFiles(t.target); if (n !== t.before) { console.error(`AFTER REMOVE: ${t.target} had ${t.before} files, now ${n}: STOP`); process.exit(1); } }
+  for (const t of r.targets) if (t.target) { const n = countFiles(t.target); if (n < t.before) { console.error(`AFTER REMOVE: ${t.target} had ${t.before} files, now ${n}: STOP`); process.exit(1); } }
   console.log(`removed ${wt}; every link target unchanged (${r.targets.map((t) => `${path.basename(t.target || "?")} ${t.before}`).join(", ")})`);
 }
