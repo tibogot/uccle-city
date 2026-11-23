@@ -189,6 +189,7 @@ const SEED = +(process.argv.find((a, k) => process.argv[k - 1] === "--seed") ?? 
 // stretch), after claude/signals1: model lanes 0 / 1 / 1 = 2 (the E4 priority junction, the SIGNALS job's follow-up; a
 // patrol before a 72 m narrow street at E6, cause narrow-starved, the PARKING follow-up), the measured value; the
 // parking-both-sides places gone (the E6 ambulance, Dieweg, Rue Engeland)
+const PARK_CLAMP_MAX = 660;
 const STUCK_MAX = 2, MORE_SEEDS = [11, 23];
 const CHILD = argv.includes("--child"), ONE_SEED = process.argv.includes("--seed"), REG = argv.includes("--register");
 const kids = CHILD || ONE_SEED ? [] : MORE_SEEDS.map((sd) => new Promise((res) => {
@@ -491,6 +492,12 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
   const reads = [MT];
   if (MT.ratio > 1.10 && !TRAFMIX_OLD) { reads.push(cpuAB({ make, reps: 4, rounds: 30, batches: 3 }), cpuAB({ make, reps: 4, rounds: 30, batches: 3 })); MT = [...reads].sort((p, q) => p.ratio - q.ratio)[1]; }
   const ratio = MT.ratio, twin = MT.twin;
+  // (claude/lanes5, rule street-lanes: how often the mix's wide vehicles clamp beside a parked car (trafficSim.js
+  // parkClamped, the cost sims, seed 11). Capping parked-car needs by the other stations' room put the rank-0 lanes
+  // 0.1-0.4 m nearer the cars: 509 -> 2,796 and the cost row near x1.15; a parked car the lane cannot clear is now
+  // dropped. Ceiling 1.3 x the foundation's 509)
+  const clamps = A.stats.parkClamped || 0;
+  check("wide vehicles clamped beside parked cars", clamps <= PARK_CLAMP_MAX, `parkClamped ${clamps} (ceiling ${PARK_CLAMP_MAX}: 1.3 x claude/foundation 358ec924's 509; claude/lanes5 before its fix 2,796)`);
   check("sim cost", TRAFMIX_OLD || ratio <= 1.10, `${reads.length > 1 ? `median of 3 reads (x${reads.map((r) => r.ratio.toFixed(3)).join(" / ")}): ` : ""}${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
 }
 console.log(fails ? `${fails} trafmix check(s) FAILED${OLD ? " (?trafmix=old: expected)" : ""}` : "all trafmix checks pass");

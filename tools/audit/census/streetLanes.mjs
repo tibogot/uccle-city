@@ -25,9 +25,10 @@ import { footprintIndex } from "./lib_mesh.mjs";
 import { findCtx, roadRuns } from "./lib_find.mjs";
 import { judge, report, rewrite } from "../gaps.mjs";
 import { resample } from "./lib_path.mjs";
+import { laneCtx } from "./laneCause.mjs";
 
-const { CHILD, TILES, OUT, JOBS, WORST, flag } = cli();
-const QUIET = flag("--quiet"), REG = flag("--register"), WREG = flag("--write-register"), LANES_OLD = flag("--lanesold");
+const { CHILD, TILES, OUT, JOBS, WORST, flag, opt } = cli();
+const EVID = flag("--evidence"), QUIET = flag("--quiet"), REG = flag("--register"), WREG = flag("--write-register"), LANES_OLD = flag("--lanesold");
 const CHECKS = ["kerb", "carriage", "turn", "building"];
 const GATED = CHECKS.map((c) => `streetlanes.${c}`);
 export const KERB = 1.0, KERB_TOL = 0.05, CENTRE_TOL = 0.3, CAR_HW = 0.9;
@@ -35,7 +36,7 @@ const CARR = new Set([SC.roadway, SC.tramRoad, SC.parking]);
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: streetLanes.mjs [--all | T ...] [--register] [--write-register]"); process.exit(2); }
-  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, log: !QUIET, extra: LANES_OLD ? ["--lanesold"] : [] });
+  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, log: !QUIET, extra: [...(LANES_OLD ? ["--lanesold"] : []), ...(EVID ? ["--evidence"] : [])] });
   let bad = res.filter((r) => r.error).length;
   const sum = { tiles: 0, laneM: 0, turnM: 0, lanes: 0, turns: 0, lanesOld: 0, turnsNoJ: 0, parked: 0, parkedKept: 0 }, byCheck = Object.fromEntries(CHECKS.map((c) => [c, 0]));
   for (const r of res) { if (r.error) continue; sum.tiles++; for (const k of Object.keys(sum)) if (k !== "tiles") sum[k] += r.sum[k] || 0; for (const c of CHECKS) byCheck[c] += r.byCheck[c]; }
@@ -46,9 +47,21 @@ if (!CHILD) {
   const byKerb = {}; for (const r of res) for (const [k, v] of Object.entries(r.byKerb || {})) byKerb[k] = (byKerb[k] || 0) + v;
   console.log(`  kerb metres by kind: ${JSON.stringify(byKerb)}`);
   console.log(`streetlanes: ${JSON.stringify(sum)}\n  flagged metres by check: ${JSON.stringify(byCheck)}\n  findings by check: ${JSON.stringify(byInv)}\n  findings by cause: ${JSON.stringify(byCause)}`);
+  // the classification (laneCause.mjs): per check, class (a source data / b the measure / c our builder) and reason,
+  // places and metres
+  const cls = {};
+  for (const f of findings) { const k = `${f.inv} ${f.klass} ${f.why}`, e = (cls[k] ??= { n: 0, m: 0 }); e.n++; e.m = Math.round((e.m + f.m) * 10) / 10; }
+  console.log("  classified (check class reason: places / metres):");
+  for (const k of Object.keys(cls).sort()) console.log(`    ${k}: ${cls[k].n} / ${cls[k].m} m`);
+  // (class-c ceilings: our builder's metres per check may only go down; building c = 0, rule street-lanes job 4b)
+  const MAXC = opt("--maxc", null);
+  if (MAXC) for (const kv of MAXC.split(",")) {
+    const [k, v] = kv.split("="), n = Math.round(findings.filter((f) => f.inv === k && f.klass === "c").reduce((s, f) => s + f.m, 0) * 10) / 10;
+    if (n > +v) { console.log(`FAIL class-c ${k} ${n} m > ${v}`); bad++; } else console.log(`ok class-c ${k} ${n} m <= ${v}`);
+  }
   findings.sort((a, b) => b.m - a.m);
   for (const f of findings.slice(0, WORST)) console.log(`  ${f.id} ${f.m} m ${f.at} ${f.street} (${f.cause})`);
-  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), sum, byCheck, byInv, byCause, findings }, null, 1));
+  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), tiles: res.filter((r) => !r.error).map((r) => r.tile), sum, byCheck, byInv, byCause, findings }, null, 1));
   const done = res.filter((r) => !r.error).map((r) => r.tile);
   if (WREG) { const w = rewrite(findings, { invariants: GATED, tiles: done, date: new Date().toISOString().slice(0, 10), decision: (f) => `open (${f.cause})` }); console.log(`  register rewritten: ${w.written}`); }
   else if (REG) bad += report("streetlanes", judge(findings, { invariants: GATED, tiles: done }));
@@ -80,6 +93,7 @@ const inBuilding = (x, z, nx, nz) => { let deep = 0; for (const w of [0, 0.9, -0
 /** the distance to the first kerb line crossed going along (nx, nz) from (x, z), within 8 m (0.1 m steps) */
 const kerbRay = (x, z, nx, nz) => { for (let d = 0; d <= 8; d += 0.1) { const k = kerbs.dist(x + nx * d, z + nz * d, 0.06); if (k) return d; } return Infinity; };
 const ctx = findCtx(S);
+const LC = laneCtx(S, g, trace, model);
 const samples = [];
 const jOf = new Map((model?.junctions || []).map((J) => [J.node, J]));
 const turnF = new Map();         // turn id -> { inv, n, x, z }
@@ -126,14 +140,22 @@ for (let i = 0; i < g.paths; i++) {
     if (inBuilding(x, z, nx, nz)) why.push("building");
     if (!why.length) continue;
     for (const w of why) out.byCheck[w] += 0.5;
-    if (lane) samples.push({ x, z, why, m: 0.5 });
-    else for (const w of why) { const k = `${w}|${tid}`, e = turnF.get(k) || { inv: w, n: 0, x, z }; e.n++; turnF.set(k, e); }
+    const ev = LC.at(x, z, i, q * 0.5, nx, nz);
+    if (lane) samples.push({ x, z, why, m: 0.5, ev });
+    else for (const w of why) { const k = `${w}|${tid}`, e = turnF.get(k) || { inv: w, n: 0, x, z, ev: [] }; e.n++; e.ev.push(ev); turnF.set(k, e); }
   }
 }
 for (let i = 0; i < g.paths; i++) if (!g.model[i] && g.kind[i] === 0 && trace.src[i]) { const P = pathPts(i), m = P.length >> 1; if (inB(P[m][0], P[m][1])) out.sum.lanesOld++; }
-out.findings.push(...roadRuns(samples, ctx, { prefix: "streetlanes", tile: T, nameAt, at, GAP: 3, MIN: 2 }));
+// (each finding's cause from its points' evidence, tools/audit/census/laneCause.mjs: class a source data, b the measure,
+// c our builder)
+const evSum = (L) => { const n = L.length || 1, sh = (f) => Math.round((L.filter(f).length / n) * 100) / 100; return { mdl: sh((e) => e.mdl > 0), carr: sh((e) => e.carr), unmapped: sh((e) => e.cls < 0), meas: sh((e) => e.meas), inDrive: sh((e) => e.inDrive), moved: sh((e) => e.moved > 0.3), end: sh((e) => e.endD < 4), X: sh((e) => e.X), bare: sh((e) => e.bare), jn: sh((e) => e.jn), jO: sh((e) => e.jconf === "O"), outRoom: sh((e) => e.outRoom), across: sh((e) => e.across != null), ex: L[L.length >> 1] }; };
+for (const f of roadRuns(samples, ctx, { prefix: "streetlanes", tile: T, nameAt, at, GAP: 3, MIN: 2, keep: true })) {
+  const ev = f.members.map((p) => p.ev), c = LC.classify(f.inv, ev);
+  out.findings.push({ ...f, cause: c.cause, klass: c.klass, why: c.why, ...(EVID ? { ev: evSum(ev) } : {}) });
+}
 for (const [k, e] of turnF) {
   const tid = k.split("|")[1];
-  out.findings.push({ id: `streetlanes.${e.inv}:${tid}:0-0`, tile: T, inv: e.inv, m: e.n * 0.5, at: at(e.x, e.z), street: nameAt(e.x, e.z), cause: e.inv === "turn" ? "junction-unmodelled" : ctx.causeOf({ x: e.x, z: e.z }) });
+  const c = LC.classify(e.inv, e.ev);
+  out.findings.push({ id: `streetlanes.${e.inv}:${tid}:0-0`, tile: T, inv: e.inv, m: e.n * 0.5, at: at(e.x, e.z), street: nameAt(e.x, e.z), cause: c.cause, klass: c.klass, why: c.why, ...(EVID ? { ev: evSum(e.ev) } : {}) });
 }
 console.log(JSON.stringify(out));
