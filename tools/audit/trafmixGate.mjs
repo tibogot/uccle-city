@@ -483,9 +483,15 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
   // wall-time version read x1.04-1.17 for the same code with other jobs on the laptop: their time on the core was
   // counted as the mix's (claude/foundation failed it at x1.138 under load and passed alone))
   const batch = (S) => () => { let cars = 0; for (let s = 0; s < 50; s++) { S.clearObstacles(); S.step(ctx); cars += S.count; } return cars; };
-  const MT = cpuAB({ make, reps: 4, rounds: 30, batches: 3 });
+  // (coordinator 2026-11-23, rule timing-rows: ONE reading over the limit is not a verdict. claude/lanes5 read
+  // x1.177 inside a gate while other agents' jobs loaded the laptop, then x1.003 / 1.107 / 1.045 alone: a single
+  // measure flaps round 1.10 by load, not by code. So: one measure; over the limit, two more, and the MEDIAN of the
+  // three is judged. A real regression is over the limit in at least two of three and still fails)
+  let MT = cpuAB({ make, reps: 4, rounds: 30, batches: 3 });
+  const reads = [MT];
+  if (MT.ratio > 1.10 && !TRAFMIX_OLD) { reads.push(cpuAB({ make, reps: 4, rounds: 30, batches: 3 }), cpuAB({ make, reps: 4, rounds: 30, batches: 3 })); MT = [...reads].sort((p, q) => p.ratio - q.ratio)[1]; }
   const ratio = MT.ratio, twin = MT.twin;
-  check("sim cost", TRAFMIX_OLD || ratio <= 1.10, `${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
+  check("sim cost", TRAFMIX_OLD || ratio <= 1.10, `${reads.length > 1 ? `median of 3 reads (x${reads.map((r) => r.ratio.toFixed(3)).join(" / ")}): ` : ""}${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
 }
 console.log(fails ? `${fails} trafmix check(s) FAILED${OLD ? " (?trafmix=old: expected)" : ""}` : "all trafmix checks pass");
 process.exitCode = fails ? 1 : 0;
