@@ -1,5 +1,5 @@
 // PER-FRAME ALLOCATION GATE (claude/allocrate, perf job B, docs/PERF_RESEARCH_2026-11.md "Job B", rule docs/rules/alloc-rate.md).
-//   node --import ./tools/heap/register.mjs tools/audit/allocRateCheck.mjs [--quiet]      exit 1 on a failure
+//   node --import ./tools/christmas/hook.mjs tools/audit/allocRateCheck.mjs [--quiet]      exit 1 on a failure
 // WHY: the falcon flight allocated ~1.8 MB of JS objects a frame (3-4.5 GB a minute with the ArrayBuffers): the young
 // generation filled several times a second and the major GCs paused 50-100 ms. An allocation-sampling profile
 // (tools/perf/allocSample.mjs) named the sources on our side: array destructuring in hot polygon / attribute loops
@@ -140,7 +140,74 @@ const fresh = async (rel, search) => { globalThis.location.search = search; try 
   ok(/if \(STREAM_COPY\) m\.runs\.push\(m\.n, b\); else m\.runs\.push\(\[m\.n, b\]\);/.test(md), "multiDraw: the stream pools' runs flat (?streamcopy=old: pairs)");
 }
 
-// ------------------------------------------------------------------ 4. text: the other fixes, the readbacks, the rows
+// ------------------------------------------------------------------ 4. the parked fleet: new = old, car by car
+{
+  // two fleets (the module loaded with and without ?fleetflat=old), the same synthetic types / tiles / camera path and
+  // a fake clock: after every update each batch must hold the same cars (count, matrices, paints, fades). Tiles leave
+  // and come back, a type goes live late, cars hide (pulled into traffic) and come back, the camera moves and jumps.
+  const THREE = await import("three/webgpu");
+  const realNow = performance.now.bind(performance);
+  let clock = 1000;
+  const mkFleet = async (search) => {
+    const M = await fresh("../../viewer/carFleet.js", search);
+    const F = M.carFleet;
+    F.loading = true;                                       // (no model load: the types are made here)
+    const geo = new THREE.BoxGeometry(4, 1.5, 2);
+    const mat = new THREE.MeshBasicNodeMaterial();
+    F.lodDist = [22, 55, 130, 1e9];
+    const types = {};
+    for (const id of ["hatch_s", "estate", "van_c", "saloon"]) types[id] = { lods: F.lodDist.map((_, k) => ({ tris: 12 * (k + 1), plain: F.batch(geo, mat, true, false, 8), fade: F.batch(geo, mat, true, true, 8) })), keepPaint: id === "van_c", paint: new THREE.Color(0.3, 0.3, 0.3), t0: 0 };
+    F.types = types; F.ready = true; F.pendingTypes = [];
+    types.saloon.t0 = 2600;                                 // (a type that goes live later)
+    return { F, M };
+  };
+  performance.now = () => clock;
+  try {
+    const NEW = await mkFleet(""), OLD = await mkFleet("?fleetflat=old");
+    const scene = new THREE.Scene();
+    const tiles = [];
+    let s2 = 4242;
+    const r2 = () => ((s2 = (s2 * 1103515245 + 12345) >>> 0) / 4294967296);
+    const ids = ["hatch_s", "estate", "van_c", "saloon"];
+    for (let t = 0; t < 6; t++) {
+      const cars = [];
+      for (let i = 0; i < 60; i++) cars.push({ x: t * 120 + r2() * 110, y: 0, z: r2() * 300 - 150, heading: r2() * 6.28, type: ids[Math.floor(r2() * 4)], pv: r2() });
+      tiles.push({ cars, gA: new THREE.Group(), gB: new THREE.Group() });
+    }
+    const clone = (cars) => cars.map((c) => ({ ...c }));
+    for (const T of tiles) { T.carsB = clone(T.cars); NEW.F.add(T.gA, T.cars); OLD.F.add(T.gB, T.carsB); }
+    const cam = new THREE.PerspectiveCamera(60, 16 / 9, 0.5, 2000);
+    const pos = new THREE.Vector3();
+    const snap = (F) => {
+      const out = [];
+      for (const id of ids) F.types[id].lods.forEach((l, k) => { for (const [nm, b] of [["p", l.plain], ["f", l.fade]]) { const m = b.mesh, n = m.count; out.push(`${id}${k}${nm}:${n}:${Array.from(m.instanceMatrix.array.subarray(0, n * 16)).map((v) => v.toFixed(3)).join(",")}|${Array.from(b.geo.attributes.paint.array.subarray(0, n * 3)).map((v) => v.toFixed(3)).join(",")}|${b.fade ? Array.from(b.geo.attributes.lodFade.array.subarray(0, n)).map((v) => v.toFixed(4)).join(",") : ""}`); } });
+      return out.join("\n") + `#${F.stats.drawn},${F.stats.fading},${F.stats.culled},${F.stats.far},${F.stats.perLod.join("/")},${F.stats.pops}`;
+    };
+    let frames = 0, diffs = 0, drawnMax = 0, firstDiff = null;
+    for (let f = 0; f < 400; f++) {
+      clock += 16.7;
+      // tiles in / out of the scene (a tile streamed out and in again: its registration leaves and is added back)
+      for (let t = 0; t < tiles.length; t++) {
+        const T = tiles[t], on = !(t === 2 && f >= 120 && f < 220) && !(t === 5 && f < 60);
+        for (const [g] of [[T.gA], [T.gB]]) { if (on && !g.parent) scene.add(g); if (!on && g.parent) scene.remove(g); }
+        if (t === 2 && f === 230) { T.gA = new THREE.Group(); T.gB = new THREE.Group(); scene.add(T.gA, T.gB); T.cars = clone(T.carsB); T.carsB = clone(T.cars); NEW.F.add(T.gA, T.cars); OLD.F.add(T.gB, T.carsB); }
+      }
+      if (f === 150) { tiles[1].cars[3].hidden = true; tiles[1].carsB[3].hidden = true; NEW.F.touch(); OLD.F.touch(); }
+      if (f === 260) { tiles[1].cars[3].hidden = false; tiles[1].carsB[3].hidden = false; NEW.F.touch(); OLD.F.touch(); }
+      // the camera: a drive along x, a turn, a jump (teleport) at 300
+      const x = f < 300 ? f * 1.8 : 500 + (f - 300) * 1.2, z = 20 * Math.sin(f / 40);
+      pos.set(x, 1.7, z); cam.position.copy(pos); cam.lookAt(x + 30 * Math.cos(f / 90), 1.2, z + 30 * Math.sin(f / 90)); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+      if (f % 50 === 49) { clock += 0; }                    // (some frames with a still camera follow)
+      for (let rep = 0; rep < (f % 50 === 49 ? 2 : 1); rep++) { NEW.F.update(pos, cam); OLD.F.update(pos, cam); }
+      const a = snap(NEW.F), b = snap(OLD.F);
+      frames++; drawnMax = Math.max(drawnMax, NEW.F.stats.drawn);
+      if (a !== b) { diffs++; firstDiff ??= f; }
+    }
+    ok(diffs === 0 && drawnMax > 30, `carFleet: the flat jobs give the old batches car by car (count, matrix, paint, fade, stats) over ${frames} frames with tiles leaving / coming back, a late type, a hidden car, a jump (drawn up to ${drawnMax}; frames differing ${diffs}${firstDiff != null ? ", first " + firstDiff : ""})`);
+  } finally { performance.now = realNow; }
+}
+
+// ------------------------------------------------------------------ 5. text: the other fixes, the readbacks, the rows
 {
   const fleet = src("viewer/carFleet.js"), hero = src("viewer/heroColliders.js"), light = src("viewer/lighting.js");
   ok(/const FLEET_FLAT = .*get\("fleetflat"\) !== "old";/.test(fleet) && /_jB\[nj\] = b; _jC\[nj\] = c; _jF\[nj\] = f;/.test(fleet) && /b\.set\.write\(b\.part, n, _setCols, B\)/.test(fleet), "carFleet: the jobs in reused parallel lists, one cols object (?fleetflat=old)");
