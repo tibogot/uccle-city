@@ -91,3 +91,28 @@ New interior slots: ceramic_white, books (a palette per code: spines, bottles), 
 - LOD1 is meshopt of LOD0 (its packed audit reports normal streaks): a scripted mid level would be cleaner.
 - Night: the interior's night bake and the exterior glow are set by eye; a night pass against NTE's blue hour.
 - The pool: an infinity edge; a swimming animation for the walker.
+
+## Resume notes (claude/villa2, paused 2026-11-23)
+
+Done (analysis only, no code changed yet): the `heroshell` clusters classified with a ray diagnostic (copy of
+openMeshes probeAround printing each failing ray's entry / exit / hit in the villa frame):
+- L0 17.7 m2: almost all "through" rays (0 back) grazing UNDER THE CANTILEVERED UPPER BOX (front overhang u 12..14 x
+  w -8..23.5, the south strip w 23..23.5, the back overhang u 36..37.5 + the pergola slab): open undercroft by design.
+  One real see-through: the hall's OPEN BAY (w 5.0..7.9, back): 6 back hits (1.2 m2) on the front wall's inside, seen
+  30-70 m away (LOD0 drawn, interior not shown yet).
+- L1 23.2 m2: the same overhang rays + back hits through the entrance recess's DOOR hole (the leaf is Villa_door, not in
+  LOD1) and meshopt collapses (packed audit 7847 blocking: streak / bentflat / leak / coplanar / crossing).
+- L2 6.8 m2: only overhang "through" rays (0 back); the far box is closed. (far(): the living box's +h face duplicates the
+  LPAR roof rect: a coplanar pair to fix.)
+
+Next (plan):
+1. heroShell.allow.json: villa capsule entries (new `to` end point = a segment, and `noBack: true` = a cluster with back
+   hits is never allowed) along the three overhang strips, yRange 115..122.2; document in heroShell.mjs.
+2. villa.py: a "Villa_bay" glass pane node for the open bay (outside the root like the door: not a walker collider),
+   added to villaCity's extGlass (hidden when the interior shows) and shown only while LOD0 is; pack.mjs lod0 group += it.
+3. villa.py: scripted Villa_lod1 (walls + holes, reveals, panes, box frames, recess back wall solid, slat screens as one
+   plane with codes screen/channel drawn as anti-aliased stripes in villaModel.js wood_cladding, hedges as stepped boxes,
+   AO baked alone like far); hero_pack.mjs: keep a raw <Name>_lod1 instead of simplifying.
+4. far(): front / side openings as flush dark panes, the upper box front + south as screen codes, drop the duplicate face.
+5. Rebuild (OptiX), pack (LOD1 packed audit clean), heroshell ceilings -> 0, villa row, rule note docs/rules/villa-lod-shells.md
+   (+ tools/docs/rulesIndex.mjs), browser LOD cross-fade check, metaGate + mergeGate --changed --base 3626f42e.
