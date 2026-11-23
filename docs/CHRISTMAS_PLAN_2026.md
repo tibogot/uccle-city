@@ -230,3 +230,10 @@ layer as merged is already shippable, so jobs 0-4 are the must-haves.
 7. **More streets?** Today: Chaussée de Saint-Job, Place de Saint-Job, Rue Xavier De Bue, Chaussée d'Alsemberg, the
    Parvis Saint-Pierre. Others (Rue Vanderkindere, the Chaussée de Waterloo at Fort-Jaco) are one config line plus a
    site rebuild each.
+
+## Owner decisions (2026-11-23)
+
+- **Dates:** the layer turns itself on by date from **1 December** to 6 January on the live site (as set today).
+- **Extras after the must-haves:** **job 5, garlands on poles at Saint-Job** and **job 7, warm window lights** are wanted. Job 6, the lights in the plane trees, is not wanted for now.
+- **Market:** keep the 6 chalets on Place Saint-Job.
+- Still open: the tree palette, default snow, more streets. Ask at the review (job 4).
