@@ -138,6 +138,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   3. The 4 remaining road tunnels with the existing method (viewer/rail/tunnels.js, docs/trains/TUNNELS.md).
   4. Through-building passages (arch, drive-through).
   Perf: streamed like the villa (interior only near), ground cut like the tunnels, nothing drawn underground from afar. Check each place on Street View first (look only).
+- [ ] Carrefour Market near the police station (owner 2026-11-23): does not look like the real one; check photos / Street View (look only) and redo it (building, shopfront, signage, car park).
 - [ ] Stunt area (owner 2026-11-22, for later): a construction site or waste ground with ramps, pipes, sand piles, containers, scaffolding for stunts with the car, the moto and the bike. Place not chosen: candidates to check on Google Maps / Street View (look only): the Calevoet / Stalle industrial and rail-side land, open or vacant plots in the Kauwberg / Engeland area (next to the kid game's sand quarries and the Dieweg bike park, docs/KIDGAME.md), any real building site. Pick one that is real and drivable; scripted props only.
 - [ ] Parc de la Sauvagère (owner 2026-11-22): fences all round, a few gates and entrances; check the line and the gates on Street View (look only). Same job as Wolvendael (one park-fence kit, both parks).
 - [ ] Place Saint-Pierre: the restaurant Le Petit Pont.
