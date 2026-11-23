@@ -20,16 +20,18 @@ The objects are in two renders. The main scene pass draws ~290 objects every fra
 
 Over 8 s of drive: 43 redraws, of which fade 18, shift 10, refresh 6, key (depth step) 5, dirty 4.
 
-**Measured** (claude/renders, 2026-11-23; RED preflight: another agent's gate on the CPU, so redraw counts are the robust figure):
+**Measured** (claude/renders, 2026-11-23). Counts only: the owner was on the laptop, so no frame-time or CPU / GPU timing was taken. The timed A/B waits for a quiet machine. Both runs are the same 22 s police drive (debug/gamePerf.js police autopilot), counted with debug/renderCount.js and `window.__sunCache.stats`:
 
-| | police drive, before | police drive, after |
+| | `&sunfadecast=old&sundepthstep=old` | default |
 |---|---|---|
-| renders a frame | 31.8 (top-level 7.3) | 31.9 (unchanged: the quads stay) |
-| objects drawn a frame | 353 | 350 |
-| sun cache full redraws | 43 in 433 frames (0.10 a frame; fade 18, shift 10, refresh 6, key 5, dirty 4) | 22 in 320 frames (0.069; shift 20, refresh 2, fade 0, key 0, dirty 0) |
-| falcon flight | | 19 in 558 frames (0.034; refresh 11, step 5, shift 3) |
+| renders a frame | 32.3 (top-level 7.8) | 32.3 (top-level 7.8: the quads stay) |
+| objects drawn a frame | 343 | 341 |
+| sun cache full redraws | 46 in 597 frames = 0.077 a frame (key 12, shift 16, fade 9, dirty 5, refresh 4) | 28 in 644 = 0.043 (-44 %; shift 21, refresh 7, key / fade / dirty 0) |
+| casters in a full redraw / movers a frame | 109 / 13.6 | 113 / 13.9 |
 
-debug/sunDepthStep.js: after a 25 m step, the laid-back cache matches a full redraw on 99.52 % of the caster texels. A second full redraw with no step matches on 99.31 %: the noise floor, because the trees' wind moves the leaves between frames. Without the offset, 100 % of the texels are off.
+Falcon flight (default): 19 full redraws in 558 frames = 0.034 (refresh 11, step 5, shift 3).
+
+debug/sunDepthStep.js: the cache laid back after a 25 m step equals a full redraw on every caster texel. That holds with the movers and the wind's groups hidden and the LOD dither held: worst 3e-7 of the depth range. Without the offset, 100 % of the texels are off.
 
 **Not cut, and why** (candidates for later; each needs a look check or touches vendor/):
 - **Bloom's 12 quads.** three's BloomNode has 5 mips with a blur pair each. Fewer mips, or bloom every 2nd frame, changes the glow, or lags it one frame behind the police lights.
