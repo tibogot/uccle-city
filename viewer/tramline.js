@@ -26,6 +26,8 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
 import * as tramV1 from "./tramModel.js";
 import * as tramV2 from "./tram2Model.js";
+// (claude/allocrate2, rule alloc-rate) the snap, yAlong and update without per-point arrays; ?tramalloc=old = as before
+export const TRAM_ALLOC = new URLSearchParams(globalThis.location?.search || "").get("tramalloc") !== "old";
 
 const MOD_L = 6.4, GAP = 0.25, MODS = 5, WIDTH = 2.3, FLOOR = 0.35, H = 3.25, MAX_TRAMS = 40;
 
@@ -125,6 +127,34 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
     sliceT = performance.now();
   };
+  // (claude/allocrate2, ?tramalloc=old: the loop below) the same snap by index reads: no destructuring of the grid's
+  // segment tuples or of the shape's points, the previous snapped point in two numbers (21 KB a frame flying)
+  const snapShapeFlat = async (s, snap, loaded) => {
+    let prevLine = -1, hasPrev = false, ppx = 0, ppz = 0;
+    const o = s.orig;
+    for (let i = 0; i < o.length; i++) {
+      if ((i & 255) === 0) await slice();
+      const x = o[i][0], z = o[i][1];
+      if (!loaded(x, z)) { prevLine = -1; hasPrev = false; continue; }
+      const a0 = o[Math.max(0, i - 1)], a1 = o[Math.min(o.length - 1, i + 1)];
+      const sx = a1[0] - a0[0], sz = a1[1] - a0[1], sl = Math.hypot(sx, sz) || 1;
+      let best = Infinity, bx = x, bz = z, bl = -1;
+      const cell = grid.get(gk(Math.floor(x / 4), Math.floor(z / 4)));
+      if (cell) for (let c = 0; c < cell.length; c++) {
+        const sg = cell[c], ax = sg[0], az = sg[1], cx = sg[2], cz = sg[3], li = sg[4];
+        const dx = cx - ax, dz = cz - az, L2 = dx * dx + dz * dz || 1e-9;
+        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), px = ax + dx * t, pz = az + dz * t;
+        const d2 = (px - x) ** 2 + (pz - z) ** 2;
+        if (d2 > 9) continue;
+        const back = (dx * sx + dz * sz) / (Math.sqrt(L2) * sl) < 0 ? 1 : 0;
+        const cont = li === prevLine || (hasPrev && (px - ppx) ** 2 + (pz - ppz) ** 2 < 2.25 && Math.abs(Math.hypot(px - ppx, pz - ppz) - Math.hypot(x - o[Math.max(0, i - 1)][0], z - o[Math.max(0, i - 1)][1])) < 0.5);
+        const cost = d2 + (prevLine >= 0 && !cont ? 100 : 0) + back;
+        if (cost < best) { best = cost; bx = px; bz = pz; bl = li; }
+      }
+      snap[i] = [bx, bz];
+      prevLine = bl; hasPrev = true; ppx = bx; ppz = bz;
+    }
+  };
   const snapTileNow = async (feats, b) => {
     sliceT = performance.now();
     for (const l of feats.lines || []) if (l.kind === "platform") for (let k = 1; k < l.line.length; k++) platSegs.push([...l.line[k - 1], ...l.line[k]]);
@@ -147,6 +177,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
     for (const s of Object.values(shapes)) {
       let prevLine = -1, prevPt = null;
       const snap = s.snap.slice();
+      if (TRAM_ALLOC) { await snapShapeFlat(s, snap, loaded); s.snapNext = snap; continue; }
       for (let i = 0; i < s.orig.length; i++) {
         if ((i & 255) === 0) await slice();
         const [x, z] = s.orig[i];
@@ -239,7 +270,11 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   // the line leaves the OSM tracks (321 m along the commune's north edge, outside the study area: no rails drawn there)
   // the fallback is the raw road surface, and this softens it and the hand-over to the profile
   const TAPS = [[-3, 1], [-1.5, 2], [0, 3], [1.5, 2], [3, 1]];
-  const yAlong = (shape, q) => { let s = 0; for (const [o, w] of TAPS) { const [x, z, h] = at(shape, q + o); s += w * railY(x, z, h); } return s / 9; };
+  // (claude/allocrate2, ?tramalloc=old: for-of over TAPS + an array from at() per tap, every frame per drawn tram)
+  const TAP_O = [-3, -1.5, 0, 1.5, 3], TAP_W = [1, 2, 3, 2, 1], yA = [0, 0, 0];
+  const yAlong = TRAM_ALLOC
+    ? (shape, q) => { let s = 0; for (let k = 0; k < 5; k++) { atInto(shape, q + TAP_O[k], yA); s += TAP_W[k] * railY(yA[0], yA[1], yA[2]); } return s / 9; }
+    : (shape, q) => { let s = 0; for (const [o, w] of TAPS) { const [x, z, h] = at(shape, q + o); s += w * railY(x, z, h); } return s / 9; };
   let scale = +(params.get("timescale") || 1);
   const clockP = params.get("clock");
   let t0 = performance.now();
@@ -415,6 +450,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
       if (isCab) cabs.setMatrixAt(s.cab++, M); else mids.setMatrixAt(s.mid++, M);
     }
   };
+  const uA = [0, 0, 0];                                              // (TRAM_ALLOC: update's at() scratch)
   const update = (camPos, camera = null) => {
     const T = clock() % 86400, Tn = T + 86400;                          // trips can run past midnight
     holdTrips(T);                                                      // (police game: a blocked track)
@@ -428,11 +464,12 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
       const tt = T >= first && T <= last ? T : Tn >= first && Tn <= last ? Tn : -1;
       if (tt < 0) continue;
       const { d, doors: dOpen, stop, brake } = tripD(t, tt);
-      const [x, z] = at(shapes[t.shape], d);
+      let x, z;
+      if (TRAM_ALLOC) { atInto(shapes[t.shape], d, uA); x = uA[0]; z = uA[1]; } else [x, z] = at(shapes[t.shape], d);
       running++;
       if ((x - near.x) ** 2 + (z - near.z) ** 2 > near.r * near.r || s.cab >= MAX_TRAMS * 2) continue;
       drawn.xz[drawn.n * 2] = x; drawn.xz[drawn.n * 2 + 1] = z;
-      { const r = at(shapes[t.shape], d - MODS * MOD_L - (MODS - 1) * GAP); drawn.rear[drawn.n * 3] = r[0]; drawn.rear[drawn.n * 3 + 1] = r[1]; drawn.rear[drawn.n * 3 + 2] = railTop(x, z); }
+      { const r = TRAM_ALLOC ? atInto(shapes[t.shape], d - MODS * MOD_L - (MODS - 1) * GAP, uA) : at(shapes[t.shape], d - MODS * MOD_L - (MODS - 1) * GAP); drawn.rear[drawn.n * 3] = r[0]; drawn.rear[drawn.n * 3 + 1] = r[1]; drawn.rear[drawn.n * 3 + 2] = railTop(x, z); }
       drawn.n++;
       if (nearN < 64) { nearT[nearN] = t; nearDoors[nearN] = dOpen; nearD[nearN++] = d; }
       if (fleet) {

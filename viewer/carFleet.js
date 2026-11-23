@@ -30,6 +30,8 @@ const _carBox = new Float64Array(6);
 // registrations filtered in place: the parked cars' update makes no garbage a frame (docs/rules/alloc-rate.md)
 const FLEET_FLAT = typeof location === "undefined" || new URLSearchParams(location.search).get("fleetflat") !== "old";
 const _jB = [], _jC = [], _jF = [];
+// (claude/allocrate2, rule alloc-rate) the car loop in its own small function (placeCars); ?fleetopt=old = inline
+const FLEET_OPT = typeof location === "undefined" || new URLSearchParams(location.search).get("fleetopt") !== "old";
 const _setCols = { instanceMatrix: null, paint: null, lodFade: null };
 
 // the mix (a residential Brussels street): mostly hatchbacks, estates and saloons, some SUVs and compact vans, a few
@@ -311,6 +313,12 @@ class CarFleet {
     // a camera jump (teleport, view switch) is not motion: the pop / appear counters skip that update
     const jumped = this.lastPos ? camPos.distanceTo(this.lastPos) > 5 : true;
     (this.lastPos ||= new THREE.Vector3()).copy(camPos);
+    if (FLEET_OPT && !jobs) {
+      // (claude/allocrate2, ?fleetopt=old: the loop inline) the car loop in a small function of its own: inline in this
+      // long update() it ran unoptimised (TurboFan rarely took it), so every double (d, keep, t, alpha) was a new heap
+      // number: 16-36 KB a frame. Small and called once per registration, it is optimised and boxes nothing
+      for (let ri = 0; ri < this.regs.length; ri++) { const r = this.regs[ri]; if (r.live) nj = placeCars(this, r, camPos, now, L, last, st, jumped, nj); }
+    } else
     for (const r of this.regs) {
       if (!r.live) continue;                             // its tile is still being built (not in the scene yet)
       const alpha = Math.min(1, (now - r.t0) / FADE_IN_MS);
@@ -392,6 +400,40 @@ class CarFleet {
       if (b.fade) { const a = b.geo.attributes.lodFade; a.clearUpdateRanges(); a.addUpdateRange(0, m.count); a.needsUpdate = true; }
     }
   }
+}
+
+/** (FLEET_OPT) one registration's cars into the job lists _jB / _jC / _jF from index nj; -> the new count. The same
+ *  decisions, in the same order, as the inline loop of CarFleet.update (allocRateCheck.mjs compares them car by car). */
+function placeCars(F, r, camPos, now, L, last, st, jumped, nj) {
+  const alpha = Math.min(1, (now - r.t0) / FADE_IN_MS), cars = r.cars, frameNo = F.frameNo, sphere = F.sphere, frustum = F.frustum;
+  for (let ci = 0; ci < cars.length; ci++) {
+    const c = cars[ci];
+    st.cars++;
+    if (c.hidden) continue;
+    const T = F.types[c.type]; if (!T || T.t0 > now) continue;
+    sphere.center.set(c.x, c.y + 0.9, c.z);
+    if (!frustum.intersectsSphere(sphere)) { st.culled++; continue; }
+    const d = camPos.distanceTo(sphere.center);
+    if (d >= FADE_TO) { st.far++; c.farAt = frameNo; continue; }
+    let k = last; for (let u = 0; u < L.length; u++) if (d < L[u]) { k = u; break; }
+    const keep = (d > FADE_FROM ? 1 - (d - FADE_FROM) / (FADE_TO - FADE_FROM) : 1) * Math.min(alpha, (now - T.t0) / FADE_IN_MS, 1);
+    let near = k, far = -1, t = 0;
+    const bl = BANDS[k - 1] ?? 0, bk = BANDS[k] ?? 0;
+    if (k > 0 && d - L[k - 1] < bl * L[k - 1]) { near = k - 1; far = k; t = (d - (1 - bl) * L[k - 1]) / (2 * bl * L[k - 1]); }
+    else if (k < last && L[k] - d < bk * L[k]) { near = k; far = k + 1; t = (d - (1 - bk) * L[k]) / (2 * bk * L[k]); }
+    t = Math.min(1, Math.max(0, t));
+    const shown = far >= 0 ? -1 : k;
+    if (!jumped && shown >= 0 && c.shown >= 0 && c.shown !== shown && c.seen === frameNo - 1) st.pops++;
+    if (!jumped && c.farAt === frameNo - 1 && keep >= 1 && far < 0) st.appears++;
+    c.shown = shown; c.seen = frameNo;
+    const lods = T.lods;
+    if (far >= 0 && keep >= 1) { _jB[nj] = lods[near].fade; _jC[nj] = c; _jF[nj] = t; nj++; _jB[nj] = lods[far].fade; _jC[nj] = c; _jF[nj] = 1 + t; nj++; st.fading++; }
+    else if (keep < 1) { _jB[nj] = lods[k].fade; _jC[nj] = c; _jF[nj] = 1 - keep; nj++; st.fading++; }
+    else { _jB[nj] = lods[k].plain; _jC[nj] = c; _jF[nj] = 0; nj++; }
+    st.drawn++; st.perLod[k]++;
+    st.tris += lods[k].tris;
+  }
+  return nj;
 }
 
 export const carFleet = new CarFleet();

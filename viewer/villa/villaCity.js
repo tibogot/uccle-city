@@ -16,6 +16,7 @@ import * as THREE from "three/webgpu";
 import { loadVilla, VILLA_LODS, setLodFades, villaLodState, villaLook } from "./villaModel.js";
 import { buildVillaGrounds } from "./villaGrounds.js";
 import { drivePlane, LIFT } from "./villaGroundsGeom.js";
+import { VILLA_DECK, makeDriveDeck } from "./villaDeck.js";
 import { buildVillaCars } from "./villaCars.js";
 import { villaInLook } from "./villaInterior.js";
 import { SMOOTH, fadeProxies } from "../lodFade.js";
@@ -79,8 +80,10 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
     const inv = m.inv, q = new THREE.Vector3();
     const dp = notes.drive_plane, dRings = dp.zones.map((z) => notes.grounds[z]);
     const inRingUW = (r, u, w) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [ui, wi] = r[i], [uj, wj] = r[j]; if ((wi > w) !== (wj > w) && u < ((uj - ui) * (w - wi)) / (wj - wi) + ui) c = !c; } return c; };
-    const onDrive = (x, z) => { q.set(x, 0, z).applyMatrix4(inv); return dRings.some((r) => inRingUW(r, q.x, q.z)) ? q.x : null; };
-    const driveDeck = (x, z) => { const u = onDrive(x, z); return u == null ? null : drivePlane(dp, u) + LIFT; };
+    // (claude/allocrate2: one box + index-loop rings, villaDeck.js; ?villadeck=old = the closures, 2.9 MB a frame flying)
+    const fastDeck = VILLA_DECK ? makeDriveDeck(dp, dRings, m.rootM, inv) : null;
+    const onDrive = fastDeck ? fastDeck.onDrive : (x, z) => { q.set(x, 0, z).applyMatrix4(inv); return dRings.some((r) => inRingUW(r, q.x, q.z)) ? q.x : null; };
+    const driveDeck = fastDeck || ((x, z) => { const u = onDrive(x, z); return u == null ? null : drivePlane(dp, u) + LIFT; });
     const standAt = (x, z) => driveDeck(x, z) ?? groundAt(x, z);
     if (world.decks) world.decks.push(driveDeck);
     const cars = await buildVillaCars({ notes, rootM: m.rootM, rotationY: m.placement.rotationY, groundAt: (x, z) => { const d = driveDeck(x, z); return d == null ? groundAt(x, z) : d - LIFT; } }).catch((e) => { log(`villa cars: ${e.message}`); return null; });
