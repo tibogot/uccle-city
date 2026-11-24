@@ -19,6 +19,10 @@
 // S  (claude/carrefour, rule curated-shed-look) every look with shed: true names its place (_name) and a set with a switch
 //    (the Carrefour: set carrefour, ?carrefour=old); the Carrefour Market by Square Marlow: its box (529267) is a shed,
 //    its front says Carrefour, has the glazing (w >= 12) and the canopy, its car park (carrefour_lot) has its 3 bay rows
+//    (claude/carrefour2) every curated store (shed look with store: { front, sign, lot, bays }): its front says its sign,
+//    a glazed run under a canopy on THIS building, its lot on the look's switch with that many bay rows, each bay inside
+//    the lot's ring; Marlow (529267) and Rue Gatti de Gamond 60 (558122) present; Gatti's lot records OSM node
+//    9627537495's wrong parking=underground (osmWrong)
 // M  (claude/places2) every OSM point MOVED with an address (extra_pois.json _moves + tags addr:street) is placed on a
 //    face of that street: a corner shop opens on its own street (Le Pigeon Noir, Rue Geleytsbeek 2: the build put its front
 //    on the Avenue de la Chênaie gable, the nearest wall to OSM's point, which has no address); Le Pigeon Noir on
@@ -118,10 +122,10 @@ for (const [k, c] of Object.entries(cur)) {
   const f = poi.face, X = [f.nz, -f.nx], du = fr.du || 0, W = fr.w ?? f.w;
   const own = solids(T).filter((b) => b.attrs?.BU_ID === f.bu).map((b) => b.footprint[0]);
   if (!own.length) { fail(`W ${k}: its building ${f.bu} not in ${T}`); continue; }
-  const spans = [["front", W / 2]];
-  if (fr.canopy) spans.push(["canopy", (W + (fr.canopy.extra ?? 0.4)) / 2]);
-  for (const [what, half] of spans) for (const s of [-1, 1]) {
-    const x = f.x + X[0] * (du + s * half), z = f.z + X[1] * (du + s * half);
+  const spans = [["front", W / 2, 0]];
+  if (fr.canopy) spans.push(["canopy", (W + (fr.canopy.extra ?? 0.4)) / 2, fr.canopy.du ?? 0]);   // (claude/carrefour2: canopy.du)
+  for (const [what, half, cu] of spans) for (const s of [-1, 1]) {
+    const x = f.x + X[0] * (du + cu + s * half), z = f.z + X[1] * (du + cu + s * half);
     const d = Math.min(...own.map((r) => ringD(r, x, z)));
     if (d > 0.6) fail(`W ${k}: the ${what}'s ${s < 0 ? "left" : "right"} end (${x.toFixed(1)}, ${z.toFixed(1)}) is ${d.toFixed(2)} m off its wall`);
   }
@@ -139,6 +143,56 @@ if (!/Carrefour/.test([].concat(cm?.sign ?? [], ...(cm?.plaques || []).map((p) =
 if (!(cm?.w >= 12) || !cm?.canopy) fail("S osm:n255033292: not the supermarket's glazed run (w >= 12) under its canopy");
 const cl = grounds.find((g) => g.id === "carrefour_lot");
 if (!cl || cl.switch !== "?carrefour=old" || (cl.marks || []).filter((m) => m.kind === "bays").length !== 3) fail("S carrefour_lot: missing, not on ?carrefour=old, or not its 3 bay rows");
+// (claude/carrefour2) every curated store (a shed look with store: { front, sign, lot, bays }, data-driven: a second
+// Carrefour is a data entry, no code): its front present, saying its sign, the glazed run (w >= 12) under a canopy, on
+// THIS building (its POI's face on the solid's BU_ID; section W puts both ends on the wall); its lot present on the
+// look's switch with its bay rows, every bay's four corners inside the lot's ring (0.3 m slack: a bay row on the
+// sidewalk or under the store is a wrong frame); the stores the owner named present (Marlow 529267, Gatti de Gamond
+// 558122), and Gatti de Gamond's lot records the wrong OSM tag (node 9627537495 parking=underground: a surface lot)
+let stores = 0;
+const toWorld = (g, u, v) => { const a = (g.frame.angleDeg * Math.PI) / 180; return [g.frame.origin[0] + Math.cos(a) * u - Math.sin(a) * v, g.frame.origin[1] + Math.sin(a) * u + Math.cos(a) * v]; };
+for (const [id, v] of Object.entries(looks)) if (v?.shed && v.store) {
+  stores++;
+  const st = v.store, fr = cur[st.front]?.front;
+  if (!fr) { fail(`S store ${id}: no curated front ${st.front}`); continue; }
+  if (!new RegExp(st.sign).test(signOf(st.front))) fail(`S store ${id}: its front ${st.front} does not say ${st.sign}`);
+  if (!(fr.w >= 12) || !fr.canopy) fail(`S store ${id}: ${st.front} is not a glazed run (w >= 12) under a canopy`);
+  let poi = null, T = null;
+  for (const t of manifest.tiles) { const p = (slOf(t.name)?.pois || []).find((q) => q.id === st.front); if (p) { poi = p; T = t.name; break; } }
+  const solid = T && solids(T).find((b) => String(b.attrs?.INSPIRE_ID || "").endsWith(`/${id}`));
+  if (!poi?.face || !solid || poi.face.bu !== solid.attrs.BU_ID) fail(`S store ${id}: its front ${st.front} is not on this building (face ${poi?.face?.bu ?? "none"})`);
+  const g = grounds.find((q) => q.id === st.lot);
+  const sw = v.set === "carrefour" ? "?carrefour=old" : null;
+  if (!g) { fail(`S store ${id}: no lot ${st.lot}`); continue; }
+  // no LiDAR "tree" (urbis-chm) taller than the canopy's underside standing under it, unless the lot's chmClear drops it
+  // (viewer/main.js groundTreesClear): a crown through the canopy (Gatti de Gamond: 4 peaks of 3-3.6 m, the canopy edge
+  // and the planters)
+  if (fr.canopy && poi?.face) {
+    const f = poi.face, X = [f.nz, -f.nx], N = [f.nx, f.nz], c = fr.canopy, half = (fr.w + (c.extra ?? 0.4)) / 2, mid = (fr.du || 0) + (c.du ?? 0), out = c.out ?? 3;
+    const clear = g.chmClear || [];
+    const trees = existsSync(join(ROOT, `data/tiles/${T}/features.json`)) ? json(`data/tiles/${T}/features.json`).trees || [] : [];
+    for (const t of trees) {
+      if (t.source !== "urbis-chm" || !(t.height > (c.y ?? 3.1))) continue;
+      const dx = t.x - f.x, dz = t.z - f.z, u = dx * X[0] + dz * X[1] - mid, n = dx * N[0] + dz * N[1];
+      if (Math.abs(u) <= half && n >= -0.5 && n <= out + (t.crown ?? 1) && !clear.some((r) => inRing(r, t.x, t.z))) fail(`S store ${id}: a LiDAR tree ${t.id} (${t.height} m) stands under its canopy (add the lot's chmClear)`);
+    }
+  }
+  if (sw && g.switch !== sw) fail(`S store ${id}: lot ${st.lot} not on ${sw}`);
+  const rows = (g.marks || []).filter((m) => m.kind === "bays");
+  if (rows.length !== st.bays) fail(`S store ${id}: lot ${st.lot} has ${rows.length} bay rows, the data says ${st.bays}`);
+  if (!g.frame) { fail(`S store ${id}: lot ${st.lot} has no paint frame`); continue; }
+  for (const m of rows) {
+    const a = ((m.deg || 0) * Math.PI) / 180, du = [Math.cos(a), Math.sin(a)], dv = [-Math.sin(a), Math.cos(a)];
+    for (const [s, t] of [[0, 0], [m.n * m.w, 0], [0, m.depth], [m.n * m.w, m.depth]]) {
+      const [x, z] = toWorld(g, m.at[0] + du[0] * s + dv[0] * t, m.at[1] + du[1] * s + dv[1] * t);
+      if (!inRing(g.ring, x, z) && ringD(g.ring, x, z) > 0.3) { fail(`S store ${id}: a bay row of ${st.lot} (at ${m.at}) leaves the lot at (${x.toFixed(1)}, ${z.toFixed(1)})`); break; }
+    }
+  }
+}
+for (const id of ["529267", "558122"]) if (!looks[id]?.store) fail(`S buildingLooks ${id}: not a curated store (shed + store)`);
+const gl = grounds.find((g) => g.id === looks["558122"]?.store?.lot);
+if (!gl?.osmWrong?.some((w) => w.id === "osm:n9627537495")) fail("S the Gatti de Gamond lot does not record OSM node 9627537495's wrong parking=underground (osmWrong)");
+say(`ok   S ${stores} curated stores (front, sign, canopy, lot, bays inside)`);
 
 // ---- M: moved OSM points with an address, on their street (claude/places2)
 let moved = 0;
