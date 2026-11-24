@@ -117,7 +117,14 @@ async function main() {
   const views = cfg.views.filter((v) => (!only || only.includes(v.id)) && !skip.includes(v.id));
   T.n = views.length; T.state = "running";
   say(`${views.length} views, ${W}x${H}, devicePixelRatio ${devicePixelRatio}`);
+  // (rule tour-page-in-front, 2026-11-24) a window behind others is throttled to ~1 fps although the page reads
+  // "visible": every view then times out as "not ready: limit". Measure this page's rAF rate before each view; under
+  // 30 fps wait up to 20 s for it to come back, else stop the whole tour with the real cause.
+  const pageFps = () => new Promise((res) => { let n = 0; const t0 = performance.now(); const f = () => { if (++n < 20) requestAnimationFrame(f); else res(20000 / (performance.now() - t0)); }; requestAnimationFrame(f); });
   for (const view of views) {
+    let fps = await pageFps();
+    for (let w = 0; fps < 30 && w < 4; w++) { say(`page at ${fps.toFixed(0)} fps: waiting for it to come back (bring the window to front)`); await new Promise((r) => setTimeout(r, 5000)); fps = await pageFps(); }
+    if (fps < 30) { T.state = "failed"; T.errors.push(`page throttled: ${fps.toFixed(1)} fps (the window is behind others or the display is off: bring it to front, rule tour-page-in-front)`); say(`tour STOPPED: ${T.errors.at(-1)}`); return; }
     T.i++; T.current = view.id;
     const q = new URLSearchParams({ ...cfg.common, ...view.q });
     const url = `/viewer/index.html?${q}`;

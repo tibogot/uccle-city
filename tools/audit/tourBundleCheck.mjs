@@ -76,6 +76,8 @@ try {
   const kill = await swOnce([]), real = await swOnce(["--keep-sw"]);
   check("/sw.js is the self-removing worker on local checks", /unregister\(\)/.test(kill) && /caches\.delete/.test(kill) && kill.length < 600, `${kill.length} bytes`);
   check("--keep-sw serves the real sw.js", real === fs.readFileSync(path.join(HERE, "sw.js"), "utf8"), `${real.length} bytes`);
+  const tourJs = fs.readFileSync(path.join(HERE, "debug/tour.js"), "utf8");
+  check("tour.js stops on a throttled page", /const pageFps = /.test(tourJs) && /page throttled/.test(tourJs) && /fps < 30/.test(tourJs), "debug/tour.js measures its rAF rate before each view (rule tour-page-in-front)");
 } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 
 console.log(fails ? `tourbundle: ${fails} FAIL` : "tourbundle: all pass");
