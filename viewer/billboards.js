@@ -19,6 +19,7 @@ import * as THREE from "three/webgpu";
 import { attribute, vec3, vec4, float, clamp, fract, floor, cos, sin, texture, uv, uniform, cameraViewMatrix, normalize } from "three/tsl";
 import { env } from "./lighting.js";
 import { wxMat } from "./weather/cityWeatherize.js";
+import { setMotionDelta } from "./upscale.js";   // --- instmotion (the slats at last frame's time)
 import { PRISM, FRAME, ROOF, drawAtlas, buildBoards, prismAngle } from "./billboardsKit.js";
 export { PRISM, FRAME, ROOF, drawAtlas, buildBoards, prismAngle };
 
@@ -40,7 +41,7 @@ const qs = new URLSearchParams(typeof location !== "undefined" ? location.search
 /** ?billboards=0: no billboards (as before) */
 export const BILLBOARDS = qs.get("billboards") !== "0";
 
-const uTime = uniform(0);
+const uTime = uniform(0), uTimePrev = uniform(0);
 function frameMaterial() {
   const m = new THREE.MeshStandardNodeMaterial();
   const cr = attribute("aCR", "vec4"), em = attribute("aEm", "vec2");
@@ -63,14 +64,14 @@ function posterMaterial(tex, rotating) {
   m.emissiveNode = t.mul(em.x.mul(env.uNight).mul(0.9));
   if (rotating) {
     const ex = attribute("aEx", "vec4"), nrm = attribute("normal", "vec3");
-    const q = uTime.sub(ex.w).div(PRISM.cycle), k = floor(q), f = clamp(fract(q).mul(PRISM.cycle / PRISM.turn), 0, 1);
-    const ang = k.add(f.mul(f).mul(float(3).sub(f.mul(2)))).mul((2 * Math.PI) / 3);
-    const c = cos(ang), s = sin(ang);
-    // rotate the local (t, n) offset round the slat's axis (the vertex position is the axis foot, world)
     const bt = attribute("aT", "vec2"), tx = bt.x, tz = bt.y;                   // the board's t = (tx, 0, tz), n = (-tz, 0, tx)
-    const lt = ex.x.mul(c).add(ex.z.mul(s)), ln = ex.z.mul(c).sub(ex.x.mul(s));
-    const off = vec3(tx.mul(lt).sub(tz.mul(ln)), ex.y, tz.mul(lt).add(tx.mul(ln)));
+    const angAt = (T) => { const q = T.sub(ex.w).div(PRISM.cycle), k = floor(q), f = clamp(fract(q).mul(PRISM.cycle / PRISM.turn), 0, 1); return k.add(f.mul(f).mul(float(3).sub(f.mul(2)))).mul((2 * Math.PI) / 3); };
+    // rotate the local (t, n) offset round the slat's axis (the vertex position is the axis foot, world)
+    const offAt = (a) => { const c = cos(a), s = sin(a), lt = ex.x.mul(c).add(ex.z.mul(s)), ln = ex.z.mul(c).sub(ex.x.mul(s)); return vec3(tx.mul(lt).sub(tz.mul(ln)), ex.y, tz.mul(lt).add(tx.mul(ln))); };
+    const ang = angAt(uTime), c = cos(ang), s = sin(ang), off = offAt(ang);
     m.positionNode = attribute("position", "vec3").add(off);
+    // the motion vectors (CityTAAU): where this vertex was last frame minus where it is now (gate row motion)
+    setMotionDelta(m, offAt(angAt(uTimePrev)).sub(off));
     const nt = nrm.x.mul(c).add(nrm.z.mul(s)), nn = nrm.z.mul(c).sub(nrm.x.mul(s));
     const nw = vec3(tx.mul(nt).sub(tz.mul(nn)), 0, tz.mul(nt).add(tx.mul(nn)));
     m.normalNode = normalize(cameraViewMatrix.mul(vec4(nw, 0)).xyz);
@@ -106,7 +107,7 @@ export const billboards = {
     const c = compiler?.();
     if (c) await c([group]).catch(() => {});
     const t00 = performance.now();
-    updaters.push(() => { uTime.value = (performance.now() - t00) / 1000; });
+    updaters.push(() => { uTimePrev.value = uTime.value; uTime.value = (performance.now() - t00) / 1000; });
     let tris = 0; group.traverse((o) => { if (o.isMesh) tris += o.geometry.attributes.position.count / 3; });
     this.stats = { ...K.stats, draws: group.children.length, tris, atlas: `${A.width}x${A.height}`, ms: Math.round(performance.now() - t0) };
     log(`billboards: ${K.stats.boards} boards (${K.stats.prisms} trivision, ${K.stats.slats} slats), ${this.stats.draws} draws, ${tris} tris, atlas ${this.stats.atlas}, ${this.stats.ms} ms (viewer/billboards.js)`);

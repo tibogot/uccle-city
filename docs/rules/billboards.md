@@ -40,3 +40,9 @@ walls round there (floating balcony slabs and pillars), and the block's far wall
 building is never a street eye; the row now also builds the boards with the city's own kit (viewer/billboardsKit.js,
 the pure half of viewer/billboards.js) and checks each poster / slat row / frame against `at`, and --write stores the
 street eye it found per board (`view`) for tours and shots.
+
+## Round 4 (merge gate, 2026-11-24): the turning slats need motion vectors
+
+WHY: the trivision slats move in the vertex shader (a time uniform), but the city TAA reprojects every pixel with last frame's position; with no motion hook a turning slat smears and ghosts (gate row motion: "unknown billboards.js: deforms over time with no motion hook").
+RULE: anything that moves in a vertex shader gives its own motion: the slats compute their offset at last frame's time too (uTimePrev) and set setMotionDelta(prev - now) (viewer/upscale.js); billboards.js is listed as a MOVER in tools/audit/motionAudit.mjs.
+CHECK: gate row motion (fails on any unlisted file that deforms over time).
