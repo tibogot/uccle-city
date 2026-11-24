@@ -12903,7 +12903,7 @@ function laneFit(node, ground, noData) {
   y0 = sy / n - gx * mx - gz * mz;
   return { y: y0, gx, gz, rms: Math.sqrt(e / n) };
 }
-function relevelRoads(net, ground, noData = null, { roughLanes = true, deckLevel = null } = {}) {
+function relevelRoads(net, ground, noData = null, { roughLanes = true, deckLevel = null, edgeHold = true } = {}) {
   const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0, ...globalThis.__levelsDebug ? { debug: true } : {} };
   if (!net?.nodes) return st;
   const realSpan = (rr, sp) => {
@@ -12992,12 +12992,33 @@ function relevelRoads(net, ground, noData = null, { roughLanes = true, deckLevel
     st.roads++;
   }
   st.maxMove = Math.round(st.maxMove * 100) / 100;
-  dropLifts(net, ground, noData, fixedRoad, st);
+  dropLifts(net, ground, noData, fixedRoad, st, edgeHold);
   return st;
 }
 var LIFT_TOL = 1;
+var HOLD_STEP = 2;
+function heldGround(rr, P, ground, noData) {
+  const L2 = Math.max(rr.L || 0, P.s[P.s.length - 1] || 0), ks = [], gs = [];
+  for (let s = 0; s <= L2 + 1e-6; s += HOLD_STEP) {
+    const e = evalAlignment(rr.al, s);
+    if (!noData(e.x, e.z)) {
+      ks.push(s);
+      gs.push(ground(e.x, e.z));
+    }
+  }
+  if (!ks.length) return null;
+  return (s) => {
+    let lo = 0, hi = ks.length - 1;
+    while (hi - lo > 1) {
+      const m = lo + hi >> 1;
+      if (ks[m] <= s) lo = m;
+      else hi = m;
+    }
+    return Math.abs(ks[lo] - s) <= Math.abs(ks[hi] - s) ? gs[lo] : gs[hi];
+  };
+}
 var STEEP_GRADE = 0.32;
-function dropLifts(net, ground, noData, fixedRoad, st) {
+function dropLifts(net, ground, noData, fixedRoad, st, edgeHold = true) {
   st.lifted = 0;
   st.maxLift = 0;
   for (const rr of net.roads || []) {
@@ -13016,9 +13037,12 @@ function dropLifts(net, ground, noData, fixedRoad, st) {
     if (lift <= LIFT_TOL) continue;
     const { armA: aA, armB: aB, L: L2, type } = rr;
     const ya = planeY(rr.A, aA.ox, aA.oz), yb = planeY(rr.B, aB.ox, aB.oz);
+    const hold = noData && edgeHold ? heldGround(rr, P, ground, noData) : null;
     const groundAt = (s) => {
       const e = evalAlignment(rr.al, s), y = profileAt(P, s).y;
-      return noData && noData(e.x, e.z) ? y : Math.min(y, ground(e.x, e.z));
+      if (!noData || !noData(e.x, e.z)) return Math.min(y, ground(e.x, e.z));
+      const h = hold ? hold(s) : null;
+      return h == null ? y : Math.min(y, h);
     };
     const np = buildProfile(rr.src, L2, { ya, yb, fixed: pinnedProfile(rr) }, groundAt, Math.max(type.maxGrade, STEEP_GRADE));
     for (let i = 0; i < np.s.length; i++) {
@@ -16400,7 +16424,7 @@ function buildRoadData(o) {
     const h = hm.h;
     return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step;
   };
-  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02), { roughLanes: o.roughLanes !== false, deckLevel: o.deckLevel ?? null });
+  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02), { roughLanes: o.roughLanes !== false, deckLevel: o.deckLevel ?? null, edgeHold: o.edgeLift !== false });
   if (ctx) ctx.zebraKerb = o.roadsR !== false;
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
@@ -22412,6 +22436,7 @@ async function buildTileData(entry, base) {
     ground: roadGround,
     noData: pad?.noData,
     roughLanes: entry.roughLanes !== false,
+    edgeLift: entry.edgeLift !== false,
     recentre: entry.recentre === true,
     roadBend: entry.roadBend !== false,
     roadLines: entry.roadLines !== false,
@@ -23184,4 +23209,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "50ce0f23227e24d2";
+self.__TILE_CODE_HASH = "373c37f95c4caf27";
