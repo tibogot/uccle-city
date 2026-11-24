@@ -116,9 +116,14 @@ a first-time player must be able to catch a pigeon within ~30 s of the start. Th
   - every 8th is a pale racer: fast and dodgy
   - a dodge is warned (hard wingbeats, the ring turns orange "DODGE!")
   - after two escapes a bird is tired: slow, no dodge
-- **Where:** with nothing locked, an arrow points to the nearest pigeons (or the nearest square with a flock).
+- **Where:** with nothing locked, an arrow points to the nearest pigeons (or the nearest square with a flock). The two
+  nearest squares with pigeons also show on the minimap and the full map as a flock glyph (three dots).
+- **The camera:** in a hard pull-out the chase camera turns with the path faster, pulls back and up with the g, and a
+  frame guard keeps the falcon within 60 % of the half field of view. When street-tree crowns hide the falcon (whole
+  crowns, not only their cores), the camera first lifts over them (1.5-8 m) before coming in, eased in ~0.1 s.
 - **The first catch:** a tame pigeon sits on a roof straight ahead under the eyrie's launch. The hint says "hold Shift
-  (or F) to dive onto it".
+  (or F) to dive onto it". While it is uncaught it holds the lock whenever it is in range and within 70 deg of the view,
+  so the ring, the hint and the first catch are the same bird.
 
 ## The catch (`viewer/falconGame/hunt.js`, on top of `falconFlight/falconGame.js`)
 

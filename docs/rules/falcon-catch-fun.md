@@ -60,7 +60,8 @@ The stoop was physically real: 40 m/s only after ~200 m of drop. Over Uccle's 10
 
 | | default | `?falconfun=old` |
 |---|---|---|
-| first catch after the launch | 7.6 s (the tame pigeon) | none in 2 min |
+| first catch after the launch | 7.6 s, the tame pigeon on every seed | none in 2 min |
+| the falcon out of frame (the chase camera simulated) | 0 % of frames, hunts and 150 m stoops | |
 | catches in 2 min | 14-17 (median 15) | 0 |
 | first 5 easy pigeons dived at | 5 / 5 on every seed | n/a (no lock) |
 | auto-dive bumps into a roof | 1 in 91 catches | n/a |
