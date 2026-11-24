@@ -53,10 +53,13 @@ export function shares(h, weekday, out = {}) {
   out.bin = weekday && h >= 6.5 && h < 11 ? 0.006 : weekday && h >= 13 && h < 15 ? 0.002 : 0;
   const cars = 1 - out.van_c - out.van_p - out.taxi - out.police_t - out.ambulance - out.fire - out.bin;
   out.hatch_s = cars * 0.21; out.hatch_c = cars * 0.23; out.estate = cars * 0.15; out.saloon = cars * 0.11; out.suv = cars * 0.30;
+  // (claude/cars1 round 2) the boxy 4x4 takes 8 points of the SUV share (Uccle: a wealthy commune); ?carlook=old none
+  if (!X4_OLD) { out.suv = cars * 0.22; out.x4 = cars * 0.08; }
   return out;
 }
 /** the place: patrols x6 within 700 m of the station; fire engines only within 3 km of the fire station; ambulances and
  *  fire engines on main roads (rank >= 2) x2, elsewhere x0.3; bin lorries never on boulevards (rank >= 4) */
+const X4_OLD = typeof location !== "undefined" && /[?&]carlook=old(&|$)/.test(location.search);
 export function placeBoost(name, x, z, rank) {
   switch (name) {
     case "police_t": return (x - STATION.x) ** 2 + (z - STATION.z) ** 2 < 700 * 700 ? 6 : 1;

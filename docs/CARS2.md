@@ -238,3 +238,21 @@ Owner's bar: Neverness to Everness's cars (stylised, glossy, reflecting the stre
   police 15006 -> 20954; LOD1 and LOD2 identical. Draws unchanged (+2-8 probe draws every 3rd frame, at 64 px).
 - Check: `node tools/audit/carLookGate.mjs`; browser `debug/carLook.js` (`go(dist)`, `strip({kind})`, `probe()`).
 - Next (round 2): new shapes one at a time at this quality, the boxy 4x4 first (tall, square, spare wheel on the back).
+
+## 11. CARS LOOK round 2 (claude/cars1, 2026-11-24)
+- **Probe decision**: OFF by default (`?carprobe=1` on). Fixes tried first: no first-frame burst (the probe fades in over
+  the sky after its first cube), each tile's pipelines + textures warmed before it enters, at most 3 tiles held, a spike
+  log (`__carProbe.stats.spikes`). Police drive, YELLOW, alternated: `?carprobe=0` GPU avg / p95 5.88 / 8.45, 5.08 / 7.60,
+  6.06 / 8.32 ms; probe 7.39 / 10.55, 7.10 / 9.57, 7.18 / 10.16 ms (+1.2 / +1.8). In one page the probe's updates alone
+  were p95 +2.5-3 ms; tile entries still 5-12 ms frames. Needs a much lighter proxy (a decimated building shell per tile,
+  made in the worker) before it can come back.
+- **Body shapes** (cars2.py tables, all 8 + taxi / police): flared arches (28 / 44 mm, SUV 40 / 52) with a WAIST drawing
+  the doors in between them (new `waist`), higher shoulder, more tumblehome, rounder sections (upper / lower exponents
+  3.2 / 2.8 -> 2.7 / 2.5; vans 3.0 / 2.7), softer nose / tail roundings, an arched roof (crown 30 -> 45 mm, roundness 4 ->
+  3), a narrower tapered glasshouse on a 50 mm shoulder ledge, a rising belt to the rear, a taller lamp + grille band and
+  a bigger lower intake. Sizes within 1 cm, LOD1 / LOD2 at or under r0 (gate `carlook`). Sheet:
+  uccle-cars1-ab/r2/shapes_before_after.jpg.
+- **Boxy 4x4** (`x4`, generic Defender / G / Land Cruiser class): 4.52 x 1.86 x 1.88, WB 2.74, wheels 0.375, boxy section
+  (4.2 / 3.6), upright screen, flat bonnet, black cladding, rails, the spare wheel on the tailgate (all LODs). LODs
+  17,200 / 2,180 / 340. Mix: parked 6 % (TYPE_MIX re-weighted for a wealthy commune), traffic 8 % of the cars (SUV
+  30 -> 22 %); SIZES, WHEELS, MASS set. `?carlook=old` keeps the r0 mix (no 4x4).

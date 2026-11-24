@@ -19,13 +19,18 @@ import * as THREE from "three/webgpu";
 import { texture, equirectUV, pmremTexture, mix, uniform, float, smoothstep } from "three/tsl";
 
 export const CARLOOK_OLD = typeof location !== "undefined" && /[?&]carlook=old(&|$)/.test(location.search);
-/** ?carprobe=0: the new paint without the probe (sky environment only: the A/B of the probe alone) */
-export const CARPROBE_OFF = CARLOOK_OLD || (typeof location !== "undefined" && /[?&]carprobe=0(&|$)/.test(location.search));
+/** (round 2) the probe is OFF by default: ?carprobe=1 turns it on. Police drive A/B, YELLOW, 3 + 3 alternated loads:
+ *  GPU avg +1.2 ms, p95 +1.8 ms with it (5.0-6.1 / 7.6-8.5 ms without, 7.1-7.4 / 9.6-10.6 with); live in one page, its
+ *  face draws + PMREM alone: p95 +2.5-3 ms (a probe face draws whole far tiles, 2-5 MB of buildings each, ~100k+
+ *  triangles at 64 px), and a tile entering the probe still cost a 5-12 ms frame (its buffers' first upload). Over the
+ *  +0.5 ms p95 bar (rule car-look): the cars reflect the sky environment only until a lighter proxy exists. */
+export const CARPROBE_OFF = CARLOOK_OLD || !(typeof location !== "undefined" && /[?&]carprobe=1(&|$)/.test(location.search));
 /** the environment node the car materials take (null: none, the scene's environment) + the live probe */
 export const carEnv = { node: null, probe: null };
 
-export const PROBE_R = 260;        // m: the far tiles the probe draws (from the tile's edge; a tile is 500 m: 1-4 tiles)
-const PROBE_KEEP = 450;            // m: a probe tile is dropped beyond this (hysteresis)
+export const PROBE_R = 160;        // m: the far tiles the probe draws (from the tile's edge; a tile is 500 m: 1-4 tiles)
+const PROBE_KEEP = 300;            // m: a probe tile is dropped beyond this (hysteresis)
+const PROBE_MAX = 3;               // tiles held at most (round 2: 6 were held at a corner, each its GPU buffers + ortho)
 
 /**
  * renderer, scene (the city's: its environment = the sky's, its fog), sky = () => the sky's environment texture,
@@ -52,6 +57,9 @@ export function createCarProbe({ renderer, scene, sky, key, groundAt, tiles, siz
   sun.castShadow = false;
   pscene.add(sun, sun.target);
   const w = uniform(0);                       // the weight of cube B
+  // (round 2) the probe's weight over the sky: 0 until the first cube is complete, then faded in over a cycle. Round 1
+  // drew both cubes whole on the first frame (12 faces + their pipelines built synchronously: the 10-16 ms frame)
+  const ready = uniform(0);
   const pmA = pmremTexture(rts[0].texture), pmB = pmremTexture(rts[1].texture);
   // THE CARS' ENVIRONMENT: the probe for what is a REFLECTION (the coat, the base's specular, chrome, glass), the sky's
   // own environment for the DIFFUSE light (three's irradiance context asks for level 1). The probe's irradiance is the
@@ -61,14 +69,14 @@ export function createCarProbe({ renderer, scene, sky, key, groundAt, tiles, siz
     constructor() { super("vec3"); }
     setup(builder) {
       const lvl = builder.context.getTextureLevel ? builder.context.getTextureLevel(this) : float(0);
-      return mix(mix(pmA, pmB, w), pmSky, smoothstep(0.45, 0.9, lvl));
+      return mix(pmSky, mix(pmA, pmB, w), ready.mul(float(1).sub(smoothstep(0.45, 0.9, lvl))));
     }
   }
   const node = new CarEnvNode();
   const pos = new THREE.Vector3(), held = new Map();   // name -> { group, dispose } | "loading"
-  let face = 0, r = 1, frame = 0, fadeFrom = 0, fadeTo = 0, fadeN = 0, primed = false, loading = false;
+  let face = 0, r = 0, frame = 0, fadeFrom = 0, fadeTo = 0, fadeN = 0, warm = null, warmed = false, loading = false, readyN = -1;
   const cycle = 6 * every;
-  const stats = { faces: 0, cycles: 0, tiles: 0, ms: 0, msMax: 0, cpuLast: 0 };
+  const stats = { faces: 0, cycles: 0, tiles: 0, ms: 0, msMax: 0, cpuLast: 0, spikes: [] };
 
   const sync = () => {
     const t = sky(); if (t && skyTex.value !== t) skyTex.value = t;
@@ -87,20 +95,27 @@ export function createCarProbe({ renderer, scene, sky, key, groundAt, tiles, siz
     if (!renderer.autoClear) renderer.clear();
     renderer.render(pscene, cube.children[f]);
   };
-  const drawAll = (rt) => { for (let f = 0; f < 6; f++) drawFace(rt, f); rt.texture.needsPMREMUpdate = true; };
+  /** (round 2) everything a probe draw will need, BEFORE its first draw: the pipelines (compileAsync with a probe camera
+   *  in the probe scene) and the textures' uploads (initTexture): a tile then enters the probe without a hitch */
+  const warmUp = async (obj) => {
+    try { await renderer.compileAsync(obj, cube.children[0], pscene); } catch (err) { console.warn("[carProbe] compile:", err); }
+    const texs = new Set();
+    obj.traverse?.((o) => { const m = o.material; if (m) for (const k of ["map", "normalMap", "roughnessMap"]) if (m[k]?.isTexture) texs.add(m[k]); });
+    for (const t of texs) { try { renderer.initTexture(t); } catch { /* old renderer: uploads at first draw */ } await new Promise((res) => requestAnimationFrame(res)); }
+  };
   /** the far tiles round the probe: load the missing (one at a time), drop the far ones */
   const keepTiles = () => {
-    const want = tiles.near(pos.x, pos.z, PROBE_R);
+    const want = tiles.near(pos.x, pos.z, PROBE_R).slice(0, PROBE_MAX);
     for (const [n, h] of held) {
       if (h === "loading") continue;
-      if (!want.some((e) => e.name === n) && !tiles.near(pos.x, pos.z, PROBE_KEEP).some((e) => e.name === n)) { h.dispose(); held.delete(n); }
+      if (!want.some((e) => e.name === n) && (held.size > PROBE_MAX || !tiles.near(pos.x, pos.z, PROBE_KEEP).some((e) => e.name === n))) { pscene.remove(h.group); h.dispose(); held.delete(n); }
     }
     if (loading) return;
     const e = want.find((x) => !held.has(x.name));
     if (!e) return;
     loading = true; held.set(e.name, "loading");
     tiles.load(e).then(async (h) => {
-      try { await renderer.compileAsync(h.group, cube.children[0], pscene); } catch (err) { console.warn("[carProbe] compile:", err); }
+      await warmUp(h.group);
       pscene.add(h.group); held.set(e.name, h);
     }, (err) => { console.warn(`[carProbe] tile ${e.name}:`, err); held.delete(e.name); })
       .finally(() => { loading = false; stats.tiles = [...held.values()].filter((h) => h !== "loading").length; });
@@ -112,16 +127,18 @@ export function createCarProbe({ renderer, scene, sky, key, groundAt, tiles, siz
   };
 
   const probe = {
-    rts, scene: pscene, stats, weight: w, every, size, skyGain, sun, keyGain: 0.5,
+    rts, scene: pscene, stats, weight: w, ready, every, size, skyGain, sun, keyGain: 0.5,
     /** per frame, before the city's render (main.js updaters) */
     update(camPos) {
       const t0 = performance.now();
       const prevRT = renderer.getRenderTarget(), prevFace = renderer.getActiveCubeFace(), prevMip = renderer.getActiveMipmapLevel(), prevMRT = renderer.getMRT();
       renderer.setMRT(null);
       try {
-        if (!primed) {
-          where(camPos); sync(); drawAll(rts[0]); drawAll(rts[1]); primed = true; keepTiles();
+        if (!warmed) {
+          // the probe scene's own pipelines (sky background, nothing else yet) compiled off the frame, then the faces
+          if (!warm) { where(camPos); sync(); warm = warmUp(pscene).then(() => { warmed = true; }); keepTiles(); }
         } else {
+          if (readyN >= 0 && readyN < cycle) { readyN++; ready.value = Math.min(1, readyN / cycle); }
           // the cross-fade: linear over one cycle toward the cube completed last
           if (fadeN < cycle) { fadeN++; w.value = fadeFrom + (fadeTo - fadeFrom) * Math.min(1, fadeN / cycle); }
           if (frame++ % every === 0) {
@@ -131,6 +148,7 @@ export function createCarProbe({ renderer, scene, sky, key, groundAt, tiles, siz
               face = 0; stats.cycles++;
               rts[r].texture.needsPMREMUpdate = true;                   // its PMREM is made once, at its next use
               fadeFrom = w.value; fadeTo = r; fadeN = 0;
+              if (readyN < 0) { readyN = 0; w.value = fadeFrom = fadeTo = r; fadeN = cycle; }   // the first cube: shown alone
               r = 1 - r;
             }
           }
@@ -141,6 +159,7 @@ export function createCarProbe({ renderer, scene, sky, key, groundAt, tiles, siz
       }
       const ms = performance.now() - t0;
       stats.cpuLast = ms; stats.ms = stats.ms * 0.95 + ms * 0.05; stats.msMax = Math.max(stats.msMax, ms);
+      if (ms > 4 && stats.spikes.length < 50) stats.spikes.push({ ms: +ms.toFixed(1), face, tiles: stats.tiles, t: Math.round(t0) });
     },
     dispose() { for (const h of held.values()) if (h !== "loading") h.dispose(); held.clear(); for (const rt of rts) rt.dispose(); },
   };

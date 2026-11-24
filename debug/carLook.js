@@ -1,6 +1,6 @@
 // CARS LOOK round 1 (claude/cars1, rule car-look, docs/rules/car-look.md): shots of parked cars at fixed distances and the
 // SMOOTH-OR-NOTHING strip (SSR on the paint vs the probe alone, a moving camera, frame-to-frame flicker).
-//   ?quick=1&place=stjob-street (&carlook=old | &carssr=1 | &carprobe=0)
+//   ?quick=1&place=stjob-street (&carlook=old | &carssr=1 | &carprobe=1)
 //   const L = await import("/debug/carLook.js");
 //   await L.go(15)                 the camera 15 m from the parked car nearest the densest street, 3/4 front, 1.5 m up
 //   await L.strip({ kind: "dolly" | "pan" | "still", frames: 90 }) -> { flicker, hot, sharp } medians over the frames: the main
@@ -109,3 +109,30 @@ export async function strip({ kind = "dolly", frames = 90, speed = 6, turn = 25,
   const mean = (k) => acc.reduce((p, r) => p + r[k], 0) / (acc.length || 1);
   return { kind, frames: acc.length, flicker: +(med(0) * 1000).toFixed(3), flickerMean: +(mean(0) * 1000).toFixed(3), hot: +med(1).toFixed(3), hotMean: +mean(1).toFixed(3), px: Math.round(med(2)), variant: location.search.match(/car(look|ssr|probe)=[^&]+/g)?.join(",") || "new" };
 }
+
+/** (round 2) a TRAFFIC car shot (?quick=1&with=traffic): the moving car nearest the camera, the camera `dist` m off its
+ *  front 3/4, the main loop paused and stepped 40 frames re-aiming at it (the TAAU settles; the car keeps driving). */
+export async function goTraffic(dist = 15, { fov = 50, steps = 40 } = {}) {
+  const T = window.__traffic, sim = T?.sim || T?.traffic?.sim || T?.T?.sim;
+  if (!sim) throw new Error("no traffic sim (open with &with=traffic)");
+  const v = V(), cam = v.camera, p = cam.position;
+  let best = -1, bd = 1e12;
+  for (let i = 0; i < sim.alive.length; i++) if (sim.alive[i]) { const d = (sim.x[i] - p.x) ** 2 + (sim.z[i] - p.z) ** 2; if (d < bd) { bd = d; best = i; } }
+  if (best < 0) throw new Error("no traffic car");
+  const held = v.controls.update; v.controls.update = () => false;
+  v.pause(true);
+  try {
+    for (let f = 0; f < steps; f++) {
+      const x = sim.x[best], z = sim.z[best], yw = sim.yaw[best];
+      const fx = Math.cos(yw), fz = -Math.sin(yw), sx = Math.sin(yw), sz = Math.cos(yw);   // (trafficSim: forward = cos, -sin)
+      const cx = x + fx * dist * 0.77 + sx * dist * 0.64, cz = z + fz * dist * 0.77 + sz * dist * 0.64;
+      cam.position.set(cx, v.world.surface(cx, cz) + 1.5, cz); cam.fov = fov; cam.updateProjectionMatrix();
+      cam.lookAt(x, v.world.surface(x, z) + 0.7, z); cam.updateMatrixWorld();
+      v.step(1 / 60);
+      if (f % 4 === 0) await sleep(0);
+    }
+  } finally { v.controls.update = held; }
+  return { type: sim.type ? sim.type[best] : "?", d: Math.sqrt(bd) };
+}
+/** the main loop back on after goTraffic (the shot is taken while paused) */
+export const resume = () => V().pause(false);

@@ -20,6 +20,7 @@ import { PACK_SOURCES, packMaterial, FLEET_SOURCE, CARS_OLD, GLASS_PASS, glassGe
 import { MultiDrawSet, multiDrawOK } from "./multiDraw.js";
 import { dentFrame } from "./drive/carDent.js";
 import { HEAVY_TYPES, HEAVY_URL } from "./traffic/trafMix.js";   // TRAFMIX: the traffic's service vehicles (not parked)
+import { CARLOOK_OLD } from "./carProbe.js";                      // claude/cars1: ?carlook=old = the r0 family (no 4x4)
 
 /** ?carmerge=old: one InstancedMesh per (type, LOD, plain / fade): 26 scene + 11 shadow render objects in a street,
  *  instead of one multi-draw mesh per (material, shadow) (6 + 4; viewer/multiDraw.js, docs/perf/AUDIT.md step 13) */
@@ -34,15 +35,17 @@ const _jB = [], _jC = [], _jF = [];
 const FLEET_OPT = typeof location === "undefined" || new URLSearchParams(location.search).get("fleetopt") !== "old";
 const _setCols = { instanceMatrix: null, paint: null, lodFade: null };
 
-// the mix (a residential Brussels street): mostly hatchbacks, estates and saloons, some SUVs and compact vans, a few
-// panel vans, an occasional taxi
-export const TYPE_MIX = [["hatch_s", 0.20], ["hatch_c", 0.22], ["estate", 0.16], ["saloon", 0.13], ["suv", 0.13], ["van_c", 0.09], ["van_p", 0.035], ["taxi", 0.015]];
+// the mix (a residential Brussels street in a wealthy commune): mostly hatchbacks, estates and saloons, SUVs, the boxy
+// 4x4 (claude/cars1 round 2: Uccle's leafy streets, 6 %), compact vans, a few panel vans, an occasional taxi
+export const TYPE_MIX = [["hatch_s", 0.18], ["hatch_c", 0.195], ["estate", 0.16], ["saloon", 0.13], ["suv", 0.15], ["x4", 0.06], ["van_c", 0.085], ["van_p", 0.035], ["taxi", 0.015]];
+// ?carlook=old: the mix before round 2 (the r0 GLB has no 4x4)
+if (CARLOOK_OLD) TYPE_MIX.splice(0, TYPE_MIX.length, ["hatch_s", 0.20], ["hatch_c", 0.22], ["estate", 0.16], ["saloon", 0.13], ["suv", 0.13], ["van_c", 0.09], ["van_p", 0.035], ["taxi", 0.015]);
 // body sizes [w, h, l] (m), as tools/blender/carFaceted.py prints them (the colliders need them before the pack loads)
 // (cars2: as tools/blender/cars2.py prints them; ?cars=old: the faceted family's)
 export const SIZES = CARS_OLD ? { hatch_s: [1.74, 1.50, 4.01], hatch_c: [1.80, 1.50, 4.31], estate: [1.80, 1.51, 4.63], saloon: [1.82, 1.49, 4.73],
   suv: [1.82, 1.64, 4.41], van_c: [1.84, 1.82, 4.50], van_p: [2.02, 2.28, 5.05], taxi: [1.80, 1.61, 4.67] }
   : { hatch_s: [1.77, 1.44, 4.09], hatch_c: [1.81, 1.45, 4.31], estate: [1.85, 1.47, 4.70], saloon: [1.85, 1.44, 4.73],
-    suv: [1.84, 1.56, 4.33], van_c: [1.88, 1.84, 4.53], van_p: [1.95, 1.98, 5.03], taxi: [1.85, 1.59, 4.73], police: [1.85, 1.47, 4.70] };
+    suv: [1.84, 1.56, 4.33], van_c: [1.88, 1.84, 4.53], van_p: [1.95, 1.98, 5.03], taxi: [1.85, 1.59, 4.73], police: [1.85, 1.47, 4.70], x4: [1.86, 1.88, 4.52] };
 // paints (sRGB): Brussels car parks are mostly black, greys, silver and white
 export const PAINTS = [0x0d0e10, 0x0d0e10, 0x0d0e10, 0x1a1c1f, 0x34383d, 0x34383d, 0x4a4e53, 0x5a5e63, 0x8f959c, 0x9ea4ab, 0x9ea4ab, 0xb8bcc0,
   0xe8e8e4, 0xe8e8e4, 0xdcdcd6, 0x1d3f6e, 0x1d2c4a, 0x2e5a8a, 0x8a1414, 0x5a1010, 0x24483a, 0x6b5a48, 0x3a3226];

@@ -28,18 +28,24 @@ const STREET = JSON.parse(/export const TYPE_MIX = (\[.*?\]);/s.exec(rd("viewer/
 const KNOWN = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12]);
 
 const now = glb("models/cars/cars2.glb"), old = glb("models/cars/cars2_r0.glb");
+const lvl0 = (name) => (/_L(\d)$/.exec(name) ? +RegExp.$1 : 0);
+const maxOld = (L) => Math.max(...old.filter((q) => q.id !== "police").map((q) => q.parts.filter((p) => lvl0(p.name) === L).reduce((a, p) => a + p.mesh.I.length / 3, 0)));
+const NEW_TYPES = { x4: { t0: [null, maxOld(1), maxOld(2)] } };
+// the fleet's SIZES (viewer/carFleet.js) must be the GLB's (colliders, slots): within 1 cm for every street type
+const SIZES_SRC = /x4: \[([\d., ]+)\]/.exec(readFileSync(path.join(ROOT, "viewer/carFleet.js"), "utf8"));
 const lvl = (name) => (/_L(\d)$/.exec(name) ? +RegExp.$1 : 0);
 const tris = (car, L) => car.parts.filter((p) => lvl(p.name) === L).reduce((a, p) => a + p.mesh.I.length / 3, 0);
 const kinds = (car, L) => { const s = new Set(); for (const p of car.parts) if (lvl(p.name) === L) for (const k of p.mesh.K) s.add(Math.round(k)); return s; };
 const rows = [];
 for (const c of now) {
-  const o = old.find((q) => q.id === c.id);
-  if (!ok(!!o, `${c.id}: in cars2_r0.glb`)) continue;
-  const t = [0, 1, 2].map((L) => tris(c, L)), t0 = [0, 1, 2].map((L) => tris(o, L));
+  // a NEW type (round 2: the boxy 4x4) has no r0 twin: its LOD1 / LOD2 within the r0 street types' largest
+  const o = old.find((q) => q.id === c.id) || NEW_TYPES[c.id];
+  if (!ok(!!o, `${c.id}: in cars2_r0.glb or a listed new type`)) continue;
+  const t = [0, 1, 2].map((L) => tris(c, L)), t0 = o.parts ? [0, 1, 2].map((L) => tris(o, L)) : o.t0;
   rows.push(`${c.id.padEnd(8)} LOD0 ${t0[0]} -> ${t[0]}   LOD1 ${t0[1]} -> ${t[1]}   LOD2 ${t0[2]} -> ${t[2]}`);
   ok(t[0] <= (c.id === "police" ? LOD0_MAX_POLICE : LOD0_MAX), `${c.id}: LOD0 ${t[0]} tris <= ${c.id === "police" ? LOD0_MAX_POLICE : LOD0_MAX}`);
   ok(t[1] <= t0[1] && t[2] <= t0[2], `${c.id}: LOD1 ${t[1]} <= ${t0[1]}, LOD2 ${t[2]} <= ${t0[2]} (the far bands do not grow)`);
-  const s = c.extras.size, s0 = o.extras.size;
+  const s = c.extras.size, s0 = o.extras?.size || s;
   ok(s.every((v, i) => Math.abs(v - s0[i]) <= 0.01), `${c.id}: size ${s} within 1 cm of r0 ${s0}`);
   for (const L of [0, 1, 2]) { const bad = [...kinds(c, L)].filter((k) => !KNOWN.has(k)); ok(!bad.length, `${c.id} LOD${L}: known kinds only${bad.length ? ` (unknown ${bad})` : ""}`); }
   if (STREET.includes(c.id)) {
@@ -49,6 +55,10 @@ for (const c of now) {
   ok(!kinds(c, 1).has(12) && !kinds(c, 2).has(12), `${c.id}: no panel-gap slot at LOD1 / LOD2`);
 }
 ok(STREET.every((t) => now.some((c) => c.id === t)), `every street type (${STREET.join(" ")}) in cars2.glb`);
+{ const x4 = now.find((c) => c.id === "x4"), S = SIZES_SRC && SIZES_SRC[1].split(",").map(Number);
+  ok(!!x4 && !!S && x4.extras.size.every((v, i) => Math.abs(v - S[i]) <= 0.01), `x4: carFleet SIZES ${S} = the GLB's ${x4?.extras.size} (1 cm)`);
+  const k0 = x4 ? kinds(x4, 0) : new Set();
+  ok(STREET.includes("x4"), "x4 in the street mix (TYPE_MIX)"); }
 
 // ---- the material and the probe (text)
 const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[\s;,){])\/\/.*$/gm, "$1");
@@ -60,6 +70,9 @@ ok(/CARLOOK_OLD \? "\.\.\/\.\.\/models\/cars\/cars2_r0\.glb"/.test(packs), "carP
 ok(/drawFace\(rts\[r\], face\)/.test(probe) && /frame\+\+ % every === 0/.test(probe), "carProbe: one cube face per step");
 ok(/mix\(pmA, pmB, w\)/.test(probe) && /needsPMREMUpdate = true/.test(probe), "carProbe: two cubes, cross-faded, a PMREM per completed cube");
 ok(!/DynamicDrawUsage/.test(probe), "carProbe: no DynamicDrawUsage");
+// (round 2) the probe stays OFF by default (GPU p95 +1.8 ms measured): only ?carprobe=1 turns it on
+ok(/CARPROBE_OFF = CARLOOK_OLD \|\| !\(typeof location !== "undefined" && \/\[\?&\]carprobe=1/.test(probe), "carProbe: off by default (?carprobe=1 on)");
+ok(/const ready = uniform\(0\)/.test(probe) && /warmUp\(h\.group\)/.test(probe), "carProbe: no first-frame burst (faded in), tiles warmed before they enter");
 const iProbe = main.indexOf("createCarProbe({"), iTraffic = main.search(/createTraffic|trafficFleet/);
 ok(iProbe > 0 && main.indexOf("updaters.push(probe.update)") > iProbe, "main.js: the probe is made and updated per frame");
 ok(iProbe > 0 && (iTraffic < 0 || iProbe < iTraffic), "main.js: the probe exists before the traffic's car materials");

@@ -1379,7 +1379,7 @@ async function main() {
   if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
   // CARS LOOK (claude/cars1, docs/rules/car-look.md): the cars' reflection probe (viewer/carProbe.js): the sky AND the
   // city round the player in every car's clear coat, from the far tiles' proxy, one cube face every 3 frames, made
-  // before any car material (packMaterial reads carEnv.node). ?carlook=old / ?carprobe=0: none (the sky environment)
+  // before any car material (packMaterial reads carEnv.node). OFF by default since round 2 (GPU p95 +1.8 ms): ?carprobe=1 on
   if (!CARPROBE_OFF) {
     const live = manifest.tiles.filter((t) => t.status !== "missing");
     const near = (x, z, R) => live.filter((t) => Math.max(t.bounds.x[0] - x, x - t.bounds.x[1], 0) ** 2 + Math.max(t.bounds.z[0] - z, z - t.bounds.z[1], 0) ** 2 < R * R)

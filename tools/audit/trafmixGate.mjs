@@ -109,12 +109,12 @@ const BEACON = new Set(["police_t", "ambulance", "fire"]);
 }
 
 // ---------------------------------------------------------------- 2. the mix tables
-const GROUP = (n) => (["hatch_s", "hatch_c", "estate", "saloon", "suv"].includes(n) ? "car" : n === "van_c" || n === "van_p" ? "van" : n);
+const GROUP = (n) => (["hatch_s", "hatch_c", "estate", "saloon", "suv", "x4"].includes(n) ? "car" : n === "van_c" || n === "van_p" ? "van" : n);
 {
   const bad = [];
   for (const h of [3, 8, 13, 18, 22]) {
-    const s = shares(h, true), car = s.hatch_s + s.hatch_c + s.estate + s.saloon + s.suv, van = s.van_c + s.van_p;
-    if (Math.abs(s.suv / car - 0.30) > 0.05) bad.push(`${h} h SUV ${(s.suv / car * 100).toFixed(0)} % of cars`);
+    const s = shares(h, true), suv = s.suv + (s.x4 || 0), car = s.hatch_s + s.hatch_c + s.estate + s.saloon + suv, van = s.van_c + s.van_p;
+    if (Math.abs(suv / car - 0.30) > 0.05) bad.push(`${h} h SUV + 4x4 ${(suv / car * 100).toFixed(0)} % of cars`);
     if (h >= 7 && h < 19 ? van < 0.08 || van > 0.15 : van > 0.08) bad.push(`${h} h vans ${(van * 100).toFixed(1)} %`);
     if (!(s.police_t > 0.003 && s.police_t < 0.012)) bad.push(`${h} h patrols ${(s.police_t * 100).toFixed(2)} %`);
     if (!(s.ambulance > 0.001 && s.ambulance < 0.005)) bad.push(`${h} h ambulances`);
