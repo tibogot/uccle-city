@@ -33,13 +33,13 @@ repair, coplanar clean, ground fit + wall feet, facade kit walls; heroes' solids
 Load: the whole city, 120 tiles / 25,412 buildings / 9.77 M edge rays, in ~4 min sequential on a warm tile cache, one
 node process, ~1 GB.
 
-## 1. UrbIS 520249 (building 1787335, I3, Langeveld): its walls ARE drawn; the eye stood inside it
+## 1. UrbIS 520249 (building 1787335, I3): its walls ARE drawn; the eye stood inside it
 
 `--solid 520249`: 1,860 edge rays over all 8 footprint edges, **1,860 meet a front-facing wall** (every column `o`, the
 party stretches against 713851 / 538674 / 543646 / 713847 `p`), 0 missing, 0 inward, roof closed (0 of its roof
 points open). The UrbIS solid is complete (76 wall triangles, all wound outward) and the tile build keeps it.
 
-The billboards tour's eye for the Langeveld trivision, `at 1504.6,-947.3,1.7` (views_bb2.json, and the first run's
+The billboards tour's eye for the trivision, `at 1504.6,-947.3,1.7` (views_bb2.json, and the first run's
 `1502.1,-946.1,1.7` in views_billboards.json), stands **2.2 m inside the footprint's north-east edge**, at y 108.2 under
 the block's roof at 122-127 m (ground 106.5, the walls' feet at 101.4). From there every direction meets a wall from
 BEHIND (8 horizontal rays: all `BACK`, 2.2-29 m), and the wall material is FrontSide (rule faces-out), so every wall of
@@ -84,23 +84,23 @@ second. Missing samples split 10,234 recess (a front face deeper in) / 12,713 th
 | tile | solid (building) | m2 | cause | where (x, z) | what is missing |
 |---|---|---|---|---|---|
 | B5 | 561065 (1781349) | 494 | E3 data LOW | -2528.6, 69.2 | the 240 m block's stepped ends: the lowest 2-6 m of 9 end walls (260 recess, 715 through) |
-| D5 | 507248 (1789121) | 414 | E3 data LOW | -1199.1, 115.1 (Rue de Stalle 70) | the lowest ~4-9 m on 4 edges: a recessed ground floor (752 of 828 recess) |
-| F7 | 723572 (1591486) | 414 | E2 empty edge | -368.8, 1378.8 (Rue de Verrewinkel 95D) | 2 long walls (19.8 + 14.9 m) with no UrbIS triangle at all |
-| F7 | 723573 (1778333) | 360 | E2 empty edge | -386.5, 1372.7 (Verrewinkel 95C) | the same: empty edges, 80 columns |
-| H1 | 509208 (1581081) | 311 | E4 short + E2 | 912.7, -1555.7 (Rue Dodonée 92) | walls stop under the roof (65 columns) |
-| H1 | 541447 (1779496) | 256 | E5 srcIn | 678.3, -1874.9 (Rue Alphonse Renard 86) | the north edge seen from behind (an overlapping solid 541177 inside it) |
-| D3 | 750156 (1796119) | 212 | E3 data LOW | -1063.1, -641.6 (Rue Beeckman 87) | open under, 74 columns |
-| J4 | 655873 (1760821) | 155 | E3 + E2 | 1676.8, -353 (Ch. de Waterloo 964) | open low (95 columns) |
-| K7 | 548053 (1797359) | 135 | E2 | 2055.5, 1342.4 (Drève du Caporal 5C) | empty edges, 27 columns |
-| J5 | 761186 + 760045 | 117 + 117 | E3 | 1742.2, 105.3 (Av. Hamoir 8) | the solid given twice (zfight's solidsGone keeps one): open low |
+| D5 | 507248 (1789121) | 414 | E3 data LOW | -1199.1, 115.1 | the lowest ~4-9 m on 4 edges: a recessed ground floor (752 of 828 recess) |
+| F7 | 723572 (1591486) | 414 | E2 empty edge | -368.8, 1378.8 | 2 long walls (19.8 + 14.9 m) with no UrbIS triangle at all |
+| F7 | 723573 (1778333) | 360 | E2 empty edge | -386.5, 1372.7 | the same: empty edges, 80 columns |
+| H1 | 509208 (1581081) | 311 | E4 short + E2 | 912.7, -1555.7 | walls stop under the roof (65 columns) |
+| H1 | 541447 (1779496) | 256 | E5 srcIn | 678.3, -1874.9 | the north edge seen from behind (an overlapping solid 541177 inside it) |
+| D3 | 750156 (1796119) | 212 | E3 data LOW | -1063.1, -641.6 | open under, 74 columns |
+| J4 | 655873 (1760821) | 155 | E3 + E2 | 1676.8, -353 | open low (95 columns) |
+| K7 | 548053 (1797359) | 135 | E2 | 2055.5, 1342.4 | empty edges, 27 columns |
+| J5 | 761186 + 760045 | 117 + 117 | E3 | 1742.2, 105.3 | the solid given twice (zfight's solidsGone keeps one): open low |
 | E3 | 526306 | 53 | **E1 feet** (106 / 106) | -956.2, -569.7 | wall torn by the feet |
-| J7 | 718039 | 52.5 | **E1 feet** (105 / 105) | 1872.2, 1034.5 (Av. du Fort-Jaco 24) | idem |
+| J7 | 718039 | 52.5 | **E1 feet** (105 / 105) | 1872.2, 1034.5 | idem |
 | K6 | 726369 | 48 | **E1 feet** (96 / 96) | 2027.6, 570.7 | idem |
-| F4 | 533428 | 43.5 | **E1 feet** (87 / 87) | -217, -129.8 (Av. Paul Stroobant 41) | idem |
-| E5 | 525238 | 43.5 | **E1 feet** (87 / 87) | -996, 148.7 (Rue Rittweger 6) | idem (the census's old E5 worst spot) |
+| F4 | 533428 | 43.5 | **E1 feet** (87 / 87) | -217, -129.8 | idem |
+| E5 | 525238 | 43.5 | **E1 feet** (87 / 87) | -996, 148.7 | idem (the census's old E5 worst spot) |
 | E4 | 523869 | 40 | **E1 feet** (80 / 80) | -831.8, -374.1 | idem |
-| I8 | 542120 | 33 | **E1 feet** (62 / 66) | 1280.1, 1673.3 (Clos de Wagram 10) | idem |
-| I3 | 540548 (1727902) | 7 | **E1 feet** (11 / 14) | 1139.3, -902.7 (Av. de la Floride 63A) | traced below |
+| I8 | 542120 | 33 | **E1 feet** (62 / 66) | 1280.1, 1673.3 | idem |
+| I3 | 540548 (1727902) | 7 | **E1 feet** (11 / 14) | 1139.3, -902.7 | traced below |
 
 The full list (every building, per-edge numbers) is what the script writes with `--out`.
 
@@ -113,10 +113,10 @@ drive colliders) calls an edge a FOOT when both its corners are the lowest wall 
 0.6; it then moves every vertex at that x|z|y, in EVERY wall triangle of the building, down by the shift. The test looks
 at vertices only, so it also takes:
 
-- **the top of a plinth under a recess** (I3 536783, Av. De Fré 202): the front's lower wall triangle (9061) ends at a
+- **the top of a plinth under a recess** (I3 536783): the front's lower wall triangle (9061) ends at a
   flat edge at 103.0 m, the recessed porch behind it starts there; both corners are the lowest vertices at their x|z (the
   wall under them has no vertex there): the plinth's TOP is sunk to the ground and the wall collapses, 8 columns open;
-- **a step in the solid's bottom outline** (I3 540548, Av. de la Floride 63A): a sliver triangle's corner B (105.66) sits
+- **a step in the solid's bottom outline** (I3 540548): a sliver triangle's corner B (105.66) sits
   over the big wall triangle A-C-D that runs down to 102.32; A-B passes the test, A and B go down 2.57 m while C stays:
   the A-C line drops, the sliver turns over (wound inward) and a 1.5 m band under the roof opens (11 of 14 samples);
 - **a hanging edge over a porch** (I3 539754): the porch lintel at 107.69 is 2.4 m over the ground (under MAX_GAP 2.5)
@@ -135,20 +135,20 @@ checked for contact (the foot meets the ground), not for what they do to the wal
 ### E2: UrbIS edges with no wall triangle at all are never repaired
 
 viewer/wallRepair.js `repairWalls` rebuilds an edge whose UrbIS triangles cover it under 85 %, but skips an edge with
-NO triangle on it (`if (!on.length) continue;`): Verrewinkel 95C / 95D (F7 723572 / 723573: the two long sides of each
+NO triangle on it (`if (!on.length) continue;`): F7 723572 / 723573 (the two long sides of each
 block, 15-20 m, are simply absent in the source), 100 buildings / 3,236 m2 (73 of them mostly see-through). wallAudit.mjs's "roofOnly" counts only
 solids whose EVERY open edge is bare (canopies), so a solid with some walls and some empty edges passes `shell`.
 
 ### E3: open low (walls closed above, open near the ground)
 
 100 buildings / 3,792 m2, 65 of them mostly RECESS (a front face further in): a ground floor set back under the upper floors, an
-undercroft on pilotis, a passage (D5 Rue de Stalle 70: 752 of 828 samples recess). Many are real; the rest are walls
+undercroft on pilotis, a passage (D5 507248: 752 of 828 samples recess). Many are real; the rest are walls
 whose foot stands over the drawn ground by more than FEET.MAX_GAP (2.5 m: the feet do not reach) or a solid given twice
-(J5 Av. Hamoir 8). Needs a Street View look per case before any fix (look only).
+(J5 761186 / 760045). Needs a Street View look per case before any fix (look only).
 
 ### E4 / E5 / R: the source itself
 
-- E4 short (16 / 428 m2): UrbIS walls ending under their own roof's edge (H1 Rue Dodonée 92).
+- E4 short (16 / 428 m2): UrbIS walls ending under their own roof's edge (H1 509208).
 - E5 inward (49 / 603 m2): UrbIS wall triangles wound into the footprint that wallRepair does not judge (or the wall of
   an overlapping solid seen from behind: H1 541447 / 541177).
 - R roof down (138 buildings >= 2 m2): UrbIS roof triangles facing DOWN with nothing of the solid over them (I1 540558:
@@ -176,7 +176,7 @@ whose foot stands over the drawn ground by more than FEET.MAX_GAP (2.5 m: the fe
    drive colliders' "missing" count (rule colliders-match-drawn: the skirt is drawn and collides as the sunk wall did).
 2. **E2, viewer/wallRepair.js**: an edge with no triangle, not a party stretch, under the building's own roof and not a
    recess (the same `probe()`), is rebuilt like a partial one (a quad strip from the base to the roof's edge over it).
-   `?wallfix=old` keeps the old behaviour. Expected: 100 buildings / 3,236 m2 -> ~0 (Verrewinkel 95C / 95D).
+   `?wallfix=old` keeps the old behaviour. Expected: 100 buildings / 3,236 m2 -> ~0.
 3. **R**: a roof triangle facing down with nothing of its own solid over it is flipped (the roof's up side drawn), in
    facadeGeom.js where the roof triangles are pushed (138 buildings).
 4. E3 / E4 / E5: after a Street View look (look only) per worst case; real arcades and undercrofts stay open.
@@ -218,3 +218,50 @@ export default {
 - Time: ~4 min sequential, ~1-1.5 min with `--jobs 4` on a warm tile cache (the gate builds the tiles anyway); a fast
   lane variant on the 6 tiles with the most cases (I3, F7, H1, D5, E5, J5) for small branches.
 - The billboards row keeps its own eye check (its street eyes are generated, not listed in the tour files).
+
+## 6. After the fix (claude/walls2, 2026-11-24)
+
+Rule `walls-closed-from-street` (provisional), gate row `walls` (tools/audit/gate.d/walls.mjs: this census with `--gate
+tools/audit/missingWalls.ceil.json --selftest --eyes tools/tour/views*.json`). Switches: `?feet=old`, `?wallempty=old`.
+
+- **E1 (viewer/groundFit.js sinkFeet)**: a foot is an edge on the wall mesh's lower boundary only: no triangle on it
+  reaching below its line, and neither corner PINNED (a wall triangle of the building, any slope, holding the point 5 cm
+  under it). The corners of such a false edge are FROZEN: never moved by a true foot sharing them (that alone left 20
+  false-foot vertices moved on I3). The looser test of section 4 (the building's wall going on 0.5 m lower within 1.5 m)
+  tore no fewer walls on the 7 worst tiles and reopened ~300 gap samples under walls on slopes (K11 0 -> 339, D6, F6): not
+  used. footGaps (tools/groundfit/scan.mjs's check) skips the same false feet.
+- **E2 (viewer/wallRepair.js)**: an edge with no UrbIS triangle is judged like a partial one, its top line the
+  building's roof just inside it; party stretches and recesses (the rays in meet a front face or nothing) stay open.
+- **R** (roofs wound down): tried (flip a down-facing roof triangle with nothing of its solid over its centre) and
+  dropped: I1 540558's 98.6 m slabs lie under other roof layers and the roof holes there grew (499 -> 656 points).
+- **feetMoved** (new census count, the gate's hard 0): a STRICT false-foot vertex of the source (wall under it) that the
+  drawn walls no longer hold, with a lower vertex at its x|z the source does not have (a wall wallRepair rebuilt from the
+  base excluded). ?feet=old: 92 on I3; now 0 city-wide.
+
+| city, 120 tiles (samples of 0.5 x 1 m) | before (2726c13a) | after |
+|---|---|---|
+| lost (the pipeline lost a wall the source has) | 9,952 | **886** |
+| of it on a false foot (section 3's test) | 8,387 | 197 |
+| strict false feet moved | (92 on I3 alone) | **0** |
+| nowall.data (E2 empty edges, the source open) | 6,723 | **1,864** |
+| low.data (open low, gaps under walls included) | 7,312 | 7,213 |
+| short.data (E4) / srcIn (E5) | 731 / 1,187 | 727 / 1,189 (not touched) |
+| inward (drawn faces seen from behind) | 3,058 | 2,052 |
+| buildings open >= 1 m2 / >= 10 m2 | 1,261 / 222 | **389 / 100** |
+| by cause (buildings / m2): lost / data / srcIn | 996 / 4,755; 216 / 7,456; 49 / 603 | 140 / 264; 199 / 4,973; 50 / 609 |
+| orphan balconies / tour eyes inside a building | 2 / 0 of 47 | 2 / 0 of 47 |
+| `shell` row (wallAudit): edges rebuilt, after, inwardM2 | 240, 3, 15 | 295, 3, 15 |
+
+Self-test (in the row): `?feet=old` on I3 fails (lost 139 > 20, feetMoved 92 > 0), `?wallempty=old` on F7 fails (nowall.data
+1,548 > 3). Ceilings: per tile and city-wide, this run + max(3, 3 %), lowered only (`--ratchet`).
+
+Left (not touched, Street View look first):
+- E3 open low (data): the gap samples fell city-wide (7,312 -> 7,213), but ~20 buildings now show a gap the old feet used to
+  close by accident (the torn walls made wallRepair rebuild the edge from the base): walls standing 2.8 m or more over the
+  ground, past FEET.MAX_GAP (E4 549046 46 samples, C8 507606 34, M5 688148 32, F6 540238 26, H6 543916 25, D5 507427 21,
+  C4 661319 17). Worst E3 overall: B5 561065, D5 507248, D3 750156, J4 655873, J5 761186 / 760045 (the solid given twice),
+  F8 508348, F5 529178.
+- E4 short: H1 509208 (54 columns). E5 inward in UrbIS: H1 541447 (overlapping solid 541177).
+- lost 886 samples / 140 buildings (mostly small: 264 m2): not the feet (197 on a loose false foot, 0 strict moved);
+  coplanar clean / kit cuts, to trace next.
+- R roofs wound down: 138 buildings, needs a per-layer test (see above).
