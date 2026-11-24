@@ -278,3 +278,11 @@ stair passages today, one new wider gently sloped passage planned, PMR and bikes
 question 2025-03-20 "Accès des PMR et familles à la gare de Calevoet" (title and search summary only: the PDF is a
 scan); Wikimedia Commons photos by Stratoswift ("Calevoet Station - Tunnel", 2018; "- Tunnel2", 2019; "Gare de
 Calevoet (abri et tunnel)", 2024) and the "Ukkel-Kalevoet station 2019" set: looked at only, not kept.
+
+## Owner decisions (2026-11-24)
+
+- Build **U1 first** (the public street-to-street tunnel), **U2 later** as its own small job.
+- Walls: **our own invented mural** in the spirit of the real underwater one, plus a few tags (never a copy of the real artwork).
+- Kid game: the bike **rides the stair gutters** (a stunt), not carried.
+- The owner does not remember the inside: go with the photos plus the Street View look (job 0).
+- Today's stairs, not the unbuilt ramp project (default kept).
