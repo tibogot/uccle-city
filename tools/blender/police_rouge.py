@@ -697,13 +697,22 @@ def street_signs(far):
     pts = [P(uu + 0.05, ww + 0.30, h0), P(uu + 0.05, ww - 0.30, h0), P(uu + 0.05, ww - 0.30, h1), P(uu + 0.05, ww + 0.30, h1)]
     face_dir(pts, Vector((1, 0, 0)), SIGN, C_TEXT, [(0.0, 0.5), (1.0, 0.5), (1.0, 0.75), (0.0, 0.75)])
 
+FLAG_POLES = []
 def flags(far):
     """three flagpoles in front of wing A behind the hedge line (Belgium, Europe, Europe as in April 2024): tapered
-    aluminium poles with a ball, the flags hanging in a light breeze (cloth with folds, two sides)"""
+    aluminium poles with a ball, the flags hanging in a light breeze (cloth with folds, two sides).
+    The modelled flags (slot flag_fabric) are a STILL picture: the city hides that slot and flies the cloth flags of
+    viewer/flagsCity.js on these poles (police.json flag_poles; rule docs/rules/flags-are-cloth.md)"""
+    if not far: FLAG_POLES.clear()
     for k, (ww, code) in enumerate(((-4.4, C_FLAG_EU), (-1.4, C_FLAG_BE), (1.6, C_FLAG_EU))):
         uu = 24.55
         g = ground(uu, ww)
         top = g + 8.6
+        if not far:
+            cx, cz = city(uu, ww)
+            FLAG_POLES.append({"name": ("north", "centre", "south")[k], "design": "eu" if code == C_FLAG_EU else "belgium",
+                               "base_city_xyz": [round(cx, 3), round(g, 3), round(cz, 3)], "tip_city_xyz": [round(cx, 3), round(top, 3), round(cz, 3)],
+                               "hoist_m": 1.0, "fly_m": 1.5})
         K.B.new_group()
         lathe(P(uu, ww, g - 0.2), [(0.055, 0.0), (0.05, 2.0), (0.032, top - g + 0.2)], 16, GALV, C_FRAME, smooth=True)
         KT.knob(P(uu, ww, top + 0.24), 0.06, GALV, C_FRAME, rings=6, segs=12)
@@ -1088,6 +1097,10 @@ info = {
                  "the window joinery's sections, the screens' positions (as seen in April 2024), the gate leaf's parked place, the hedge's "
                  "height, the flagpoles' exact places, the roof hatch",
     "landmarks": LANDMARKS,
+    # the poles the city flies its cloth flags from (viewer/policeCity.js -> flagsCity.js flyFlags); the slot(s) holding
+    # the modelled still flags, hidden in the city (rule flags-are-cloth; gate row flags)
+    "flag_poles": FLAG_POLES,
+    "rigid_flag_slots": ["flag_fabric"],
 }
 json.dump(info, open(os.path.join(OUT, "police.json"), "w"), indent=1)
 print(f"done {time.time() - T0:.1f}s")
