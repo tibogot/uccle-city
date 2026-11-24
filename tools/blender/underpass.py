@@ -1262,7 +1262,7 @@ notes = {
     "stream": {"fetch_m": 80, "show_m": 50, "hide_m": 70, "unload_s": 20},
     "slots": {"surface": SURF_SLOTS, "inside": IN_SLOTS}, "codes": CODES,
     "tris": TRIS, "times": TIMES, "samples": SAMPLES, "device": DEVICE,
-    "mural": {"file": "mural.png", "atlas": "rows 0-2: 10 m x 2.5 m mural strips (UV0.x 0..30 m), row 3: x 30..37 the lettering band, 37..40 the signs; texture v = 1 - (row * 2.5 + v) / 10",
+    "mural": {"file": "mural.png", "atlas": "rows 0-2: 10 m x 2.5 m mural strips (UV0.x 0..30 m), row 3: x 30..37 the lettering band, 37..40 the signs; texture v (bottom-up) = (row * 2.5 + v) / 10",
               "about": "OUR OWN invented underwater scene (sea, kelp, corals, fish, a turtle, a diver's helmet, a wreck, jellyfish, bubbles) + invented tags; never a copy of the real murals"},
     "measured": "OSM ways (site.json), the UrbIS kiosk solids 525169 / 519275 (footprint, base, eaves), the DTM (heightmap.js surface), rail.json",
     "estimated": "floor 48.40 m, clear height 2.45 m, corridor 2.6 m clear, risers / goings, the kiosk's finish (plan §1-2 + the Street View look)",

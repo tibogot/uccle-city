@@ -681,7 +681,7 @@
  "device": "GPU",
  "mural": {
   "file": "mural.png",
-  "atlas": "rows 0-2: 10 m x 2.5 m mural strips (UV0.x 0..30 m), row 3: x 30..37 the lettering band, 37..40 the signs; texture v = 1 - (row * 2.5 + v) / 10",
+  "atlas": "rows 0-2: 10 m x 2.5 m mural strips (UV0.x 0..30 m), row 3: x 30..37 the lettering band, 37..40 the signs; texture v (bottom-up) = (row * 2.5 + v) / 10",
   "about": "OUR OWN invented underwater scene (sea, kelp, corals, fish, a turtle, a diver's helmet, a wreck, jellyfish, bubbles) + invented tags; never a copy of the real murals"
  },
  "measured": "OSM ways (site.json), the UrbIS kiosk solids 525169 / 519275 (footprint, base, eaves), the DTM (heightmap.js surface), rail.json",

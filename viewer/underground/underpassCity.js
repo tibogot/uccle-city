@@ -100,7 +100,8 @@ function bakedLight() {
 }
 function insideMaterial(slot, mural, codes) {
   const m = new THREE.MeshBasicNodeMaterial();
-  const p = uv(), C = codes[slot] || {};
+  // (the glTF export stores v' = 1 - v: UV0's metres come back with y = 1 - (height over the floor / the stair line))
+  const p = vec2(uv().x, float(1).sub(uv().y)), C = codes[slot] || {};
   const fw = max(fwidth(p.x), fwidth(p.y)).max(0.0005);
   const n1 = noise2D(p.mul(1.1)), grit = hash2D(floor(p.mul(70)));
   let alb;
@@ -120,8 +121,11 @@ function insideMaterial(slot, mural, codes) {
     // skirting under 12 cm; code paint: a plain sea-blue
     const strip = clamp(floor(p.x.div(10)), 0, 2);
     const sx = fract(p.x.div(10)), sy = strip.mul(2.5).add(clamp(p.y, 0.01, 2.49));
+    // (texture v = 1 - atlas y / 10: the image's top row is atlas y = 10; the PNG fallback is loaded with flipY false.
+    // The direction signs (atlas x 37..40) are mapped mirrored by underpass.py: mirrored back here)
     const muralC = texture(mural, vec2(sx, float(1).sub(sy.div(10)))).rgb;
-    const letters = texture(mural, vec2(p.x.sub(30).div(10), float(1).sub(p.y.add(7.5).div(10)))).rgb;
+    const lx = select(p.x.greaterThan(37.0), float(77.0).sub(p.x), p.x);
+    const letters = texture(mural, vec2(lx.sub(30).div(10), float(1).sub(p.y.add(7.5).div(10)))).rgb;
     const top = mix(lin(0x5bb2c2), lin(0x3d8fb0), smoothstep(2.5, 6.0, p.y)).mul(mix(0.94, 1.04, n1));
     let col = select(p.y.greaterThan(2.5), top, muralC);
     col = mix(col, lin(0x3a3d40), step(p.y, 0.12));
