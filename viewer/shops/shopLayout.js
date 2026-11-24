@@ -93,6 +93,20 @@ function steepAwning(env, at, X, Y, Z, w, y, out, deg, canvas, text, font, valan
 }
 const lumOf = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 
+/** THE DRAWN FRONT (one rule for the shop kit, viewer/streetlife/layout.js + layoutShop, and the Christmas swags,
+ *  viewer/christmas/xmasSwag.js: claude/xmas1, rule xmas-fit-current-city). f: the street life's face ({ x, z, nx, nz, w,
+ *  ... }); cf: the curated front (data/shops/terraces.json "front") or null. (claude/carrefour) a curated width (front.w:
+ *  a supermarket's glazed run) replaces the build's slot and may pass the street fronts' 9.9 m (up to 40 m); front.du
+ *  moves the front along its wall (m to the right seen from the street). Returns the face as the layout sees it (the
+ *  same object when nothing is curated) */
+export function frontFace(f, cf) {
+  if (!f || !(cf?.w || cf?.du)) return f;
+  const du = cf.du || 0;
+  return { ...f, w: cf.w ?? f.w, x: f.x + f.nz * du, z: f.z - f.nx * du };
+}
+/** the drawn width of a front (its face from frontFace): 2 m at least, 9.9 m at most unless curated wide (40) */
+export function frontWidth(f, cf) { return Math.max(2.0, Math.min(f.w, cf?.w ? 40 : 9.9)); }
+
 /** a front's family and heights (shared with viewer/christmas/xmasCity.js, which hangs garlands on the fronts):
  *  { classic, lowFloor, fasciaY (fascia bottom over the sidewalk), dH (its rise over the kit's nominal 2.55) } */
 export function frontFamily(p, f, cur, hash01) {
@@ -115,7 +129,8 @@ export function layoutShop(p, f, frame, lit, env) {
   // curated (data/shops/terraces.json "front": checked on Street View): family, paint / canvas (palette index), awning
   const cf = env.cur?.front || {};
   // (claude/carrefour) a curated width (front.w: a supermarket's glazed run) may pass the street fronts' 9.9 m
-  const W = Math.max(2.0, Math.min(f.w, cf.w ? 40 : 9.9));
+  // (frontWidth: one rule with the Christmas swags, claude/xmas1)
+  const W = frontWidth(f, cf);
   const yaw = yawTo(f.nx, f.nz);
   const { lowFloor, fasciaY, dH, classic } = frontFamily(p, f, env.cur, hash01);
   const paint = cf.paint != null ? (classic ? CLASSIC : MODERN)[cf.paint] : classic ? pick(CLASSIC, id, "p") : pick(MODERN, id, "p");

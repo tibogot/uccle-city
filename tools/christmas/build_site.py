@@ -23,6 +23,7 @@ import json, math, os, glob, hashlib
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 OUT = os.path.join(ROOT, "models", "christmas", "site.json")
 SPACING, HEIGHT, HEIGHT_TRAM, OFFSET0 = 18.0, 6.8, 7.3, 9.0
+TREE_RADIUS = 160.0                                  # m: the shops round a square's fir that get swags (any street)
 
 # the decorated areas: centre, radius (m) and the streets (UrbIS / OSM names, FR part) inside it
 AREAS = [
@@ -69,13 +70,27 @@ for t in TILES:
         pois += [p for p in s.get("pois", []) if p.get("face")]
         numbers += s.get("numbers", [])
 
+# (claude/xmas1, rule xmas-fit-current-city) the buildings the city does NOT draw: the UrbIS solids a scripted model
+# replaces (models/<name>/<name>.json placement.hides_bu_ids / hides_solids, viewer/tileData.js hideBuildings): nothing
+# hangs on them (the Parvis Saint-Pierre's garlands were hooked on the hidden church solid, under the Saint-Pierre
+# model); and the retail boxes (data/overrides.json buildingLooks shed: plain clad walls, no house door): no wreath
+HIDDEN = set()
+for fp in glob.glob(os.path.join(ROOT, "models", "*", "*.json")):
+    try: pl = json.load(open(fp, encoding="utf-8")).get("placement") or {}
+    except Exception: continue
+    if isinstance(pl, dict): HIDDEN.update(pl.get("hides_bu_ids") or []); HIDDEN.update(pl.get("hides_solids") or [])
+SHED = {k for k, v in json.load(open(os.path.join(ROOT, "data", "overrides.json"), encoding="utf-8")).get("buildingLooks", {}).items() if isinstance(v, dict) and v.get("shed")}
+hidden = lambda b: b["id"] in HIDDEN or (b.get("attrs") or {}).get("BU_ID") in HIDDEN
+shed = lambda b: ((b.get("attrs") or {}).get("BU_ID") or "").rsplit("/", 1)[-1] in SHED
+bld = {k: b for k, b in bld.items() if not hidden(b)}
+
 # building wall segments in a 10 m grid: (ax, az, bx, bz, base, eaves)
 GRID = {}
 for b in bld.values():
     for ring in b["footprint"]:
         for i in range(len(ring)):
             ax, az = ring[i - 1]; bx, bz = ring[i]
-            seg = (ax, az, bx, bz, b["base"], b["top"])          # (UrbIS eaves = the LOWEST roof point: the top)
+            seg = (ax, az, bx, bz, b["base"], b["top"], shed(b))  # (UrbIS eaves = the LOWEST roof point: the top)
             for gx in range(int(math.floor(min(ax, bx) / 10)), int(math.floor(max(ax, bx) / 10)) + 1):
                 for gz in range(int(math.floor(min(az, bz) / 10)), int(math.floor(max(az, bz) / 10)) + 1):
                     GRID.setdefault((gx, gz), []).append(seg)
@@ -91,7 +106,7 @@ def ray_wall(px, pz, dx, dz, maxd=16.0):
                 for seg in GRID.get((gx + ox, gz + oz), ()):
                     if id(seg) in seen: continue
                     seen.add(id(seg))
-                    ax, az, bx, bz, base, eaves = seg
+                    ax, az, bx, bz, base, eaves, _ = seg
                     ex, ez = bx - ax, bz - az
                     den = dx * ez - dz * ex
                     if abs(den) < 1e-9: continue
@@ -164,15 +179,29 @@ fronts = []
 deco_names = {s for a in AREAS for s in a["streets"]}
 for p in pois:
     f = p["face"]
-    if p.get("kind") not in SHOP_KINDS: continue
+    if p.get("kind") not in SHOP_KINDS or f.get("bu") in HIDDEN: continue
     street = fr(f.get("street"))
     on_street = street in deco_names and any(near_area(f["x"], f["z"], a) for a in AREAS)
-    near_tree = any(math.hypot(f["x"] - t["x"], f["z"] - t["z"]) < 160 for t in TREES)
+    near_tree = any(math.hypot(f["x"] - t["x"], f["z"] - t["z"]) < TREE_RADIUS for t in TREES)
     if not (on_street or near_tree): continue
     fronts.append({"id": p["id"], "kind": p.get("kind"), "cat": p.get("cat"), "name": p.get("name"), "street": street,
                    "x": round(f["x"], 3), "y": round(f["y"], 3), "z": round(f["z"], 3), "nx": f["nx"], "nz": f["nz"], "w": f["w"], "eaves": f["eaves"]})
 
 # ------------------------------------------------------------------------------------------------ door wreaths
+def on_house_wall(x, z, d=0.6):
+    """a drawn house wall within d m (not hidden: dropped from GRID; not a retail box)"""
+    hit = False
+    gx, gz = int(math.floor(x / 10)), int(math.floor(z / 10))
+    for seg in (s_ for ox in (-1, 0, 1) for oz in (-1, 0, 1) for s_ in GRID.get((gx + ox, gz + oz), ())):
+        ax, az, bx, bz, _, _, is_shed = seg
+        ex, ez = bx - ax, bz - az; L = ex * ex + ez * ez or 1e-9
+        t = max(0, min(1, ((x - ax) * ex + (z - az) * ez) / L))
+        if math.hypot(ax + t * ex - x, az + t * ez - z) <= d:
+            if is_shed: return False
+            hit = True
+    return hit
+
+
 wreaths = []
 shop_pts = [(p["face"]["x"], p["face"]["z"]) for p in pois]
 for n_ in numbers:
@@ -181,6 +210,7 @@ for n_ in numbers:
     if h01(n_["id"] + "wreath") > 0.33: continue
     if any(math.hypot(n_["x"] - x, n_["z"] - z) < 3.0 for x, z in shop_pts): continue
     if any(math.hypot(n_["x"] - w["x"], n_["z"] - w["z"]) < 4.0 for w in wreaths): continue
+    if not on_house_wall(n_["x"], n_["z"]): continue
     wreaths.append({"x": round(n_["x"], 3), "y": round(n_["y"] + 1.7, 3), "z": round(n_["z"], 3), "nx": n_["nx"], "nz": n_["nz"], "n": n_.get("n"), "street": n_.get("fr")})
 
 
@@ -257,6 +287,10 @@ site = {
     "version": 2, "generated_by": "tools/christmas/build_site.py",
     "season": {"from": "12-01", "to": "01-06", "note": "date-driven; ?xmas=1 forces it on, ?xmas=0 off; ?xmaschalets=0 without the market"},
     "config": CONFIG,
+    # (claude/xmas1) the selection rules, so tools/audit/xmasCheck.mjs can re-derive the decorated fronts from the CURRENT
+    # street life and fail a stale site.json (rule xmas-fit-current-city)
+    "select": {"areas": [{"id": a["id"], "centre": list(a["centre"]), "radius": a["radius"], "streets": a["streets"]} for a in AREAS],
+               "shopKinds": sorted(SHOP_KINDS), "treeRadius": TREE_RADIUS},
     "trees": [{"id": t["id"], "x": t["x"], "z": t["z"], "scale": t["scale"], "yaw": round(math.atan2(t["face"][0], t["face"][1]), 4)} for t in TREES],
     "chalets": chalets, "spans": spans, "fronts": fronts, "wreaths": wreaths, "streets": streets,
     "counts": {"spans": len(spans), "fronts": len(fronts), "wreaths": len(wreaths), "streets": len(streets), "chalets": len(chalets)},

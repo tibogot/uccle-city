@@ -16,7 +16,7 @@ import * as THREE from "three/webgpu";
 import { loadXmasKit, spanMaterial, xmasLook, FIR, XMAS_SHADOW_LAYER } from "./xmasKit.js";
 import { lampSiteSets, lampSitesVersion } from "../lamps.js";
 import * as lampsMod from "../lamps.js";
-import { frontFamily } from "../shops/shopLayout.js";
+import { swagRun } from "./xmasSwag.js";
 import { hash01 as slHash01 } from "../streetlife/layout.js";
 
 // ------------------------------------------------------------------------------------------------ the season
@@ -240,13 +240,11 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
   let nSwag = 0;
   for (const f of site.fronts ?? []) {
     if (!on(f.street, "swags")) continue;
-    const fam = frontFamily({ id: f.id, kind: f.kind, cat: f.cat }, f, curated[f.id], slHash01);
-    const W = Math.max(2.0, Math.min(f.w, 9.9)), n = Math.max(1, Math.round(W / 1.6)), sx = W / (n * 1.6);
-    const hook = f.y + fam.fasciaY + (fam.classic ? 0.94 : 0.62), out = fam.classic ? 0.3 : 0.22;
-    const yaw = Math.atan2(f.nx, f.nz), tx = -f.nz, tz = f.nx;
-    for (let k = 0; k < n; k++) {
-      const u = -W / 2 + (k + 0.5) * W / n;
-      field.add("swag", place(f.x + tx * u + f.nx * out, hook, f.z + tz * u + f.nz * out, yaw, sx, 0.7, 1), `swag ${f.id} ${k}`);
+    // (claude/xmas1) the width and centre of the DRAWN front (xmasSwag.js swagRun: shopLayout.js frontFace / frontWidth,
+    // the curated front.w / front.du; a curated canopy: along its band), never site.json's own slot width
+    const run = swagRun(f, curated[f.id], slHash01);
+    for (const [k, m] of run.modules.entries()) {
+      field.add("swag", place(m.x, m.y, m.z, run.yaw, run.sx, 0.7, 1), `swag ${f.id} ${k}`);
       nSwag++;
     }
   }

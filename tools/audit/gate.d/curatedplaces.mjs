@@ -13,8 +13,9 @@ export default {
       { file: "viewer/grounds.js", what: "paints the parking bay rows of a hard ground", test: (s) => /m\.kind === "bays"/.test(s) },
       { file: "viewer/facadeGeom.js", what: "a curated shed look draws a plain clad wall (SHED_PARTY: no house windows, no party-wall ghost)", test: (s) => /look\?\.shed/.test(s) && /SHED_PARTY = 997/.test(s) },
       { file: "viewer/farLookData.js", what: "the far tiles draw a shed look plain too", test: (s) => /look\?\.shed/.test(s) },
-      { file: "viewer/shops/shopLayout.js", what: "a curated front's width past 9.9 m and its canopy", test: (s) => /cf\.w \? 40 : 9\.9/.test(s) && /cf\.canopy/.test(s) },
-      { file: "viewer/streetlife/layout.js", what: "a curated front moved along its wall (front.du)", test: (s) => /cf0\?\.du/.test(s) },
+      // (claude/xmas1) one helper for the drawn front (frontFace / frontWidth), shared with the Christmas swags
+      { file: "viewer/shops/shopLayout.js", what: "a curated front's width past 9.9 m (frontWidth), moved along its wall (frontFace: front.du), and its canopy", test: (s) => /cf\?\.w \? 40 : 9\.9/.test(s) && /export function frontFace/.test(s) && /cf\.du/.test(s) && /const W = frontWidth\(f, cf\)/.test(s) && /cf\.canopy/.test(s) },
+      { file: "viewer/streetlife/layout.js", what: "a curated front moved along its wall (front.du, through shopLayout.js frontFace)", test: (s) => /frontFace\(p\.face, curated\[p\.id\]\?\.front\)/.test(s) },
     ],
   },
 };
