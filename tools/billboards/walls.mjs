@@ -29,6 +29,61 @@ const pip = (x, z, ring) => {
 };
 const solidId = (b) => String(b.id).split("/").pop();
 
+// THE WHOLE CITY'S ROOFS (round 2, coordinator review 2026-11-24): what stands in front of a board, or between it and
+// the street, is often in ANOTHER tile (a tile lists only the buildings it owns: waterloo_panel stood 6 m from the J4 / J5
+// edge and the J4 building 8.6 m in front of it, 3 m over its foot, was never read). cityRoofOf reads every tile round
+// the point, lazily: buildings.json + buildings.bin only (no facade analysis).
+const roofTiles = new Map();
+let manifest = null;
+function roofTile(T) {
+  if (roofTiles.has(T)) return roofTiles.get(T);
+  const d = join(ROOT, "data/tiles", T);
+  const doc = JSON.parse(readFileSync(join(d, "buildings.json"), "utf8"));
+  const bin = readFileSync(join(d, "buildings.bin")), buf = bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.byteLength);
+  const dv = new DataView(buf), V = dv.getUint32(0, true), TN = dv.getUint32(4, true);
+  const P = new Float32Array(buf, 8, V * 3), I = new Uint32Array(buf, 8 + V * 12, TN * 3);
+  const items = doc.buildings.map((b) => {
+    const ring = b.footprint[0];
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const [x, z] of ring) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
+    return { b, ring, x0, z0, x1, z1, solid: solidId(b) };
+  });
+  const roofY = (it, x, z) => {
+    let best = -Infinity;
+    for (let t = it.b.roof.first; t < it.b.roof.first + it.b.roof.count; t++) {
+      const a = I[t * 3] * 3, c = I[t * 3 + 1] * 3, e = I[t * 3 + 2] * 3;
+      const ax = P[a], az = P[a + 2], bx = P[c], bz = P[c + 2], cx = P[e], cz = P[e + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-9) continue;
+      const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det, l3 = 1 - l1 - l2;
+      if (l1 < -1e-4 || l2 < -1e-4 || l3 < -1e-4) continue;
+      best = Math.max(best, l1 * P[a + 1] + l2 * P[c + 1] + l3 * P[e + 1]);
+    }
+    return best === -Infinity ? it.b.top : best;
+  };
+  const out = { items, roofY };
+  roofTiles.set(T, out);
+  return out;
+}
+const tilesAround = (x, z, r) => {
+  manifest ??= JSON.parse(readFileSync(join(ROOT, "data/tiles/manifest.json"), "utf8"));
+  return manifest.tiles.filter((t) => t.status !== "missing" && x + r >= t.bounds.x[0] && x - r <= t.bounds.x[1] && z + r >= t.bounds.z[0] && z - r <= t.bounds.z[1]).map((t) => t.name);
+};
+/** the tallest building of the WHOLE city whose footprint holds (x, z): { solid, y } or null (every tile within 60 m:
+ *  a footprint can reach over its own tile's edge) */
+export function cityRoofOf(x, z) {
+  let best = null;
+  for (const T of tilesAround(x, z, 60)) {
+    const R = roofTile(T);
+    for (const it of R.items) {
+      if (x < it.x0 || x > it.x1 || z < it.z0 || z > it.z1 || !pip(x, z, it.ring)) continue;
+      const y = R.roofY(it, x, z);
+      if (!best || y > best.y) best = { solid: it.solid, y };
+    }
+  }
+  return best;
+}
+
 const cache = new Map();
 export function tileWalls(T) {
   if (cache.has(T)) return cache.get(T);

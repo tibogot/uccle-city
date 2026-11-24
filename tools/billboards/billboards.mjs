@@ -9,6 +9,8 @@
 //     --write: write the derived `at` into the file (then re-check)
 //
 // The rules (rule billboards):
+//   street  seen from the street it faces: from at least one eye 15-60 m in front (+-60 deg), on open ground by a road,
+//           1.7 m up, the rays to its 4 corners pass over every building of the whole city (seenFromStreet)
 //   wall    the board's whole outline (poster + border) lies on ONE drawn face of its building: inside its width, over
 //           its foot, >= TOP_GAP under its top (the gable's chimney and coping stay free); the face is blind where the
 //           board is (no window, door or garage the painted facade draws there: faceOpenings), nothing built in front
@@ -21,7 +23,7 @@
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { tileWalls, ROOT } from "./walls.mjs";
+import { tileWalls, cityRoofOf, ROOT } from "./walls.mjs";
 
 const argv = process.argv.slice(2);
 const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); return i >= 0; };
@@ -122,7 +124,7 @@ export function derive(b, opt = {}) {
       if (pts.some(([x, z]) => inQuad(x, z))) { issues.push(`a roof-kit item (stack / vent, top ${top.toFixed(1)}) under the board's footprint`); break; }
     }
     // nothing taller right in front of / behind the board (a neighbour's wall through it)
-    for (let a = -hw; a <= hw + 1e-6; a += 0.5) for (const c of [0.3, 1.2]) { const q = W.roofOf(px + tx * a + nx * c, pz + tz * a + nz * c); if (q && q.bi !== bi && q.y > y) { issues.push(`a neighbour's roof (${q.y.toFixed(1)}) over the board's foot in front of it`); a = 1e9; break; } }
+    for (let a = -hw; a <= hw + 1e-6; a += 0.5) for (const c of [0.3, 1.2]) { const q = cityRoofOf(px + tx * a + nx * c, pz + tz * a + nz * c); if (q && q.solid !== String(b.solid) && q.y > y) { issues.push(`a neighbour's roof (${q.y.toFixed(1)}) over the board's foot in front of it`); a = 1e9; break; } }
     return { at: { p: [+px.toFixed(3), +y.toFixed(3), +pz.toFixed(3)], n: [+nx.toFixed(5), +nz.toFixed(5)], leg: ROOF_LEG, roof: +hi.toFixed(3), mount: "roof" }, issues };
   }
   if (b.mount === "ground") return deriveGround(b, W, bd, hw);
@@ -138,7 +140,7 @@ export function derive(b, opt = {}) {
   let front = -Infinity, top = Infinity, foot = -Infinity;
   for (let a = Math.max(lo, 0.05); a <= Math.min(hi2, f.width - 0.05) + 1e-6; a += 0.25) {
     // the roofs built in front, 0.4 m out (the party wall's neighbour) and over the frame's / lamp arms' reach
-    for (const out of [0.4, TOL.front, 1.4]) { const [x, z] = f.at(a, out), q = W.roofOf(x, z); if (q && q.bi !== f.bi) front = Math.max(front, q.y); }
+    for (const out of [0.4, TOL.front, 1.4]) { const [x, z] = f.at(a, out), q = cityRoofOf(x, z); if (q && q.solid !== f.solid) front = Math.max(front, q.y); }
     top = Math.min(top, f.wallTop(a)); foot = Math.max(foot, f.wallFoot(a));
   }
   const yMin = Math.max(front + TOL.footGap, foot + (b.minH ?? 0));
@@ -199,7 +201,7 @@ function deriveGround(b, W, bd, hw) {
   // the whole footprint (the frame's ends, the legs) on open ground
   const pts = [...legs.map((q) => [q[2], q[3]]), [px + tx * -hw, pz + tz * -hw], [px + tx * hw, pz + tz * hw]];
   for (const [x, z] of pts) {
-    if (W.roofOf(x, z)) { issues.push(`a foot / end inside a building (${x.toFixed(1)}, ${z.toFixed(1)})`); break; }
+    if (cityRoofOf(x, z)) { issues.push(`a foot / end inside a building (${x.toFixed(1)}, ${z.toFixed(1)})`); break; }
     if (railBridges.some((r) => nearRing(r, x, z))) { issues.push(`a foot / end within ${GROUND.bridge} m of a rail bridge`); break; }
     const t = feats.trees.find((q) => Math.hypot(q.x - x, q.z - z) < GROUND.trunk);
     if (t) { issues.push(`a foot / end ${Math.hypot(t.x - x, t.z - z).toFixed(2)} m from a tree trunk`); break; }
@@ -215,6 +217,48 @@ function deriveGround(b, W, bd, hw) {
   }
   const y = hi + clear + bd;
   return { at: { p: [+px.toFixed(3), +y.toFixed(3), +pz.toFixed(3)], n: [+nx.toFixed(5), +nz.toFixed(5)], legs: legs.map((q) => [q[0], +(q[1] - GROUND.sink).toFixed(3)]), mount: "ground" }, issues };
+}
+
+
+/** SEEN FROM THE STREET (round 2, coordinator review 2026-11-24): a board is drawn to be read from the street it faces.
+ *  Eyes on a fan in front of it (+-60 degrees off its normal, 15-60 m out), each on open ground within VIS.road m (the pavements, a square's middle) of a
+ *  street's, square's or footway's centre line, at VIS.eye m over the drawn ground; the board is seen when, from at least one eye, the rays to its
+ *  4 outer corners pass over every building of the WHOLE city (cityRoofOf, every tile) - buildings only, trees are not
+ *  volumes here. -> { ok, eye: [x, y, z] | null, why } */
+export const VIS = { eye: 1.7, road: 25, dists: [15, 20, 25, 30, 35, 40, 50, 60], fan: 60, step: 7.5, near: 0.7 };
+const roadTiles = new Map();
+const roadsOf = (T) => { if (!roadTiles.has(T)) roadTiles.set(T, J(join(ROOT, "data/tiles", T, "roads.json")).roads.filter((r) => !/steps|track|service/.test(r.meta?.highway || ""))); return roadTiles.get(T); };   // (streets, squares and footways: people read boards from all of them)
+let manifestV = null;
+const tileAt = (x, z) => { manifestV ??= J(join(ROOT, "data/tiles/manifest.json")); return manifestV.tiles.find((t) => t.status !== "missing" && x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1])?.name; };
+const tilesNear = (x, z, r) => { manifestV ??= J(join(ROOT, "data/tiles/manifest.json")); return manifestV.tiles.filter((t) => t.status !== "missing" && x + r >= t.bounds.x[0] && x - r <= t.bounds.x[1] && z + r >= t.bounds.z[0] && z - r <= t.bounds.z[1]).map((t) => t.name); };
+const nearRoad = (x, z) => tilesNear(x, z, VIS.road).some((T) => roadsOf(T).some((r) => { for (let i = 0; i < r.pts.length - 1; i++) { const a = r.pts[i], c = r.pts[i + 1], dx = c.x - a.x, dz = c.z - a.z, l2 = dx * dx + dz * dz || 1e-9, k = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / l2)); if (Math.hypot(a.x + k * dx - x, a.z + k * dz - z) < VIS.road) return true; } return false; }));
+/** the board's 4 outer corners (world) from its `at` */
+export function boardCorners(b, at) {
+  const bd = FRAME_BORDER[b.kind] ?? 0.14, [x, y, z] = at.p, [nx, nz] = at.n, tx = nz, tz = -nx, hw = b.w / 2 + bd, out = at.mount === "wall" ? 0.45 : 0.3;
+  return [[-hw, -bd], [hw, -bd], [hw, b.h + bd], [-hw, b.h + bd]].map(([a, h]) => [x + tx * a + nx * out, y + h, z + tz * a + nz * out]);
+}
+export function seenFromStreet(b, at) {
+  const corners = boardCorners(b, at), [nx, nz] = at.n, own = String(b.solid ?? "");
+  const cx = corners.reduce((s, c) => s + c[0], 0) / 4, cz = corners.reduce((s, c) => s + c[2], 0) / 4;
+  let eyes = 0;
+  for (const D of VIS.dists) for (let sd = 0; sd <= VIS.fan; sd += VIS.step) for (const sg of sd ? [1, -1] : [1]) {
+    const s = (sg * sd * Math.PI) / 180, dx = nx * Math.cos(s) - nz * Math.sin(s), dz = nx * Math.sin(s) + nz * Math.cos(s);
+    const ex = cx + dx * D, ez = cz + dz * D, T = tileAt(ex, ez), hm = T && hmCache.get(T);
+    if (!hm || cityRoofOf(ex, ez) || !nearRoad(ex, ez)) continue;
+    const ey = hm.ground(ex, ez) + VIS.eye;
+    if (!Number.isFinite(ey)) continue;
+    eyes++;
+    const clear = corners.every(([qx, qy, qz]) => {
+      const L = Math.hypot(qx - ex, qz - ez);
+      for (let d = 0.5; d < L - VIS.near; d += 0.5) {
+        const k = d / L, r = cityRoofOf(ex + (qx - ex) * k, ez + (qz - ez) * k);
+        if (r && r.solid !== own && r.y > ey + (qy - ey) * k) return false;
+      }
+      return true;
+    });
+    if (clear) return { ok: true, eye: [+ex.toFixed(1), +ey.toFixed(1), +ez.toFixed(1)], why: `seen from (${ex.toFixed(1)}, ${ez.toFixed(1)}) ${D} m out` };
+  }
+  return { ok: false, eye: null, why: eyes ? `from none of ${eyes} street eyes 15-60 m in front are its 4 corners clear of the buildings` : "no street eye on open ground 15-60 m in front of it" };
 }
 
 /** the poster texts' brand words */
@@ -243,6 +287,7 @@ export function check(doc, { quietRows = false } = {}) {
       const e = Math.hypot(d.at.p[0] - b.at.p[0], d.at.p[1] - b.at.p[1], d.at.p[2] - b.at.p[2]), en = Math.hypot(d.at.n[0] - b.at.n[0], d.at.n[1] - b.at.n[1]);
       r(e <= TOL.at && en < 0.01, `${tag}: the file's position = the current city's (${e.toFixed(3)} m)`);
     } else r(false, `${tag}: the file has its derived position (run --write)`);
+    if (b.at) { const v = seenFromStreet(b, b.at); r(v.ok, `${tag}: seen from the street it faces (${v.why})`); }
   }
   return out;
 }
@@ -261,11 +306,24 @@ function mutations(doc) {
   out.push({ ok: brandHits({ brand: "Jupiler", lines: ["x"] }).length > 0 && brandHits({ brand: "Café Moka", lines: ["le petit noir"] }).length === 0, msg: "mutation: a brand word is found, an invented one is not" });
   const tall = doc.boards.find((b) => b.kind === "panel");
   if (tall) out.push({ ok: check({ posters: doc.posters, boards: [{ ...tall, w: 30 }] }).some((q) => !q.ok && /size/.test(q.msg)), msg: "mutation: a 30 m panel fails the size range" });
+  // the planted case (coordinator review 2026-11-24): waterloo_panel as first placed, an 8 x 3 m board 10 m up the
+  // north gable of UrbIS 604726 (J5), 6 m from the J4 edge: a J4 building 8.6 m in front, its roof 3 m over the board's
+  // foot, hid it from Ch. de Waterloo (the street-level tour view (1857.7, -29.1) saw no board at all)
+  const planted = { id: "planted", kind: "panel", mount: "wall", tile: "J5", solid: "604726", facing: [0.044, -0.999], u: 6.5, y0: 10, w: 8, h: 3 };
+  const pd = derive(planted);
+  out.push({ ok: !!pd.at && !seenFromStreet(planted, pd.at).ok, msg: "mutation: the first waterloo_panel (hidden behind the J4 building in front) fails the street view" });
   return out;
 }
 
 /** preload what derive() needs asynchronously (the heightmaps of the ground boards' tiles) */
-export async function prepare(doc) { for (const b of doc.boards) if (b.mount === "ground") await heightmap(b.tile); }
+export async function prepare(doc) {
+  // the ground boards' tiles and every tile a street eye can stand on (40 m + the board round each board)
+  const pts = doc.boards.map((b) => b.at?.p ? [b.at.p[0], b.at.p[2]] : b.near).filter(Boolean);
+  pts.push([1856.1, 5.9]);                                   // (the planted mutation's)
+  const Ts = new Set(doc.boards.filter((b) => b.mount === "ground").map((b) => b.tile));
+  for (const [x, z] of pts) for (const T of tilesNear(x, z, 60)) Ts.add(T);
+  for (const T of Ts) await heightmap(T);
+}
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
 if (isMain) {
