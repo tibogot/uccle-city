@@ -54,6 +54,25 @@ A 1.0 kg juvenile female (`FALCON` in flightModel.js; carrying a pigeon +0.33 kg
   = **touch-down**: the bird perches there. Hard (> 9 m/s, walls > 6) = stunned 0.9 s: wings open, controls back.
 - Substeps: 8 ms, 4 ms above 50 m/s.
 
+### The arcade stoop (the falcon game, claude/falconfun; `FalconFlight.arcade`, null in the lab / `?falconfun=old`)
+
+The game sets `f.arcade = FUN.arcade` (`viewer/falconFlight/falconFun.js`):
+
+- **Dive push:** a tucked bird going down gets a push of `dive` (2.2) x g x sin(dive angle) along its path, and
+  `diveDrag` (60 %) of its drag is taken off. Both grow with the tuck.
+- **Sprint:** `sprint` (0.65 g) for `sprintT`, fading to 0 at 34 m/s.
+- **Pursuit push:** `chaseA`, the auto-dive's push, set each frame.
+- **Pull-out:** nMax is 9 g. `flightAssist.js`'s ground guard uses the g the wings really give at that speed (at
+  most 6), a 0.4 s lag and a 4 m margin. The stoop's probes look 0.25-0.8 s ahead.
+
+| stoop | the real model (the lab) | the arcade stoop (the game) | lowest point of the pull-out (arcade) |
+|---|---|---|---|
+| 50 m | 88 km/h | 150 km/h | 10.6 m |
+| 150 m | 142 km/h | 258 km/h | 32.7 m |
+| 300 m | 198 km/h | 367 km/h | |
+
+`tools/falconFunTest.mjs` checks these.
+
 ## The air
 
 - **Wind**: speed at 10 m + FROM direction (like a forecast; default 4 m/s from 240), log profile over the SMOOTHED
