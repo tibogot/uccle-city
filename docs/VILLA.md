@@ -110,3 +110,25 @@ download 5.50 MB, interior 179,420 / 16.
 Cross-fades checked in the browser (forced levels, same camera; shots in uccle-villa-ab/round4): LOD0 -> LOD1 at 70 m mean
 pixel difference 1.7/255 over the house (only the climbers, LOD0-only as before); LOD1 -> LOD2 at 240 m the same masses and
 tones after the roof fix. The bay pane: shown at 47 m (interior hidden), hidden at 20 m (interior shown) and beyond LOD0.
+
+## Showing it (claude/villamark, 2026-11-24)
+
+The owner could not find the villa, nor get in (rule enterable-places-findable). Now:
+
+| how | what |
+|---|---|
+| link | **https://uccle-city-pipeline.vercel.app/viewer/index.html?place=villa** (third person on the sidewalk of Av. du Prince d'Orange, 4.8 m in front of the gate, facing it: walk in, the gate opens at 13 m, the front door at 3.5 m). `?place=villa&view=stjob`: the orbit camera there instead. `?place=stalle`: the Stalle chapel's west door. |
+| map | the minimap and the full map (M) show a green **door** marker on every place you can walk into (the villa, the Stalle chapel); the full map's search ("villa", "stalle", "interior") lists them as *go inside*: picking one takes you to its door in third person |
+| Walk in | within 40 m of the door (on foot, in a car, on a bike, the falcon, or the orbit camera within 40 m), not in third person: a "Walk in" pill bottom centre; **E** (on foot / vehicles) or **Enter** (orbit / falcon: E is up / land there) or a click: third person at the entry spot. `?enterprompt=0`: none |
+| dev panel | Go to > *Go inside*: "Villa Prince d'Orange (go inside)", "Stalle chapel, the west door (go inside)" |
+| any spot | `?at=x,z&view=third[&heading=deg | &look=x,z]`: the character AT x, z, facing the heading (clockwise from north) or the look point |
+
+The data: data/places/enterable.json (one row per place: door, entry, heading, map mark, radius). A new enterable place =
+one row there + a viewer/places.js entry with `enter: <id>`; gate row `enterable` checks both, the entry spot (outside
+every footprint, on walkable ground, facing the door) and the wiring.
+
+**The ?at bug** (the owner's `?at=912,2036&view=third` spawned at Saint-Job, Vieille rue du Moulin): with no `?tile` the
+boot tile was always I6, `start` was the nearest road of THE BOOT TILE (main.js roadStart skips every point outside its
+bounds: the nearest I6 road point to the villa is on I6's edge) and third person started at `start`. Fix by cause: the
+boot tile is the tile under `?at` (viewer/placeLink.js bootTile; `?attile=old` = I6), and third person starts at `?at`
+itself (`?atthird=old` = the road start); an `?at` whose tile is not in streams it in through the teleport first.

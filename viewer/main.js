@@ -108,10 +108,15 @@ import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stat
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
 import { farBuildingMaterial } from "./farLook.js";   // farcity: the far tiles' façades (docs/FARCITY.md)
 import { RING_TEST, ringSet, inRing as inRingCC } from "./ringTest.js";   // allocrate: point-in-ring tests without iterator garbage (?ringtest=old)
+import { placeLink, bootTile, atBearing, parseAt } from "./placeLink.js";   // villamark: ?place=<id> links, the boot tile under ?at, the third-person start at ?at
 import { setBootStart, coverLifted, whenNeeded, whenXmasNeeded, neededAtReveal, setRevealCamera, nearModel, gatesPending } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
+// villamark (rule enterable-places-findable): ?place=<id> (data/places/enterable.json, viewer/places.js) writes the place's
+// ?at / ?heading / ?cam / ?view first (the URL is rewritten, so every module reads the same; viewer/placeLink.js)
+const PLACE = await placeLink(params);
+if (PLACE) history.replaceState(history.state, "", `${location.pathname}?${params.toString().replace(/%2C/gi, ",")}${location.hash}`);
 setupHud(params);           // dev log: closed by default (it covered the view), ?log=1 opens it; the HUD folds (viewer/devHud.js)
 // perfgame (docs/PERF_GAME.md): a game link boots AT the game's spawn (the police station: tile E4) instead of booting
 // Saint-Job and then streaming the station's tiles in front of the player; ?gameboot=old: as before
@@ -129,7 +134,10 @@ const BOOT_HOLD_NEAR = params.get("boothold") === "ring" ? 300 : 0;
 const FAST_START = params.get("playloader") !== "old" && params.get("gamefast") !== "old" && (GAME_START || BOOT_HOLD);
 const SPAWN = params.get("at")?.split(",").map(Number).filter(Number.isFinite).length === 2 ? params.get("at").split(",").map(Number)
   : GAME_ID === "falcon" || (params.get("tile") || "I6").toUpperCase() === "I6" ? [1153, 540] : null;
-const TILE = (params.get("tile") || "I6").toUpperCase();    // I6 = Saint-Job (it was G4 before the grid grew to all of Uccle)
+// I6 = Saint-Job (it was G4 before the grid grew to all of Uccle). villamark: with no ?tile, the tile UNDER ?at (an ?at
+// elsewhere booted Saint-Job and the walk / third-person start was searched on I6's roads; ?attile=old: I6 as before)
+const BOOT_TILE = bootTile(params);
+let TILE = BOOT_TILE.name;
 const EYE = 1.7;            // walk-mode eye height (m)
 const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // Smooth LOD (docs/SMOOTH_LOD.md): streamed tiles cross-fade (dithered, ~0.9 s) instead of popping: a full
@@ -1296,7 +1304,9 @@ async function main() {
     sel.add(o);
   }
   sel.onchange = () => { params.set("tile", sel.value); location.search = params.toString(); };
-  const entry = manifest.tiles.find((t) => t.name === TILE);
+  let entry = manifest.tiles.find((t) => t.name === TILE);
+  // (an ?at outside the built tiles, or on a tile that is not built: Saint-Job, and the ?at start streams its tile in)
+  if (BOOT_TILE.derived && (!entry || entry.status === "missing")) { log(`?at: tile ${TILE} is not built, booting I6`); TILE = "I6"; entry = manifest.tiles.find((t) => t.name === TILE); }
   if (!entry || entry.status === "missing") throw new Error(`tile ${TILE} is not built (manifest status: ${entry?.status})`);
   const F = entry.files;
   const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
@@ -1869,17 +1879,39 @@ async function main() {
   quickCamera({ camera, controls, world });   // ?quick=1: the camera exactly at the spot (again once its tiles are in: quickReady)
   // third person: a character on foot (viewer/character/cityHook.js, Capsule Lab); the button, ?view=third, the dev panel
   let thirdBoot = null;                   // one start only, however many callers (button, ?view=third, a shared link)
-  const thirdPerson = async () => {
+  // villamark: thirdPerson(at) starts AT at = { x, z, bearing? } (radians clockwise from north; none: along the nearest
+  // road there), not at the boot tile's road start (the ?at=..&view=third bug: viewer/placeLink.js). An at whose tile
+  // is not in yet goes through the teleport (it streams the tile in, then starts third person there).
+  let teleportFn = null, pendingThirdAt = null;
+  const tileAt = (x, z) => world.tiles.find((t) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1);
+  const atFacing = (at) => { if (at.bearing != null) return at.bearing; const T = tileAt(at.x, at.z), s = T && roadStart(T.roads, at.x, at.z, T.bounds); return s ? -s.yaw : 0; };
+  // hold the character at (x, z) until its colliders there are built (cityHook sync), then stand it on them
+  const settleThird = async (x, z, yaw) => {
+    const top = world.heightAt(x, z) + 40;
+    for (let i = 0; i < 80 && !(third.world.ray(x, top, z, 0, -1, 0, 80) < Infinity); i++) { third.tp.start(x, world.walkY(x, z) + 0.6, z, yaw); await new Promise((r) => setTimeout(r, 100)); }
+    const hit = third.world.ray(x, top, z, 0, -1, 0, 80);
+    third.tp.start(x, (hit < Infinity ? top - hit : world.walkY(x, z)) + 0.05, z, yaw);
+  };
+  const thirdPerson = async (at = null) => {
+    if (at && !tileAt(at.x, at.z)) {
+      const o = { x: at.x, z: at.z, bearing: atFacing(at), exact: true, mode: "third", name: at.name };
+      if (teleportFn) return teleportFn(o);
+      pendingThirdAt = o; return;                     // (at boot: the teleport is set up below)
+    }
     walker.on = false; flyer.stop(); driver.stop(); controls.enabled = false;
+    const b = at ? atFacing(at) : 0, yaw = Math.PI - b;   // (bearing -> the character's yaw, as getPlayer reads it back)
     try {
       if (!third) {
-        third = await (thirdBoot ||= import("./character/cityHook.js").then((m) => m.startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log })));
+        const st = at ? { x: at.x, z: at.z, yaw: -b } : start;   // (cityHook resume: a walk-yaw start, + PI)
+        third = await (thirdBoot ||= import("./character/cityHook.js").then((m) => m.startThirdPerson({ scene, camera, renderer, controls, world, start: st, setView, log })));
         if (third?.world && driver.movers && !third.world.__rail) { third.world.__rail = true; const { railMoverSource } = await import("./drive/movers.js"); third.world.add(railMoverSource(driver.movers)); }
       }
+      else if (at) { third.last = [at.x, world.walkY(at.x, at.z) + 0.6, at.z, yaw]; third.resume(); }
       else third.resume();
+      if (at) await settleThird(at.x, at.z, yaw);
     } catch (e) { log(`third person: ${e.message}`); controls.enabled = true; }
   };
-  $("btnThird").onclick = thirdPerson;
+  $("btnThird").onclick = () => thirdPerson();
   // ?traffic=1: the moving traffic on the lane graph (viewer/traffic/), updated before the parked fleet so a car pulling
   // out is hidden there in the same frame it appears in the traffic
   if (TRAFFIC) {
@@ -1905,7 +1937,9 @@ async function main() {
       log(`traffic: on (?traffic=1), ${trafficTiles.size} tile graphs; ?trafficdebug=1 draws the lane graph`);
     } catch (e) { log(`traffic: ${e.message}`); console.error(e); }
   }
-  if (v0 === "third") thirdPerson();
+  // (villamark) ?at=x,z&view=third: the character AT x, z facing ?heading / ?look (?atthird=old: the road start as before)
+  const AT0 = parseAt(params);
+  if (v0 === "third") thirdPerson(AT0 && params.get("atthird") !== "old" ? { x: AT0[0], z: AT0[1], bearing: atBearing(params, AT0[0], AT0[1]), name: PLACE?.fr ?? PLACE?.name } : null);
   // ?interior=1: the pilot interior cell (viewer/interior/cityInterior.js; Interior Lab first)
   if (params.get("interior") === "1") import("./interior/cityInterior.js").then((m) => m.startCityInterior({ scene, renderer, camera, lighting, updaters, getThird: () => third, log })).catch((e) => log(`interior: ${e.message}`));
 
@@ -2401,13 +2435,13 @@ async function main() {
       return r;
     } finally { await playLoader.close(); }
   };
-  const teleportNow = async ({ x, z, yaw: dirAng, exact = false, mode: wantMode = null }) => {   // exact: face that way (the dev panel's places), not the street side nearest the old heading; mode: start that mode there (the game kit)
+  const teleportNow = async ({ x, z, yaw: dirAng, bearing = null, exact = false, mode: wantMode = null }) => {   // exact: face that way (the dev panel's places), not the street side nearest the old heading; mode: start that mode there (the game kit)
     const t0 = performance.now();
     const entry = manifest.tiles.find((t) => t.status !== "missing" && x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1]);
     if (!entry) throw new Error("outside the built tiles");
     const before = getPlayer();
-    let b = Math.atan2(Math.cos(dirAng), -Math.sin(dirAng));       // the street's bearing
-    if (!exact && Math.abs(Math.atan2(Math.sin(b - before.heading), Math.cos(b - before.heading))) > Math.PI / 2) b += Math.PI;
+    let b = bearing ?? Math.atan2(Math.cos(dirAng), -Math.sin(dirAng));       // the street's bearing (villamark: or the bearing asked, radians clockwise from north)
+    if (bearing == null && !exact && Math.abs(Math.atan2(Math.sin(b - before.heading), Math.cos(b - before.heading))) > Math.PI / 2) b += Math.PI;
     const m = wantMode || before.mode;
     if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true;
     const loaded = world.tiles.some((t) => t.name === entry.name);
@@ -2428,13 +2462,11 @@ async function main() {
     else if (RIDE.has(m)) { controls.enabled = false; await driver.start(x, z, Math.PI - b, wantMode ? (m === "drive" ? "car" : m) : null); }
     else if (m === "third") {
       controls.enabled = false;
+      if (!third) await thirdPerson({ x, z, bearing: b });      // (villamark: a teleport into third person before it was ever started)
       third.last = [x, world.walkY(x, z) + 0.6, z, Math.PI - b];
       third.resume();
       // its colliders for the new tile are built a moment later (cityHook sync): hold it in place until the ground is there
-      const top = world.heightAt(x, z) + 40;
-      for (let i = 0; i < 80 && !(third.world.ray(x, top, z, 0, -1, 0, 80) < Infinity); i++) { third.tp.start(x, world.walkY(x, z) + 0.6, z, Math.PI - b); await new Promise((r) => setTimeout(r, 100)); }
-      const hit = third.world.ray(x, top, z, 0, -1, 0, 80);
-      third.tp.start(x, (hit < Infinity ? top - hit : world.walkY(x, z)) + 0.05, z, Math.PI - b);
+      await settleThird(x, z, Math.PI - b);
     } else { const y = world.surface(x, z); controls.target.set(x, y, z); camera.position.set(x - Math.sin(b) * 110, y + 70, z + Math.cos(b) * 110); controls.update(); }
     lighting.snapNext = true;
     return { ms: performance.now() - t0, tileMs: +tTile.toFixed(0), tile: entry.name, loaded: !loaded, mode: m };
@@ -2442,6 +2474,8 @@ async function main() {
   // (motorbike round 2: a ?view=moto|scooter|villo|drive&at= outside the boot tile: stream it in, then start there)
   driveAt = async (vehicle) => { await teleport({ x: atP[0], z: atP[1], yaw: 0 }); controls.enabled = false; return drive(vehicle); };
   if (pendingDriveAt) { const v = pendingDriveAt; pendingDriveAt = null; driveAt(v).catch((e) => log(`?at start: ${e.message}`)); }
+  teleportFn = teleport;                                // (villamark: an ?at=..&view=third outside the boot tile)
+  if (pendingThirdAt) { const o = pendingThirdAt; pendingThirdAt = null; teleport(o).catch((e) => log(`?at third person: ${e.message}`)); }
   (globalThis.__gameTimes ||= []).push(["cover->panel", Math.round(performance.now() - (window.__coverAt || 0))]);
   // the dev panel (viewer/devPanel.js; ?panel=0: the old HUD only)
   if (params.get("panel") !== "0") {
@@ -2452,9 +2486,18 @@ async function main() {
       else import("./devPanel.js").then(mkPanel).catch((e) => log(`dev panel: ${e.message}`));
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
+  // villamark (rule enterable-places-findable): walk into an enterable place (data/places/enterable.json): third person
+  // at its entry spot facing its door. near: from its Walk in prompt (the area is built: no loader); else (the map's
+  // search) through the play loader
+  const enterPlace = (p, { near = false } = {}) => teleport({ x: p.entry[0], z: p.entry[1], bearing: p.heading * Math.PI / 180, exact: true, mode: "third", name: p.fr, label: p.fr, hold: near ? false : undefined });
+  if (params.get("enterprompt") !== "0") import("./enterPrompt.js").then((m) => m.startEnterPrompt({ getPlayer, camera, world, params, log,
+    enter: (p) => enterPlace(p, { near: true }),
+    blocked: () => !!(playLoader.active || document.body.classList.contains("loading") || window.__map?.full?.open || window.__game?.hud?.menuOpen || window.__game?.promptOn || window.__game?.current) }))
+    .catch((e) => log(`walk in prompt: ${e.message}`));
+  window.__enterPlace = (id) => import("./placeLink.js").then((m) => m.loadEnterable()).then((l) => { const p = l.find((q) => q.id === id); if (!p) throw new Error(`no enterable place "${id}"`); return enterPlace(p); });
   // ?map=1: the minimap (bottom left) and the full map (M) with click-to-teleport (viewer/map/, docs/MAP.md)
   if (params.get("map") !== "0") {
-    import("./map/cityMap.js").then((mm) => mm.startCityMap({ getPlayer, teleport, getTrams: () => tramLine?.positions() ?? null, log })).then((h) => { mapHook = h; window.__map = h; })
+    import("./map/cityMap.js").then((mm) => mm.startCityMap({ getPlayer, teleport, getTrams: () => tramLine?.positions() ?? null, log, enter: (id) => window.__enterPlace(id) })).then((h) => { mapHook = h; window.__map = h; })
       .catch((e) => log(`map: ${e.message}`));
   }
   // ---- GAME KIT (viewer/game/, docs/GAMEKIT.md): the start menu, missions, the player HUD; ?game=0 = free roam as before
