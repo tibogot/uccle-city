@@ -84,6 +84,17 @@ ok(emissive, "LEDs, LED rope and the star glow (emissive only: no light added)")
       && !c.maskNode && c.maskShadowNode && c.depthFunc === THREE_.EqualDepth && c.depthWrite === false && c.side === 2 && c.normalNode && c.contextNode?.value?.invariant === true && !c.transparent,
       `fir cards pre-pass (${fade ? "fade" : "solid"} set): twin = depth only (alpha + band mask, no colour, @invariant), lit = EQUAL depth, no discard, no depth write, @invariant, shadow mask kept`);
   }
+  // FIR ROUND 4 (claude/xmas3): the cards' lit materials (solid, fade, one-pass) take the foliage light path (sun / moon +
+  // sky: foliageLights), the depth twin and every other slot do not; the ?firlight=old variant is its own material
+  {
+    const { XMAS_LIGHT } = await import("../../viewer/christmas/xmasKit.js");
+    const lit = [true, false].flatMap((fade) => [kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: fade, pass: "colour" }), kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: fade })]);
+    const twin = kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false, pass: "depth" });
+    const others = ["fir_needles", "fir_bark", "bauble", "bulb_warm", "gold_metal", "star_glow", "chalet_wood"].map((s) => kit.slotMaterial(s, { instanced: true }));
+    const oldM = kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false, pass: "colour", light: { cards: false } });
+    ok(XMAS_LIGHT.cards === true && lit.every((m) => m.userData.foliageLights === true) && !twin.userData.foliageLights && others.every((m) => !m.userData.foliageLights) && oldM !== lit[2] && !oldM.userData.foliageLights,
+      "fir light: the cards' lit materials take the sun / moon + sky only (?firlight=old: every light, its own material); the twin and the other slots unchanged");
+  }
   ok(FIR.prepass === true && FIR.shadow === "far" && XMAS_SHADOW_LAYER > 0 && XMAS_SHADOW_LAYER < 32, `fir switches default: pre-pass on (?firprepass=0: one pass), shadow from the far level (?firshadow=cards: each level its own), shadow layer ${XMAS_SHADOW_LAYER}`);
   // the 45 m switch: a dithered cross-fade over the band's last LOD_FADE (39.6-45 m), card crown on BOTH sides
   ok(LOD_FADE === 0.12 && T.range[0] === 45 && T.range[1] === 150 && !!cards[1], `fir 45 m switch: dithered over ${(T.range[0] * (1 - LOD_FADE)).toFixed(1)}-${T.range[0]} m, needle cards on both sides (the near crown -> the middle shell: one material)`);

@@ -217,6 +217,52 @@
     "cell": 40.0,
     "ssim": 0.93
    }
+  },
+  {
+   "id": "xmas-stjob-night",
+   "what": "Christmas (claude/xmas2): Place Saint-Job at night from the east, eye height, 24 m from the fir: the 10 m fir (LEDs, baubles, star), the 6-chalet market, the square's garland; bloom on the LEDs",
+   "q": {
+    "at": "1147,544,1.7",
+    "look": "1127,531,5",
+    "time": "night"
+   }
+  },
+  {
+   "id": "xmas-stjob-dusk",
+   "what": "Christmas (claude/xmas2): Place Saint-Job at dusk from the west (the stjob-street spot): the fir and the market against the twilight sky, the LEDs at their day-to-night level",
+   "q": {
+    "at": "1102,542,1.7",
+    "look": "1127,531,5",
+    "time": "twilight"
+   }
+  },
+  {
+   "id": "xmas-stpierre-night",
+   "what": "Christmas (claude/xmas2): Parvis Saint-Pierre at night: the 9 m fir before the church (the parvis lost its 4 garlands that hooked on the hidden UrbIS church solid, claude/xmas1: none may come back on the church)",
+   "q": {
+    "at": "-740,-486,1.7",
+    "look": "-723,-495,5",
+    "time": "night",
+    "fov": "70"
+   }
+  },
+  {
+   "id": "xmas-debue-garlands-dusk",
+   "what": "Christmas (claude/xmas2): Rue Xavier De Bue at dusk looking east: garlands across the street (stars mid-span, the tram span at -898 without one), shopfront swags, lamp snowflakes",
+   "q": {
+    "at": "-910,-498,1.7",
+    "look": "-850,-497,6",
+    "time": "twilight"
+   }
+  },
+  {
+   "id": "xmas-debue-swag-night",
+   "what": "Christmas (claude/xmas2): a shopfront swag and a door wreath at night, Rue Xavier De Bue (Maroquinerie Karwan + the wreath of no. 36A, Les Petits Riens next door): swag along the drawn front, the wreath on the door at 1.7 m",
+   "q": {
+    "at": "-857,-494.5,1.7",
+    "look": "-852,-502,2.6",
+    "time": "night"
+   }
   }
  ]
 }

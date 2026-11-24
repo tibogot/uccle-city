@@ -156,6 +156,7 @@ export async function quickReady(host) {
     for (const n of roots) if (!found.has(n) && scene.children.some((o) => o.name === n)) found.add(n);   // (the landmarks' roots are scene children)
     const bridges = window.__bridges ? Object.keys(window.__bridges) : [];
     const missing = roots.filter((n) => !found.has(n)).concat(wantBridges.filter((n) => !bridges.includes(n)).map((n) => `bridge ${n}`));
+    if (window.__xmasPending) missing.push("christmas");   // (?xmas=1: the layer loads at low priority; its shots need it in)
     st = { tiles: tilesIn.length, want: want.length, fading: fader.list.length, jobs: jobsLeft(), pipes: window.__asyncPipes?.pending ?? 0, missing, bridges };
     const ok = tilesIn.length === want.length && !st.fading && !st.jobs && !st.pipes && !missing.length;
     q = ok ? q + 1 : 0;

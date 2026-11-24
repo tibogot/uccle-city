@@ -108,7 +108,7 @@ import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stat
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
 import { farBuildingMaterial } from "./farLook.js";   // farcity: the far tiles' façades (docs/FARCITY.md)
 import { RING_TEST, ringSet } from "./ringTest.js";   // allocrate: point-in-ring tests without iterator garbage (?ringtest=old)
-import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera, nearModel, gatesPending } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
+import { setBootStart, coverLifted, whenNeeded, whenXmasNeeded, neededAtReveal, setRevealCamera, nearModel, gatesPending } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -1565,8 +1565,13 @@ async function main() {
   if (params.get("places2") !== "old") heroes.push(() => { loadOverrides(DATA).then((ov) => addPlaygrounds({ scene, updaters, world, manifest, log, compiler: heroCompiler, overrides: ov, params })).catch((e) => log(`playgrounds failed (${e.message}): reload with ?places2=old`)); });
   // the Christmas layer (viewer/christmas/, docs/CHRISTMAS.md): 1 Dec - 6 Jan (the real date or ?day=), ?xmas=1 on, ?xmas=0 off:
   // the firs on Place de Saint-Job and the Parvis Saint-Pierre, garlands across the shopping streets, shopfront swags,
-  // door wreaths, lamp-post snowflakes; emissive only (no light added). Loads in the background (does not hold the boot)
-  if (xmasActive(params)) heroes.push(() => { addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }).catch((e) => log(`christmas failed (${e.message}): reload with ?xmas=0`)); });
+  // door wreaths, lamp-post snowflakes; emissive only (no light added). Loads in the background (does not hold the boot),
+  // at LOW fetch priority, and only after the cover when no decorated area is in the boot's ring (bootGate.js whenXmasNeeded)
+  if (xmasActive(params)) heroes.push(() => {
+    window.__xmasPending = true;                    // (?quick=1: quickReady waits until the layer is in or has failed)
+    whenXmasNeeded().then(() => addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }))
+      .catch((e) => log(`christmas failed (${e.message}): reload with ?xmas=0`)).finally(() => { window.__xmasPending = false; });
+  });
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   // ... and the Lycée Français's three (viewer/lyceeFront.js: once tile F7 has built the poles; ?cortenbosch=old none)
@@ -2238,7 +2243,9 @@ async function main() {
   // gpuStats(): GPU ms per frame over the last ≤600 samples (avg, p50, p95, max), for measurements
   const gpuStats = () => {
     const s = [...gpu.samples].sort((a, b) => a - b), q = (p) => s.length ? +s[Math.min(s.length - 1, Math.floor(p * s.length))].toFixed(2) : null;
-    return { n: s.length, avg: s.length ? +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(2) : null, p50: q(0.5), p95: q(0.95), max: q(1) };
+    // tmean (claude/xmas3, debug/xmasPerf.js): the mean of the 10-90 % band, finer than p50 under the timestamps' quantum
+    const band = s.slice(Math.floor(s.length * 0.1), Math.ceil(s.length * 0.9));
+    return { n: s.length, avg: s.length ? +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(2) : null, p50: q(0.5), p95: q(0.95), max: q(1), tmean: band.length ? +(band.reduce((a, b) => a + b, 0) / band.length).toFixed(3) : null };
   };
   // gpuPasses(): ms per render pass of the last resolved frame, biggest first (uid minus the frame suffix)
   const gpuPasses = () => {

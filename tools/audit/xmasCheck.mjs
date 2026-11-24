@@ -137,6 +137,36 @@ for (const [i, c] of (site.chalets ?? []).entries()) standsWell(`chalet ${i}`, r
     && /export const FIR_SHADOW_LEVEL = 2;/.test(citySrc) && /shadow\.camera\.layers\.enable\(XMAS_SHADOW_LAYER\)/.test(citySrc);
   out(ok, "fir: depth pre-pass on by default (?firprepass=0), the shadow from the far level's solid fronds (?firshadow=cards), its layer enabled on the sun's shadow camera");
 }
+// FIR ROUND 4 (claude/xmas3, docs/CHRISTMAS.md 7.3): the GPU cost at night (debug/xmasPerf.js, timed on GREEN / YELLOW).
+// (1) the needle cards are lit by the sun / moon + the sky only (foliage/vertexLight.js foliageLights, as the city's
+//     grass, plants and ivy): the night's lamp loop + the two shadowed lamp spots over every card pixel were the cards'
+//     cost (the lamps' light on the crown is not seen); ?firlight=old = before.
+// (2) the fir's shadow casters at night are NOT a per-frame cost: they are static casters of the sun's cached map (drawn
+//     only on its redraws, ~1 frame in 30: 0.03 +- 0.06 ms per redraw measured, ~0.001 ms a frame) and of the lamps'
+//     cached maps (never the lamps' per-frame mover layer). They stay at night: the moon casts the city's shadows. A
+//     change that made them movers (the group's name matching lighting.js MOVER_TOP, a sunMover flag, the lamps' mover
+//     layer 11) would draw them every frame: this row fails then.
+// (3) the draws per tree level (christmas.json; + the cards' depth twin + 2 shadow-only copies drawn in the sun's map).
+{
+  const kitSrc = fs.readFileSync(path.join(ROOT, "viewer/christmas/xmasKit.js"), "utf8"), citySrc = fs.readFileSync(path.join(ROOT, "viewer/christmas/xmasCity.js"), "utf8");
+  out(/cards: QS\.get\("firlight"\) !== "old"/.test(kitSrc) && /slot === "fir_cards"\) \{ const L = foliageLights\(\); if \(L\) m\.lightsNode = L;/.test(kitSrc),
+    "fir light: the needle cards lit by the sun / moon + the sky only by default (foliageLights; ?firlight=old: every scene light)");
+  const lightSrc = fs.readFileSync(path.join(ROOT, "viewer/lighting.js"), "utf8"), nightSrc = fs.readFileSync(path.join(ROOT, "viewer/nightLights/cityNight.js"), "utf8");
+  const mt = /const MOVER_TOP = \/(.*)\/;/.exec(lightSrc), moverTop = mt ? new RegExp(mt[1]) : null;
+  const grp = /this\.group = new THREE\.Group\(\); this\.group\.name = "(\w+)"/.exec(citySrc)?.[1];
+  const dir = path.join(ROOT, "viewer/christmas"), xsrc = fs.readdirSync(dir).filter((f) => f.endsWith(".js")).map((f) => fs.readFileSync(path.join(dir, f), "utf8")).join("\n");
+  const lampMover = /const MOVER_LAYER = (\d+);/.exec(nightSrc)?.[1];
+  const staticOk = !!moverTop && !!grp && !moverTop.test(grp) && !/sunMover/.test(xsrc) && !!lampMover && !new RegExp(`layers\\.(set|enable)\\((${lampMover}|MOVER_LAYER)\\)`).test(xsrc);
+  out(staticOk, `fir shadow at night: the casters are static in the sun's cache (group "${grp}" not a mover by lighting.js MOVER_TOP, no sunMover) and never on the lamps' mover layer ${lampMover}: drawn on cache redraws only, not per frame`);
+  // (4) the probe's timing is not the render scale's (the first numbers moved +-0.3 ms with dynres' steps): run() and
+  //     lightAB() pin the scale before timing and give it back after
+  const probe = fs.readFileSync(path.join(ROOT, "debug/xmasPerf.js"), "utf8");
+  const fnBody = (name) => { const i = probe.indexOf(`export async function ${name}(`); return i < 0 ? "" : probe.slice(i, probe.indexOf("\nexport ", i + 10) < 0 ? undefined : probe.indexOf("\nexport ", i + 10)); };
+  out(["run", "lightAB"].every((f) => /const unpin = pinScale\(\)/.test(fnBody(f)) && /unpin\(\)/.test(fnBody(f))) && /U\.setScale\(s, \{ dynres: false \}\)/.test(probe),
+    "fir perf probe: run() and lightAB() pin the render scale (dynres off) for the timing, restored after");
+  const info = J("models/christmas/christmas.json"), L = info.lods?.tree?.lods ?? [], DRAWS = [9, 9, 5];
+  out(L.length === 3 && L.every((l, k) => l.draws <= DRAWS[k]), `fir draws per level ${L.map((l) => l.draws).join(" / ")} (budget ${DRAWS.join(" / ")}; + the cards' depth twin on the card levels, + 2 shadow-only copies in the sun's map)`);
+}
 // THE SITE FITS THE CURRENT CITY (rule xmas-fit-current-city, claude/xmas1: tools/christmas/siteFit.mjs). site.json is
 // baked; the data under it moves (street-life extras, scripted models hiding UrbIS solids, curated wide fronts). Fronts
 // = the current street life's (complete, unmoved, on a drawn wall); every swag run inside the front the shop kit DRAWS
@@ -147,6 +177,35 @@ for (const [i, c] of (site.chalets ?? []).entries()) standsWell(`chalet ${i}`, r
   const { siteFit } = await import(new URL("../christmas/siteFit.mjs", import.meta.url).href);
   const { rows } = await siteFit(site);
   for (const r of rows) out(r.ok, `site fit: ${r.msg}`);
+}
+// BOOT PRIORITY (rule xmas-low-priority, claude/xmas2, plan job 3): from 1 December every visitor downloads the layer;
+// every fetch under viewer/christmas/ carries XMAS_FETCH (priority "low"), every three.js loader there is set to it (a
+// loader's own fetch is High by default), the shared KTX2 loader is never asked to load (its priority is the ground's);
+// main.js starts addChristmas only through bootGate.js whenXmasNeeded (after the cover unless a decorated area is in the
+// boot's ring), whose areas match site.json select.areas
+{
+  const dir = path.join(ROOT, "viewer/christmas");
+  const src = Object.fromEntries(fs.readdirSync(dir).filter((f) => f.endsWith(".js")).map((f) => [f, fs.readFileSync(path.join(dir, f), "utf8")]));
+  const kit = src["xmasKit.js"] ?? "";
+  out(/export const XMAS_FETCH = \{ priority: "low" \}/.test(kit), "boot: XMAS_FETCH is { priority: \"low\" } (viewer/christmas/xmasKit.js)");
+  const bad = [];
+  for (const [f, t] of Object.entries(src)) {
+    for (const m of t.matchAll(/\bfetch\(/g)) {
+      let d = 0, i = m.index + 6;                      // the call's own argument list
+      for (; i < t.length; i++) { if (t[i] === "(") d++; else if (t[i] === ")") { if (d === 0) break; d--; } }
+      if (!/XMAS_FETCH/.test(t.slice(m.index, i))) bad.push(`${f}: fetch at line ${t.slice(0, m.index).split("\n").length}`);
+    }
+    for (const m of t.matchAll(/new (\w*Loader)\(\)[^;\n]*/g)) if (!/setPriority\(XMAS_FETCH\.priority\)/.test(m[0])) bad.push(`${f}: ${m[1]} without setPriority(XMAS_FETCH.priority)`);
+    if (/ktxLoader\([^)]*\)\.load(Async)?\(/.test(t)) bad.push(`${f}: the shared KTX2 loader's load() (fetch the bytes with XMAS_FETCH, then parse)`);
+  }
+  out(!bad.length, `boot: every Christmas fetch / loader at low priority${bad.length ? `: ${bad.join("; ")}` : ""}`);
+  const main = fs.readFileSync(path.join(ROOT, "viewer/main.js"), "utf8"), gate = fs.readFileSync(path.join(ROOT, "viewer/bootGate.js"), "utf8");
+  const calls = [...main.matchAll(/addChristmas\(\{/g)].map((m) => main.slice(Math.max(0, m.index - 160), m.index));
+  out(calls.length > 0 && calls.every((c) => /whenXmasNeeded\(\)\.then\(\(\) => $/.test(c)), "boot: main.js starts addChristmas only after bootGate.js whenXmasNeeded()");
+  const am = /export const XMAS_AREAS = (\[\[[^;]*\]\]);/.exec(gate);
+  const areas = am ? JSON.parse(am[1]) : [];
+  const want = (site.select?.areas ?? []).map((a) => [a.centre[0], a.centre[1], a.radius]);
+  out(want.length > 0 && JSON.stringify(areas) === JSON.stringify(want), `boot: bootGate.js XMAS_AREAS = site.json select.areas (${JSON.stringify(areas)} vs ${JSON.stringify(want)})`);
 }
 // (no light, no DynamicDrawUsage in viewer/christmas/: the meta row, tools/audit/gate.d/xmas.mjs)
 console.log(fails ? `xmasCheck: ${fails} FAIL` : "xmasCheck: all PASS");
