@@ -2013,16 +2013,20 @@ async function main() {
   /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
   sunCache.fader = fader;                // (perfgame round 3: the sun shadow cache is redrawn while a tile fades)
   globalThis.__sunCache = sunCache;      // (debug/falconStutter.js: full redraws per frame)
-  const retire = async (groups, dispose) => {
-    markSunShadowDirty();
-    if (!TILE_FADE) { dispose(); markSunShadowDirty(); return; }
+  // (claude/renders, ?sunfadecast=old: every tile event redrew the sun shadow cache) a full tile's AREA (its footprint,
+  // 0-250 m TAW: what it adds to the pools too) or a far tile's groups (no casters): a redraw only if it meets the light's box
+  const tileArea = (b) => new THREE.Box3(new THREE.Vector3(b.x0, 0, b.z0), new THREE.Vector3(b.x1, 250, b.z1));
+  const retire = async (groups, dispose, area = null) => {
+    const what = area || groups;
+    markSunShadowDirty(what);
+    if (!TILE_FADE) { dispose(); markSunShadowDirty(what); return; }
     const px = groups.map(fadeProxies).filter(Boolean);     // fading copies it has none of yet: built first
     if (px.length && compileFor) await compileFor(px, { first: true });
     // falcon2 (?retirewarm=old: the scene pass only, as before): their SHADOW pass too (compileAsync builds none), as a
     // landing tile's (preCompile): a retiring tile's new fading copy built its shadow shader on screen (31-56 ms)
     if (px.length && RETIRE_WARM && shadowWarm) await shadowWarm(px);
     let n = groups.length;
-    for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) { dispose(); markSunShadowDirty(); } });
+    for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) { dispose(); markSunShadowDirty(what); } });
   };
   const stream = async (liteFirst = false) => {   // liteFirst: skip the full tiles this step (boot warm-up)
     // the manifest tile under (or nearest to) the player / orbit target, loaded or not
@@ -2052,7 +2056,7 @@ async function main() {
           try { const l = await loadLiteTile(byName(t.name), liteGroup); lite.set(t.name, l); fader.fade(l.group, +1); } catch (e) { log(`far tile ${t.name} failed: ${e.message}`); }
           pending.delete(t.name);
         }
-        retire(t.groups, t.dispose);
+        retire(t.groups, t.dispose, tileArea(t.bounds));
         log(`- tile ${t.name}`);
       }
     }
@@ -2080,7 +2084,7 @@ async function main() {
       const t0 = performance.now();
       try {
         world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));   // (fades in by itself)
-        markSunShadowDirty();
+        markSunShadowDirty(tileArea(world.tiles[world.tiles.length - 1].bounds));
         const old = lite.get(t.name);
         lite.delete(t.name);
         if (old) retire([old.group], old.dispose);
@@ -2299,7 +2303,7 @@ async function main() {
         pending.add(n); fullHold++;
         const t0 = performance.now();
         loadTile(t, { layers, contourOn, verbose: false }).then((tile) => {
-          world.tiles.push(tile); markSunShadowDirty();
+          world.tiles.push(tile); markSunShadowDirty(tileArea(tile.bounds));
           const old = lite.get(n); lite.delete(n);
           if (old) retire([old.group], old.dispose);
           log(`+ tile ${n} (${(performance.now() - t0).toFixed(0)} ms, under the loader)`);

@@ -112,9 +112,55 @@ export const SUN_CACHE = SMOOTH_SHADOWS && QS.get("sunshadowcache") !== "old";
 export const SUN_QZ = 25;
 const SUN_REFRESH = Math.max(0, +(QS.get("sunshadowrefresh") ?? 30));
 const MOVER_TOP = /^(car|traffic|trains?|tram|twowheel|falcon|player-falcon|pigeons|sky-birds|bird|flag|People|character|police-props|waypoint)/;
-export const sunCache = { dirty: true, fader: null, stats: { full: 0, shifted: 0, frames: 0 } };
-/** something static changed in the sun's view (a tile, a landmark swap): the cache is redrawn next frame */
-export function markSunShadowDirty() { sunCache.dirty = true; }
+export const sunCache = { dirty: true, fader: null, pend: [], stats: { full: 0, shifted: 0, frames: 0 } };
+// (claude/renders, docs/rules/renders-per-frame.md; ?sunfadecast=old: as before) A FULL REDRAW ONLY FOR A CHANGE THE MAP
+// CAN SHOW. The police drive redrew the whole cache (~106 casters, the heaviest render of a frame) on ~1 frame in 10; half
+// of those were for tile fades and tile swaps that put nothing into the map: the far-LOD tiles cast no shadow at all,
+// the terrain / road groups neither, and a full tile landing or retiring 1-3 tiles away lies outside the light's box.
+// Now a fade or a dirty mark that names its objects redraws only when one of them has a shadow-casting mesh whose
+// bounds meet the light's frustum this frame (a mesh with frustumCulled = false or no bounds counts as anywhere).
+export const FADE_CAST = SUN_CACHE && QS.get("sunfadecast") !== "old";
+// (claude/renders; ?sundepthstep=old: as before) THE LIGHT'S DEPTH STEP WITHOUT A REDRAW. The light's distance along
+// the sun is quantised (SUN_QZ m) so the static depths hold while the box slides; driving toward / away from the sun
+// crossed a step every ~1.6 s and each one redrew the cache. Orthographic depth is linear in the light's own z, so a step
+// of d metres moves every stored depth by -P[10] x d: the lay-back quad adds it (empty texels kept). One step at most
+// (a second one redraws); the far plane carries one more SUN_QZ, so the cached depth range still reaches the deepest
+// receiver after a step either way.
+export const DEPTH_STEP = SUN_CACHE && QS.get("sundepthstep") !== "old";
+const castInfo = new WeakMap();                 // object -> { casts, any, box } (world bounds of its shadow casters)
+const _cb = new THREE.Box3(), _cs = new THREE.Sphere(), _fr = new THREE.Frustum(), _fm = new THREE.Matrix4();
+/** the shadow-casting part of obj, measured once (bounding spheres: already computed by the main pass's culling) */
+export function casterInfo(obj) {
+  let c = castInfo.get(obj);
+  if (c) return c;
+  if (obj.isBox3) { c = { casts: true, any: false, box: obj }; castInfo.set(obj, c); return c; }   // (an area: a tile's footprint)
+  c = { casts: false, any: false, box: new THREE.Box3() };
+  obj.updateWorldMatrix(true, true);
+  obj.traverse((o) => {
+    if (!o.castShadow || !(o.isMesh || o.isLine || o.isPoints)) return;
+    c.casts = true;
+    if (c.any) return;
+    const src = o.isInstancedMesh || o.isBatchedMesh ? o : o.geometry;
+    if (o.frustumCulled === false || o.isSkinnedMesh || !src) { c.any = true; return; }
+    if (!src.boundingSphere) src.computeBoundingSphere();
+    if (!src.boundingSphere || !(src.boundingSphere.radius >= 0)) { c.any = true; return; }
+    _cs.copy(src.boundingSphere).applyMatrix4(o.matrixWorld);
+    c.box.union(_cs.getBoundingBox(_cb));
+  });
+  castInfo.set(obj, c);
+  return c;
+}
+/** does obj put anything into a shadow map whose light frustum is `fr` (a caster meeting it; an area meeting it) */
+export function castsInto(obj, fr) { const c = casterInfo(obj); return c.casts && (c.any || fr.intersectsBox(c.box)); }
+const castsIn = (obj) => castsInto(obj, _fr);
+/** something static changed in the sun's view (a tile, a landmark swap): the cache is redrawn next frame. With `objs`
+ *  (an object or a list: the tile's groups), only if one of them casts into the light's box (FADE_CAST); measured now,
+ *  so a list about to be disposed still counts */
+export function markSunShadowDirty(objs = null) {
+  if (!FADE_CAST || !objs) { sunCache.dirty = true; return; }
+  for (const o of Array.isArray(objs) ? objs : [objs]) if (o) { casterInfo(o); sunCache.pend.push(o); }
+  if (sunCache.pend.length > 64) { sunCache.dirty = true; sunCache.pend.length = 0; }   // (no shadow pass for a while: bounded)
+}
 // falconstutter (docs/perf/FALCON_STUTTER.md; ?warmmover=old: as before): the SHADOW-pass warm groups ("<name>-warm" of the
 // landmarks / bridges, warmup.js warmShadows' "boot3-late-warm") draw their stand-ins for a frame or two far under the
 // city so the shadow pass builds their shaders off screen; with the cache they were static casters, drawn only when the
@@ -123,7 +169,7 @@ export function markSunShadowDirty() { sunCache.dirty = true; }
 const WARM_MOVER = QS.get("warmmover") !== "old";
 const isMover = (o) => o.userData?.sunMover === true || MOVER_TOP.test(o.name || "") || (WARM_MOVER && /-warm$/.test(o.name || ""));
 class CachedSunShadowNode extends FadedShadowNode {
-  constructor(light, sh) { super(light, sh); this.cache = null; this.key = null; this.cx0 = 0; this.cy0 = 0; this.age = 0; this.hid = []; this.blit = null; }
+  constructor(light, sh) { super(light, sh); this.cache = null; this.key = null; this.cx0 = 0; this.cy0 = 0; this.pz0 = 0; this.age = 0; this.hid = []; this.blit = null; }
   setupRenderTarget(sh, builder) {
     const r = super.setupRenderTarget(sh, builder);
     r.depthTexture.type = THREE.FloatType;                 // depth32float: copyable (depth24plus is not)
@@ -133,17 +179,26 @@ class CachedSunShadowNode extends FadedShadowNode {
   }
   blitQuad() {
     if (this.blit) return this.blit;
-    const off = uniform(new THREE.Vector2(0, 0)), size = uniform(new THREE.Vector2(1, 1));
+    const off = uniform(new THREE.Vector2(0, 0)), size = uniform(new THREE.Vector2(1, 1)), dz = uniform(0);
     const m = new THREE.MeshBasicNodeMaterial({ depthTest: false, depthWrite: true, colorWrite: false });
     const cache = this.cache;
     {
       const c = ivec2(screenCoordinate.xy).add(ivec2(off));
       const inside = c.x.greaterThanEqual(int(0)).and(c.y.greaterThanEqual(int(0))).and(c.x.lessThan(int(size.x))).and(c.y.lessThan(int(size.y)));
-      m.depthNode = select(inside, float(textureLoad(cache, c.clamp(ivec2(0), ivec2(size).sub(1)))), float(1));
+      const d = float(textureLoad(cache, c.clamp(ivec2(0), ivec2(size).sub(1))));
+      // (DEPTH_STEP) the light's depth step added to every caster's depth; an empty texel (the clear value, 0 or 1) kept
+      const moved = DEPTH_STEP ? select(d.equal(0).or(d.equal(1)), d, d.add(dz).clamp(0, 1)) : d;
+      m.depthNode = select(inside, moved, float(1));
     }
     m.name = "sun shadow cache blit";
-    this.blit = { quad: new THREE.QuadMesh(m), off, size };
+    this.blit = { quad: new THREE.QuadMesh(m), off, size, dz };
     return this.blit;
+  }
+  /** (FADE_CAST) does a running fade put anything into the map: a fading object with a caster in the light's frustum */
+  fadeCasts() {
+    const L = sunCache.fader.list;
+    for (let i = 0; i < L.length; i++) if (castsIn(L[i].obj)) return true;
+    return false;
   }
   renderShadow(frame) {
     if (!this.cache) return super.renderShadow(frame);
@@ -154,12 +209,21 @@ class CachedSunShadowNode extends FadedShadowNode {
     // the light camera's position across its view, in its own x / y / z axes (the matrixWorld's columns)
     const e = cam.matrixWorld.elements;
     const px = e[12] * e[0] + e[13] * e[1] + e[14] * e[2], py = e[12] * e[4] + e[13] * e[5] + e[14] * e[6], pz = e[12] * e[8] + e[13] * e[9] + e[14] * e[10];
-    const key = `${cam.right}|${cam.far}|${e[8].toFixed(6)},${e[9].toFixed(6)},${e[10].toFixed(6)}|${Math.round(pz / SUN_QZ)}`;
+    const key = DEPTH_STEP ? `${cam.right}|${cam.far}|${e[8].toFixed(6)},${e[9].toFixed(6)},${e[10].toFixed(6)}`
+      : `${cam.right}|${cam.far}|${e[8].toFixed(6)},${e[9].toFixed(6)},${e[10].toFixed(6)}|${Math.round(pz / SUN_QZ)}`;
+    const dpz = DEPTH_STEP ? pz - this.pz0 : 0;                 // the light's depth steps since the cache was drawn (m)
+    if (FADE_CAST) {                                            // the light's frustum this frame (castsIn)
+      _fm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+      _fr.setFromProjectionMatrix(_fm, cam.coordinateSystem, cam.reversedDepth);
+      const pend = sunCache.pend;
+      if (pend.length) { if (!sunCache.dirty) for (let i = 0; i < pend.length; i++) if (castsIn(pend[i])) { sunCache.dirty = true; break; } pend.length = 0; }
+    }
     const mx = Math.round((px - this.cx0) / texel), my = Math.round((py - this.cy0) / texel);
     // the strip shifted in must stay inside the fade's fully-lit outer band
     const lim = Math.max(8, Math.floor((1 - shadowFade.uRadius.value) * W / 2) - 4);
     this.age++;
-    const why = sunCache.dirty ? "dirty" : key !== this.key ? "key" : Math.abs(mx) > lim || Math.abs(my) > lim ? "shift" : sunCache.fader?.busy && this.age >= 3 ? "fade" : SUN_REFRESH > 0 && this.age >= SUN_REFRESH ? "refresh" : null;
+    const why = sunCache.dirty ? "dirty" : key !== this.key ? "key" : Math.abs(dpz) > SUN_QZ * 1.01 ? "step" : Math.abs(mx) > lim || Math.abs(my) > lim ? "shift"
+      : sunCache.fader?.busy && this.age >= 3 && (!FADE_CAST || this.fadeCasts()) ? "fade" : SUN_REFRESH > 0 && this.age >= SUN_REFRESH ? "refresh" : null;
     const full = !!why;
     if (why) sunCache.stats[why] = (sunCache.stats[why] || 0) + 1;
     const name = scene.name;
@@ -172,11 +236,13 @@ class CachedSunShadowNode extends FadedShadowNode {
       for (const c of hid) c.visible = true;
       hid.length = 0;
       renderer.copyTextureToTexture(map.depthTexture, this.cache);
-      this.key = key; this.cx0 = px; this.cy0 = py; this.age = 0; sunCache.dirty = false; sunCache.stats.full++;
+      this.key = key; this.cx0 = px; this.cy0 = py; this.pz0 = pz; this.age = 0; sunCache.dirty = false; sunCache.stats.full++;
     } else {
       // the cache laid back, shifted by the box's move: current texel (c, r) <- cache (c + mx, r - my) (rows grow down)
       const B = this.blitQuad();
       B.off.value.set(mx * SHIFT_SIGN.x, my * SHIFT_SIGN.y); B.size.value.set(W, sh.mapSize.height);
+      B.dz.value = -cam.projectionMatrix.elements[10] * dpz;    // (DEPTH_STEP: the stored depths moved by the step; 0 otherwise)
+      if (dpz !== 0) sunCache.stats.stepped = (sunCache.stats.stepped || 0) + 1;
       const rof = renderer.getRenderObjectFunction();
       renderer.setRenderObjectFunction(null);
       B.quad.render(renderer);
@@ -596,7 +662,7 @@ export class Lighting {
     // within the box across the sun's view and +-110 m in height lies within box x 1.42 + 110 m of the focus along the
     // light): casters further away from the sun than that shadow nothing drawn, and were drawn in the shadow pass
     // (far landmarks 300-700 m behind the player: 15-25 of its ~150 objects in the police drive)
-    const farWant = SHADOW_FAR ? 900 + box * 1.42 + 110 + (SUN_CACHE ? SUN_QZ : 0) : 2000;
+    const farWant = SHADOW_FAR ? 900 + box * 1.42 + 110 + (SUN_CACHE ? SUN_QZ * (DEPTH_STEP ? 2 : 1) : 0) : 2000;
     if (sc.right !== box || sc.far !== farWant) {
       Object.assign(sc, { left: -box, right: box, top: box, bottom: -box, far: farWant });
       sc.updateProjectionMatrix();
