@@ -21,7 +21,7 @@ export async function run({ grid = 1024, still = /^(car|traffic|trains?|tram|two
   V.pause(true);
   const upd = Lg.update;
   let off = 0, forceZero = false;
-  Lg.update = function (...a) { const r = upd.apply(this, a); if (off) this.sun.position.addScaledVector(this._lz, off); return r; };
+  Lg.update = function (...a) { const r = upd.apply(this, a); if (off) (this.shadowPos ?? this.sun.position).addScaledVector(this._lz, off); return r; };   // (claude/sunstep: the shadow camera sits at shadowPos)
   const rt = new THREE.RenderTarget(grid, grid, { type: THREE.FloatType, format: THREE.RedFormat, depthBuffer: false });
   const read = async () => {
     const map = sn.shadowMap.depthTexture, W = map.image.width;

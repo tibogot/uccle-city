@@ -470,3 +470,14 @@ by the GLTF parser (6 MB per model seen).
    (the per-model wrapAO copies -> NodeMaterialInstance + materialReference).
 3. The flush split's extra city passes: draw only the chunk's holder (not the whole pass) per chunk, in the pass's
    target + MRT, to make the split free.
+
+## sunstep (claude/sunstep, 2026-11-24): the moving sun's shadow cache
+
+Police spawn, sun speed 60x from golden (9.4 deg, sinking to -2 deg over the 77 s run), render scale pinned 0.75, system
+preflight GREEN, page in front at 60 fps (no page check: the game page). One page, 8 interleaved rounds of 4 s:
+A = a full cache redraw every frame (what `?sunstep=old` does with any sun motion), B = the stepped shadow sun (default).
+GPU frame (trimmed mean) 7.82 -> **5.35 ms (-2.47 +- 0.67)**; sun shadow pass CPU 2.27 -> **1.06 ms**; full redraws
+100 % -> 35 % of frames (the low end of the sun's path: the step shrinks with sin(e); 23.5 % over 20 s from 9.4 deg on a
+busy machine; the simulated day gives 5.6-12 %). Counts with `?sunstep=old&sunfar=old`: 99 % of frames redraw even at 1x.
+The far plane by elevation (`sunfar`): the spawn's full redraw draws the same 135 casters at golden; the far-300m view
+122 vs 102 (+0.6 ms CPU on a full redraw only). Rule docs/rules/sun-shadow-step.md.
