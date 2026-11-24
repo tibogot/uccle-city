@@ -38,7 +38,7 @@ const CSS = `
 .fg .fg-arrow.on { display: block; }
 .fg .fg-arrow i { position: absolute; left: 11px; top: 4px; width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-bottom: 22px solid #ffcc33; filter: drop-shadow(0 1px 3px rgba(0,0,0,.7)); }
 .fg .fg-arrow span { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 700; color: #ffe08a; text-shadow: 0 1px 3px rgba(0,0,0,.85); }
-.fg .fg-goal { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); padding: 6px 14px; display: none; text-align: center; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.fg .fg-goal { position: absolute; left: 50%; top: 62px; transform: translateX(-50%); padding: 6px 14px; display: none; text-align: center; font-size: 13px; font-weight: 700; white-space: nowrap; }
 .fg .fg-goal.on { display: block; } .fg .fg-goal em { font-style: normal; color: #ffcc33; margin-left: 10px; }
 .fg .fg-hint { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); padding: 8px 16px; display: none; font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; }
 .fg .fg-hint.on { display: block; } .fg .fg-hint kbd { font: 800 12px/1 ui-monospace, monospace; padding: 2px 6px; border-radius: 4px; background: #ffcc33; color: #1a1406; }
@@ -195,7 +195,7 @@ export class FalconHunt {
     document.body.append(el);
     const q = (s) => el.querySelector(s);
     this.e = { g: q(".fg-g"), flash: q(".fg-flash"), tgt: q(".fg-tgt"), tgtL: q(".fg-tgt span"), tgtB: q(".fg-tgt b"), banner: q(".fg-banner"), bannerP: q(".fg-banner p"), bannerS: q(".fg-banner small"),
-      arrow: q(".fg-arrow"), arrowL: q(".fg-arrow span"), goal: q(".fg-goal"), goalL: q(".fg-goal span"), goalC: q(".fg-goal em"), hint: q(".fg-hint"),
+      arrow: q(".fg-arrow"), arrowI: q(".fg-arrow i"), arrowL: q(".fg-arrow span"), goal: q(".fg-goal"), goalL: q(".fg-goal span"), goalC: q(".fg-goal em"), hint: q(".fg-hint"),
       hunger: q(".fg-hunger"), eyas: [...el.querySelectorAll(".fg-eyas")], eyasU: [...el.querySelectorAll(".fg-eyas u")],
       speed: q(".fg-gauge b"), alt: q(".fg-alt"), vy: q(".fg-vy"), assist: q(".fg-assist"), n: q(".fg-n"), sta: q(".fg-sta"), staU: q(".fg-sta u"), chip: q(".fg-chip") };
   }
@@ -332,7 +332,9 @@ export class FalconHunt {
     const px = (x * 0.5 + 0.5) * innerWidth, py = (-y * 0.5 + 0.5) * innerHeight;
     const ang = inside ? Math.PI : Math.atan2(x * innerWidth, y * innerHeight);
     if (this.cache.get("arrow.on") !== true) { this.cache.set("arrow.on", true); E.arrow.classList.add("on"); }
-    E.arrow.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) rotate(${ang.toFixed(3)}rad)`;
+    // (the triangle turns, the label stays upright)
+    E.arrow.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px)`;
+    E.arrowI.style.transform = `rotate(${ang.toFixed(3)}rad)`;
     const lab = `${what} · ${Math.round(d / 10) * 10} m`;
     if (this.cache.get("arrow.l") !== lab) { this.cache.set("arrow.l", lab); E.arrowL.textContent = lab; }
   }
