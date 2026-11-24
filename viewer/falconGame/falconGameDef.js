@@ -179,6 +179,8 @@ export const FALCON_GAME = {
         }
         S.hunt.frame(dt);
         const g = fl.game;
+        // (falcon fun, round 2) the two nearest squares with pigeons on the minimap / the full map (the flock glyph)
+        if (g.fun && (S.flockT = (S.flockT || 0) + dt) >= 1) { S.flockT = 0; flockMarkers(kit, fl); }
         if ((S.hudT = (S.hudT || 0) + dt) >= 0.25) { S.hudT = 0; S.hunt.hud(); }
         if (S.mobbers.active) {
           S.mobbers.update(dt * g.timeScale, g.f, !!fl.bird.prey, (x, z) => fl.w.floor(x, z));
@@ -218,6 +220,7 @@ export const FALCON_GAME = {
   },
   stop(kit) {
     const fl = kit.host.flyer;
+    kit.markers?.set("flock0", null); kit.markers?.set("flock1", null); S.flockKey = "";
     const i = kit.host.updaters.indexOf(S.frameFn); if (i >= 0) kit.host.updaters.splice(i, 1); S.frameFn = null;
     S.mobbers?.stop();
     if (S.hunt) { S.hunt.show(false); S.hunt.hunger = null; }
@@ -247,6 +250,20 @@ export const FALCON_GAME = {
     setTimeout(() => { if (kit.current?.def.id === "falcon" && !kit.mission) offer(kit, def, `${lines[def.id] || "Next:"} (Y: "${def.title}")`); }, 6500);
   },
 };
+
+/** (falcon fun) the nearest two squares with a flock (the Place de Saint-Job + cityFlyer's squares not known empty) as
+ *  map markers; set only when the pair changes (a redraw), the city map's own overlay (viewer/game/mapMarkers.js) */
+function flockMarkers(kit, fl) {
+  const f = fl.game.f, L = (S._sq ??= []);
+  L.length = 0;
+  L.push({ name: "Place de Saint-Job", x: PLACE.x, z: PLACE.z });
+  for (const q of fl.squares || []) if (q.state !== "none") L.push(q);
+  L.sort((a, b) => Math.hypot(a.x - f.pos.x, a.z - f.pos.z) - Math.hypot(b.x - f.pos.x, b.z - f.pos.z));
+  const key = `${L[0]?.name}|${L[1]?.name}`;
+  if (key === S.flockKey && kit.markers?.list.some((m) => m.id === "flock0")) return;    // (a mission's end clears the markers)
+  S.flockKey = key;
+  for (let k = 0; k < 2; k++) kit.markers?.set(`flock${k}`, L[k] ? { x: L[k].x, z: L[k].z, color: k ? "#d9e6f2" : "#ffffff", kind: "flock", label: L[k].name } : null);
+}
 
 /** the player as the tiercel: the adult plumage on the player's bird, the family's own male out of the way */
 function tiercel(fl, on) {

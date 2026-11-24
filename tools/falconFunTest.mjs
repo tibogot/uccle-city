@@ -23,6 +23,11 @@ globalThis.location = { search: OLD ? "?falconfun=old" : "" };
 let seed = 1;
 Math.random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
+// (the chase camera, simulated: a DOM stub for its vignette)
+const el = () => ({ style: { setProperty() {} }, append() {}, classList: { add() {}, remove() {}, toggle() {} } });
+if (!globalThis.document?.body) globalThis.document = { ...(globalThis.document || {}), createElement: el, body: el(), head: el() };
+const THREE = await import("three/webgpu");
+const { FalconCamera } = await import("../viewer/falconFlight/falconCamera.js");
 const { FalconGame } = await import("../viewer/falconFlight/falconGame.js");
 const { Pigeons } = await import("../viewer/falconFlight/pigeons.js");
 const { FalconFlight, FlightControls } = await import("../viewer/falconFlight/flightModel.js");
@@ -96,10 +101,17 @@ function play(sd, T = 120, high = false) {
   g.takeoffT = 0.6;
   const falcon = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, speed: 0, stoop: false };
   const dt = 1 / 60, f = g.f, I = inp.intent;
-  let first = -1, real = 0, maxV = 0, k = 0;
+  let first = -1, real = 0, maxV = 0, k = 0, firstTame = false;
   const attempts = [];                // { i, kind, t, caught }
   let cur = null, lastCatches = 0;
   const tmp = { x: 0, y: 0, z: 0 };
+  // the chase camera as the city runs it (cityFlyer.update), the falcon fun's params unless old
+  const cam = new THREE.PerspectiveCamera(58, 16 / 9, 0.05, 8000), fc = new FalconCamera(cam, new THREE.Scene());
+  if (g.fun) Object.assign(fc.params, CAM_FUN);
+  const cb = { pos: g.pos, va: f.va, V: 0, phi: 0, heading: 0, gamma: 0, span: 1, stun: 0, liftRate: 0, fold: 0, n: 1 };
+  const co = { aim: null, steady: true, look: { yaw: 0, pitch: 0 }, zoom: 1, perched: false, perchYaw: 0, floor: roofAt, col: (x, z) => ({ floor: roofAt(x, z), ceil: Infinity }), sight: roofAt };
+  const pv = new THREE.Vector3();
+  let camFrames = 0, outFrames = 0, hidFrames = 0, outRun = 0, outRunMax = 0;
   for (; real < T; real += dt, k++) {
     // ---- the simple player
     I.turn = 0; I.vert = 0; I.climb = 0; I.stoop = 0; I.half = 0; I.brake = 0; I.aim = null; inp.talons = false;
@@ -134,9 +146,19 @@ function play(sd, T = 120, high = false) {
     }
     g.update(dt, null);
     if (g.fun?.diving) diveEnd = real;
+    if (g.mode === "fly") {
+      Object.assign(cb, { V: f.V, phi: f.phi, heading: f.heading, gamma: f.gamma, span: g.span, stun: f.stun, liftRate: f.lift, fold: f.fold, n: f.n });
+      co.aim = null; co.steady = !!g.assist;
+      fc.update(dt, cb, co);
+      cam.updateMatrixWorld(); camFrames++;
+      pv.copy(g.pos).project(cam);
+      const out = pv.z > 1 || Math.abs(pv.x) > 0.97 || Math.abs(pv.y) > 0.97;
+      if (out) { outFrames++; outRun++; outRunMax = Math.max(outRunMax, outRun); } else outRun = 0;
+      if (fc.sight(cb, co, g.span, cam.position) < 1) hidFrames++;
+    }
     if (g.score.catches > lastCatches) {
       lastCatches = g.score.catches;
-      if (first < 0) first = real;
+      if (first < 0) { first = real; firstTame = !!g.fun?.firstWasTame; }
       if (cur && !cur.done) { cur.caught = true; cur.done = true; }
     }
     // ---- the pigeons (as cityFlyer.ambient: the falcon as the threat, the game's time scale)
@@ -147,7 +169,8 @@ function play(sd, T = 120, high = false) {
   }
   const easy = attempts.filter((a) => a.kind === "easy").slice(0, 5);
   if (TRACE) console.log(attempts.slice(0, 12).map((a) => `${a.i}:${a.kind}@${a.t.toFixed(1)}${a.caught ? "+" : "-"}`).join(" "));
-  return { first, catches: g.score.catches, points: g.score.points, crashes, other, contacts, maxKmh: Math.round(maxV * 3.6), easyCaught: easy.filter((a) => a.caught).length, easyTried: easy.length, attempts: attempts.length, escapes: P.escapes, runs: g.fun?.run.done ?? 0, starter: !!starter };
+  const camOut = { out: outFrames / Math.max(camFrames, 1), outRunMax: outRunMax / 60, hid: hidFrames / Math.max(camFrames, 1) };
+  return { camOut, firstTame, first, catches: g.score.catches, points: g.score.points, crashes, other, contacts, maxKmh: Math.round(maxV * 3.6), easyCaught: easy.filter((a) => a.caught).length, easyTried: easy.length, attempts: attempts.length, escapes: P.escapes, runs: g.fun?.run.done ?? 0, starter: !!starter };
 }
 
 /** a straight stoop from h m over flat ground (or the town), Shift held 25 s, the fun arcade (or not) */
@@ -180,10 +203,12 @@ const S = out.seeds, firsts = S.map((r) => r.first), med = (a) => [...a].sort((x
 const f1 = (x) => (x < 0 ? "none" : x.toFixed(1) + " s");
 if (!OLD) {
   check("first catch <= 30 s (every seed)", S.every((r) => r.first >= 0 && r.first <= 30), `${firsts.map(f1).join(", ")} (the tame pigeon placed: ${S.every((r) => r.starter)})`);
+  check("the first catch is the tame pigeon under the launch (the hint's bird)", S.every((r) => r.firstTame), S.map((r) => (r.firstTame ? "tame" : "another")).join(", "));
   check(">= 4 catches in 2 min (every seed)", S.every((r) => r.catches >= 4), `${S.map((r) => r.catches).join(", ")} catches; ${S.map((r) => r.points).join(", ")} points; runs of 5 done ${S.map((r) => r.runs).join(", ")}`);
   check(">= 4 of the first 5 easy pigeons dived at caught (>= 80 %, every seed)", S.every((r) => r.easyTried >= 3 && r.easyCaught >= Math.ceil(r.easyTried * 0.8)), S.map((r) => `${r.easyCaught}/${r.easyTried}`).join(", "));
   const nc = S.reduce((a, r) => a + r.crashes, 0), ncat = S.reduce((a, r) => a + r.catches, 0);
   check("auto-dives near the roofs: <= 1 bump per 25 catches, <= 3 a run", nc * 25 <= ncat && S.every((r) => r.crashes <= 3), `${nc} bumps in ${ncat} catches: ${S.map((r) => r.crashes).join(", ")} (other low-flight bumps: ${S.map((r) => r.other).join(", ")}); top speed ${S.map((r) => r.maxKmh).join(", ")} km/h; escapes ${S.map((r) => r.escapes).join(", ")}`);
+  check("the falcon on screen (the chase camera simulated): <= 0.5 % of frames out of frame, never > 0.25 s, in the hunts and the 150 m stoops", [...S, ...HIGH].every((r) => r.camOut.out <= 0.005 && r.camOut.outRunMax <= 0.25), `out of frame ${S.map((r) => (r.camOut.out * 100).toFixed(1)).join(", ")} % (longest ${S.map((r) => r.camOut.outRunMax.toFixed(2)).join(", ")} s); stoops ${HIGH.map((r) => (r.camOut.out * 100).toFixed(1)).join(", ")} % (longest ${HIGH.map((r) => r.camOut.outRunMax.toFixed(2)).join(", ")} s); hidden ${S.map((r) => (r.camOut.hid * 100).toFixed(1)).join(", ")} %`);
   check("stoop from 150 m into an auto-dive (6 runs of 30 s): no crash, a catch", HIGH.every((r) => r.crashes === 0 && r.other === 0 && r.catches >= 1), HIGH.map((r) => `${r.catches} caught, top ${r.maxKmh} km/h, ${r.crashes + r.other} crashes`).join("; "));
   const d150 = stoop(150), d50 = stoop(50), d300 = stoop(300);
   check("a 150 m stoop >= 230 km/h, no ground contact", d150.kmh >= 230 && d150.contacts === 0, `${d150.kmh} km/h, lowest ${d150.minAgl} m (50 m: ${d50.kmh} km/h lowest ${d50.minAgl} m; 300 m: ${d300.kmh} km/h)`);

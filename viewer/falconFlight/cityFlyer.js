@@ -423,8 +423,8 @@ export class CityFlyer {
     const inp = this.input;
     const aim = inp.mouseAim && inp.mouse.locked && g.mode === "fly" ? (this._aim ??= new THREE.Vector3()).set(-Math.sin(inp.aim.yaw) * Math.cos(inp.aim.pitch), Math.sin(inp.aim.pitch), -Math.cos(inp.aim.yaw) * Math.cos(inp.aim.pitch)) : null;
     this.fovCity ??= this.camera.fov;
-    this.fcam.update(dt, { pos: g.pos, va: f.va, V: g.mode === "fly" ? f.V : Math.max(f.V, 0.1), phi: f.phi, heading: f.heading, gamma: f.gamma, span: g.span, stun: f.stun, liftRate: f.lift, fold: f.fold },
-      { aim, steady: !!g.assist && f.assisted, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z), col: (this._colFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true)), sight: (this._sightFn ??= (x, z) => w.column(x, z, this.game.f.pos.y).floor) });
+    this.fcam.update(dt, { pos: g.pos, va: f.va, V: g.mode === "fly" ? f.V : Math.max(f.V, 0.1), phi: f.phi, heading: f.heading, gamma: f.gamma, span: g.span, stun: f.stun, liftRate: f.lift, fold: f.fold, n: f.n },
+      { aim, steady: !!g.assist && f.assisted, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z), col: (this._colFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true)), sight: (this._sightFn ??= (x, z) => w.column(x, z, this.game.f.pos.y).floor), sightWhole: (this._sightWFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true).floor) });
     this.audio?.update(dt, { V: g.mode === "fly" ? f.V : 0, phi: f.phi, fold: f.fold, lift: f.lift, downstroke: this.bird.downstroke, flapLevel: f.flapLevel }, this.camera);
     const t6 = performance.now();
     c.game = t3 - t2; c.hints = t5 - t4; c.camera = t6 - t5;

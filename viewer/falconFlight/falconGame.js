@@ -306,6 +306,15 @@ export class FalconGame {
     if (i >= 0 && P.state[i] === 3) i = -1;
     // (after a catch: FUN.cool s with the prey in the talons before the next lock: one bird at a time)
     if (F.cool > 0) { F.cool -= dt; this.target = -1; F.lock = -1; this.window = null; F.slowK = 1; F.arrowTick(dt, P, f); return; }
+    // (round 2) the FIRST CATCH is the tame pigeon: while it is uncaught it holds the lock whenever it is in range and
+    // within 70 deg of the view (the hint says "the pigeon on the roof below": the ring must be on that one)
+    const si = F.starter ? (P === F.starter.flock ? F.starter.i : P.flock === F.starter.flock ? F.starter.i : -1) : -1;
+    if (si >= 0 && P.state[si] !== 3) {
+      P.pos(si, this._v);
+      const dx = this._v.x - f.pos.x, dy = this._v.y - f.pos.y, dz = this._v.z - f.pos.z, d = Math.hypot(dx, dy, dz);
+      if (d < FUN.lockRange * 1.3 && (dx * vd.x + dy * vd.y + dz * vd.z) / Math.max(d, 0.1) > Math.cos(1.2)) { i = si; this.lockTarget = true; }
+      else if (i === si) this.lockTarget = false;
+    } else if (F.starter) { F.starter = null; this.lockTarget = false; }
     if (i >= 0 && !this.lockTarget) {
       P.pos(i, this._v);
       const dx = this._v.x - f.pos.x, dy = this._v.y - f.pos.y, dz = this._v.z - f.pos.z, d = Math.hypot(dx, dy, dz);
@@ -397,7 +406,7 @@ export class FalconGame {
     this.hitStop = 0.35; this.audio?.strike(true);
     this.target = -1; this.window = null; F.lock = -1;
     this.lastCatch = { t: this.t, V: v, x: f.pos.x, y: f.pos.y, z: f.pos.z, pts, labels: F.last.labels };
-    if (starter) { F.starter = null; F.hint = ""; }
+    if (starter) { F.starter = null; F.hint = ""; F.firstWasTame = true; this.lockTarget = false; }
   }
 
   /** the strike: target, catch window, catch / miss */

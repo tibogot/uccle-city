@@ -8,6 +8,8 @@ import { attribute, vec3, uniform } from "three/tsl";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const _g1 = new THREE.Vector3(), _g2 = new THREE.Vector3();
+const LIFTS = [1.5, 3, 5, 8];
 const _c = new THREE.Vector3(), _q = new THREE.Vector3(), _e = new THREE.Vector3(), _u = new THREE.Vector3(), _w = new THREE.Vector3(), _t = new THREE.Vector3(), _Y = new THREE.Vector3(0, 1, 0);
 
 export class FalconCamera {
@@ -59,8 +61,8 @@ export class FalconCamera {
    *  fraction of the way from the bird to P that is clear (1: all; the first point under the solid + 0.25 m). The
    *  solids that hide the bird: o.sight (the crowns' dense cores, not their leaves, else a bird brushing a crown is
    *  hidden), else o.floor */
-  sight(b, o, span, P) {
-    const sample = o.sight || o.floor, B = b.pos;
+  sight(b, o, span, P, whole = false) {
+    const sample = (whole && o.sightWhole) || o.sight || o.floor, B = b.pos;
     if (!sample) return 1;
     const rx = -Math.cos(b.heading) * span * 0.5, rz = Math.sin(b.heading) * span * 0.5;
     let worst = 1;
@@ -86,8 +88,20 @@ export class FalconCamera {
       dx = P.x - B.x; dy = P.y - B.y; dz = P.z - B.z; d = minD;
     }
     if (o.perched) return P;
-    const worst = this.sight(b, o, span, P);
+    // (falcon fun, params.fun: the crowns WHOLE hide the bird too (their leaves, not only the dense cores), unless the
+    // bird is itself inside one; then the camera first LIFTS over them (1.5 / 3 / 5 / 8 m) before it comes in along the
+    // line: low after a catch, the falcon was lost behind the street trees' leaves)
+    const whole = !!(this.params.fun && o.sightWhole && o.sightWhole(B.x, B.z) < B.y - 0.3);
+    const worst = this.sight(b, o, span, P, whole);
     if (worst >= 1) return P;
+    if (whole) {
+      for (const h of LIFTS) {
+        _q.set(P.x, P.y + h, P.z);
+        const c = o.col ? o.col(_q.x, _q.z) : null;
+        if (c && !(_q.y > c.floor + 0.3 && _q.y < c.ceil - 0.3)) continue;
+        if (this.sight(b, o, span, _q, true) >= 1) { P.copy(_q); this.clear.lifted = h; return P; }
+      }
+    }
     // pull in along the line to the clear part; when that is closer than minD, go over the bird instead
     const keep = Math.max(worst - 0.08, 0), want = d * keep;
     if (want >= minD) { P.set(B.x + dx * keep, B.y + dy * keep, B.z + dz * keep); this.clear.pulled = d - want; }
@@ -126,7 +140,10 @@ export class FalconCamera {
     }
     // faster = stiffer; steady (the assisted flight): softer, and slow in a tumble (no swing round after a crash)
     // perched: a firm settle (~1 s), then at rest
-    const stiff = o.perched ? 5 : o.steady ? (b.stun > 0 ? 0.5 : 2.4 + V * 0.06) : 3.5 + V * 0.09;
+    // (falcon fun: gx = the load factor's share, 2 g -> 7 g: in a hard pull-out the view turns faster with the path, and
+    // the camera pulls back and up below; a 150 m stoop's 6-9 g pull-out left the bird behind the view)
+    const gx = P.fun && !o.perched ? smooth(b.n ?? 1, 2, 7) : 0;
+    const stiff = (o.perched ? 5 : o.steady ? (b.stun > 0 ? 0.5 : 2.4 + V * 0.06) : 3.5 + V * 0.09) * (1 + 1.5 * gx);
     if (!this.inited) { this.dir.copy(_e); }
     this.dir.lerp(_e, 1 - Math.exp(-stiff * dt)).normalize();
     // (falconfix) perched: settle and STOP (the exponential ease otherwise creeps for ever; under a threshold: at rest)
@@ -145,8 +162,8 @@ export class FalconCamera {
       this.roll += ((o.perched ? 0 : b.phi) - this.roll) * (1 - Math.exp(-8 * dt));
     } else {
       // chase: behind along the view and above; closer in the stoop (the ground rushes up), farther when slow
-      const dist = (1.55 + 0.9 * smooth(V, 4, 18) - 0.35 * smooth(V, 40, 90)) * span * P.dist * (o.zoom ?? 1);
-      const up = (0.3 + 0.1 * smooth(V, 30, 90)) * span * (o.zoom ?? 1);
+      const dist = (1.55 + 0.9 * smooth(V, 4, 18) - 0.35 * smooth(V, 40, 90)) * span * P.dist * (o.zoom ?? 1) * (1 + 0.45 * gx);
+      const up = (0.3 + 0.1 * smooth(V, 30, 90) + 0.35 * gx) * span * (o.zoom ?? 1);
       _t.copy(b.pos).addScaledVector(D, -dist).addScaledVector(_u, up);
       // never inside a roof: lifted over it (and then the view tips down, so the bird stays in the frame); o.col (the
       // city: the solid at the bird's height, crowns whole) also holds it under a ceiling (a bridge's arch)
@@ -162,7 +179,9 @@ export class FalconCamera {
       // along that line, or over the bird when that would be too close)
       // (the fix is an offset on the eased position: taken at once when it grows, eased off when it shrinks: no pop)
       const want = this.keepClear(b, o, span, _c.copy(this.pos)).sub(this.pos);
-      if (!this.inited || want.lengthSq() >= this.fix.lengthSq()) this.fix.copy(want);
+      // (falcon fun: a growing fix is eased in too, fast (~0.1 s): the lift over a crown glides, no snap)
+      if (P.fun && this.inited && !o.perched && want.lengthSq() >= this.fix.lengthSq()) this.fix.lerp(want, 1 - Math.exp(-14 * dt));
+      else if (!this.inited || want.lengthSq() >= this.fix.lengthSq()) this.fix.copy(want);
       else {
         // easing off, unless the eased spot would hide the bird (then the clear spot at once)
         _w.copy(this.fix).lerp(want, 1 - Math.exp(-5 * dt));
@@ -197,6 +216,22 @@ export class FalconCamera {
       _c.subVectors(cam.position, B);
       const d = _c.length();
       if (d < minD) cam.position.copy(B).addScaledVector(d > 1e-3 ? _c.divideScalar(d) : _c.copy(this.dir).negate(), minD);
+    }
+    // (falcon fun) THE FRAME GUARD: the bird stays within 60 % of the half field of view from the view's centre: past it,
+    // the look turns toward the bird by the excess (a function of where things are now: smooth, no state, no snap)
+    if (P.fun && this.mode !== "head" && !o.perched) {
+      _g1.subVectors(this.look, cam.position); const lL = _g1.length();
+      _g2.subVectors(b.pos, cam.position); const lB = _g2.length();
+      if (lL > 1e-3 && lB > 1e-3) {
+        _g1.divideScalar(lL); _g2.divideScalar(lB);
+        const a = Math.acos(clamp(_g1.dot(_g2), -1, 1)), amax = 0.6 * (cam.fov * Math.PI / 360) * Math.min(1, cam.aspect || 1);
+        if (a > amax) {
+          const t = (a - amax) / a, sn = Math.sin(a), ka = Math.sin((1 - t) * a) / sn, kb = Math.sin(t * a) / sn;
+          _g1.multiplyScalar(ka).addScaledVector(_g2, kb).normalize();
+          this.look.copy(cam.position).addScaledVector(_g1, lL);
+          this.guarded = a - amax;
+        } else this.guarded = 0;
+      }
     }
     cam.up.copy(_u);
     cam.lookAt(this.look);

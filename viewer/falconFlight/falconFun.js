@@ -241,4 +241,4 @@ export function windLevels(V, fold, fun = !FUN_OLD) {
   return { wind: 0.16 * clamp((V / ref) ** 1.6, 0.02, 2.2), hiss: 0.25 * sm(V, h0, h1), tuck: sm(fold, 0.6, 1) * sm(V, fun ? 26 : 35, fun ? 65 : 80) };
 }
 /** the camera's speed feel (falconCamera.js params): fov from fov0 to fov1 over fovV, streaks over streakV, the vignette over vigV */
-export const CAM_FUN = { fov1: 88, fovV: [14, 70], streakV: [22, 60], vigV: [28, 75] };
+export const CAM_FUN = { fov1: 88, fovV: [14, 70], streakV: [22, 60], vigV: [28, 75], fun: true };
