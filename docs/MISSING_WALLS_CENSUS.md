@@ -265,3 +265,25 @@ Left (not touched, Street View look first):
 - lost 886 samples / 140 buildings (mostly small: 264 m2): not the feet (197 on a loose false foot, 0 strict moved);
   coplanar clean / kit cuts, to trace next.
 - R roofs wound down: 138 buildings, needs a per-layer test (see above).
+
+### 6.1 The other gate rows the fix moved (traced per item)
+
+- `drivecheck` places 90 -> 91 (ceiling moved to 91, named in the row): F1 (-218, -1637). OSM way 307954781's centre line
+  runs 2.5 m INSIDE UrbIS building 729885's footprint; the UrbIS street surfaces put the sidewalk (SW) right at that
+  facade and the carriageway (S) beyond it, so the building is where it stands and the OSM line is off (source data). The
+  old feet had pulled the south wall's fan apex (106.66 m) down and torn the wall open: the car's path went through the
+  hole (1 m blocked); closed, the wall blocks 15 + 5.5 m of the centre line. Not a passage: the street surfaces run along
+  the facade, not under it. (The `register` row accepts entries only for rows that judge the register, so the item is
+  named in the row instead of data/gaps.json.)
+- `colliders` invisible 7 -> 8 on its 4 tiles (ceiling moved to 8, named in the row): E4 (-696.5, -6.1), 5.9 m2, building
+  529646. With ?feet=old its car-band ring was torn (8 lost samples) and neither the collider nor the audit's trace of the
+  drawn walls filled inside; now the collider's ring is closed and fills, while the audit's trace of the DRAWN walls
+  leaves a dotted gap along the NW wall, whose foot (54.68 m, drawn the same in both builds) sits at the top of the car
+  band over the lower drive surface. Not traced further (the zfight / wallfix / kit / cellar / styles switches leave it).
+  The same fix takes missing 7 -> 5 and offset 19 -> 17 on these tiles.
+- `gates` (open by mistake 320 -> 322, ungated paths 1520 -> 1525, gated 824 -> 823): all from E2. tools/gardens/faces.mjs
+  (the garden build's faces = facadeGeom analyseBuildings) now sees the rebuilt empty edges as street faces (E8 villa at
+  -867.5, 1706.4; G5 terraced at 138.5, 97.1), but data/gardens was baked from the old faces (no garden record there).
+  Fixed by cause: data/gardens E8 / G5 / I4 rebuilt (tools/gardens/build_gardens.py --tile, then fitGardens --lanes until
+  nothing moves and --steps; a raw rebuild with ?wallempty=old faces reproduces the old counts, so the change is E2 only:
+  E8 +1 garden / +10 segments, G5 +1 garden).
