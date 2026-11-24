@@ -10,7 +10,7 @@
 //   3. A planted worker-side change (a temp copy of the checkout's viewer/ with one marker line in tileWorker.js)
 //      shows up in what serve.mjs sends: the case the tour missed (claude/parking1 and claude/lanes5 were toured on
 //      foundation's bundle, 2026-11-22/23).
-import { spawn, execFileSync } from "node:child_process";
+import { spawn, spawnSync, execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -46,7 +46,7 @@ try {
   // 2 + 3. serve.mjs on the planted copy, fresh and --committed-bundle
   const serveOnce = (extra) => new Promise((resolve, reject) => {
     const port = 18800 + Math.floor(Math.random() * 900);
-    const p = spawn(process.execPath, [path.join(HERE, "tools/tour/serve.mjs"), "--root", tmp, "--port", String(port), "--out", path.join(tmp, "out"), ...extra], { stdio: ["ignore", "pipe", "pipe"] });
+    const p = spawn(process.execPath, [path.join(HERE, "tools/tour/serve.mjs"), "--root", tmp, "--port", String(port), "--any-port", "--out", path.join(tmp, "out"), ...extra], { stdio: ["ignore", "pipe", "pipe"] });
     let log = "";
     const done = (v, e) => { p.kill(); e ? reject(e) : resolve(v); };
     const t = setTimeout(() => done(null, new Error(`serve.mjs did not start: ${log}`)), 60000);
@@ -63,6 +63,19 @@ try {
   check("serve.mjs reports a stale committed bundle", /STALE/.test(fresh2.log), "the start-up line names the committed bundle as stale when the sources differ");
   const old = await serveOnce(["--committed-bundle"]);
   check("--committed-bundle serves the file", !old.text.includes(marker) && old.text.includes("__TILE_CODE_HASH"), "the committed bundle, without the planted marker");
+
+  // rule local-origins-capped: a port outside the pool is refused; /sw.js is the self-removing worker; --keep-sw = real
+  const refused = spawnSync(process.execPath, [path.join(HERE, "tools/tour/serve.mjs"), "--root", tmp, "--port", "18999", "--committed-bundle", "--out", path.join(tmp, "out")], { encoding: "utf8", timeout: 60000 });
+  check("a port outside the pool is refused", refused.status === 2 && /refused/.test(refused.stderr), `exit ${refused.status}: ${(refused.stderr || "").trim().slice(0, 120)}`);
+  const swOnce = (extra) => new Promise((resolve, reject) => {
+    const port = 18800 + Math.floor(Math.random() * 900);
+    const p = spawn(process.execPath, [path.join(HERE, "tools/tour/serve.mjs"), "--root", HERE, "--port", String(port), "--any-port", "--committed-bundle", "--out", path.join(tmp, "out"), ...extra], { stdio: ["ignore", "pipe", "pipe"] });
+    let log = ""; const t = setTimeout(() => { p.kill(); reject(new Error("serve.mjs did not start")); }, 60000);
+    p.stdout.on("data", async (d) => { log += d; if (!/open http/.test(log)) return; clearTimeout(t); try { const r = await fetch(`http://127.0.0.1:${port}/sw.js`); const txt = await r.text(); p.kill(); resolve(txt); } catch (e) { p.kill(); reject(e); } });
+  });
+  const kill = await swOnce([]), real = await swOnce(["--keep-sw"]);
+  check("/sw.js is the self-removing worker on local checks", /unregister\(\)/.test(kill) && /caches\.delete/.test(kill) && kill.length < 600, `${kill.length} bytes`);
+  check("--keep-sw serves the real sw.js", real === fs.readFileSync(path.join(HERE, "sw.js"), "utf8"), `${real.length} bytes`);
 } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 
 console.log(fails ? `tourbundle: ${fails} FAIL` : "tourbundle: all pass");

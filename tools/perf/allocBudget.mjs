@@ -65,7 +65,7 @@ let fails = 0;
 try {
   await takeLock();
   const port = await freePort();
-  const server = spawn(process.execPath, [path.join(ROOT, "tools/tour/serve.mjs"), "--root", ROOT, "--port", String(port), "--out", path.join(ROOT, ".tour")], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+  const server = spawn(process.execPath, [path.join(ROOT, "tools/tour/serve.mjs"), "--root", ROOT, "--port", String(port), "--any-port", "--out", path.join(ROOT, ".tour")]   /* (own temp Chrome profile: rule local-origins-capped does not apply) */, { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
   kids.add(server);
   await new Promise((r, j) => { let s = ""; const to = setTimeout(() => j(new Error("serve.mjs did not start in 120 s")), 120000); server.stdout.on("data", (d) => { s += d; if (/serving /.test(s)) { clearTimeout(to); r(); } }); server.on("exit", (c) => j(new Error(`serve.mjs exited ${c}`))); });
   const got = {};

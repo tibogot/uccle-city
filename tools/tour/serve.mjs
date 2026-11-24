@@ -21,6 +21,18 @@ const HERE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const ROOT = path.resolve(arg("root", HERE));
 const PORT = +arg("port", 8837);
+// rule local-origins-capped: each localhost PORT is its own browser origin, with its own 800 MB tile cache
+// (viewer/tileCache.js CAP_BYTES) and service-worker cache. ~50 ports used by tours / agents filled the DevTools Chrome
+// profile to 43 GB (2026-11-24). Only a small fixed pool is allowed, so origins (and their caches) are reused.
+export const PORT_POOL = [8837, 8838, 8839, 8840, 8841, 8842];
+if (!PORT_POOL.includes(PORT) && !process.argv.includes("--any-port")) {
+  console.error(`[tour] port ${PORT} refused: use one of ${PORT_POOL.join(", ")} (rule local-origins-capped: every new port is a new browser origin with its own 800 MB tile cache)`);
+  process.exit(2);
+}
+const KEEP_SW = process.argv.includes("--keep-sw");
+// the local checks never need the offline asset cache: /sw.js answers a worker that deletes its asset caches and
+// unregisters itself (the live site keeps sw.js; --keep-sw serves the real file for a test that needs it)
+export const SW_KILL = `// tools/tour/serve.mjs (rule local-origins-capped): no offline cache on local checks\nself.addEventListener("install", () => self.skipWaiting());\nself.addEventListener("activate", (e) => e.waitUntil((async () => { for (const k of await caches.keys()) if (k.startsWith("uccle-assets")) await caches.delete(k); await self.registration.unregister(); })()));\n`;
 const OUT = path.resolve(arg("out", path.join(HERE, ".tour")));
 const OVERLAY = new Set(["/debug/tour.html", "/debug/tour.js", "/tools/tour/views.json"]);
 const MIME = {
@@ -84,6 +96,10 @@ const server = http.createServer((req, res) => {
   let p;
   try { p = decodeURIComponent(u.pathname); } catch { res.writeHead(400); return res.end(); }
   if (p === "/") p = "/debug/tour.html";
+  if (p === "/sw.js" && !KEEP_SW) {
+    res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" });
+    return res.end(req.method === "HEAD" ? undefined : SW_KILL);
+  }
   // rule tour-fresh-bundle: the tile worker built from the SERVED checkout's sources, not its committed (stale) bundle
   if (p === "/viewer/tileWorker.bundle.js" && BUNDLE) {
     res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-cache", etag: `"fresh-${BUNDLE.hash}"`, "content-length": Buffer.byteLength(BUNDLE.code) });
