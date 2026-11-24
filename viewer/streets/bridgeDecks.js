@@ -56,7 +56,10 @@ export function widths(r) {
 const CARR_TYPES = new Set(["driving", "turn", "bus", "parking", "bike", "shoulder"]);
 /** the lane stack of bridge road r from its measured widths (a bridgeWidths entry { deck?, carr? }), or null */
 export function measuredBridgeLanes(r, m) {
-  if (!m || !(m.deck > 0 || m.carr > 0)) return null;
+  // (a road with its own lane stack keeps it: only the TYPE's guessed stack is replaced. The gate's lane rows, streetlanes
+  // and roads, saw the Tilleuls deck's tagged stack, narrowed to 11 m, pull its lanes off the measured carriageway: that
+  // bridge is a follow-up with its own lane fit)
+  if (!m || !(m.deck > 0 || m.carr > 0) || r.lanes) return null;
   const t = ROAD_TYPES[r.type] || ROAD_TYPES.local, src = r.lanes || t;
   const cw = +src.center?.width || 0, isC = (l) => CARR_TYPES.has(l.type), sum = (a) => a.reduce((s, l) => s + (+l.width || 0), 0);
   const C = { left: (src.left || []).filter(isC), right: (src.right || []).filter(isC) }, R = { left: (src.left || []).filter((l) => !isC(l)), right: (src.right || []).filter((l) => !isC(l)) };

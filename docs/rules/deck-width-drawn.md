@@ -17,7 +17,7 @@ bridge road or, where it has none, within 12 m of its ends (the measured approac
 other, neither is written. The tile worker (viewer/roadBuild.js applyRoadOverrides, viewer/street/model.js stackOf) then
 gives the bridge road a lane stack of those widths: its carriage lanes scaled to `carr`, one sidewalk out to the inside
 of the parapets. The road engine draws the street on the deck at the measured width, and the deck follows that stack.
-A measurement only narrows a deck, never widens it past its drawn width. A one-way stack is left as drawn. Re-run the
+A measurement only narrows a deck, never widens it past its drawn width. A one-way stack, and a road with its own lane stack (not the type's guess), are left as drawn. Re-run the
 tool when the tiles, the street model or rail.json change: the check measures again and fails on a stale entry. A band
 deck's parapet style is data too (data/overrides.json `bridgeLooks`, parapet `concrete` (the default) or `brick`: red
 brick under a blue-stone coping, same outline and colliders). With a style the deck is drawn in named material slots,
@@ -34,5 +34,6 @@ claude/places2 narrowed it to the alley's drawn 8.2 m, but the alley type is sti
 UrbIS street surface of its own: the surfaces stop at the abutments, so no measured kerb reached it. UrbIS has measured
 the bridge itself (road bridge 899, 5.03 m outside the parapets; the DSM cross-sections give ~5.3 m drop to drop), and
 the street model has measured the approaches at 3.3-3.5 m kerb to kerb. Now the deck is 5.04 m wide with a 3.32 m
-carriageway and 0.56 m margins inside red-brick parapets. Of the 13 band bridge ways, 7 are measured: Tilleuls (D9/E9) is
-11.05 m instead of 19 m, and Merlo is 9.25 m instead of 12 m.
+carriageway and 0.56 m margins inside red-brick parapets. Of the 13 band bridge ways, 7 are measured and 5 are re-stacked (the lane-less ones): Merlo is
+9.25 m instead of 12 m. Tilleuls D9 / E9 (a tagged stack, 19 m on an 11.05 m bridge)
+is left for a follow-up with its own lane fit: narrowed, its lanes left the measured carriageway (streetlanes).
