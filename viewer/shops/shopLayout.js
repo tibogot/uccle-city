@@ -195,10 +195,11 @@ export function layoutShop(p, f, frame, lit, env) {
   } else {
     box(at(0, fasciaY + 0.325, 0.273), X, Y, Z, W + 0.08, 0.6, 0.006, { board, ink, inkGlow, boardGlow, lab, fill: cf.signFill ?? 1.05, padX: 0.2, rough: lightbox ? 0.3 : 0.4, kind: 2 });
   }
-  // (curated) plaques on the fascia: [{ u, w, h, dy, text, board, ink, font }] (White Night's WHITE | NIGHT halves, Proxy's
-  // white panel on the black band): thin boxes 1 cm proud of the fascia face
+  // (curated) plaques on the fascia: [{ u, w, h, dy, dz, text, board, ink, font }] (White Night's WHITE | NIGHT halves, Proxy's
+  // white panel on the black band): thin boxes 1 cm proud of the fascia face; (claude/carrefour2) dz: further out (m), for
+  // a plaque running past the glazing's wall onto a wall a little forward of it (Gatti de Gamond's red line)
   for (const pl of cf.plaques || []) {
-    const zf = cf.fascia === false ? 0.02 : classic ? 0.221 + 0.009 : 0.273 + 0.009, yc = (classic ? fasciaY + 0.375 : fasciaY + 0.325) + (pl.dy ?? 0);
+    const zf = (cf.fascia === false ? 0.02 : classic ? 0.221 + 0.009 : 0.273 + 0.009) + (pl.dz ?? 0), yc = (classic ? fasciaY + 0.375 : fasciaY + 0.325) + (pl.dy ?? 0);
     const plab = pl.text ? label([].concat(pl.text), pl.font ?? "shopSans") : null;
     box(at(pl.u ?? 0, yc, zf), X, Y, Z, pl.w, pl.h ?? 0.46, 0.008, { board: pl.board ?? [0.86, 0.86, 0.84], ink: pl.ink ?? [0.02, 0.02, 0.02], lab: plab, fill: pl.fill ?? 0, pad: 0.1, rough: 0.4, kind: 2,
       inkGlow: (pl.glow ?? 0) * lit, boardGlow: (pl.boardGlow ?? 0) * lit });   // (a lit panel at night: White Night's WHITE half)
@@ -227,14 +228,16 @@ export function layoutShop(p, f, frame, lit, env) {
   // (curated) a flat cantilevered CANOPY over the whole front (a supermarket's: the Carrefour Market by Square Marlow):
   // { out (m from the wall), y (underside, m over the shop floor), t (slab), edge (fascia band height), board (its
   // colour), under (the soffit's) }: a slab and its front band, boxes of the layout (no new piece, no new draw)
+  // (claude/carrefour2) canopy.du: the canopy moved along the wall from the glazing's centre (m to the right seen from the
+  // street): the Carrefour Market Rue Gatti de Gamond's canopy runs the whole hall, its glazing only the west half
   if (cf.canopy) {
-    const c = cf.canopy, out = c.out ?? 3, y0 = c.y ?? 3.1, t = c.t ?? 0.3, eh = c.edge ?? 0.55, wc = W + (c.extra ?? 0.4);
+    const c = cf.canopy, out = c.out ?? 3, y0 = c.y ?? 3.1, t = c.t ?? 0.3, eh = c.edge ?? 0.55, wc = W + (c.extra ?? 0.4), cu = c.du ?? 0;
     const down = [0, -1, 0];
     // the slab: frame (X, Z, -Y), right-handed (X x Z = -Y for X = (nz, 0, -nx), Z = (nx, 0, nz))
-    box(at(0, y0 + t / 2, out / 2), X, Z, down, wc, out, t, { board: c.under ?? c.board ?? [0.3, 0.28, 0.25], rough: 0.7 });
-    box(at(0, y0 + eh / 2 - 0.05, out + 0.03), X, Y, Z, wc + 0.06, eh, 0.06, { board: c.board ?? [0.3, 0.28, 0.25], rough: 0.6, kind: 2 });
-    if (c.stripe) box(at(0, y0 + eh / 2 - 0.05, out + 0.065), X, Y, Z, wc + 0.06, c.stripe[1] ?? 0.06, 0.01, { board: c.stripe[0], rough: 0.5, kind: 2 });
-    if (lit > 0) night.lights?.push(1, ...at(0, y0 - 0.1, out * 0.6), Z[0], Z[2], W / 2, 0.3, 0.9 * lit, 0.88 * lit, 0.8 * lit);
+    box(at(cu, y0 + t / 2, out / 2), X, Z, down, wc, out, t, { board: c.under ?? c.board ?? [0.3, 0.28, 0.25], rough: 0.7 });
+    box(at(cu, y0 + eh / 2 - 0.05, out + 0.03), X, Y, Z, wc + 0.06, eh, 0.06, { board: c.board ?? [0.3, 0.28, 0.25], rough: 0.6, kind: 2 });
+    if (c.stripe) box(at(cu, y0 + eh / 2 - 0.05, out + 0.065), X, Y, Z, wc + 0.06, c.stripe[1] ?? 0.06, 0.01, { board: c.stripe[0], rough: 0.5, kind: 2 });
+    if (lit > 0) night.lights?.push(1, ...at(cu, y0 - 0.1, out * 0.6), Z[0], Z[2], W / 2, 0.3, 0.9 * lit, 0.88 * lit, 0.8 * lit);
   }
   // ---- awning (food and fresh shops), the name on its valance
   const awn = cf.awning ?? ((AWNING_KINDS.has(p.kind) || AWNING_CATS.has(p.cat)) && !lowFloor && hash01(id + "aw") < 0.8);

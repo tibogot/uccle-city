@@ -23,6 +23,96 @@
     ]
    }
   },
+  "osm:n13192287981": {
+   "_name": "Carrefour Market Rue Gatti de Gamond 60, at the corner of Avenue Docteur Decroly (claude/carrefour2; Street View Apr 2024 + the UrbIS orthophoto 2024, looked at, not kept). The store: a single-storey box in pale silver-grey horizontal panels with a thin grey coping, the same design as the Carrefour Market Marlow. Its front faces south across the car park to Avenue Docteur Decroly: a long run of shop glazing in dark frames (red-and-white promo posters behind the glass, a digital poster screen by the door) under a deep flat canopy with a plain light-grey fascia that runs the whole main hall; the entrance near the front's middle-left is a glazed vestibule with a curved glass barrel roof standing out under the canopy (not drawn: the canopy covers its place), automatic doors, trolleys parked inside the vestibule. Signage: a thin red line along the top of the face (it turns the Gatti corner), the name in big red letters 'Carrefour' with 'market' smaller under its right end, on the upper wall left of the vestibule; the brand's red-and-blue mark beside the name at the Gatti corner (not drawn: no logo artwork, text only); red round trolley signs on poles in the lot. The car park: data/overrides.json grounds carrefour_gatti_lot (its 12 bay rows; two red-and-white trolley shelters, not drawn). Next to it: the low west wing on Rue Gatti de Gamond (the Louise bakery, a red awning), a tall 1960s white-balconied block of flats across Avenue Docteur Decroly to the south-west, woods behind the store to the north and east",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "frame": 2,
+    "tall": true,
+    "lightbox": false,
+    "awning": false,
+    "blade": false,
+    "w": 19.0,
+    "du": 0.6,
+    "fascia": false,
+    "interior": 4,
+    "canopy": {
+     "out": 3.8,
+     "y": 2.7,
+     "t": 0.3,
+     "edge": 0.7,
+     "extra": 15.8,
+     "board": [
+      0.6,
+      0.61,
+      0.6
+     ],
+     "under": [
+      0.3,
+      0.3,
+      0.29
+     ],
+     "du": 7.93
+    },
+    "plaques": [
+     {
+      "u": 12.3,
+      "w": 25.0,
+      "h": 0.09,
+      "dy": 1.225,
+      "text": "",
+      "board": [
+       0.71,
+       0.012,
+       0.016
+      ],
+      "dz": 0.45
+     },
+     {
+      "u": -5.0,
+      "w": 9.0,
+      "h": 0.8,
+      "dy": 1.075,
+      "text": "Carrefour",
+      "board": [
+       0.36,
+       0.36,
+       0.35
+      ],
+      "ink": [
+       0.5,
+       0.005,
+       0.01
+      ],
+      "font": "shopSans",
+      "fill": 0.98,
+      "glow": 0.5
+     },
+     {
+      "u": -2.7,
+      "w": 3.4,
+      "h": 0.36,
+      "dy": 0.495,
+      "text": "market",
+      "board": [
+       0.36,
+       0.36,
+       0.35
+      ],
+      "ink": [
+       0.5,
+       0.005,
+       0.01
+      ],
+      "font": "shopSans",
+      "fill": 0.98,
+      "glow": 0.5
+     }
+    ]
+   }
+  },
   "osm:n255033292": {
    "_name": "Carrefour Market Marlow, Av. Wolvendael 2 / Square Georges Marlow 10, ~100 m north-west of the police station (claude/carrefour; Street View Apr 2024 + the UrbIS orthophoto 2024, looked at, not kept). The store: a single-storey box in plain greige-taupe horizontal panels, a thin dark coping. Its front faces the car park: a long run of full-height glazing in black aluminium frames with the automatic doors near its middle, under a deep flat cantilevered canopy (~3 m, greige like the walls, a darker soffit) that runs nearly the whole face; red promo screens behind the glass. Signage: the upper wall over the canopy carries a thin red line along the whole face and the name in big red letters, 'Carrefour' over 'market', with the brand's red-and-blue mark beside it (not drawn: no logo artwork, text only); a small red name panel over the entrance; a tall red pylon sign at the street corner (not drawn). The car park (data/overrides.json grounds carrefour_lot): asphalt, white bay lines, painted arrows, a red-and-white barrier at the entrance off the square, old dark-green lantern lamp posts, pollarded plane trees and a planted bank with a low brick wall along the street; trolleys returned under the canopy (no separate shelter seen). Next to it: a 1970s office block north of the lot, the Ma Poule takeaway kiosk and a white gabled house at its south-west corner on Av. Wolvendael",
    "none": true,

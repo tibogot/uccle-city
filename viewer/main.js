@@ -107,7 +107,7 @@ import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
 import { farBuildingMaterial } from "./farLook.js";   // farcity: the far tiles' façades (docs/FARCITY.md)
-import { RING_TEST, ringSet } from "./ringTest.js";   // allocrate: point-in-ring tests without iterator garbage (?ringtest=old)
+import { RING_TEST, ringSet, inRing as inRingCC } from "./ringTest.js";   // allocrate: point-in-ring tests without iterator garbage (?ringtest=old)
 import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera, nearModel, gatesPending } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
@@ -745,6 +745,16 @@ const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("pai
  *  houses' and the school's looks, the school's yards and courts, its front (fence, gate, flags, lettering);
  *  ?cortenbosch=old: the neighbourhood as before */
 const CORTENBOSCH = params.get("cortenbosch") !== "old";
+/** a hard ground's own switch (data/overrides.json grounds[].switch "?key=old") is on */
+const groundOn = (g) => { const k = /^\?(\w+)=old$/.exec(g?.switch ?? "")?.[1]; return !k || (k === "cortenbosch" ? CORTENBOSCH : params.get(k) !== "old"); };
+/** (claude/carrefour2, rule curated-shed-look) no LiDAR "tree" under a curated canopy: a hard ground's chmClear rings drop
+ *  the urbis-chm peaks the canopy and its planters made (the Carrefour Market Rue Gatti de Gamond: 3-3.6 m "trees" whose
+ *  crowns stood through the canopy); the full tile and its far impostors both call it (no pop at the swap) */
+async function groundTreesClear(trees) {
+  if (!trees?.length) return trees;
+  const rings = ((await loadOverrides(DATA)).grounds || []).filter(groundOn).flatMap((g) => g.chmClear || []);
+  return rings.length ? trees.filter((t) => t.source !== "urbis-chm" || !rings.some((r) => inRingCC(r, t.x, t.z))) : trees;
+}
 /** round 2 (docs/CORTENBOSCH2.md): the 1990s house type on the lane, the curtain wall on the Lycée's block D, the school's
  *  other blocks, the lane's herringbone pavers and painted name, the railing / gate as colliders; ?cortenbosch2=old: round 1 */
 const CORTENBOSCH2 = CORTENBOSCH && params.get("cortenbosch2") !== "old";
@@ -921,7 +931,7 @@ async function loadLiteTile(entry, group) {
   if (SMOOTH && entry.files.features) {
     const f = await getJSON(entry.files.features).catch(() => null);
     const b = { x0: entry.bounds.x[0], x1: entry.bounds.x[1], z0: entry.bounds.z[0], z1: entry.bounds.z[1] };
-    if (f?.trees) f.trees = villaTreesClear(cityFuel.treesClear(f.trees));   // as the full tile (viewer/fuel/cityFuel.js; the villa's built rings)
+    if (f?.trees) f.trees = await groundTreesClear(villaTreesClear(cityFuel.treesClear(f.trees)));   // as the full tile (viewer/fuel/cityFuel.js; the villa's built rings)
     const ys = new Map((f?.trees || []).map((t) => [`${t.x},${t.z}`, t.y]));
     trees = f?.trees?.length && ys.values().next().value != null
       ? buildFarTreeField(f.trees, (x, z) => ys.get(`${x},${z}`), (x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) : null;
@@ -1017,7 +1027,6 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (cortenbosch) hard grounds OSM's recreation grounds drew as lawn: the Lycée Français's yards, track and courts
   // (data/overrides.json grounds, viewer/grounds.js: one mesh, one draw); each entry's own "switch" (?key=old) drops it
   // (?cortenbosch=old: the Lycée's, ?forecourts=old: the church forecourts of claude/snow2)
-  const groundOn = (g) => { const k = /^\?(\w+)=old$/.exec(g?.switch ?? "")?.[1]; return !k || (k === "cortenbosch" ? CORTENBOSCH : params.get(k) !== "old"); };
   const grounds = buildGrounds(((await loadOverrides(DATA)).grounds || []).filter(groundOn), bounds, (x, z) => hm.surface(x, z));
   if (grounds.mesh) { own.roads.add(grounds.mesh); say(`grounds: ${grounds.tris} triangles (data/overrides.json grounds)`); }
   R.textures.push(...terr.userData.textures);
@@ -1034,7 +1043,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const fit = d.road.surfaceData ? streetFit(d.road.surfaceData) : null;
   // a tree on measured ground stands on it (in its pit, viewer/surfaces.js), not on the terrain carved under it
   const treeGround = fit ? (x, z) => (fit.classAt(x, z) >= 0 ? hm.surface(x, z) + CARVE + fit.lift(x, z) : hm.surface(x, z)) : undefined;
-  if (feats?.trees) feats.trees = villaTreesClear(cityFuel.treesClear(feats.trees));   // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js) nor in the villa's house / terrace / drive (viewer/villa/villaPlot.js)
+  if (feats?.trees) feats.trees = await groundTreesClear(villaTreesClear(cityFuel.treesClear(feats.trees)));   // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js) nor in the villa's house / terrace / drive (viewer/villa/villaPlot.js)
   if (PARKFENCE && feats?.trees) feats.trees = await parkFence.treesClear(feats.trees);   // (parkfence) no trunk in a park entrance's opening
   const fo = featureObjects(feats, hm, bounds, d.road.surfaceStats ? 0.02 : 0.012, treeGround);
   own.features.add(fo);
