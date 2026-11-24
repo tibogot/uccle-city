@@ -370,7 +370,7 @@ const fresh = async (rel, search) => { globalThis.location.search = search; try 
   ok(diff === 0, `colliders driveHeight: the module corner function = the old closure at ${n} points (one and two layers, near or not, outside the grid; diffs ${diff})`);
   const pf = src("viewer/parkFence.js"), tl = src("viewer/tramline.js");
   ok(/const ALLOC_SMALL = qs\.get\("allocsmall"\) !== "old";/.test(pf) && /if \(ALLOC_SMALL\) for \(let li = 0; li < list\.length; li\+\+\) \{/.test(pf), "parkFence Stage.fill: an index loop (?allocsmall=old: for-of)");
-  ok(/for \(let ti = 0, tn = trips\.length; ti < tn; ti\+\+\) \{\n      const t = trips\[ti\];\n      const st = t\.stops/.test(tl), "tramline update: the trips by index");
+  ok(/for \(let ti = 0, tn = trips\.length; ti < tn; ti\+\+\) \{\n      const t = trips\[ti\];\n      const (st = t\.stops|tt = tripTime\(t, T\))/.test(tl), "tramline update: the trips by index");
 }
 
 console.log(fails ? `allocrate: ${fails} FAIL` : "allocrate: all checks pass");
