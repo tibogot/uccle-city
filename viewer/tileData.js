@@ -32,6 +32,7 @@ import { squeezeDeckLanes } from "./rail/roadDeck.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
 import { applyParkSquares, carveFlights, withoutLines } from "./heros/herosSurface.js";
+import { loadUnderpass, underpassTerrain, underpassSurfaces, underpassLines } from "./underground/underpass.js";
 import { drawnGround, sinkFeet, footprintIndex } from "./groundFit.js";
 
 let railP = null;
@@ -355,6 +356,10 @@ export async function buildTileData(entry, base) {
   // Square des Heros (viewer/heros/herosSurface.js; ?heros=old: the setts plaza as before): the UrbIS square surface minus
   // the park, as sidewalk paving; the park is the hero place's own ground
   if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
+  // the Calevoet pedestrian underpass U1 (viewer/underground/underpass.js; ?underpass=0: none): its stair wells as holes
+  // in the street surfaces round them, its tunnel ways out of the land cover's paths, the drawn terrain cut at the wells
+  const upass = entry.underpass && bounds.x0 <= -1150 && bounds.x1 >= -1250 && bounds.z0 <= 900 && bounds.z1 >= 830 ? await step("underpass fetch", () => loadUnderpass(base)) : null;
+  const upassSurf = upass && surf ? underpassSurfaces(surf, upass) : null;
   // (cortenbosch) the surface of single UrbIS street surfaces a local knows (data/overrides.json streetSurfaces: the
   // Chemin privé 't Cortenbosch, grey concrete pavers on its 1990s part, setts on the old lane; the name vote of
   // surfaces.js never matches it: UrbIS names are French only, OSM's bilingual), read by surfaces.js as s.surface;
@@ -538,6 +543,7 @@ export async function buildTileData(entry, base) {
   const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   // the tunnels: the drawn earth over the bores (the lid) and the ground clipped at the walls (tunnels.js)
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
+  if (upass) netInfo.underpass = { ...await step("underpass wells", () => underpassTerrain(upass, terrain)), surfaces: upassSurf };
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
@@ -613,7 +619,7 @@ export async function buildTileData(entry, base) {
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
-  const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));   // joins2: distance-field edges, ?groundsdf=old the coverage mask   // (Square des Heros: its paths are the hero ground's)
+  const cover = await step("land cover", () => landCoverData(withoutLines(upass ? underpassLines(feats) : feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));   // joins2: distance-field edges, ?groundsdf=old the coverage mask   // (Square des Heros: its paths are the hero ground's)
   // (vivier) the drawn street's top near (x, z): the nearest road-surface cell of the drive raster within 2 m (a plan
   // deck's paving between the UrbIS surfaces sits a kerb over the street beside it, not on its own plane up to 0.35 m off)
   const streetTop = (x, z) => {

@@ -1,0 +1,1413 @@
+{
+ "summary": {
+  "triangles": 88,
+  "vertices_welded": 84,
+  "open_edges": 104,
+  "rays": 45744,
+  "blocking": 0,
+  "warnings": 30,
+  "counts": {
+   "sliver": 4,
+   "seam": 14,
+   "tjunction": 26,
+   "opening": 48
+  },
+  "ms": 52
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": 10.507000000000001,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "Underpass_lod2",
+   "slot": "brick_painted_white",
+   "triangles": 40,
+   "maxDistance": 2000
+  },
+  {
+   "name": "Underpass_lod2",
+   "slot": "paint_fascia",
+   "triangles": 40,
+   "maxDistance": 2000
+  },
+  {
+   "name": "Underpass_lod2",
+   "slot": "concrete",
+   "triangles": 8,
+   "maxDistance": 2000
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.491,
+     55.19,
+     10.34
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "aspect": 95,
+    "longest": 2.839
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -2.437,
+     55.18,
+     10.34
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "aspect": 95,
+    "longest": 2.839
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     22.92,
+     53.7,
+     -8.052
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "aspect": 87,
+    "longest": 2.599
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     22.053,
+     53.71,
+     -8.052
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "aspect": 87,
+    "longest": 2.599
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -3.633,
+     55.2,
+     5.565
+    ],
+    "parts": [
+     "Underpass_lod2/brick_painted_white",
+     "Underpass_lod2/paint_fascia"
+    ],
+    "length_m": 19.1,
+    "pieces": 2,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     20.937,
+     53.72,
+     -5.123
+    ],
+    "parts": [
+     "Underpass_lod2/brick_painted_white",
+     "Underpass_lod2/paint_fascia"
+    ],
+    "length_m": 11.72,
+    "pieces": 2,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.869,
+     52.939,
+     10.32
+    ],
+    "parts": [
+     "Underpass_lod2/concrete",
+     "Underpass_lod2/concrete"
+    ],
+    "length_m": 2.84,
+    "pieces": 2,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     23.771,
+     51.265,
+     -8.032
+    ],
+    "parts": [
+     "Underpass_lod2/concrete",
+     "Underpass_lod2/concrete"
+    ],
+    "length_m": 2.6,
+    "pieces": 2,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -3.633,
+     53.185,
+     10.34
+    ],
+    "parts": [
+     "Underpass_lod2/brick_painted_white",
+     "Underpass_lod2/brick_painted_white"
+    ],
+    "length_m": 0.83,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.294,
+     53.185,
+     10.34
+    ],
+    "parts": [
+     "Underpass_lod2/brick_painted_white",
+     "Underpass_lod2/brick_painted_white"
+    ],
+    "length_m": 0.83,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     20.937,
+     51.645,
+     -8.052
+    ],
+    "parts": [
+     "Underpass_lod2/brick_painted_white",
+     "Underpass_lod2/brick_painted_white"
+    ],
+    "length_m": 0.83,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     24.036,
+     51.645,
+     -8.052
+    ],
+    "parts": [
+     "Underpass_lod2/brick_painted_white",
+     "Underpass_lod2/brick_painted_white"
+    ],
+    "length_m": 0.83,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.964,
+     55.2,
+     0.389
+    ],
+    "parts": [
+     "Underpass_lod2/paint_fascia",
+     "Underpass_lod2/paint_fascia"
+    ],
+    "length_m": 3.34,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.964,
+     55.2,
+     10.74
+    ],
+    "parts": [
+     "Underpass_lod2/paint_fascia",
+     "Underpass_lod2/paint_fascia"
+    ],
+    "length_m": 3.34,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.964,
+     55.2,
+     10.34
+    ],
+    "parts": [
+     "Underpass_lod2/paint_fascia",
+     "Underpass_lod2/paint_fascia"
+    ],
+    "length_m": 2.84,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     22.486,
+     53.72,
+     -8.452
+    ],
+    "parts": [
+     "Underpass_lod2/paint_fascia",
+     "Underpass_lod2/paint_fascia"
+    ],
+    "length_m": 3.1,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     22.486,
+     53.72,
+     -1.793
+    ],
+    "parts": [
+     "Underpass_lod2/paint_fascia",
+     "Underpass_lod2/paint_fascia"
+    ],
+    "length_m": 3.1,
+    "pieces": 1,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     22.486,
+     53.72,
+     -8.052
+    ],
+    "parts": [
+     "Underpass_lod2/paint_fascia",
+     "Underpass_lod2/paint_fascia"
+    ],
+    "length_m": 2.6,
+    "pieces": 1,
+    "min_angle_deg": 90
+   }
+  ],
+  "tjunction": [
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -3.383,
+     52.939,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 2.988
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -3.633,
+     52.77,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 2.988
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.544,
+     52.939,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 2.988
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.294,
+     52.77,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 2.988
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.294,
+     53.6,
+     0.789
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 2.43
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -3.633,
+     53.6,
+     0.789
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 2.43
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     21.187,
+     51.265,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 3.013
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     20.937,
+     51.23,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 3.013
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     23.786,
+     51.265,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 3.013
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     24.036,
+     51.23,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 3.013
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     24.036,
+     52.06,
+     -2.194
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 2.49
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     20.937,
+     52.06,
+     -2.194
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "edge_m": 2.49
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -3.633,
+     55.2,
+     0.389
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "edge_m": 4.138
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -3.633,
+     55.2,
+     10.74
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "edge_m": 4.138
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -3.633,
+     55.2,
+     0.789
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "edge_m": 10.351
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.294,
+     55.2,
+     0.789
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "edge_m": 10.351
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -3.383,
+     55.2,
+     10.34
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "edge_m": 3.338
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     20.937,
+     53.72,
+     -8.452
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "edge_m": 3.899
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     20.937,
+     53.72,
+     -1.793
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "edge_m": 3.899
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     20.937,
+     53.72,
+     -8.052
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "edge_m": 6.658
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     24.036,
+     53.72,
+     -8.052
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "edge_m": 6.658
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     21.187,
+     53.72,
+     -8.052
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "edge_m": 3.099
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.544,
+     52.939,
+     10.32
+    ],
+    "part": "Underpass_lod2/concrete",
+    "edge_m": 0.301
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -3.383,
+     52.939,
+     10.32
+    ],
+    "part": "Underpass_lod2/concrete",
+    "edge_m": 0.301
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     23.786,
+     51.265,
+     -8.032
+    ],
+    "part": "Underpass_lod2/concrete",
+    "edge_m": 1.691
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     21.187,
+     51.265,
+     -8.032
+    ],
+    "part": "Underpass_lod2/concrete",
+    "edge_m": 1.691
+   }
+  ],
+  "opening": [
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.633,
+     52.212,
+     0.839
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 9.551
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.633,
+     52.822,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 0.83
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.633,
+     52.822,
+     0.789
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 0.83
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.633,
+     53.65,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 1.6
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.633,
+     53.65,
+     0.789
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 1.6
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.591,
+     52.212,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.25
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.294,
+     52.724,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 0.558
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.294,
+     52.212,
+     10.29
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 9.551
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.294,
+     52.822,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 0.83
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.294,
+     52.822,
+     0.789
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 0.83
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.294,
+     53.65,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 1.6
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.294,
+     53.65,
+     0.789
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 1.6
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.336,
+     52.212,
+     10.34
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.25
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.582,
+     52.212,
+     0.789
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 3.338
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.937,
+     50.707,
+     -8.002
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 5.859
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.937,
+     50.759,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 0.523
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.937,
+     51.282,
+     -2.194
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 0.83
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.937,
+     51.282,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 0.83
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.937,
+     52.109,
+     -2.194
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 1.66
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.937,
+     52.109,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 1.66
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.979,
+     50.707,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.25
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.036,
+     50.707,
+     -2.243
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 5.859
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.036,
+     51.282,
+     -2.194
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 0.83
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.036,
+     51.282,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 0.83
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.036,
+     52.109,
+     -2.194
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 1.66
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.036,
+     52.109,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 1.66
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     23.994,
+     50.707,
+     -8.052
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.25
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.987,
+     50.707,
+     -2.194
+    ],
+    "part": "Underpass_lod2/brick_painted_white",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 3.099
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.983,
+     55.2,
+     0.389
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.983,
+     55.2,
+     10.74
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     0.055,
+     55.2,
+     0.389
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     0.055,
+     55.2,
+     10.74
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.582,
+     55.2,
+     0.389
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 3.338
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.633,
+     55.2,
+     0.739
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.294,
+     55.2,
+     10.39
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.582,
+     55.2,
+     10.74
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 3.338
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.587,
+     53.72,
+     -8.452
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.587,
+     53.72,
+     -1.793
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.386,
+     53.72,
+     -8.452
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.386,
+     53.72,
+     -1.793
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.987,
+     53.72,
+     -8.452
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 3.099
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.937,
+     53.72,
+     -8.102
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     24.036,
+     53.72,
+     -2.144
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 0.4
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     20.987,
+     53.72,
+     -1.793
+    ],
+    "part": "Underpass_lod2/paint_fascia",
+    "facing": [
+     0,
+     -1,
+     0
+    ],
+    "edge_m": 3.099
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.332,
+     52.939,
+     10.34
+    ],
+    "part": "Underpass_lod2/concrete",
+    "facing": [
+     0,
+     1,
+     0
+    ],
+    "edge_m": 2.838
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.332,
+     52.939,
+     10.32
+    ],
+    "part": "Underpass_lod2/concrete",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 2.838
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     23.736,
+     51.265,
+     -8.052
+    ],
+    "part": "Underpass_lod2/concrete",
+    "facing": [
+     0,
+     1,
+     0
+    ],
+    "edge_m": 2.599
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     23.736,
+     51.265,
+     -8.032
+    ],
+    "part": "Underpass_lod2/concrete",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 2.599
+   }
+  ]
+ },
+ "file": "calevoet.raw.glb"
+}

@@ -35,12 +35,32 @@ export class Contacts {
 /**
  * Terrain as a solid below height(x, z). The normal comes from central differences (eps m). Only the capsule's
  * bottom sphere can touch it (the capsule is vertical).
+ * VOIDS (claude/underpass1, rule underpass-wells): `voids` = [{ ring: Float64Array x, z pairs, yTop, x0, x1, z0, z1 }]
+ * (viewer/underground/underpass.js underpassVoids): a body whose (x, z) is inside a ring and whose feet are below yTop
+ * gets no contact from the field (yTop Infinity: a stair well, the field off; a corridor: yTop = its soffit + a margin,
+ * so a body walking on the ground over it is still carried), and a ray's samples there are not solid. The model's own
+ * triangles (a TriBVH) carry the body inside. null (default): as before.
  */
+export function inVoid(voids, x, z, y) {
+  for (let i = 0; i < voids.length; i++) {
+    const v = voids[i];
+    if (x < v.x0 || x > v.x1 || z < v.z0 || z > v.z1 || y >= v.yTop) continue;
+    const R = v.ring, n = R.length >> 1;
+    let c = false;
+    for (let a = 0, b = n - 1; a < n; b = a++) {
+      const xa = R[a * 2], za = R[a * 2 + 1], xb = R[b * 2], zb = R[b * 2 + 1];
+      if ((za > z) !== (zb > z) && x < ((xb - xa) * (z - za)) / (zb - za) + xa) c = !c;
+    }
+    if (c) return true;
+  }
+  return false;
+}
 export class Heightfield {
-  constructor(height, { eps = 0.25, tag = 2 } = {}) { this.height = height; this.eps = eps; this.tag = tag; this.enabled = true; }
+  constructor(height, { eps = 0.25, tag = 2 } = {}) { this.height = height; this.eps = eps; this.tag = tag; this.enabled = true; this.voids = null; }
   capsule(q, contacts) {
     if (!this.enabled) return;
     const ax = q[0], ay = q[1], az = q[2], r = q[6], H = this.height;
+    if (this.voids !== null && inVoid(this.voids, ax, az, ay - r)) return;
     const h = H(ax, az);
     if (ay - r > h + 0.5) return;
     const e = this.eps, gx = (H(ax + e, az) - H(ax - e, az)) / (2 * e), gz = (H(ax, az + e) - H(ax, az - e)) / (2 * e);
@@ -59,8 +79,10 @@ export class Heightfield {
     const len = Math.sqrt(dx * dx + dy * dy + dz * dz) * tmax, n = Math.max(2, Math.ceil(len / 0.5));
     let tp = 0, fp = oy - H(ox, oz);
     if (fp < 0) return;                           // starts below the ground: ignore
+    const V = this.voids;
     for (let i = 1; i <= n; i++) {
       const t = tmax * i / n, f = oy + dy * t - H(ox + dx * t, oz + dz * t);
+      if (f < 0 && V !== null && inVoid(V, ox + dx * t, oz + dz * t, oy + dy * t)) { tp = t; fp = 1; continue; }
       if (f < 0) {
         let a = tp, b = t;                        // bisection
         for (let k = 0; k < 10; k++) {
