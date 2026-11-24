@@ -11,9 +11,16 @@
 //   stolen     a stolen car in the traffic: get near, it FLEES (viewer/traffic/trafficSim.js ctl 1: faster, overtakes,
 //              runs lights, turns away from you); stay on its bumper / box it in until it gives up; E: arrest.
 //              Ramming costs score; 4 rams = failed.
-// Each factory: (G, kit, rng) -> a dispatch call { priority, from, icon, text, mission } or null (no fitting place).
+// Each factory: (G, kit, rng) -> a dispatch call { priority, from, icon, text, mission, premise } or null (no fitting place).
+// claude/missions (rule mission-premise, missionPremise.js): each job's premise is made TRUE at the call (the car on the
+// rails with a tram held behind it or due before you can get there, the crashed cars on the road, the stolen car taken
+// from the traffic) and handed to the game as `premise` { type, setup, release, check }: policeGame.js watches it (1 Hz)
+// and cancels the call without a penalty when it breaks. ?missions=old: as before (the scene made at the accept, no watch).
 import { TrafficCarTarget } from "../game/entities.js";
 import { hazard } from "./props.js";
+import { MISSIONS_OLD, pickTramSpot, tramBlock, tramPremise, pickSpeeder, speederMissed, placeAccident, accidentPremise, stolenPremise } from "./missionPremise.js";
+const OLD = MISSIONS_OLD;
+const title = (n) => n.replace(/\s*\(tram 92\)/, "").toLowerCase().replace(/(^|[\s-])\S/g, (c) => c.toUpperCase());
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const metres = (d) => (d >= 1000 ? `${(d / 1000).toFixed(1)} km` : `${Math.round(d / 5) * 5} m`);
@@ -43,52 +50,91 @@ function sceneEntity(x, z, setup, cleanup) {
 export function tramJob(G, kit, rng) {
   const tl = G.tram();
   if (!tl) return null;
-  const P = kit.player, stops = kit.places.all.filter((p) => p.group === "stop" && dist(p, P) > 250 && dist(p, P) < 2600);
-  if (!stops.length) return null;
-  // Place Saint-Job first (the owner's example), then any stop
-  const sj = stops.filter((s) => /SAINT-JOB/i.test(s.name) && !/GARE/i.test(s.name));
-  const st = (G.done.tram || 0) === 0 && sj.length ? sj[Math.floor(rng() * sj.length)] : stops[Math.floor(rng() * stops.length)];
-  const tk = tl.trackNear(st.x, st.z, 30);
-  if (!tk) return null;
-  const at = tl.shapePoint(tk.shape, tk.d + 16) || tk;               // 16 m past the stop: the tram stands at its platform behind it
-  const h = at.heading, rx = -Math.cos(h), rz = Math.sin(h);         // (right = -(cos h, -sin h))
-  const car = { x: at.x + rx * 0.7, z: at.z + rz * 0.7, heading: h + 0.12 };
-  const name = st.name.replace(/\s*\(tram 92\)/, "").toLowerCase().replace(/(^|[\s-])\S/g, (c) => c.toUpperCase());
+  const P = kit.player;
+  let car, name, spot = null;
+  if (OLD) {
+    const stops = kit.places.all.filter((p) => p.group === "stop" && dist(p, P) > 250 && dist(p, P) < 2600);
+    if (!stops.length) return null;
+    // Place Saint-Job first (the owner's example), then any stop
+    const sj = stops.filter((s) => /SAINT-JOB/i.test(s.name) && !/GARE/i.test(s.name));
+    const st = (G.done.tram || 0) === 0 && sj.length ? sj[Math.floor(rng() * sj.length)] : stops[Math.floor(rng() * stops.length)];
+    const tk = tl.trackNear(st.x, st.z, 30);
+    if (!tk) return null;
+    const at = tl.shapePoint(tk.shape, tk.d + 16) || tk;               // 16 m past the stop: the tram stands at its platform behind it
+    const h = at.heading, rx = -Math.cos(h), rz = Math.sin(h);         // (right = -(cos h, -sin h))
+    car = { x: at.x + rx * 0.7, z: at.z + rz * 0.7, heading: h + 0.12 };
+    name = title(st.name);
+  } else {
+    // a stop of the line (in the built city) where the next tram is held behind the car by the time you can get there
+    // (Place Saint-Job first when it qualifies: the owner's example)
+    spot = pickTramSpot(tl, P, rng, { where: (x, z) => kit.places.inBuilt(x, z), prefer: (G.done.tram || 0) === 0 ? /^(?!.*GARE).*SAINT-JOB/i : null });
+    if (!spot) return null;
+    car = spot.car; name = title(spot.name);
+  }
   const D = dist(car, P), T = driveTime(D);
   const types = ["hatch_s", "hatch_c", "saloon", "suv"], paints = [0x8a1414, 0xb9bcc0, 0x24483a, 0x1d3f6e, 0xd8d4c8];
+  const look = { type: types[Math.floor(rng() * types.length)], paint: paints[Math.floor(rng() * paints.length)] };
+  // the scene: the car on the rails + the block (OLD: made when the job is accepted; new: at the call, the premise)
+  const S = { on: false, car: null, freed: false, c0: 0 };
+  const setup = () => {
+    if (S.on) return;
+    S.on = true; S.freed = false; S.c0 = tl.clockSecs;
+    S.car = G.props.addCar({ ...car, ...look });
+    tl.setBlock(OLD ? { x: car.x, z: car.z, heading: null, r: 4.6, gap: 7 } : tramBlock(spot));
+  };
+  const release = () => {
+    if (!S.on) return;
+    S.on = false; tl.setBlock(null);
+    if (S.car && G.props.cars.includes(S.car)) G.props.removeCar(S.car);
+    S.car = null;
+  };
+  const premise = OLD ? null : {
+    type: "tram", spot, setup, release,
+    check: () => {
+      if (S.freed) return { ok: true };
+      const now = G.tram(), el = ((((tl.clockSecs - S.c0) % 86400) + 86400) % 86400) / (tl.timescale || 1);
+      return tramPremise(now === tl ? now : null, spot, el);
+    },
+  };
+  const due = spot && spot.eta > 1.5 ? Math.max(5, Math.round(spot.eta / 5) * 5) : 0;
+  const dueT = due >= 90 ? `${Math.round(due / 60)} min` : `${due} s`;
+  const stuck = OLD || !due ? "Tram 92 is stuck behind it." : `The next tram 92 is due there in about ${dueT} and will be stuck behind it.`;
   const mission = {
     id: "police-tram", title: `Car on the tram line: ${name}`, giver: { name: "Dispatch", icon: "radio" },
-    brief: `A car is parked on the tram rails at ${name}. Tram 92 is stuck behind it. Go and get it moved.`,
+    brief: `A car is parked on the tram rails at ${name}. ${stuck} Go and get it moved.`,
+    premise,
     steps: [
       { type: "reach", target: [car.x, car.z, `${name} (the rails)`], radius: 32, time: T, text: "Drive to the blocked tram line at {target}",
-        entity: { id: "scene", kind: "custom", make: () => sceneEntity(car.x, car.z, (e) => {
-          e.data.car = G.props.addCar({ ...car, type: types[Math.floor(rng() * types.length)], paint: paints[Math.floor(rng() * paints.length)] });
-          e.data.block = tl.setBlock({ x: car.x, z: car.z, heading: null, r: 4.6, gap: 7 });
-        }, (e) => { tl.setBlock(null); if (e.data.car && G.props.cars.includes(e.data.car)) G.props.removeCar(e.data.car); }) } },
+        entity: { id: "scene", kind: "custom", make: () => {
+          if (premise) { setup(); G.live = premise; }                    // (a retry: the scene again, watched again)
+          return sceneEntity(car.x, car.z, () => setup(), () => release());
+        } } },
       { type: "stay", target: [car.x, car.z, "the car on the rails"], radius: 13, seconds: 2, maxSpeed: 6, time: 60, text: "Stop next to the car on the rails",
-        radio: { from: "Tram 92 driver", icon: "person", text: "I've been waiting here for ages! It's that car right in front of me." } },
+        radio: { from: "Tram 92 driver", icon: "person", text: OLD ? "I've been waiting here for ages! It's that car right in front of me." : "I can't get past! It's that car right in front of me." } },
       { type: "interact", target: [car.x, car.z, "the car"], radius: 13, prompt: "Find the driver and get the car moved", time: 60, text: "Get the car off the rails",
         onDone: (c) => c.say("Driver", "Sorry, sorry! I was just picking up bread. I'm moving it now!", { icon: "person" }) },
       { type: "custom", text: "The car leaves the rails", marker: false,
         check: (c) => {
-          const e = c.entities.scene;
-          if (c.stepT > 2.5 && e?.data.car && !c.vars.gone) {
+          if (c.stepT > 2.5 && S.car && !c.vars.gone) {
             c.vars.gone = true;
-            if (G.props.driveOff(e.data.car) < 0) G.props.removeCar(e.data.car);    // (no lane found: towed off-screen? keep simple)
-            e.data.car = null;
+            if (G.props.driveOff(S.car) < 0) G.props.removeCar(S.car);    // (no lane found: towed off-screen? keep simple)
+            S.car = null;
           }
-          if (c.stepT > 6 && !c.vars.free) { c.vars.free = true; G.tram()?.setBlock(null); c.say("Tram 92 driver", "Merci! We're moving again.", { icon: "person" }); }
+          if (c.stepT > 6 && !c.vars.free) { c.vars.free = true; S.freed = true; tl.setBlock(null); c.say("Tram 92 driver", "Merci! We're moving again.", { icon: "person" }); }
           return c.stepT > 8;
         },
         status: (c) => ({ line: c.vars.free ? "the trams roll again" : "the car pulls away…", progress: Math.min(1, c.stepT / 8) }) },
     ],
     reward: { score: 120, money: 40, rep: 2 }, timeBonus: { under: Math.round(T * 0.55), score: 40 }, failRep: 1,
   };
-  return { priority: 2, from: "Dispatch", icon: "radio", text: `Tram 92 blocked at ${name}: a car parked on the rails. ${metres(D)} away. Get it moved.`, mission };
+  const text = OLD || !due ? `Tram 92 blocked at ${name}: a car parked on the rails. ${metres(D)} away. Get it moved.`
+    : `A car parked on the tram rails at ${name}: the next tram 92 is due in about ${dueT}. ${metres(D)} away. Get it moved.`;
+  return { priority: 2, from: "Dispatch", icon: "radio", text, mission, premise };
 }
 
 // ------------------------------------------------------------------------------------------------ (b) speed check
 export function speedJob(G, kit, rng) {
+  if (!OLD && !G.traffic()?.sim) return null;                            // (premise: traffic to check)
   const P = kit.player, all = (G.spots?.speed || []).filter((s) => kit.places.inBuilt(s.x, s.z) && dist(s, P) > 250 && dist(s, P) < 2200);
   if (!all.length) return null;
   const good = all.filter((s) => s.hw !== "residential" && s.hw !== "unclassified");
@@ -105,7 +151,7 @@ export function speedJob(G, kit, rng) {
         onStart: (c) => { c.vars.seen = new Map(); c.vars.n = 0; c.vars.last = null; c.vars.sp = -1; c.vars.at = { x: c.player.x, z: c.player.z }; },
         check: (c) => {
           const T = G.traffic(), sim = T?.sim;
-          if (!sim) return "fail: no traffic";
+          if (!sim) return OLD ? "fail: no traffic" : false;                // (new: the premise watch cancels the call)
           const at = c.vars.at, seen = c.vars.seen;
           if (dist(c.player, at) > 35) return "fail: you left the check point";
           // each car within 40 m: its closest approach; when it moves away again, it is measured
@@ -128,16 +174,14 @@ export function speedJob(G, kit, rng) {
           }
           // after 2 cars (or 20 s): one driver comes too fast (a car 70-220 m away heading this way)
           if (c.vars.sp < 0 && (c.vars.n >= 2 || c.stepT > 12)) {
-            let best = -1, bs = 1e9;
-            for (let i = 0; i < sim.cap; i++) {
-              if (!sim.alive[i] || sim.state[i] !== 0 || sim.keep[i] || sim.ctl[i] || sim.types[sim.type[i]]?.two) continue;
-              const dx = at.x - sim.x[i], dz = at.z - sim.z[i], d = Math.hypot(dx, dz);
-              if (d < 70 || d > 220) continue;
-              const toward = (Math.sin(sim.yaw[i]) * dx + Math.cos(sim.yaw[i]) * dz) / d;
-              if (toward < 0.75) continue;
-              if (d < bs) { bs = d; best = i; }
-            }
-            if (best >= 0) { c.vars.sp = best; sim.speedF[best] = lim <= 30 ? 1.95 : 1.5; c.entities.speeder = adopt(T, best); c.entities.speeder.label = `${c.entities.speeder.colour} ${c.entities.speeder.model}`; }
+            // (new: a car whose line passes the sign, missionPremise.js pickSpeeder; one that turns off is dropped below)
+            const best = pickSpeeder(sim, at, { old: OLD, skip: c.vars.dropped });
+            if (best >= 0) { c.vars.sp = best; c.vars.spRec = {}; sim.speedF[best] = lim <= 30 ? 1.95 : 1.5; c.entities.speeder = adopt(T, best); c.entities.speeder.label = `${c.entities.speeder.colour} ${c.entities.speeder.model}`; }
+          }
+          // (new) the speeder went past without coming by the sign (it turned off): let it go, the radar waits for another
+          if (!OLD && c.vars.sp >= 0 && c.entities.speeder?.alive && speederMissed(sim, c.vars.sp, at, c.vars.spRec)) {
+            (c.vars.dropped ||= new Set()).add(c.vars.sp * 4096 + (sim.gen[c.vars.sp] & 4095));
+            c.entities.speeder.release(); c.entities.speeder = null; c.vars.sp = -1;
           }
           if (c.vars.sp >= 0 && c.entities.speeder && !c.entities.speeder.alive) { c.vars.sp = -1; c.entities.speeder = null; }
           if (c.vars.flag && c.vars.flag.i === c.vars.sp) {
@@ -186,59 +230,51 @@ export function speedJob(G, kit, rng) {
     ],
     reward: { score: 160, money: 60, rep: 2 }, failRep: 1,
   };
-  return { priority: 3, from: "Dispatch", icon: "radio", text: `Speed check in ${s.street} (limit ${lim}): residents complain. ${metres(D)} away.`, mission };
+  mission.premise = OLD ? null : { type: "speed", setup() {}, release() {}, check: () => (G.traffic()?.sim ? { ok: true } : { ok: false, why: "the traffic is off" }) };
+  return { priority: 3, from: "Dispatch", icon: "radio", text: `Speed check in ${s.street} (limit ${lim}): residents complain. ${metres(D)} away.`, mission, premise: mission.premise };
 }
 
 // ------------------------------------------------------------------------------------------------ (c) accident
 export function accidentJob(G, kit, rng) {
   const P = kit.player;
+  if (!OLD && !kit.host.getMap()) return null;                            // (premise: the road snap places the cars)
   let all = (G.spots?.junction || []).filter((j) => kit.places.inBuilt(j.x, j.z) && dist(j, P) > 300 && dist(j, P) < 2200);
   if (!all.length) return null;
   const busy = all.filter((j) => j.main >= 2);
   if (busy.length) all = busy;
   const j = all[Math.floor(rng() * all.length)];
   const D = dist(j, P), T = driveTime(D, 0.9);
-  const scene = { x: j.x, z: j.z, cones: [[j.x, j.z], [j.x, j.z], [j.x, j.z]], ready: false };
-  const setup = async (e) => {
+  // the scene (missionPremise.js placeAccident: the two cars on the road, the cone spots); OLD: built at the accept, the
+  // cars at the raw junction point when no road snap came back; new: built at the call, none without a road
+  const scene = { x: j.x, z: j.z, cones: [[j.x, j.z], [j.x, j.z], [j.x, j.z]], ready: false, failed: null, cleared: false, a: null, b: null, on: false, t0: 0 };
+  const setup = () => {
+    if (scene.on) return;
+    Object.assign(scene, { on: true, ready: false, failed: null, cleared: false, t0: kit.time });
+    hazard.value = 1; G.hazard = true;
     const map = kit.host.getMap();
-    // a road point and its direction (forward = (sin h, cos h)), turned to agree with `ref` when given
-    const snap = async (x, z, ref = null) => {
-      const r = map ? await map.client.request({ type: "snap", x, z, maxD: 30 }) : { none: true };
-      if (r.none) return { x, z, h: ref ?? 0 };
-      let h = Math.PI / 2 - r.yaw;
-      if (ref != null && Math.cos(h - ref) < 0) h += Math.PI;
-      return { x: r.x, z: r.z, h };
-    };
-    const J = await snap(j.x, j.z);
-    if (!e.alive) return;
-    const h = J.h, fx = Math.sin(h), fz = Math.cos(h);
-    // car A just past the junction on the right lane, askew; car B rammed into its left side
-    const A = await snap(j.x + fx * 6, j.z + fz * 6, h);
-    if (!e.alive) return;
-    const ha = A.h + 0.3, ra = [-Math.cos(A.h), Math.sin(A.h)];
-    const ax = A.x + ra[0] * 1.5, az = A.z + ra[1] * 1.5;
-    const la = [Math.cos(ha), -Math.sin(ha)];
-    const types = ["hatch_c", "saloon", "estate", "hatch_s"], ta = types[Math.floor(rng() * 4)], tb = types[(types.indexOf(ta) + 1 + Math.floor(rng() * 3)) % 4];
-    const bx = ax + la[0] * 3.05, bz = az + la[1] * 3.05, hb = Math.atan2(-la[0], -la[1]) + 0.32;
-    e.data.a = G.props.addCar({ x: ax, z: az, heading: ha, type: ta, paint: [0xb9bcc0, 0xd8d4c8, 0x1d3f6e][Math.floor(rng() * 3)], damage: { sx: 1, sz: 1, depth: 0.18 } });
-    e.data.b = G.props.addCar({ x: bx, z: bz, heading: hb, type: tb, paint: [0x8a1414, 0x24483a, 0x34383d][Math.floor(rng() * 3)], damage: { sx: 1, sz: 1, depth: 0.22 } });
-    scene.x = ax; scene.z = az; e.x = ax; e.z = az;
-    // the cones: on the road behind the scene (the way the traffic comes), a taper from the kerb out over its lane
-    const back = await Promise.all([12, 18, 24].map((b) => snap(A.x - Math.sin(A.h) * b, A.z - Math.cos(A.h) * b, A.h)));
-    if (!e.alive) return;
-    scene.cones = back.map((q, k) => { const off = 2.7 - k * 0.65; return [q.x - Math.cos(q.h) * off, q.z + Math.sin(q.h) * off]; });
-    scene.ready = true;
+    const snap = map ? (x, z) => map.client.request({ type: "snap", x, z, maxD: 30 }) : null;
+    placeAccident(j, snap, rng, { old: OLD, alive: () => scene.on }).then((r) => {
+      if (!scene.on) return;
+      if (!r) { scene.failed = "no road at the junction"; return; }
+      scene.a = G.props.addCar(r.A); scene.b = G.props.addCar(r.B);
+      scene.x = r.x; scene.z = r.z; scene.cones = r.cones; scene.ready = true;
+    }).catch((e) => { scene.failed = `the scene failed (${e.message})`; });
   };
+  const release = () => { if (!scene.on) return; scene.on = false; scene.a = scene.b = null; G.hazard = false; G.props.clear(); };
+  const premise = OLD ? null : { type: "accident", setup, release, check: () => accidentPremise(scene, G.props.cars, kit.time - scene.t0) };
   const coneStep = (k) => ({ type: "interact", target: () => [scene.cones[k][0], scene.cones[k][1], `cone spot ${k + 1}`], radius: 6, snap: false, time: 60,
     prompt: `Place cone ${k + 1} of 3`, text: `Place the cones behind the scene (${k + 1} / 3)`,
     onDone: () => G.props.setCones(scene.cones.slice(0, k + 1)) });
   const mission = {
     id: "police-accident", title: `Accident: ${j.name}`, giver: { name: "Dispatch", icon: "radio" },
     brief: `Collision at ${j.name}: two cars, nobody hurt, the junction is blocked. Lights and siren!`,
+    premise,
     steps: [
       { type: "reach", target: () => [scene.x, scene.z, j.name], radius: 40, time: T, text: "Drive to the accident at {target}",
-        entity: { id: "scene", kind: "custom", make: () => sceneEntity(j.x, j.z, (e) => { setup(e); hazard.value = 1; G.hazard = true; },
-          () => { G.hazard = false; G.props.clear(); }) } },
+        entity: { id: "scene", kind: "custom", make: () => {
+          if (premise) { setup(); G.live = premise; }                    // (a retry: the scene again, watched again)
+          return sceneEntity(j.x, j.z, () => setup(), () => release());
+        } } },
       { type: "custom", target: () => [scene.x, scene.z, "the scene"], text: "Park near the scene with the blue lights on", time: 60,
         check: (c, dt) => {
           const d = dist(c.player, scene), ok = d < 26 && c.player.speed < 0.6 && G.car.lightsOn;
@@ -256,11 +292,10 @@ export function accidentJob(G, kit, rng) {
         },
         status: (c) => ({ line: !G.car.lightsOn ? REP_LIGHTS : dist(c.player, scene) >= 45 ? "stay with the scene" : "statements, photos…", progress: Math.min(1, (c.vars._s || 0) / 16) }) },
       { type: "custom", text: "The cars are cleared", marker: false,
-        onStart: (c) => c.say("Driver", "Both cars still drive. We'll sort out the paperwork. Thank you, officer!", { icon: "person" }),
+        onStart: (c) => { scene.cleared = true; c.say("Driver", "Both cars still drive. We'll sort out the paperwork. Thank you, officer!", { icon: "person" }); },
         check: (c) => {
-          const e = c.entities.scene;
-          if (c.stepT > 1.5 && e?.data.a) { if (G.props.driveOff(e.data.a) < 0) G.props.removeCar(e.data.a); e.data.a = null; }
-          if (c.stepT > 4.5 && e?.data.b) { if (G.props.driveOff(e.data.b) < 0) G.props.removeCar(e.data.b); e.data.b = null; hazard.value = 0; G.hazard = false; }
+          if (c.stepT > 1.5 && scene.a) { if (G.props.driveOff(scene.a) < 0) G.props.removeCar(scene.a); scene.a = null; }
+          if (c.stepT > 4.5 && scene.b) { if (G.props.driveOff(scene.b) < 0) G.props.removeCar(scene.b); scene.b = null; hazard.value = 0; G.hazard = false; }
           return c.stepT > 6;
         },
         status: (c) => ({ progress: Math.min(1, c.stepT / 6) }) },
@@ -269,28 +304,42 @@ export function accidentJob(G, kit, rng) {
     ],
     reward: { score: 200, money: 70, rep: 3 }, timeBonus: { under: Math.round(T * 0.5) + 120, score: 50 }, failRep: 2,
   };
-  return { priority: 1, from: "Dispatch", icon: "radio", urgent: true, text: `Accident at ${j.name}, the junction is blocked. ${metres(D)} away. Lights and siren!`, mission };
+  return { priority: 1, from: "Dispatch", icon: "radio", urgent: true, text: `Accident at ${j.name}, the junction is blocked. ${metres(D)} away. Lights and siren!`, mission, premise };
 }
 
 // ------------------------------------------------------------------------------------------------ (d) stolen car
 export function stolenJob(G, kit) {
+  // the stolen car (new: taken from the traffic AT THE CALL and held, so the call is only made when there is one; OLD:
+  // looked for at the accept, none = the job failed)
+  const take = () => {
+    const T = G.traffic(), sim = T?.sim; if (!sim) return null;
+    const t = kit.spawnEntity({ kind: "trafficCar", min: 90, max: 320 });
+    if (!t) return null;
+    t.release(); return adopt(T, t.i);
+  };
+  let car = null;
+  if (!OLD) { car = take(); if (!car) return null; }
+  const premise = OLD ? null : {
+    type: "stolen", setup() {}, release: () => car?.release(),
+    check: () => { if (premise.done) return { ok: true }; car?.update?.(); return stolenPremise(car, G.traffic()?.sim); },   // (done: it saw you and runs; losing it then is the job's fail)
+  };
   const mission = {
     id: "police-stolen", title: "Stolen car", giver: { name: "Dispatch", icon: "radio" },
     brief: "A car reported stolen this morning was just seen near you. Find it. When it runs: stay on it, box it in. No ramming.",
-    timeLimit: 330,
+    timeLimit: 330, premise,
     steps: [
       { type: "custom", target: "@stolen", text: "Find the stolen {entity}", time: 120,
-        entity: { id: "stolen", kind: "custom", missing: "no car in sight: try again on a busier street", make: (k) => {
-          const T = G.traffic(), sim = T?.sim; if (!sim) return null;
-          const t = k.spawnEntity({ kind: "trafficCar", min: 90, max: 320 });
-          if (!t) return null;
-          t.release(); return adopt(T, t.i);
+        entity: { id: "stolen", kind: "custom", missing: "no car in sight: try again on a busier street", make: () => {
+          if (OLD) return take();
+          if (!car || !car.alive) car = take();                           // (a retry)
+          if (car) { premise.done = false; G.live = premise; }
+          return car;
         } },
         onStart: (c) => { G.rams = 0; c.vars.hits = G.hits(); },
         check: (c) => {
           const e = c.entity; if (!e || !e.alive) return "fail: the car disappeared";
           if (dist(c.player, e) < 48) {
-            const sim = G.traffic().sim; sim.ctl[e.idx] = 1;
+            const sim = G.traffic().sim; sim.ctl[e.idx] = 1; if (premise) premise.done = true;
             c.say("Dispatch", `It has seen you! The ${e.label} is running. Stay on it!`, { urgent: true });
             return true;
           }
@@ -344,7 +393,7 @@ export function stolenJob(G, kit) {
     ],
     reward: { score: 280, money: 110, rep: 4 }, failRep: 2,
   };
-  return { priority: 1, from: "Dispatch", icon: "radio", urgent: true, text: "A stolen car was just seen near you. Find it and stop it.", mission };
+  return { priority: 1, from: "Dispatch", icon: "radio", urgent: true, text: "A stolen car was just seen near you. Find it and stop it.", mission, premise };
 }
 
 export const JOBS = { tram: tramJob, speed: speedJob, accident: accidentJob, stolen: stolenJob };
