@@ -438,6 +438,88 @@ slot material variants build (TSL graphs), the lights are emissive only, the sit
 the lowest point of a span 4.68 m over the street, unit normals, swag scales), the span geometry (2,282 LEDs), the field's
 level buckets match the bands, empty meshes hidden.
 
+## 7.1 The Christmas tour views (claude/xmas2, 2026-11-24, plan job 2)
+
+`tools/tour/views_xmas.json` showed the layer in 3 views only, all at golden hour (stjob-shops, stjob-60m,
+stpierre-parvis). Five views are added, each for one thing a later change can break. Every camera was checked with
+`debug/quick.js` `view()`: none stands inside a building (the first Saint-Pierre spot, -745, -482, was inside the corner
+building, roof 65.9 m: moved to -740, -486). Each view costs ~35 s of tour time, so there are no more than these:
+
+| view | time | what it guards |
+|---|---|---|
+| `xmas-stjob-night` | night | Place Saint-Job from the east, 24 m from the fir: the fir's LEDs (bloom), the 6 chalets' lit counters and roofs, the snowflakes on the lamps, the swags on the shopfronts behind. Breaks when: the market (`config.chalets`), the night emission (`xmasLook.night`), the fir's level switch |
+| `xmas-stjob-dusk` | twilight | the same square from the west (the stjob-street spot): the fir with its star against the sky, a chalet, a lamp snowflake. The LEDs at the dusk level of `env.uNight` |
+| `xmas-stpierre-night` | night | the Parvis Saint-Pierre: the 9 m fir in front of the church. The parvis lost 4 garlands to the hidden-church fix (claude/xmas1): none may come back hooked on the church |
+| `xmas-debue-garlands-dusk` | twilight | Rue Xavier De Bue looking east: garlands across the street with their star motifs, the tram span at x -898 without one, the swags, the pharmacy cross |
+| `xmas-debue-swag-night` | night | a shopfront swag and a door wreath up close (Maroquinerie Karwan + the wreath of no. 36A, Les Petits Riens next door): the swag along the drawn front (the shared `frontFace` / `frontWidth`), the wreath on the door |
+
+Shots of the first branch run (no baseline yet): `C:/Users/tibog/Downloads/uccle-xmas2-ab/tour/xmas2-new/` (5 views) and
+`.../xmas2-new2/` (the two moved cameras). 7/7 ready, 0 console errors. The Christmas tour baseline ("xmas2026") is
+recorded on the foundation after the merge. The plan also lists an Alsemberg tram-span view, an eye-height lamp snowflake
+and a 45 m fir switch. They are left out to keep the tour short: the tram span is in `xmas-debue-garlands-dusk`, the
+snowflakes are in both Saint-Job views, and the 45 m switch has its own browser row (`xmasfir3`).
+
+## 7.2 Boot with the layer on (claude/xmas2, 2026-11-24, plan job 3)
+
+**What was wrong.** The layer was queued with the landmarks in `viewer/main.js` and started its downloads at once,
+whatever the spawn, at the default High fetch priority: site.json, christmas.json, christmas.glb (5.71 MB), the needle
+atlas (0.73 MB) and data/shops/terraces.json. On a G9 spawn (Rue Engeland, 1.5 km from any decoration) all of it came in
+before the cover. On the default boot (I6, Saint-Job) site.json was requested before the start tile's first file. From
+1 December every cold visit on the live site would have shared its bandwidth between the start tile and decorations
+it may not see.
+
+**Fix (rule `xmas-low-priority`, docs/rules/xmas-low-priority.md):**
+- Every Christmas fetch carries `XMAS_FETCH = { priority: "low" }` (viewer/christmas/xmasKit.js). The GLTFLoader gets
+  `setPriority("low")` (r187 Loader). The needle atlas is fetched at low priority and handed to the shared KTX2 loader's
+  `parse`, which keeps its own priority for the ground's textures.
+- The layer starts through `viewer/bootGate.js` `whenXmasNeeded()`. It starts at once when a decorated area (site.json
+  `select.areas`: centre + radius, mirrored in `XMAS_AREAS`) reaches into the boot's ring, because the layer can then be
+  in the first view. Otherwise it starts after the cover, staggered like the far landmarks.
+- Under `?quick=1` it starts at once and `quickReady` waits for it (`window.__xmasPending`), so a tour shot never
+  misses it. This guards against flaky tour shots now that the layer's downloads are low priority.
+- Check: gate row `xmas` "boot:" rows. XMAS_FETCH is low. Every fetch / loader under viewer/christmas/ uses it. No
+  shared-KTX2 `load()`. addChristmas is started only after `whenXmasNeeded()`. `XMAS_AREAS` = site.json
+  `select.areas`. A mutation test (the site.json fetch without XMAS_FETCH) fails the row.
+
+**Request lists** (local tour server, `?gamemenu=0`, resource timing, decoded body sizes; no timing claims: the laptop
+was busy with another agent's gate, so the absolute times differ between runs):
+
+| boot | Christmas files | before the cover: requests / MB |
+|---|---|---|
+| foundation, default (I6), xmas=0 | none | 638 / 139.27 |
+| foundation, default (I6), xmas=1 | 4 + terraces.json, all before the cover; site.json at 3412 ms, before the start tile's first file (I6 ortho at 3455 ms) | 645 / 144.09 |
+| xmas2, default (I6), xmas=1 | the same 4 + terraces.json, before the cover (Saint-Job is in the ring: the fir is in the first view), at low priority | 641 / 144.72 |
+| foundation, G9 (far south), xmas=1 | all before the cover (site.json 6.3 s, glb 6.4-8.2 s, atlas 12.4 s; cover 29.3 s) | 644 / 138.32 |
+| xmas2, G9, xmas=1 | **all after the cover** (cover 25.3 s; site.json 25.9 s, glb 26.1 s, atlas 27.1 s) | 634 / 130.48 |
+
+Resource timing and the DevTools request headers do not show the fetch priority, so the offline row above is what
+guards it. On the local HTTP/1.1 server the priority changes nothing measurable. It matters on the live site's HTTP/2,
+where requests share bandwidth by priority (PERF_RESEARCH idea 8).
+
+**Perf probe (timing):** `debug/xmasPerf.js` `run()` on `?quick=1&place=stjob-street&xmas=1&time=night`. It runs a GPU
+A/B with `gpuAB.alternate`, switching the layer's meshes off and on through their camera layers (mask 0, so neither the
+colour pass nor the shadow pass draws them). Budgets (plan section 3):
+- the whole layer at street level < 0.30 ms;
+- the fir alone at 8 m < 0.10 ms;
+- each extra registered in `window.xmas.extras` (poles, window lights: none yet) < 0.05 ms.
+
+**First numbers (2026-11-24, preflight GREEN before, YELLOW after (CPU 11 %), page check YELLOW: no baseline recorded; one
+tab, no other gate or Blender running).** `?quick=1&place=stjob-street&xmas=1&time=night`, two runs of `run()` in one page,
+GPU p50, mean of 6 alternated rounds (the min / max of the per-round differences in brackets):
+- the whole layer at street level: 0.53 ms [0.32, 0.79] and 0.60 ms [0.07, 1.31]. **Over the 0.30 ms budget.**
+- the fir alone at 8 m: 0.90 ms [0.78, 1.04] and 0.98 ms [0.66, 1.58]. **Far over the 0.10 ms budget.** The 0.084 ms of the
+  cost model (tools/christmas/firCost.mjs) is the needle cards' share only.
+- At 8 m, the fir split up (5 rounds each, noisy): the needle cards (lit + depth pre-pass) ~0.21 ms; the shadow-only
+  casters (far fronds, layer 25) ~0.20 ms at night; the rest of LOD0 (solid needles, bark, baubles, LEDs, star, planter)
+  ~0.25 ms. The three parts add up to ~0.66 ms, against 0.9-1.0 ms for the whole fir: the noise is about +-0.3 ms.
+- No extras are registered yet.
+- **Verdict: FAIL on both budgets.** Next (plan section 6, in this order): the shadow casters at night (the moon's map;
+  are they needed at all?), LOD0's solid needles and bark under the cards, the cards' pre-pass. Re-measure on a GREEN page
+  check with a recorded baseline before acting on any of these.
+
+Browser row `xmasperf` (tools/audit/gate.d/browser/xmasperf.mjs) runs the probe plus the request lists above
+(`debug/xmasBoot.js` after `debug/bootTimeline.js`).
+
 ## 8. Browser turn checklist (server 8828, one tab)
 
 1. `?xmas=1&tile=I6&view=stjob&at=1115,533` day / `&time=night` / `&wx=snow_cover`; the same at Saint-Pierre

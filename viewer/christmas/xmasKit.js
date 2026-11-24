@@ -62,7 +62,9 @@ const NEEDLES = { tex: new THREE.DataTexture(new Uint8Array([40, 70, 45, 255]), 
 NEEDLES.tex.colorSpace = THREE.SRGBColorSpace; NEEDLES.tex.needsUpdate = true;
 async function loadNeedles(renderer, info) {
   if (!renderer || !info.needles) return;
-  const t = await ktxLoader(renderer).loadAsync(BASE + info.needles.file);
+  // (fetched here at LOW priority, then parsed: the shared KTX2 loader keeps its own priority for the ground's textures)
+  const buf = await fetch(BASE + info.needles.file, XMAS_FETCH).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); });
+  const t = await new Promise((res, rej) => ktxLoader(renderer).parse(buf, res, rej));
   t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
   t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.anisotropy = 4; t.generateMipmaps = false;
   t.name = "xmas fir needles";
@@ -70,13 +72,18 @@ async function loadNeedles(renderer, info) {
 }
 
 const BASE = new URL("../../models/christmas/", import.meta.url).href;
+/** BOOT PRIORITY (plan job 3, docs/CHRISTMAS.md "Boot with the layer on"): from 1 December every visitor downloads the
+ *  layer (6 MB GLB + 0.8 MB atlas + JSON). Every Christmas fetch is a LOW-priority request (fetch priority hint, r187
+ *  Loader.setPriority) so it never competes with the start tile and the boot's own files on a cold visit
+ *  (PERF_RESEARCH idea 8). Rule xmas-low-priority: gate row `xmas` checks every fetch / loader under viewer/christmas/. */
+export const XMAS_FETCH = { priority: "low" };
 let promise = null;
 export function loadXmasKit(renderer = null) {
   return (promise ??= (async () => {
     const t0 = performance.now();
     if (typeof Worker !== "undefined") MeshoptDecoder.useWorkers?.(2);
-    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-    const [gltf, info] = await Promise.all([loader.loadAsync(BASE + "christmas.glb"), fetch(BASE + "christmas.json").then((r) => r.json())]);
+    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setPriority(XMAS_FETCH.priority);
+    const [gltf, info] = await Promise.all([loader.loadAsync(BASE + "christmas.glb"), fetch(BASE + "christmas.json", XMAS_FETCH).then((r) => r.json())]);
     // (the needle atlas before any material is made: the cards' texture node takes it as built)
     await loadNeedles(renderer, info).catch((e) => console.warn(`[christmas] needle atlas failed (${e.message}): the fir's near cards show flat`));
     const pieces = {};

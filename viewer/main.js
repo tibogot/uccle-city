@@ -107,7 +107,7 @@ import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stat
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
 import { farBuildingMaterial } from "./farLook.js";   // farcity: the far tiles' façades (docs/FARCITY.md)
 import { RING_TEST, ringSet } from "./ringTest.js";   // allocrate: point-in-ring tests without iterator garbage (?ringtest=old)
-import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera, nearModel, gatesPending } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
+import { setBootStart, coverLifted, whenNeeded, whenXmasNeeded, neededAtReveal, setRevealCamera, nearModel, gatesPending } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -1552,8 +1552,13 @@ async function main() {
   if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // the Christmas layer (viewer/christmas/, docs/CHRISTMAS.md): 1 Dec - 6 Jan (the real date or ?day=), ?xmas=1 on, ?xmas=0 off:
   // the firs on Place de Saint-Job and the Parvis Saint-Pierre, garlands across the shopping streets, shopfront swags,
-  // door wreaths, lamp-post snowflakes; emissive only (no light added). Loads in the background (does not hold the boot)
-  if (xmasActive(params)) heroes.push(() => { addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }).catch((e) => log(`christmas failed (${e.message}): reload with ?xmas=0`)); });
+  // door wreaths, lamp-post snowflakes; emissive only (no light added). Loads in the background (does not hold the boot),
+  // at LOW fetch priority, and only after the cover when no decorated area is in the boot's ring (bootGate.js whenXmasNeeded)
+  if (xmasActive(params)) heroes.push(() => {
+    window.__xmasPending = true;                    // (?quick=1: quickReady waits until the layer is in or has failed)
+    whenXmasNeeded().then(() => addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }))
+      .catch((e) => log(`christmas failed (${e.message}): reload with ?xmas=0`)).finally(() => { window.__xmasPending = false; });
+  });
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   // ... and the Lycée Français's three (viewer/lyceeFront.js: once tile F7 has built the poles; ?cortenbosch=old none)

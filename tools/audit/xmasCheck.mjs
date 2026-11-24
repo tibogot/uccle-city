@@ -148,6 +148,35 @@ for (const [i, c] of (site.chalets ?? []).entries()) standsWell(`chalet ${i}`, r
   const { rows } = await siteFit(site);
   for (const r of rows) out(r.ok, `site fit: ${r.msg}`);
 }
+// BOOT PRIORITY (rule xmas-low-priority, claude/xmas2, plan job 3): from 1 December every visitor downloads the layer;
+// every fetch under viewer/christmas/ carries XMAS_FETCH (priority "low"), every three.js loader there is set to it (a
+// loader's own fetch is High by default), the shared KTX2 loader is never asked to load (its priority is the ground's);
+// main.js starts addChristmas only through bootGate.js whenXmasNeeded (after the cover unless a decorated area is in the
+// boot's ring), whose areas match site.json select.areas
+{
+  const dir = path.join(ROOT, "viewer/christmas");
+  const src = Object.fromEntries(fs.readdirSync(dir).filter((f) => f.endsWith(".js")).map((f) => [f, fs.readFileSync(path.join(dir, f), "utf8")]));
+  const kit = src["xmasKit.js"] ?? "";
+  out(/export const XMAS_FETCH = \{ priority: "low" \}/.test(kit), "boot: XMAS_FETCH is { priority: \"low\" } (viewer/christmas/xmasKit.js)");
+  const bad = [];
+  for (const [f, t] of Object.entries(src)) {
+    for (const m of t.matchAll(/\bfetch\(/g)) {
+      let d = 0, i = m.index + 6;                      // the call's own argument list
+      for (; i < t.length; i++) { if (t[i] === "(") d++; else if (t[i] === ")") { if (d === 0) break; d--; } }
+      if (!/XMAS_FETCH/.test(t.slice(m.index, i))) bad.push(`${f}: fetch at line ${t.slice(0, m.index).split("\n").length}`);
+    }
+    for (const m of t.matchAll(/new (\w*Loader)\(\)[^;\n]*/g)) if (!/setPriority\(XMAS_FETCH\.priority\)/.test(m[0])) bad.push(`${f}: ${m[1]} without setPriority(XMAS_FETCH.priority)`);
+    if (/ktxLoader\([^)]*\)\.load(Async)?\(/.test(t)) bad.push(`${f}: the shared KTX2 loader's load() (fetch the bytes with XMAS_FETCH, then parse)`);
+  }
+  out(!bad.length, `boot: every Christmas fetch / loader at low priority${bad.length ? `: ${bad.join("; ")}` : ""}`);
+  const main = fs.readFileSync(path.join(ROOT, "viewer/main.js"), "utf8"), gate = fs.readFileSync(path.join(ROOT, "viewer/bootGate.js"), "utf8");
+  const calls = [...main.matchAll(/addChristmas\(\{/g)].map((m) => main.slice(Math.max(0, m.index - 160), m.index));
+  out(calls.length > 0 && calls.every((c) => /whenXmasNeeded\(\)\.then\(\(\) => $/.test(c)), "boot: main.js starts addChristmas only after bootGate.js whenXmasNeeded()");
+  const am = /export const XMAS_AREAS = (\[\[[^;]*\]\]);/.exec(gate);
+  const areas = am ? JSON.parse(am[1]) : [];
+  const want = (site.select?.areas ?? []).map((a) => [a.centre[0], a.centre[1], a.radius]);
+  out(want.length > 0 && JSON.stringify(areas) === JSON.stringify(want), `boot: bootGate.js XMAS_AREAS = site.json select.areas (${JSON.stringify(areas)} vs ${JSON.stringify(want)})`);
+}
 // (no light, no DynamicDrawUsage in viewer/christmas/: the meta row, tools/audit/gate.d/xmas.mjs)
 console.log(fails ? `xmasCheck: ${fails} FAIL` : "xmasCheck: all PASS");
 process.exit(fails ? 1 : 0);

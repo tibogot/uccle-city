@@ -61,6 +61,20 @@ export function whenNeeded(id) {
   return liftP.then(() => new Promise((r) => setTimeout(r, 400 + k * STAGGER))).finally(() => { released++; });
 }
 
+// CHRISTMAS (plan job 3, docs/CHRISTMAS.md "Boot with the layer on"): from 1 December the layer is on for every visitor.
+// Its downloads (~7 MB) start at once only when a decorated area (models/christmas/site.json select.areas: centre +
+// radius, city metres) reaches into the boot's ring: then it can be on screen at the reveal and loads under the cover,
+// at low fetch priority. Otherwise it waits for the cover, staggered as the far landmarks (nothing of it is in view:
+// the garlands fade out by 650 m). ?quick=1: at once (quickReady waits for it: window.__xmasPending). Rule
+// xmas-low-priority: gate row `xmas` checks this gate and the fetch priority.
+export const XMAS_AREAS = [[1150, 525, 420], [-720, -500, 520]];
+export function whenXmasNeeded() {
+  if (QUICK || !BOOT_DEFER || !start || lifted) return Promise.resolve();
+  if (XMAS_AREAS.some(([x, z, r]) => x > start.x0 - r && x < start.x1 + r && z > start.z0 - r && z < start.z1 + r)) return Promise.resolve();
+  const k = queued++;
+  return liftP.then(() => new Promise((r) => setTimeout(r, 400 + k * STAGGER))).finally(() => { released++; });
+}
+
 // boot3 (docs/BOOT.md section 5): which precompile jobs the FIRST VIEW needs (warmup.js warmBoot / bootQuiet): a job whose
 // root is a gated model OUTSIDE the boot's ring (+ margin) cannot be on screen at the reveal (its home tile is not
 // loaded); models in the ring are needed, the public art when a piece is within its drawing range of the reveal's camera

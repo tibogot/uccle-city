@@ -13,7 +13,7 @@
 //     the levels cross-fade per pixel (xmasKit.js bandMask): shared materials, no pop.
 // Lights are emissive only (no new light: the fixed light count). Cost and checks: docs/CHRISTMAS.md.
 import * as THREE from "three/webgpu";
-import { loadXmasKit, spanMaterial, xmasLook, FIR, XMAS_SHADOW_LAYER } from "./xmasKit.js";
+import { loadXmasKit, spanMaterial, xmasLook, FIR, XMAS_SHADOW_LAYER, XMAS_FETCH } from "./xmasKit.js";
 import { lampSiteSets, lampSitesVersion } from "../lamps.js";
 import * as lampsMod from "../lamps.js";
 import { swagRun } from "./xmasSwag.js";
@@ -214,7 +214,7 @@ export function buildSpans(spans) {
 export async function addChristmas({ scene, updaters, world, manifest, log, compiler, renderer = null, params = new URLSearchParams(location.search) }) {
   if (!xmasActive(params)) return null;
   const t0 = performance.now();
-  const site = await fetch(new URL("../../models/christmas/site.json", import.meta.url)).then((r) => r.json()).catch(() => null);
+  const site = await fetch(new URL("../../models/christmas/site.json", import.meta.url), XMAS_FETCH).then((r) => r.json()).catch(() => null);
   if (!site) { log("christmas: models/christmas/site.json missing, no decorations"); return null; }
   const kit = await loadXmasKit(renderer).catch((e) => { log(`christmas: the kit failed to load (${e.message})`); return null; });
   if (!kit) return null;
@@ -236,7 +236,7 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
   // with): a classic front's cornice (corona 0.365 m out, its top 0.94 m over the fascia's bottom): the garland hangs
   // from the corona's edge; a modern front's fascia box (0.27 m out, 0.65 m high): from the box's face under its top.
   // Modules of 1.6 m (scaled 0.6-1.45 to the front), 0.7 high (a shallower sag over the name board). Door wreaths.
-  const curated = await fetch(new URL("../../data/shops/terraces.json", import.meta.url)).then((r) => (r.ok ? r.json() : {})).then((j) => j.terraces || {}).catch(() => ({}));
+  const curated = await fetch(new URL("../../data/shops/terraces.json", import.meta.url), XMAS_FETCH).then((r) => (r.ok ? r.json() : {})).then((j) => j.terraces || {}).catch(() => ({}));
   let nSwag = 0;
   for (const f of site.fronts ?? []) {
     if (!on(f.street, "swags")) continue;
