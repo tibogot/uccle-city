@@ -10,6 +10,7 @@
 //       the loop paused and stepped at 1/60 s, the sun moved per step; per frame the share of pixels of `rect` (canvas
 //       px; default the lower middle) that changed by > 20 (of 255) from the frame before, and the frames the cache was
 //       redrawn; a sheet of 6 crops (data URL). Compare speed 0 (the TAA noise floor) with speed 60, and ?sunstep=old.
+//       move: the camera (and its target) moved `move` m/s along x each step (the moving-camera strip).
 //   P.render({ scale: 0.75 }): the render scale pinned (dynres off) like debug/xmasPerf.js; returns the restore function
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -67,7 +68,7 @@ export async function run({ speed = 60, seconds = 20, warm = 2, restore = true }
 }
 
 /** per-frame change of a canvas rect while the loop is stepped (see the header) */
-export async function strip({ speed = 60, frames = 180, rect = null, every = 30, settle = 30, hour = null } = {}) {
+export async function strip({ speed = 60, frames = 180, rect = null, every = 30, settle = 30, hour = null, move = null } = {}) {
   const V = window.viewer, Lg = V.lighting, L = await import("/viewer/lighting.js"), cv = V.renderer.domElement;
   const [x, y, w, h] = rect ?? [Math.round(cv.width * 0.2), Math.round(cv.height * 0.55), Math.round(cv.width * 0.6), Math.round(cv.height * 0.4)];
   const h0 = Lg.hourOverride;
@@ -82,6 +83,7 @@ export async function strip({ speed = 60, frames = 180, rect = null, every = 30,
     for (let i = 0; i < settle; i++) { V.step(1 / 60); await sleep(0); }
     for (let f = 0; f < frames; f++) {
       if (speed) Lg.hourOverride = (Lg.hour + speed / 60 / 3600) % 24;
+      if (move) { V.camera.position.x += move / 60; V.controls.target.x += move / 60; }   // (a moving camera: move m/s along x)
       const n = L.sunCache.stats.full;
       V.step(1 / 60);
       if (L.sunCache.stats.full !== n) redraw.push(f);
