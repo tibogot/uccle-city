@@ -86,5 +86,10 @@
   "L1": 0,
   "L2": 0,
   "_note": "villa2 2026-11-23: the overhang undercrofts + pergola allowed (noBack capsules, heroShell.allow.json); the open bay closed by Villa_bay; LOD1 scripted (villa.py); far box closed with flush panes"
+ },
+ "underpass": {
+  "L0": 9.9,
+  "L1": 0,
+  "L2": 0
  }
 }
