@@ -30,11 +30,12 @@ const rows = [];
 const check = (name, ok, info = "") => { rows.push([name, ok ? "PASS" : "FAIL", info]); };
 
 /** ceilings (set 2026-11-23 on the first build; a rise is a regression to look at) */
-const CEIL = { gapBuildingM: 5, gapRoadM: 5, treeCuts: 100, cardCov: 0.3, viewTris: 140000, pieceTris: { pf_rail: 4000, pf_bars: 1300, pf_mesh: 1800, pf_post: 300, pf_gate2: 8000, pf_gate1: 2400, pf_pier: 1700, pf_plinth: 1000 }, meshes: 18 };
+// (claude/places3) + the brick wall: pf_brick LOD0 <= 6400 (measured 6236), LOD1 <= 60, LOD2 <= 40; its 3 meshes (21)
+const CEIL = { gapBuildingM: 5, gapRoadM: 5, treeCuts: 100, cardCov: 0.3, viewTris: 140000, pieceTris: { pf_rail: 4000, pf_bars: 1300, pf_mesh: 1800, pf_post: 300, pf_gate2: 8000, pf_gate1: 2400, pf_pier: 1700, pf_plinth: 1000, pf_brick: 6400 }, brickLod: [6400, 60, 40], meshes: 21 };
 
 const { build, arc, publicRoad, toLocal } = await imp("tools/parkfence/build.mjs");
 const L = await imp("viewer/parkFenceLayout.js");
-const { SHADOW_END, STONE_BANDS, CARD_END } = { SHADOW_END: 25, STONE_BANDS: [30, 90, 420], CARD_END: 240 };   // (viewer/parkFence.js: kept in step, the text row below)
+const { SHADOW_END, STONE_BANDS, CARD_END, BRICK_BANDS } = { SHADOW_END: 25, STONE_BANDS: [30, 90, 420], CARD_END: 240, BRICK_BANDS: [18, 90, 420] };   // (viewer/parkFence.js: kept in step, the text row below)
 
 // ---- 1. fresh
 const doc = J("data/parkfence/parkfence.json");
@@ -162,13 +163,27 @@ for (const [name, park] of Object.entries(doc.parks)) {
   R.entrancesNoPath = noPath;
   check(`${name}: every open entrance has its OSM path`, !noPath.length, noPath.length ? `no path: ${noPath.join(", ")}` : `${park.entrances.filter((e) => e.state === "open").length} open entrances`);
   // ---- 5. contact + 7. colliders + 6. view triangles, tile by tile on the built ground
-  let floatN = 0, buryN = 0, plinthBad = 0, pierBad = 0, leafBad = 0, colMiss = 0, colShort = 0, colAcross = 0, nPanel = 0;
+  let floatN = 0, buryN = 0, plinthBad = 0, pierBad = 0, leafBad = 0, colMiss = 0, colShort = 0, colAcross = 0, nPanel = 0, brickBad = 0, nBrick = 0, brickTopOff = 0, brickHmin = Infinity, brickHmax = -Infinity, brickSteps = 0;
   const contactBad = [];
   const insts = [];
   for (const T of tiles) {
     const c = city.get(T); if (!c) continue;
     const r = L.tileItems(park, T, c.g);
+    let lastTop = null;
     for (const f of r.fitted) {
+      if (f.kind === "brick") {
+        // (claude/places3, rule brick-wall-stepped) a LEVEL module: its skirt reaches under the ground all along (no
+        // floating edge: the low end's foot within the skirt, 5 cm to spare), the ground buries its foot <= 0.35 m (the
+        // high end of a step), its top on a whole course, the wall 2.0-2.6 m over the ground it stands on
+        nBrick++;
+        const k = L.panelContact(f, c.g);
+        if (k.float > f.skirt - 0.05 || k.bury > 0.35) { brickBad++; if (contactBad.length < 4) contactBad.push(`brick ${f.a.map((v) => v.toFixed(1))} float ${k.float.toFixed(2)} bury ${k.bury.toFixed(2)}`); }
+        if (Math.abs(f.top / L.BRICK_COURSE - Math.round(f.top / L.BRICK_COURSE)) > 1e-3 || Math.abs(f.a[1] - f.b[1]) > 1e-6) brickTopOff++;
+        for (const t of [0, 0.5, 1]) { const gy = c.g(f.a[0] + (f.b[0] - f.a[0]) * t, f.a[2] + (f.b[2] - f.a[2]) * t), hv = f.top - gy; brickHmin = Math.min(brickHmin, hv); brickHmax = Math.max(brickHmax, hv); }
+        if (lastTop != null && Math.abs(lastTop - f.top) > 1e-6) brickSteps++;
+        lastTop = f.top;
+        continue;
+      }
       if (f.kind === "plinth") {
         const k = L.panelContact(f, c.g);
         if (k.float > 0.55 || k.bury > 0.35) { plinthBad++; if (contactBad.length < 4) contactBad.push(`plinth ${f.a.map((v) => v.toFixed(1))} float ${k.float.toFixed(2)} bury ${k.bury.toFixed(2)}`); }
@@ -213,12 +228,18 @@ for (const [name, park] of Object.entries(doc.parks)) {
     for (const it of insts) {
       const d = Math.hypot(it.c[0] - x, it.c[2] - z);
       if (L.IRON.includes(it.p)) { if (d < SHADOW_END + 2) t += tris0[it.p]; else if (d < CARD_END) t += 2; }
+      else if (L.BRICK.includes(it.p)) { if (d < BRICK_BANDS[0] * 1.1) t += tris0[it.p]; else if (d < BRICK_BANDS[1] * 1.1) t += CEIL.brickLod[1]; }
       else if (d < STONE_BANDS[0] * 1.1) t += tris0[it.p]; else if (d < STONE_BANDS[1] * 1.1) t += 60;
     }
     if (t > worstView) { worstView = t; worstAt = [x.toFixed(0), z.toFixed(0)]; }
   }
   Object.assign(R, { panelsFitted: nPanel, floating: floatN, buried: buryN, plinthOut: plinthBad, pierOut: pierBad, leafInGround: leafBad, colliderMissing: colMiss, colliderShort: colShort, colliderAcrossEntrance: colAcross });
-  check(`${name}: contact with the drawn ground (0 floating, 0 buried beyond tolerance)`, !floatN && !buryN && !plinthBad && !pierBad && !leafBad, `${nPanel} bare panels: floating ${floatN}, buried ${buryN}; plinths out ${plinthBad}; piers ${pierBad}; leaves ${leafBad} ${contactBad.join("; ")}`);
+  check(`${name}: contact with the drawn ground (0 floating, 0 buried beyond tolerance)`, !floatN && !buryN && !plinthBad && !pierBad && !leafBad && !brickBad, `${nPanel} bare panels: floating ${floatN}, buried ${buryN}; plinths out ${plinthBad}; piers ${pierBad}; leaves ${leafBad}${nBrick ? `; brick modules out ${brickBad}/${nBrick}` : ""} ${contactBad.join("; ")}`);
+  if (nBrick) {
+    Object.assign(R, { brickModules: nBrick, brickOut: brickBad, brickSteps, brickHeight: [+brickHmin.toFixed(2), +brickHmax.toFixed(2)] });
+    check(`${name}: the brick wall level and stepped (whole courses, 2.0-2.6 m over its ground, its skirt in the ground)`, !brickBad && !brickTopOff && brickHmin >= 2.0 && brickHmax <= 2.6,
+      `${nBrick} modules, ${brickSteps} steps, ${brickHmin.toFixed(2)}-${brickHmax.toFixed(2)} m over the ground, off-course tops ${brickTopOff}, out ${brickBad}`);
+  }
   check(`${name}: colliders match the drawn line`, !colMiss && !colShort && !colAcross, `missing ${colMiss}, under 1.3 m ${colShort}, across an open entrance ${colAcross}`);
   report.parks[name] = R;
 }
@@ -240,6 +261,9 @@ for (const [name, park] of Object.entries(doc.parks)) {
     if (pk.leaves.length !== 2 || pk.leaves.some((l) => l.open)) bad.push("the gate's two closed leaves");
     const wallM = pk.plinths.filter((q) => q.stone === 3 && q.h >= 2).reduce((m, q) => m + Math.hypot(q.b[0] - q.a[0], q.b[1] - q.a[1]), 0);
     if (wallM < 40) bad.push(`brick wall ${wallM.toFixed(0)} m (>= 40 m of >= 2 m brick on Rue Kinsendael)`);
+    // (claude/places3) every stretch of it the scripted brick wall piece (pf_brick), not the stretched plinth
+    const notBrick = pk.plinths.filter((q) => q.stone === 3 && q.h >= 2 && q.piece !== "pf_brick").length;
+    if (notBrick) bad.push(`${notBrick} brick-wall modules not drawn with pf_brick`);
     const meshM = pk.panels.filter((q) => q.type === "mesh").reduce((m, q) => m + Math.hypot(q.b[0] - q.a[0], q.b[1] - q.a[1]), 0);
     if (meshM < 15) bad.push(`mesh ${meshM.toFixed(0)} m on the wooded bank`);
     if (!obs.ring || obs.default !== "none") bad.push("the obs file: no ring, or not closed by 'none' by default");
@@ -284,16 +308,23 @@ for (const [name, park] of Object.entries(doc.parks)) {
   check("far mesh: the card thickens at grazing angles (1 - (1 - a)^(1 / cos))", /pow\(float\(1\)\.sub\(T\.a/.test(src) && /GRAZE_MIN = 0\.2/.test(src), "viewer/parkFence.js cardMaterial");
 }
 // ---- 6. budget
-const meshes = L.IRON.length * 2 + L.STONE.length * 3;
+const meshes = L.IRON.length * 2 + L.STONE.length * 3 + L.BRICK.length * 3;
 check("draw budget: instanced meshes for both parks", meshes <= CEIL.meshes, `${meshes} <= ${CEIL.meshes} (whatever the length)`);
 check("triangle budget: the worst view along the lines", worstView <= CEIL.viewTris, `${worstView} <= ${CEIL.viewTris} at ${worstAt}`);
 const overPiece = L.PIECES.filter((p) => tris0[p] > CEIL.pieceTris[p]);
 check("triangle budget: the kit's LOD0 pieces", !overPiece.length, L.PIECES.map((p) => `${p} ${tris0[p]}`).join(", "));
+// (claude/places3) the brick wall's three levels, its named slots, its tone per brick
+{
+  const lv = [0, 1, 2].map((k) => kit[`pf_brick_lod${k}`]);
+  const tr = lv.map((q) => q?.triangles ?? Infinity), slots = lv[0]?.slots || [];
+  const ok = lv.every(Boolean) && tr.every((t, k) => t <= CEIL.brickLod[k]) && ["brick", "mortar", "coping"].every((q) => slots.includes(q));
+  check("brick wall piece: three LODs under budget, slots brick / mortar / coping", ok, `pf_brick LOD0-2 ${tr.join(" / ")} tris (<= ${CEIL.brickLod.join(" / ")}), slots ${slots.join(", ")}`);
+}
 // the viewer's constants kept in step with this check's copies
 {
   const src = fs.readFileSync(path.join(ROOT, "viewer/parkFence.js"), "utf8");
-  const ok = /STONE_BANDS = \[30, 90, 420\]/.test(src) && /CARD_END = 240, SHADOW_END = 25/.test(src);
-  check("viewer/parkFence.js bands = the check's", ok, "STONE_BANDS [30, 90, 420], CARD_END 240, SHADOW_END 25");
+  const ok = /STONE_BANDS = \[30, 90, 420\]/.test(src) && /CARD_END = 240, SHADOW_END = 25/.test(src) && /BRICK_BANDS = \[18, 90, 420\]/.test(src);
+  check("viewer/parkFence.js bands = the check's", ok, "STONE_BANDS [30, 90, 420], CARD_END 240, SHADOW_END 25, BRICK_BANDS [18, 90, 420]");
 }
 report.worstView = { tris: worstView, at: worstAt }; report.meshes = meshes;
 

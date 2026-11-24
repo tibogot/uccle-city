@@ -1,0 +1,2642 @@
+{
+ "summary": {
+  "triangles": 5172,
+  "vertices_welded": 2672,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 0,
+  "counts": {
+   "seam": 161
+  },
+  "ms": 149
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.00002252962440252304,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.02,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "tl_climb_lod1",
+   "slot": "playground",
+   "triangles": 5172,
+   "maxDistance": 55
+  }
+ ],
+ "items": {
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.839,
+     0.096,
+     -0.982
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 3.13,
+    "pieces": 60,
+    "min_angle_deg": 19.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.428,
+     0.949,
+     0.583
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.6,
+    "pieces": 48,
+    "min_angle_deg": 25.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.343,
+     0.959,
+     -0.552
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.61,
+    "pieces": 46,
+    "min_angle_deg": 21.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.412,
+     0.992,
+     -0.584
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.57,
+    "pieces": 44,
+    "min_angle_deg": 58
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.423,
+     0.992,
+     0.618
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.54,
+    "pieces": 37,
+    "min_angle_deg": 24.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.46,
+     2.369,
+     -0.087
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.46,
+    "pieces": 25,
+    "min_angle_deg": 54.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.96,
+     0.403,
+     0.857
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.96,
+     0.709,
+     0.722
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.96,
+     1.017,
+     0.592
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.96,
+     1.327,
+     0.466
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.96,
+     1.639,
+     0.345
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.96,
+     1.952,
+     0.228
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 48.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.64,
+     0.399,
+     0.848
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.64,
+     0.703,
+     0.706
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.64,
+     1.009,
+     0.571
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.64,
+     1.319,
+     0.445
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.64,
+     1.632,
+     0.328
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.64,
+     1.949,
+     0.218
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 49.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.32,
+     0.397,
+     0.842
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.32,
+     0.698,
+     0.695
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.32,
+     1.003,
+     0.557
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.32,
+     1.313,
+     0.432
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 48.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.32,
+     1.628,
+     0.317
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 49.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.32,
+     1.946,
+     0.212
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 50.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.32,
+     0.397,
+     0.842
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.32,
+     0.698,
+     0.695
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.32,
+     1.003,
+     0.557
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.32,
+     1.313,
+     0.431
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 48.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.32,
+     1.628,
+     0.317
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 49.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.32,
+     1.946,
+     0.212
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 50.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.64,
+     0.399,
+     0.848
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.64,
+     0.703,
+     0.706
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.629,
+     1.012,
+     0.558
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.629,
+     1.322,
+     0.432
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.64,
+     1.632,
+     0.328
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.64,
+     1.948,
+     0.218
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 49.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.96,
+     0.403,
+     0.857
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     0.712,
+     0.709
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     1.02,
+     0.579
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     1.33,
+     0.453
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     1.642,
+     0.332
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.971,
+     0.41,
+     -0.867
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 48.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.971,
+     0.724,
+     -0.75
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.971,
+     1.036,
+     -0.629
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.971,
+     1.346,
+     -0.503
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.971,
+     1.654,
+     -0.373
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.971,
+     1.96,
+     -0.238
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.651,
+     0.414,
+     -0.876
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 49.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.651,
+     0.73,
+     -0.766
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.651,
+     1.044,
+     -0.649
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.651,
+     1.354,
+     -0.524
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.651,
+     1.661,
+     -0.389
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.651,
+     1.964,
+     -0.248
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.331,
+     0.416,
+     -0.882
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 50.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.331,
+     0.735,
+     -0.777
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 49.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.331,
+     1.05,
+     -0.663
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 48.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.331,
+     1.36,
+     -0.537
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.331,
+     1.665,
+     -0.4
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.331,
+     1.967,
+     -0.254
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.309,
+     0.416,
+     -0.882
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 50.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.309,
+     0.735,
+     -0.777
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 49.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.309,
+     1.049,
+     -0.663
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 48.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.309,
+     1.359,
+     -0.538
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.309,
+     1.665,
+     -0.4
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.309,
+     1.967,
+     -0.254
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.629,
+     0.414,
+     -0.876
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 49.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.629,
+     0.73,
+     -0.766
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.629,
+     1.044,
+     -0.649
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.629,
+     1.354,
+     -0.524
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.629,
+     1.66,
+     -0.389
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.629,
+     1.964,
+     -0.248
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     0.414,
+     -0.865
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 48.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     0.723,
+     -0.75
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 46.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     1.035,
+     -0.629
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     1.345,
+     -0.503
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     1.654,
+     -0.373
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 45.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     1.96,
+     -0.238
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 24,
+    "min_angle_deg": 47
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.456,
+     2.367,
+     0.077
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.44,
+    "pieces": 23,
+    "min_angle_deg": 50.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.335,
+     2.33,
+     0.065
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.45,
+    "pieces": 23,
+    "min_angle_deg": 50
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.96,
+     1.952,
+     0.228
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 23,
+    "min_angle_deg": 48.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.396,
+     0.84
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 47.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.697,
+     0.691
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 48
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     1.001,
+     0.553
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 48.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     1.626,
+     0.313
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 50.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     1.945,
+     0.21
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 51.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.011,
+     0.417,
+     -0.884
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 51.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.011,
+     0.736,
+     -0.781
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 50.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.011,
+     1.362,
+     -0.542
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 48.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.011,
+     1.667,
+     -0.404
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 48
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.011,
+     1.968,
+     -0.256
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 47.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.344,
+     2.312,
+     -0.032
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.41,
+    "pieces": 21,
+    "min_angle_deg": 45.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     1.311,
+     0.427
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 21,
+    "min_angle_deg": 49.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.011,
+     1.051,
+     -0.668
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.09,
+    "pieces": 21,
+    "min_angle_deg": 49.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.97,
+     0.103,
+     0.978
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 17,
+    "min_angle_deg": 48.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.65,
+     0.103,
+     0.978
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 17,
+    "min_angle_deg": 48
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.309,
+     0.103,
+     0.978
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 17,
+    "min_angle_deg": 47.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.011,
+     0.103,
+     0.978
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 17,
+    "min_angle_deg": 47.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.331,
+     0.103,
+     0.978
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 17,
+    "min_angle_deg": 47.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.63,
+     0.103,
+     0.978
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 17,
+    "min_angle_deg": 48
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.95,
+     0.103,
+     0.978
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 17,
+    "min_angle_deg": 48.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.971,
+     2.266,
+     -0.102
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 17,
+    "min_angle_deg": 48.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.651,
+     2.266,
+     -0.102
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 17,
+    "min_angle_deg": 48.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.331,
+     2.266,
+     -0.102
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 17,
+    "min_angle_deg": 47.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.011,
+     2.266,
+     -0.102
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 17,
+    "min_angle_deg": 47.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.309,
+     2.266,
+     -0.102
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 17,
+    "min_angle_deg": 47.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.629,
+     2.266,
+     -0.102
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 17,
+    "min_angle_deg": 48.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.949,
+     2.266,
+     -0.102
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 17,
+    "min_angle_deg": 48.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.28,
+     2.259,
+     -0.092
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 16,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.28,
+     0.111,
+     0.988
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.277,
+     0.405,
+     0.865
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 47.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.269,
+     0.72,
+     0.729
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.269,
+     1.029,
+     0.603
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 45.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.269,
+     1.339,
+     0.478
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 45.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.269,
+     1.65,
+     0.352
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.277,
+     1.955,
+     0.236
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 47.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.28,
+     0.407,
+     0.867
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 47.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     0.72,
+     0.729
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     1.029,
+     0.603
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 45.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     1.339,
+     0.477
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 45.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     1.65,
+     0.352
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 46.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.28,
+     1.957,
+     0.239
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 47.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.269,
+     0.405,
+     -0.856
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 47.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.269,
+     0.715,
+     -0.73
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.269,
+     1.025,
+     -0.605
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 45.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.269,
+     1.335,
+     -0.479
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 45.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.269,
+     1.645,
+     -0.353
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.269,
+     1.955,
+     -0.227
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 47.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     0.406,
+     -0.856
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 47.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     0.716,
+     -0.731
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     1.025,
+     -0.605
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 45.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     1.335,
+     -0.479
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 45.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     1.646,
+     -0.353
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 46.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     1.956,
+     -0.228
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 15,
+    "min_angle_deg": 47.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.269,
+     2.266,
+     -0.102
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 15,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.28,
+     2.267,
+     0.113
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 13,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.33,
+     0.113,
+     -0.977
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 12,
+    "min_angle_deg": 56.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.314,
+     0.121,
+     -0.979
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 56.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.27,
+     0.103,
+     0.978
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 12,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.646,
+     0.105,
+     -0.984
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 10,
+    "min_angle_deg": 47.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.006,
+     0.119,
+     -0.979
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 10,
+    "min_angle_deg": 57.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     0.112,
+     -0.982
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 10,
+    "min_angle_deg": 48.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.412,
+     2.313,
+     -0.009
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.17,
+    "pieces": 10,
+    "min_angle_deg": 33.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.28,
+     2.271,
+     0.112
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.07,
+    "pieces": 10,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.274,
+     0.107,
+     -0.972
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 10,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.96,
+     2.267,
+     0.113
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 50.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.64,
+     2.267,
+     0.112
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 50.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.32,
+     2.266,
+     0.112
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 51.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     2.266,
+     0.112
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 51.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.32,
+     2.266,
+     0.112
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 51.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.64,
+     2.267,
+     0.112
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 50.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.96,
+     2.267,
+     0.113
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 50.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.28,
+     0.099,
+     -0.968
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.966,
+     0.107,
+     -0.972
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 50.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.646,
+     0.107,
+     -0.972
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 50.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.325,
+     0.107,
+     -0.972
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 51.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.005,
+     0.107,
+     -0.972
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 51.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.315,
+     0.107,
+     -0.972
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 51.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.634,
+     0.107,
+     -0.972
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 50.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.954,
+     0.107,
+     -0.972
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.06,
+    "pieces": 9,
+    "min_angle_deg": 50.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.389,
+     2.308,
+     0
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.19,
+    "pieces": 8,
+    "min_angle_deg": 33.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.957,
+     0.103,
+     -0.988
+    ],
+    "parts": [
+     "tl_climb_lod1/playground",
+     "tl_climb_lod1/playground"
+    ],
+    "length_m": 0.02,
+    "pieces": 4,
+    "min_angle_deg": 8.1
+   }
+  ]
+ },
+ "file": "timberkit.glb"
+}

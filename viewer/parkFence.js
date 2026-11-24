@@ -18,25 +18,36 @@
 //               walker's triangles from it, only while shown): the fence, the piers, the leaves as drawn; the open
 //               entrances stay open;
 //   night       nothing glows, no light (fixed light count).
+//   brick wall  (claude/places3, rule brick-wall-stepped) the Papenkasteel's old wall on Rue Kinsendael: its own scripted
+//               piece pf_brick (Flemish bond in slots brick / mortar, a stepped coping of creasing tiles under saddleback
+//               stones, slot coping; a tone per brick in COLOR_0.g), LEVEL modules stepped down the street
+//               (parkFenceLayout.js brickWall), three levels in their own bands BRICK_BANDS (LOD0 to 18 m: the
+//               bricks; brick and mortar shade toward their mean from 8 m, so the joints never shimmer and the plain
+//               LOD1 takes over unseen); 3 more instanced meshes, drawn only where the wall is. ?parkpieces=old: the
+//               plinth stretched to 2.3 m in the brick tone, as before.
 import * as THREE from "three/webgpu";
 import { attribute, vec3, float, mix, smoothstep, length, positionWorld, select, fract, floor, sin, dot, texture, uv, uniformArray, cameraPosition, normalWorld, normalize, abs, pow } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise, rampTo, SMOOTH } from "./lodFade.js";
 import { ironCards, NEAR, BAND, CARD_IN, CARD_DEPTH_CUT } from "./thinBars.js";
 import { atlasTexture } from "./thinCards.js";
-import { tileItems, boxSoup, docTiles, IRON, STONE, PIECES, entranceZones, inZone, treesOutOfEntrances } from "./parkFenceLayout.js";
+import { tileItems, boxSoup, docTiles, IRON, STONE, BRICK, PIECES, entranceZones, inZone, treesOutOfEntrances } from "./parkFenceLayout.js";
 import { wxMat } from "./weather/cityWeatherize.js";
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search : "");
 /** ?parkfence=0: no park fences (as before) */
 export const PARKFENCE = qs.get("parkfence") !== "0";
 const ALLOC_SMALL = qs.get("allocsmall") !== "old";
+/** ?parkpieces=old: the brick wall as the stretched plinth (before claude/places3) */
+export const BRICK_OLD = qs.get("parkpieces") === "old";
+/** the brick wall's LOD bands (m: LOD0 -> 1, LOD1 -> 2, end) and where its brick / mortar blend to their mean (m) */
+export const BRICK_BANDS = [18, 90, 420], BRICK_BLEND = [8, 16];
 /** the stone's LOD bands (m: switch 0 -> 1, switch 1 -> 2, end), the ironwork's card end, its shadow's end */
 export const STONE_BANDS = [30, 90, 420];
 export const CARD_END = 240, SHADOW_END = 25;
 /** the card's grazing floor (cos of the view angle): at most 1 / GRAZE_MIN x the coverage's optical depth */
 export const GRAZE_MIN = 0.2;
-const SLOT = { iron_paint: 0, iron_tip: 1, steel_dark: 2, stone: 3, stone_cap: 4 };
+const SLOT = { iron_paint: 0, iron_tip: 1, steel_dark: 2, stone: 3, stone_cap: 4, brick: 5, mortar: 6, coping: 7 };
 const lin = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
 // paints (linear rgb, roughness): black wrought iron, the parks' dark green
 const PAINTS = [[...lin(0.035, 0.036, 0.038).toArray(), 0.5], [...lin(0.085, 0.2, 0.12).toArray(), 0.55]];
@@ -45,6 +56,8 @@ const PAINTS = [[...lin(0.035, 0.036, 0.038).toArray(), 0.5], [...lin(0.085, 0.2
 const STONES = [[...lin(0.66, 0.64, 0.58).toArray(), 0.85], [...lin(0.57, 0.55, 0.5).toArray(), 0.92], [...lin(0.84, 0.83, 0.79).toArray(), 0.9], [...lin(0.47, 0.29, 0.23).toArray(), 0.93]];
 const uPaint = uniformArray(PAINTS.map((c) => new THREE.Vector4(...c)), "vec4");
 const uStone = uniformArray(STONES.map((c) => new THREE.Vector4(...c)), "vec4");
+// (claude/places3) the brick wall's lime mortar (weathered, a little warm) and its grey creasing tiles / coping stones
+const MORTAR = lin(0.6, 0.57, 0.5), COPING = lin(0.36, 0.34, 0.33);
 
 // ------------------------------------------------------------------------------------------------ the kit
 let kitP = null;
@@ -74,7 +87,7 @@ export function loadParkFenceKit(base = new URL("../", import.meta.url)) {
 function mergePrims(prims) {
   let nv = 0, ni = 0;
   for (const p of prims) { nv += p.geo.attributes.position.count; ni += p.geo.index.count; }
-  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), S = new Float32Array(nv), I = new Uint32Array(ni);
+  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), S = new Float32Array(nv), Tn = new Float32Array(nv).fill(0.5), I = new Uint32Array(ni);
   let v = 0, i = 0;
   for (const p of prims) {
     const g = p.geo, n = g.attributes.position.count, s = SLOT[p.slot];
@@ -82,12 +95,13 @@ function mergePrims(prims) {
     P.set(g.attributes.position.array, v * 3); N.set(g.attributes.normal.array, v * 3);
     const C = g.attributes.color;
     for (let k = 0; k < n; k++) S[v + k] = s + 0.99 * Math.min(1, C ? C.getX(k) : 1) * 0.999;
+    if (C && s === SLOT.brick) for (let k = 0; k < n; k++) Tn[v + k] = C.getY(k);          // (a tone per brick: pf_brick COLOR_0.g)
     const gi = g.index.array; for (let k = 0; k < gi.length; k++) I[i + k] = gi[k] + v;
     v += n; i += gi.length;
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(P, 3)); g.setAttribute("normal", new THREE.BufferAttribute(N, 3));
-  g.setAttribute("slot", new THREE.BufferAttribute(S, 1));
+  g.setAttribute("slot", new THREE.BufferAttribute(S, 1)); g.setAttribute("tone", new THREE.BufferAttribute(Tn, 1));
   g.setIndex(new THREE.BufferAttribute(nv > 65535 ? I : Uint16Array.from(I), 1));
   g.computeBoundingSphere();
   return g;
@@ -95,36 +109,47 @@ function mergePrims(prims) {
 
 // ------------------------------------------------------------------------------------------------ materials
 const hash3 = (p) => fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))).mul(43758.5453));
-/** the slot look: iron (paint per instance, tips, dark steel), stone (tone per instance, block-to-block variation) */
-function slotLook(far) {
+/** the slot look: iron (paint per instance, tips, dark steel), stone (tone per instance, block-to-block variation);
+ *  (claude/places3) brick (the instance's brick tone x the brick's own tone; brick and mortar toward their mean with
+ *  distance, BRICK_BLEND; LOD1 / LOD2 (brickLod > 0) draw the mean), mortar, coping */
+function slotLook(far, brickLod = 0) {
   const sl = attribute("slot", "float"), idx = sl.add(0.0005).floor();
   const ao = fract(sl.add(0.0005)).div(0.99).min(1);
   const V = attribute("iVar", "vec4");
   const Pn = uPaint.element(V.x.add(0.5).floor().toInt()), St = uStone.element(V.y.add(0.5).floor().toInt());
-  const isStone = idx.greaterThan(2.5), isCap = idx.greaterThan(3.5), isSteel = idx.equal(2);
+  const isStone = idx.greaterThan(2.5), isCap = idx.equal(4), isSteel = idx.equal(2);
   // stone: each course a little lighter / darker per instance (near only; a world-xz cell split the blocks in two
   // tones), the copings a touch darker
   const blk = far ? float(0.5) : hash3(vec3(floor(positionWorld.y.mul(3.1)), V.z.mul(7.31), V.z.mul(3.7)));
   const stoneCol = St.xyz.mul(float(0.93).add(blk.mul(0.1))).mul(select(isCap, float(0.92), float(1)));
   const col = select(isStone, stoneCol, select(isSteel, vec3(0.04, 0.04, 0.042), Pn.xyz));
+  // the brick wall: a tone per brick (0.5 = the mean) brighter / darker, the darkest a little purple (over-fired), the
+  // lightest a little orange; brick and mortar both shade toward their area mean (83 % brick) with distance
+  const isBrick = idx.equal(5), isMortar = idx.equal(6), isCoping = idx.greaterThan(6.5), isWall = idx.greaterThan(4.5);
+  const tone = attribute("tone", "float").sub(0.5);
+  const brick0 = St.xyz.mul(float(1).add(tone.mul(0.55))).mul(vec3(float(1).add(tone.mul(0.12)), float(1), float(1).sub(tone.mul(0.1))));
+  const mortarC = vec3(MORTAR.r, MORTAR.g, MORTAR.b), meanC = St.xyz.mul(0.83).add(mortarC.mul(0.17));
+  const wB = brickLod ? float(1) : smoothstep(BRICK_BLEND[0], BRICK_BLEND[1], length(positionWorld.sub(lodEye)));
+  const wallCol = select(isCoping, vec3(COPING.r, COPING.g, COPING.b).mul(float(0.95).add(blk.mul(0.1))), mix(select(isMortar, mortarC, brick0), meanC, wB));
   return {
-    col: col.mul(mix(float(1), ao, 0.75)), ao,
-    rough: select(isStone, St.w, select(isSteel, float(0.42), Pn.w)),
+    col: select(isWall, wallCol, col).mul(mix(float(1), ao, 0.75)), ao,
+    rough: select(isWall, select(isCoping, float(0.78), float(0.9)), select(isStone, St.w, select(isSteel, float(0.42), Pn.w))),
     metal: select(isStone, float(0), select(isSteel, float(0.6), float(0.2))),
   };
 }
 /** keep a pixel of the stone's LOD k (bands STONE_BANDS, dithered over +-10 %; the end over its last 15 %) */
-function stoneKeep(k, n = ditherNoise()) {
-  const d = length(positionWorld.sub(lodEye)), [s1, s2, end] = STONE_BANDS;
+function stoneKeep(k, n = ditherNoise(), bands = STONE_BANDS) {
+  const d = length(positionWorld.sub(lodEye)), [s1, s2, end] = bands;
   const t1 = smoothstep(s1 * 0.9, s1 * 1.1, d), t2 = smoothstep(s2 * 0.9, s2 * 1.1, d), e = smoothstep(end * 0.85, end, d);
   if (!SMOOTH) return k === 0 ? d.lessThan(s1) : k === 1 ? d.greaterThanEqual(s1).and(d.lessThan(s2)) : d.greaterThanEqual(s2).and(d.lessThan(end));
   return k === 0 ? keepBand(t1, float(1.01), n) : k === 1 ? keepBand(t2, t1, n) : keepBand(e, t2, n);
 }
 function solidMaterial(kind, k = 0) {
   const m = new THREE.MeshStandardNodeMaterial();
-  const L = slotLook(kind === "stone" && k === 2);
+  const L = slotLook((kind === "stone" || kind === "brick") && k === 2, kind === "brick" ? k : 0);
   m.colorNode = L.col; m.aoNode = L.ao; m.roughnessNode = L.rough; m.metalnessNode = L.metal;
   if (kind === "stone") { m.maskNode = stoneKeep(k); m.maskShadowNode = m.maskNode; }
+  else if (kind === "brick") { m.maskNode = stoneKeep(k, ditherNoise(), BRICK_BANDS); m.maskShadowNode = m.maskNode; }
   else {
     // the ironwork's modelled level: colour to NEAR, dithered out by NEAR + BAND (the card carries on); its sun shadow
     // to SHADOW_END (dithered over its last 20 %)
@@ -132,8 +157,8 @@ function solidMaterial(kind, k = 0) {
     m.maskNode = n.greaterThanEqual(rampTo(d, float(NEAR + BAND), float(BAND)));
     m.maskShadowNode = n.greaterThanEqual(rampTo(d, float(SHADOW_END), float(SHADOW_END * 0.2)));
   }
-  m.name = kind === "stone" ? `parkfence-stone-lod${k}` : "parkfence-iron-near";
-  wxMat(m, { porosity: kind === "stone" ? 0.6 : 0.2, streaks: kind === "stone", frost: true });
+  m.name = kind === "iron" ? "parkfence-iron-near" : `parkfence-${kind}-lod${k}`;
+  wxMat(m, { porosity: kind === "iron" ? 0.2 : 0.6, streaks: kind !== "iron", frost: true });
   return m;
 }
 /** the card: blended at the bars' coverage (the atlas: r = tip share, g = steel share, b = AO x coverage, a = coverage),
@@ -256,7 +281,7 @@ export const parkFence = {
     const per = {};
     let any = false;
     for (const [name, park] of Object.entries(doc.parks)) {
-      const r = tileItems(park, T, g);
+      const r = tileItems(park, T, g, { brickOld: BRICK_OLD });
       if (Object.values(r.counts).some((v) => v) || r.boxes.length) { per[name] = r; any = true; }
     }
     if (!any) return null;
@@ -295,7 +320,7 @@ export const parkFence = {
     const cap = Object.fromEntries(PIECES.map((p) => [p, 8]));
     for (const park of Object.values(doc.parks)) {
       for (const q of park.panels) cap[q.type === "grand" ? "pf_rail" : q.type === "bars" ? "pf_bars" : "pf_mesh"] += 8;
-      cap.pf_plinth += 8 * park.plinths.length; cap.pf_post += park.posts.length; cap.pf_pier += park.piers.length;
+      cap.pf_plinth += 8 * park.plinths.length; cap.pf_post += park.posts.length; cap.pf_pier += park.piers.length; cap.pf_brick += park.plinths.length;
       for (const q of park.leaves) cap[q.piece] += 1;
     }
     // the cards: every iron piece's LOD0 rasterised (thinBars.js ironCards; ~0.1-0.3 s once)
@@ -304,7 +329,7 @@ export const parkFence = {
     const C = ironCards(src, { tipSlot: SLOT.iron_tip, steelSlot: SLOT.steel_dark, tex: 160, width: 2048 });
     const atlas = atlasTexture(C.atlas, "park fence cards");
     const group = this.group = new THREE.Group(); group.name = "parkfence";
-    const near = solidMaterial("iron"), card = cardMaterial(atlas), stone = [0, 1, 2].map((k) => solidMaterial("stone", k));
+    const near = solidMaterial("iron"), card = cardMaterial(atlas), stone = [0, 1, 2].map((k) => solidMaterial("stone", k)), brick = [0, 1, 2].map((k) => solidMaterial("brick", k));
     const stages = this.stages = {};
     for (const p of IRON) {
       const c = C.cards[p], g = new THREE.BufferGeometry();
@@ -317,6 +342,8 @@ export const parkFence = {
     }
     const [s1, s2, end] = STONE_BANDS;
     for (const p of STONE) stages[p] = kit.pieces[p].lods.map((geo, k) => new Stage(`parkfence-${p}-lod${k}`, geo, stone[k], cap[p], k === 0 ? 0 : k === 1 ? s1 * 0.9 : s2 * 0.9, k === 0 ? s1 * 1.1 : k === 1 ? s2 * 1.1 : end, k < 2, group));
+    const [b1, b2, bEnd] = BRICK_BANDS;
+    for (const p of BRICK) stages[p] = kit.pieces[p].lods.map((geo, k) => new Stage(`parkfence-${p}-lod${k}`, geo, brick[k], cap[p], k === 0 ? 0 : k === 1 ? b1 * 0.9 : b2 * 0.9, k === 0 ? b1 * 1.1 : k === 1 ? b2 * 1.1 : bEnd, k < 2, group));
     scene.add(group);
     // compile every stage's pipelines (colour + shadow) before the first instance shows: one instance each, far under
     // the city, through the hero compiler

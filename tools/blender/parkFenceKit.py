@@ -24,11 +24,19 @@ Pieces (one object per piece and LOD, "<piece>_lod<k>"):
   pf_gate2   one leaf of the big double park gate: 2.0 x 2.4 m nominal, hinge at x = 0; tube frame, 20 mm bars with
              lances over the top rail, a band of rings between two middle rails, dog bars, two hinges, a drop bolt.
   pf_gate1   the pedestrian leaf: 1.1 x 1.8 m nominal, frame, bars, lances, a latch box.
+  pf_brick   (claude/places3, the Papenkasteel's old garden wall on Rue Kinsendael) a 2.5 m module of a 2.3 m red-brown
+             brick wall, 0.33 m thick: Flemish bond (stretcher + header, 55 mm bricks, 10 mm lime joints) on both faces
+             and on the ends (a step of the wall shows its end above the lower module), the bricks 8 mm proud of the
+             recessed mortar (LOD0: the street face's bricks with chamfered bed edges, the grounds face flat), a
+             STEPPED coping: an oversailing course of creasing tiles under bevelled saddleback coping stones; its body
+             1.0 m under the ground line (the skirt: the viewer sets it LEVEL, stepped down the street by whole
+             courses, viewer/parkFenceLayout.js). Per-brick tone in COLOR_0.g (a random per brick, 0.5 = the mean).
 LODs: the stone pieces three scripted levels (LOD0 bevelled courses, LOD1 boxes with the cap, LOD2 one box + cap);
 the ironwork ONE modelled level: far away the viewer draws its coverage card (viewer/thinBars.js ironCards: the LOD0
 rasterised into an atlas with box mips, rule 35: no shimmer / moire), so LOD1 / LOD2 of thin bars are never drawn.
 Slots by NAME only (no baked colour): iron_paint (black or green per instance), iron_tip (finials), steel_dark
-(hinges, latches, clips), stone (pier / plinth body: limestone or rubble per instance), stone_cap (copings, caps).
+(hinges, latches, clips), stone (pier / plinth body: limestone or rubble per instance), stone_cap (copings, caps);
+(pf_brick) brick, mortar, coping.
 AO: Cycles, baked per VERTEX into COLOR_0 with the piece standing on the ground / its plinth (contact darkening).
 """
 import bpy, bmesh, math, os, sys, json, time
@@ -51,6 +59,9 @@ TIP = K.mat("iron_tip", (0.02, 0.02, 0.022), 0.4, 0.5)
 STEEL = K.mat("steel_dark", (0.05, 0.05, 0.052), 0.4, 0.7)
 STONE = K.mat("stone", (0.55, 0.53, 0.49), 0.85)
 CAP = K.mat("stone_cap", (0.5, 0.49, 0.46), 0.8)
+BRICK = K.mat("brick", (0.36, 0.17, 0.11), 0.88)
+MORTAR = K.mat("mortar", (0.55, 0.52, 0.46), 0.95)
+COPING = K.mat("coping", (0.30, 0.29, 0.28), 0.8)
 W = 2.5                 # the panel module
 MESH_WIRE = 0.006       # the welded mesh's wires (heavy park panels: 6 mm; tools/audit/parkFenceCheck.mjs MESH)
 
@@ -285,8 +296,155 @@ def pf_plinth(lod):
     return P.to_object(smooth_angle=30)
 
 
+# ------------------------------------------------------------------------------------------------ the brick wall (three levels)
+BW_H, BW_D, BW_FOOT = 2.3, 0.33, -1.0         # height over the ground line, thickness, the skirt's foot
+BR_H, BR_J = 0.055, 0.010                      # brick height, joint (a course = 65 mm: viewer/parkFenceLayout.js BRICK_COURSE)
+BR_UNIT = W / 8                                # one stretcher + one header + two joints (Flemish bond, 8 a module)
+BR_S = (BR_UNIT - 2 * BR_J) * 0.678            # the stretcher's length (~0.198)
+BR_HD = BR_UNIT - 2 * BR_J - BR_S              # the header's (~0.094)
+BR_P = 0.008                                   # the bricks' face proud of the mortar
+CREASE_T, STONE_H = 0.035, 0.11                # the creasing course, the coping stone (5 cm side + 6 cm ridge)
+BW_ZB = BW_H - CREASE_T - STONE_H              # the brickwork's top (under the coping)
+
+
+def course_bricks(i, length):
+    """course i (0 = the top one) along [0, length]: [(x0, x1)], Flemish bond (odd courses shifted half a unit: each
+    header centred on the stretcher under it)"""
+    out = []
+    off = BR_UNIT / 2 if i % 2 else 0.0
+    x = -off - BR_UNIT
+    while x < length:
+        for a, b in ((x, x + BR_S), (x + BR_S + BR_J, x + BR_S + BR_J + BR_HD)):
+            a2, b2 = max(a, 0.0), min(b, length)
+            if b2 - a2 > 0.012: out.append((a2, b2))
+        x += BR_UNIT
+    return out
+
+
+def courses():
+    """[(i, z0, z1)] from the top of the brickwork down to 0.4 m under the ground line"""
+    out, i = [], 0
+    while True:
+        z1 = BW_ZB - i * (BR_H + BR_J); z0 = max(z1 - BR_H, -0.4)
+        if z1 <= -0.4 + 0.01: break
+        out.append((i, z0, z1)); i += 1
+    return out
+
+
+def brick_face(bm, x0, x1, z0, z1, y, s, cham):
+    """one brick on a wall face (s = -1: the street face at -y, +1 the grounds face), BR_P proud of the mortar at y;
+    cham: its bed edges chamfered down to the mortar (front quad + two slopes: the shadow line under every course)"""
+    yf = y + s * BR_P
+    c = min(0.004, (z1 - z0) * 0.3) if cham else 0.0
+    if c:
+        v = [bm.verts.new(p) for p in ((x0, yf, z0 + c), (x1, yf, z0 + c), (x1, yf, z1 - c), (x0, yf, z1 - c),
+                                        (x0, y, z0), (x1, y, z0), (x1, y, z1), (x0, y, z1))]
+        for q in ((0, 1, 2, 3), (4, 5, 1, 0), (3, 2, 6, 7)): bm.faces.new([v[k] for k in q])
+    else:
+        v = [bm.verts.new(p) for p in ((x0, yf, z0), (x1, yf, z0), (x1, yf, z1), (x0, yf, z1))]
+        bm.faces.new(v if s < 0 else v[::-1])               # (wound by hand: the normal out of the face)
+
+
+def brick_end(bm, x, s, z0, z1, i):
+    """the bricks of an end (x = 0: s = -1, x = W: s = +1), BR_P proud: across the thickness, alternate courses
+    a stretcher + a header or a header + a stretcher"""
+    parts = [BR_S, BR_HD] if i % 2 else [BR_HD, BR_S]
+    k = (BW_D - BR_J) / (sum(parts) + BR_J)
+    y = -BW_D / 2
+    xf = x + s * BR_P
+    for L in parts:
+        a, b = y, y + L * k
+        v = [bm.verts.new(p) for p in ((xf, a, z0), (xf, b, z0), (xf, b, z1), (xf, a, z1))]
+        bm.faces.new(v if s > 0 else v[::-1])
+        y = b + BR_J * k
+
+
+def coping_stone(P, x0, x1, bev):
+    """a saddleback coping stone over [x0, x1]: vertical sides 5 cm, a ridge 6 cm higher, 2 cm over each face"""
+    hw = BW_D / 2 + 0.02
+    z0 = BW_ZB + CREASE_T
+    prof = [(-hw, z0), (hw, z0), (hw, z0 + 0.05), (0.0, z0 + STONE_H), (-hw, z0 + 0.05)]
+    bm = bmesh.new()
+    A = [bm.verts.new((x0, y, z)) for y, z in prof]; B = [bm.verts.new((x1, y, z)) for y, z in prof]
+    bm.faces.new(list(reversed(A))); bm.faces.new(B)
+    n = len(prof)
+    for k in range(n): bm.faces.new([A[k], A[(k + 1) % n], B[(k + 1) % n], B[k]])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    if bev:
+        top = [e for e in bm.edges if not (abs(e.verts[0].co.z - z0) < 1e-6 and abs(e.verts[1].co.z - z0) < 1e-6)]
+        bmesh.ops.bevel(bm, geom=top, offset=bev, segments=1, profile=0.5, affect="EDGES", clamp_overlap=True)
+    for f in bm.faces: f.smooth = False
+    P.add_bm(bm, COPING, X)
+
+
+def pf_brick(lod):
+    P = Part(f"pf_brick_lod{lod}")
+    hd = BW_D / 2
+    if lod == 0:
+        # the body: the recessed mortar faces (the bricks stand 8 mm proud), the skirt under it in brick
+        box(P, MORTAR, (W / 2, 0, (-0.4 + BW_ZB) / 2), (W, BW_D, BW_ZB + 0.4))
+        box(P, BRICK, (W / 2, 0, (BW_FOOT - 0.4) / 2), (W, BW_D + 2 * BR_P, -0.4 - BW_FOOT))
+        bm = bmesh.new()
+        for i, z0, z1 in courses():
+            for a, b in course_bricks(i, W):
+                brick_face(bm, a, b, z0, z1, -hd, -1, True)
+                brick_face(bm, a, b, z0, z1, hd, 1, False)
+            brick_end(bm, 0.0, -1, z0, z1, i); brick_end(bm, W, 1, z0, z1, i)
+        for f in bm.faces: f.smooth = False                 # (open shells, wound by hand: no recalc)
+        P.add_bm(bm, BRICK, X)
+        # the stepped coping: creasing tiles (W / 9, oversailing 4 cm) under the saddleback stones (W / 4, 6 mm joints)
+        nt = 9
+        for k in range(nt):
+            a, b = W * k / nt + 0.003, W * (k + 1) / nt - 0.003
+            box(P, COPING, ((a + b) / 2, 0, BW_ZB + CREASE_T / 2), (b - a, BW_D + 0.08, CREASE_T), 0.005, 1)
+        box(P, MORTAR, (W / 2, 0, BW_ZB + CREASE_T / 2), (W, BW_D + 0.06, CREASE_T - 0.008))          # the tiles' joints
+        for k in range(4):
+            coping_stone(P, W * k / 4 + 0.003, W * (k + 1) / 4 - 0.003, 0.008)
+        box(P, MORTAR, (W / 2, 0, BW_ZB + CREASE_T + 0.024), (W, BW_D + 0.03, 0.046))                  # the stones' joints
+    elif lod == 1:
+        box(P, BRICK, (W / 2, 0, (BW_FOOT + BW_ZB) / 2), (W, BW_D + 2 * BR_P, BW_ZB - BW_FOOT))
+        box(P, COPING, (W / 2, 0, BW_ZB + CREASE_T / 2), (W, BW_D + 0.08, CREASE_T))
+        coping_stone(P, 0.0, W, 0.0)
+    else:
+        box(P, BRICK, (W / 2, 0, (BW_FOOT + BW_ZB + CREASE_T) / 2), (W, BW_D + 0.04, BW_ZB + CREASE_T - BW_FOOT))
+        coping_stone(P, 0.0, W, 0.0)
+    o = P.to_object(smooth_angle=30)
+    wn = o.modifiers.new("weighted", "WEIGHTED_NORMAL"); wn.keep_sharp = True; wn.weight = 50
+    return o
+
+
+def brick_tones(o, seed=11):
+    """COLOR_0.g: one random tone per brick (a connected island of brick faces), 0.5 elsewhere (and on LOD1 / LOD2)"""
+    import random
+    me = o.data
+    col = me.color_attributes.get("Col")
+    if col is None: return
+    bi = next((i for i, m in enumerate(me.materials) if m.name == "brick"), -1)
+    tone = [0.5] * len(me.vertices)
+    if o.name.endswith("_lod0") and bi >= 0:
+        rnd = random.Random(seed)
+        bm = bmesh.new(); bm.from_mesh(me); bm.faces.ensure_lookup_table()
+        seen = set()
+        for f in bm.faces:
+            if f.material_index != bi or f.index in seen: continue
+            stack, isl = [f], []
+            seen.add(f.index)
+            while stack:
+                g = stack.pop(); isl.append(g)
+                for e in g.edges:
+                    for h in e.link_faces:
+                        if h.material_index == bi and h.index not in seen: seen.add(h.index); stack.append(h)
+            vs = {v.index for g in isl for v in g.verts}
+            if len(vs) > 64: continue                          # (the skirt box: the mean)
+            t = min(1.0, max(0.0, rnd.gauss(0.5, 0.2)))
+            for v in vs: tone[v] = t
+        bm.free()
+    for v, c in enumerate(col.data):
+        r = c.color[0]; c.color = (r, tone[v], r, 1.0)
+
+
 objs = [pf_rail(), pf_bars(), pf_mesh(), pf_post(), leaf("pf_gate2", 2.0, 2.4, True, False), leaf("pf_gate1", 1.1, 1.8, False, True)]
-for lod in (0, 1, 2): objs += [pf_pier(lod), pf_plinth(lod)]
+for lod in (0, 1, 2): objs += [pf_pier(lod), pf_plinth(lod), pf_brick(lod)]
 for o in objs: tick(f"{o.name}: {K.tris(o)} tris, size {tuple(round(v, 3) for v in o.dimensions)}")
 
 
@@ -340,7 +498,10 @@ def bake_vertex_ao(objs):
     tick("AO baked")
 
 
-if BAKE: bake_vertex_ao(objs)
+if BAKE:
+    bake_vertex_ao(objs)
+    for o in objs:
+        if o.name.startswith("pf_brick"): brick_tones(o)
 K.export_glb(objs, os.path.join(OUT, "parkfence.glb"), colors=BAKE)
 info = {
     "asset": "Park fence kit: railings, bar fence, welded mesh, posts, stone piers and plinths, park gate leaves (tools/blender/parkFenceKit.py)",
@@ -358,10 +519,13 @@ if PREVIEWS:
     PV = os.path.join(OUT, "previews"); os.makedirs(PV, exist_ok=True)
     lay = {"pf_rail_lod0": (0, 0, 0.8), "pf_plinth_lod0": (0, 0, 0), "pf_pier_lod0": (-0.45, 0, 0), "pf_bars_lod0": (3.2, 0, 0), "pf_mesh_lod0": (6.2, 0, 0),
            "pf_post_lod0": (8.9, 0, 0), "pf_gate2_lod0": (10.0, 0, 0), "pf_gate1_lod0": (12.6, 0, 0),
-           "pf_pier_lod1": (16, 0, 0), "pf_pier_lod2": (17.2, 0, 0), "pf_plinth_lod1": (18.4, 0, 0), "pf_plinth_lod2": (21.2, 0, 0)}
+           "pf_pier_lod1": (16, 0, 0), "pf_pier_lod2": (17.2, 0, 0), "pf_plinth_lod1": (18.4, 0, 0), "pf_plinth_lod2": (21.2, 0, 0),
+           "pf_brick_lod0": (24.0, 0, 0), "pf_brick_lod1": (27.0, 0, 0), "pf_brick_lod2": (30.0, 0, 0)}
     for o in objs:
         o.location = lay.get(o.name, (0, 40, 0))
     K.render(cam, os.path.join(PV, "parkfence_all.jpg"), (7.0, -11.0, 2.2), (7.0, 0, 1.2), 28, (1800, 800))
     K.render(cam, os.path.join(PV, "parkfence_close.jpg"), (0.6, -2.4, 1.6), (0.9, 0, 1.3), 35, (1400, 900))
     K.render(cam, os.path.join(PV, "parkfence_gate.jpg"), (11.0, -3.6, 1.4), (11.0, 0, 1.2), 35, (1400, 900))
+    K.render(cam, os.path.join(PV, "parkfence_brick.jpg"), (25.6, -4.6, 1.5), (25.4, 0, 1.2), 35, (1400, 900))
+    K.render(cam, os.path.join(PV, "parkfence_brick_close.jpg"), (24.4, -1.2, 2.1), (25.0, 0, 1.9), 40, (1400, 900))
 tick("done")
