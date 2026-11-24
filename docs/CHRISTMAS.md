@@ -576,6 +576,77 @@ the shadow-cache redraw frames drop out) and reports the standard error. Rule: a
 (the cut, live); `run({ split: true })` splits the fir at 8 m into cards / shadow copies / the rest. The baseline of
 the page check was recorded by this branch (`docs/perf/preflight_baseline.json`, 1280 x 720, GREEN system preflight).
 
+## 7.4 Garlands on poles at Saint-Job (claude/xmas4, plan job 5, owner's choice 2026-11-23)
+
+**What was wrong.** Place de Saint-Job had 13 garlands across the street. build_site.py hangs a garland only between two
+facades at 6.8 m with the roof 0.8 m higher; the square's two-storey houses rarely reach that, and the square itself and
+its north edge (Avenue du Prince de Ligne) have no facade on one side. Brussels hangs such garlands from poles.
+
+**Added (rule xmas-pole-garlands, docs/rules/xmas-pole-garlands.md):**
+- `tools/christmas/xmasPoles.mjs` places them from the city's own data (the tile's road stage in node, tools/road_audit/tile.mjs),
+  writes `models/christmas/poles.json` (`--write`) and checks it (default; gate row `xmaspoles`). A station every 16 m along
+  the decorated Saint-Job lines (site.json streets) + the square's north edge, moved onto the middle of the DRAWN
+  carriageway (the OSM line of Avenue du Prince de Ligne runs on the square's paving edge), none within 11 m of a wall
+  garland. Each side: a drawn street lamp or tram pole within 4 m along the street (the same placedLampSites /
+  tramPoleSites the city uses), else a Christmas pole 0.55 (0.95) m behind the kerb, shifted up to 4 m along it, that
+  passes every placement rule (measured sidewalk; >= 0.45 m off the carriageway and its parking; >= 1.25 m from every
+  traffic lane / junction turn: the car's body, rule 27; >= 1.5 m from a zebra crossing, 1.6 m from a trunk, 1.0 m from a
+  wall, 2.2 m from a tram track, 1.2 m from a bollard or another pole; clear of the market and the fir).
+- Heights: lamp hook 5.5 m (on the shaft, 0.3 m under the 6.6 m Brussels lamp's lantern), tram pole 6.85 m (its 7 m top),
+  Christmas pole 6.6 m (5.5 m beside a lamp; 7.2 m over a tram). The street garlands' catenary and LEDs (buildSpans), sag
+  0.3 + 0.02 x width, less where the lowest LED would come under 4.8 m over the road / 6.4 m over a track; the hanging
+  star only where its foot clears 4.6 m (it hangs 1.32 m under the wire: not on the 5.5 m lamp garlands).
+- **13 pole garlands** (Saint-Job: 13 wall + 13 pole = 26), 7 with a star: hooks 5 lamps + 21 Christmas poles (no tram pole
+  stood at a station); widths 7.4-21.4 m, sags 0.45-0.73 m, the lowest LED 5.01 m over the road, 6.86 m over the tram.
+  Stations left out: a wall garland there 16, no pole spot (traffic lane / turn: the narrow north arm of the Chaussée,
+  junctions) 10, no kerb within 16 m 3, a pole garland there 3, a lamp over the tram 1, width 1, a bollard 1.
+- City (`viewer/christmas/xmasCity.js`): poles.json at low priority (XMAS_FETCH); a garland shows once BOTH hooks are
+  drawn: a Christmas pole on `world.walkY`, a lamp / tram pole only where the city draws it (lampSiteSets / the
+  "tram-poles" instances within 0.25 m; else dropped after ~10 s, logged: never a garland in the air). Three merged static
+  meshes (wires, LEDs, poles: `buildPoleGeometry`, slot `pole_steel` = the tram poles' steel), made with stand-in geometry
+  so they compile in the layer's warm-up, rebuilt when a set of garlands comes in; the stars join the street garlands'
+  instanced `spanmotif`. The Christmas poles are drive colliders (0.1 m octagons). No shadow (small pieces cast
+  nothing), no light, no DynamicDrawUsage. `?xmaspoles=0` / site.json `config.poles = false`: without.
+- Browser (2026-11-24, `?quick=1&place=stjob-street&xmas=1&time=night`): 13 / 13 shown, 0 dropped (the 5 lamp hooks are
+  drawn where the node data says), the foot on the drawn ground (footA = walkY exactly), 0 console errors of ours.
+
+## 7.5 December windows (claude/xmas4, plan job 7)
+
+- `viewer/christmas/xmasWindows.js` + `viewer/facades.js interiorRoom`: with the layer on, a warm LED strand (two shallow
+  swags of 11 beads, a slow twinkle) across the window head in 12 % of all rooms among the DARK ones (their faint warm
+  glow on the curtains: the extra warm windows at night) and in 38 % of the lit ones; far off the beads become a soft
+  warm line (no sparkle). The lit rooms and their colours are unchanged: viewer/nightLights/litHash.js is the shader's CPU
+  copy (the night's window light sources) and a strand is a decoration, not a room light.
+- Compiled into the facade shader only when the layer is on at boot (`xmasDate.js xmasActive`, the layer's own switch,
+  now three-free and re-exported by xmasCity.js; `?xmaswin=0`: never): outside the layer the shader is exactly the one of
+  before (an early return with the same expression), so the main tour (`xmas=0`) is unchanged; turning the layer on
+  never rebuilds a shader. Inside, `If(xmasWin > 0.5)`: the uniform is set when the layer starts; the probe flips it.
+- Shots (`C:/Users/tibog/Downloads/uccle-xmas4-ab/`): `windows_stjob_north_night_on.jpg` / `_off.jpg` (the same frame),
+  `windows_and_pole_close_night.jpg`, `poles_stjob_east_night.jpg`.
+
+## 7.6 The cost of the two extras
+
+`debug/xmasPerf.js run()` (render scale 0.75 pinned, 10 alternated rounds, trimmed means; `layer-street` now switches
+the layer's group AND the extras outside it: the windows' uniform), one page at a time, the page brought to front (rAF
+60.1 fps), browser.lock held, no Blender. System preflight YELLOW before (a second city server listening);
+**another agent's merge gate (gate.lock, carrefour2) started 6 minutes before the runs and ran through them**, and the
+page check after was RED on CPU (+60 %, boot +127 %) with the GPU within -6 %: the numbers below are YELLOW-to-RED, read
+them as an upper side; the alternation inside a page keeps the extras' differences fair.
+
+| page | layer-street (budget 0.30) | extra-poles (0.05) | extra-windows (0.05) |
+|---|---|---|---|
+| default, first load (machine hot) | 0.389 +- 0.011 | 0.028 +- 0.016 | 0.005 +- 0.007 |
+| the same page, extras off in it | 0.327 +- 0.004 | | |
+| `?xmaspoles=0&xmaswin=0` (the layer as xmas3) | 0.203 +- 0.029 | | |
+| default | 0.177 +- 0.026 | 0.004 +- 0.007 | -0.009 +- 0.014 |
+| `?xmaspoles=0&xmaswin=0` | 0.212 +- 0.024 | | |
+| default | 0.203 +- 0.017 | 0.009 +- 0.004 | -0.041 +- 0.126 |
+
+The extras: poles 0.004-0.028 ms, windows within noise (<= 0.005 ms): both under 0.05 ms. The whole layer with them:
+0.18-0.20 ms in the alternated default / without pages (without: 0.20-0.21), under 0.30; the first page's 0.39 / 0.33
+(the extras switched off in it) came from the machine's state, not from the extras.
+See the re-measure line below for the run after the other gate.
+
 ## 8. Browser turn checklist (server 8828, one tab)
 
 1. `?xmas=1&tile=I6&view=stjob&at=1115,533` day / `&time=night` / `&wx=snow_cover`; the same at Saint-Pierre
@@ -594,7 +665,6 @@ the page check was recorded by this branch (`docs/perf/preflight_baseline.json`,
 ## 9. Not done / later
 
 - No chalet (no December market documented). The square's real plane trees could carry light strings (not done).
-- Shop-window decorations inside the glass, lights in house windows: not done (the facade shaders' lit windows could
-  take a warm string pattern in December).
+- Shop-window decorations inside the glass, lights in house windows: December strands in the facade shader (7.5, claude/xmas4).
 - The planter collides for the car only (not the third-person walker yet).
-- Saint-Job's 13 spans: the two-storey houses rarely hold a span at 6.8 m; Brussels hangs them from poles too (not done).
+- Saint-Job's 13 spans: the two-storey houses rarely hold a span at 6.8 m: 13 garlands on poles added (7.4, claude/xmas4).

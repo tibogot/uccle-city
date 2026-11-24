@@ -10,7 +10,7 @@
 //                  square's garland in view):                                                   < 0.30 ms
 //   fir-8m         the fir alone, 8 m from its trunk at eye height, filling the screen:           < 0.10 ms
 //   extra-<name>   each extra the layer registers in window.xmas.extras ({ name: (on) => ... }: poles, window
-//                  lights; none yet), at the layer-street spot:                                 < 0.05 ms each
+//                  lights: claude/xmas4), at the layer-street spot:                             < 0.05 ms each
 // A part is switched off by its meshes' camera layers (mask 0: no colour, no shadow pass draws it; the field's own
 // visible / count bookkeeping is left alone), back on by the saved masks. The camera is put back where it was.
 // (claude/xmas3) Two causes of noise in the first numbers (claude/xmas2: +-0.3 ms), fixed here:
@@ -117,7 +117,9 @@ export async function run({ rounds = 10, settle = 1.2, seconds = 2.5, split = fa
     const street = [[fx + 31, 1.7, fz + 11], [fx, 5, fz + 2]];
     const near = [[fx + 8, 1.7, fz], [fx, 4, fz]];
     const tree = (o) => /^xmas tree /.test(o.name);
-    await measure("layer-street", BUDGET.layer, layerSwitch(X.group), ...street);
+    // (claude/xmas4) the whole layer = its group + every extra not in the group (the December windows: a uniform)
+    const grp = layerSwitch(X.group), whole = { n: grp.n, set: (on) => { grp.set(on); X.extras?.windows?.(on); } };
+    await measure("layer-street", BUDGET.layer, whole, ...street);
     await measure("fir-8m", BUDGET.fir8m, layerSwitch(X.group, tree), ...near);
     if (split) {
       await measure("fir-8m cards", null, layerSwitch(X.group, (o) => tree(o) && o.userData.slot === "fir_cards" && !o.userData.shadowOnly), ...near);

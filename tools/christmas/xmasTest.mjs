@@ -168,5 +168,30 @@ const expect = [0, 1, 2].map((k) => { let n = 0; for (let i = 0; i < 50; i++) { 
 ok(field.stats.drawn.join() === expect.join(), `swags bucketed per level ${field.stats.drawn.join(" / ")} (expected ${expect.join(" / ")}), ${field.stats.draws} draws`);
 const empty = Object.values(field.levels).flatMap((L) => L.flatMap((lv) => [...lv.solid.meshes, ...lv.fade.meshes])).filter((im) => im.count === 0 && im.visible).length;
 ok(empty === 0, "empty instanced meshes are hidden (no draw)");
+
+// ---- (claude/xmas4, plan jobs 5 + 7) the pole garlands' poles and the December windows
+{
+  const { buildPoleGeometry, hookPoint, POLE_TOP } = await import("../../viewer/christmas/xmasCity.js");
+  const g = buildPoleGeometry([{ x: 10, y: 50, z: 20, h: 6.2 }, { x: 30, y: 52, z: 20, h: 5.5 }]);
+  const Y = g.attributes.position.array; let y0 = Infinity, y1 = -Infinity;
+  for (let i = 1; i < Y.length; i += 3) if (Math.abs(Y[i - 1] - 10) < 1) { y0 = Math.min(y0, Y[i]); y1 = Math.max(y1, Y[i]); }
+  ok(Math.abs(y0 - 50) < 1e-4 && Math.abs(y1 - (50 + 6.2 + POLE_TOP + 0.12)) < 1e-3 && g.attributes.color.itemSize === 4 && g.index.count / 3 < 600,
+    `a Christmas pole stands on its foot (${y0.toFixed(3)}) and reaches its hook + ${POLE_TOP} m + the cap (${y1.toFixed(2)}); the spans' attributes; ${g.index.count / 3} triangles for 2 poles`);
+  const hp = hookPoint({ x: 0, z: 0 }, 6, { x: 10, z: 0 });
+  ok(Math.abs(hp[0] - 0.08) < 1e-9 && hp[1] === 6, "the wire meets the pole's surface toward the other end (8 cm off the axis)");
+  const pd = JSON.parse(fs.readFileSync(new URL("../../models/christmas/poles.json", import.meta.url), "utf8"));
+  const psp = buildSpans(pd.spans.map((s) => ({ a: hookPoint(s.a, 50 + s.a.h, s.b), b: hookPoint(s.b, 50 + s.b.h, s.a), sag: s.sag, motif: false })));
+  ok(pd.spans.length >= 10 && psp.bulbs.attributes.position.count / 6 > 200, `the pole garlands build with the street garlands' code: ${pd.spans.length} garlands, ${psp.bulbs.attributes.position.count / 6} LEDs`);
+  const W = await import("../../viewer/christmas/xmasWindows.js");
+  const D = (y, mo, d) => new Date(y, mo, d);
+  ok(W.xmasWinOn(P(""), D(2026, 11, 1)) && !W.xmasWinOn(P(""), D(2026, 10, 30)) && !W.xmasWinOn(P("xmas=0"), D(2026, 11, 24)) && !W.xmasWinOn(P("xmas=1&xmaswin=0"), D(2026, 11, 24)) && W.xmasWinOn(P("xmas=1"), D(2026, 6, 1)),
+    "December windows compiled in with the layer only (1 Dec on, 30 Nov off, ?xmas=0 off, ?xmaswin=0 off, ?xmas=1 on)");
+  ok(W.xmasWin.value === 0, "the December windows' uniform is 0 until the layer starts (and stays 0 when it is off)");
+  const fsrc = fs.readFileSync(new URL("../../viewer/facades.js", import.meta.url), "utf8");
+  ok(/if \(!XMAS_WIN\.on\) return vec4\(col\.mul\(warm\)\.mul\(mix\(float\(0\.85\), float\(1\.35\), lit\)\), litRoom\.mul\(emit\)\);/.test(fsrc) && /If\(xmasWin\.greaterThan\(0\.5\)/.test(fsrc),
+    "facades.js interiorRoom: the shader of before when the layer is off (an early return, the same expression), the strings behind If(xmasWin > 0.5)");
+  // (the lit set and its colour unchanged: the night's CPU copy, litHash.js, must still match the shader)
+  ok(!/XMAS|xmas/.test(fs.readFileSync(new URL("../../viewer/nightLights/litHash.js", import.meta.url), "utf8")), "litHash.js (the lit windows' CPU copy) untouched: the December strings are decorations, not lit rooms");
+}
 console.log(fails ? `${fails} FAIL` : "all PASS");
 process.exit(fails ? 1 : 0);
