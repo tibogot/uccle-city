@@ -277,3 +277,4 @@ Square Coghen"; Uccle council interpellation 2020-09-10, îlot Coghen-Doyenné; 
   1. one of the 6 real residential basement garages (layer -1) opened up: small but real;
   2. **an invented, abandoned underground car park near the Calevoet / Stalle industrial land**, combined with the stunt-area idea (TODO): half-closed ramp, dark concrete levels, puddles, a few wrecked cars; police chases and hiding, moto and bike stunts. This is the coordinator's pick;
   3. both, later.
+- **Decided (owner 2026-11-24): option 2.** An invented, abandoned underground car park on empty land around Stalle, together with the stunt area. The first job is to scout the empty plots around Stalle / Calevoet from the data and Street View, pick a believable spot (an industrial or waste plot with room for a ramp), then design it with the stunt area. Not urgent: after the current merges, Christmas and perf.
