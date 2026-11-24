@@ -13,7 +13,7 @@ the roof kit's stacks and flat-roof items; free-standing, every foot on open gro
 road's whole cross-section, clear of tree trunks), the legs sunk into the drawn ground. It is SEEN FROM THE STREET it faces: from at
 least one eye 15-60 m in front of it (+-60 degrees), on open ground within 25 m of a street, square or footway, 1.7 m
 up, the rays to its 4 outer corners pass over every building of the city (a board that can't be seen whole from any
-such eye is moved, raised or dropped). Its size is in the real range of
+such eye is moved, raised or dropped). Its geometry, built by the city's own kit, is where its data says. Its size is in the real range of
 its kind (readable: >= 1.8 m tall) and its poster's aspect is the board's. Posters are INVENTED: no real brand, company
 or advertiser word (the gate's word list), no logo or copied ad art. Every board says where it comes from (Street View,
 looked at only, in our own words, or PLACED: no board there today). The position in the data file is what the CURRENT
@@ -33,3 +33,10 @@ asked whether the board can be seen from the street at all. Now the front probe 
 tile (tools/billboards/walls.mjs cityRoofOf) and the street-view check casts the rays; with it the Brugmann gable canvas
 (its lower part hidden from every street eye) and waterloo_panel (no height on that gable clears the building in front)
 were dropped and the Langeveld trivision raised to 11.5 m.
+Round 3 (review 2026-11-24): the tour shot of the raised trivision, from 35 m out along its normal, showed a bare
+gable. The board IS drawn where the data says (its mesh bounds in the browser and the kit rebuilt in the gate agree
+with `at` to the centimetre): that eye stood INSIDE the footprint of UrbIS 520249, a 20 m block drawn without its
+walls round there (floating balcony slabs and pillars), and the block's far wall hid the board. An eye inside a
+building is never a street eye; the row now also builds the boards with the city's own kit (viewer/billboardsKit.js,
+the pure half of viewer/billboards.js) and checks each poster / slat row / frame against `at`, and --write stores the
+street eye it found per board (`view`) for tours and shots.

@@ -70,8 +70,10 @@ function hiddenSolids() {
   return out;
 }
 
-const FRAME_BORDER = { panel: 0.14, backlit: 0.16, trivision: 0.18, gable: 0.07, roof: 0.14 };   // = viewer/billboards.js FRAME[*].border
-const ROOF_LEG = 1.3, ROOF_BRACE = 2.6;                                                              // = viewer/billboards.js ROOF
+// the kit's own numbers (viewer/billboardsKit.js: the pure half of viewer/billboards.js, no three.js)
+const KIT = await import(pathToFileURL(join(ROOT, "viewer/billboardsKit.js")).href);
+const FRAME_BORDER = Object.fromEntries(Object.entries(KIT.FRAME).map(([k, v]) => [k, v.border]));
+const ROOF_LEG = KIT.ROOF.legClear, ROOF_BRACE = KIT.ROOF.brace;
 
 /** the face of the board's building it hangs on: the face of that solid whose outward normal is closest to `facing` */
 function pickFace(W, b) {
@@ -261,6 +263,52 @@ export function seenFromStreet(b, at) {
   return { ok: false, eye: null, why: eyes ? `from none of ${eyes} street eyes 15-60 m in front are its 4 corners clear of the buildings` : "no street eye on open ground 15-60 m in front of it" };
 }
 
+
+/** DRAWN WHERE THE DATA SAYS (round 3, coordinator review 2026-11-24): build the boards with the kit the city uses
+ *  (viewer/billboardsKit.js buildBoards, the same function viewer/billboards.js calls) and check each board's geometry
+ *  against its `at`: the poster quad's centre = at.p + n x (the box's front) + up x h / 2 (5 cm), its normal = n, its size
+ *  = w x h; a trivision's slat axes on one line in front of the box, spanning its width; every frame vertex inside the
+ *  board's own reach (its legs, braces, lamp arms) -> [{ id, ok, why }] */
+export function drawnChecks(doc) {
+  const cells = Object.fromEntries(doc.posters.map((p) => [p.id, [0, 0, 1, 1]]));
+  const boards = doc.boards.filter((b) => b.at), K = KIT.buildBoards({ ...doc, boards }, cells), out = [];
+  for (const b of boards) {
+    const r = K.ranges.find((q) => q.id === b.id), why = [];
+    if (!r) { out.push({ id: b.id, ok: false, why: "not built by the kit" }); continue; }
+    const F = KIT.FRAME[b.kind] || KIT.FRAME.panel, [px, py, pz] = b.at.p, [nx, nz] = b.at.n, tx = nz, tz = -nx;
+    const loc = (x, y, z) => [(x - px) * tx + (z - pz) * tz, y - py, (x - px) * nx + (z - pz) * nz];   // (along, up, out)
+    const c1 = F.standoff + F.depth;
+    if (b.kind !== "trivision") {
+      const P = K.posters.p.slice(r.p[0], r.p[1]), N = K.posters.n.slice(r.p[0], r.p[1]);
+      if (P.length !== 18) why.push(`${P.length / 3} poster vertices (6 expected)`);
+      else {
+        const L = [0, 1, 2, 3, 4, 5].map((i) => loc(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]));
+        const mid = [0, 1, 2].map((k) => L.reduce((s2, v) => s2 + v[k], 0) / 6);
+        const span = [0, 1].map((k) => Math.max(...L.map((v) => v[k])) - Math.min(...L.map((v) => v[k])));
+        if (Math.abs(mid[0]) > 0.05 || Math.abs(mid[2] - c1) > 0.05 || Math.abs(Math.max(...L.map((v) => v[1])) - b.h) > 0.05 || Math.abs(Math.min(...L.map((v) => v[1]))) > 0.05)
+          why.push(`poster off its place (along ${mid[0].toFixed(2)}, out ${mid[2].toFixed(2)} vs ${c1.toFixed(2)})`);
+        if (Math.abs(span[0] - b.w) > 0.05 || Math.abs(span[1] - b.h) > 0.05) why.push(`poster ${span[0].toFixed(2)} x ${span[1].toFixed(2)} (data ${b.w} x ${b.h})`);
+        if (N[0] * nx + N[2] * nz < 0.99) why.push("poster not facing the board's way");
+      }
+    } else {
+      const S = K.slats.p.slice(r.s[0], r.s[1]);
+      if (!S.length) why.push("no slats");
+      const A = []; for (let i = 0; i < S.length; i += 3) A.push(loc(S[i], S[i + 1], S[i + 2]));
+      const outs = A.map((v) => v[2]), alongs = A.map((v) => v[0]);
+      if (A.some((v) => Math.abs(v[1]) > 0.01) || Math.max(...outs) - Math.min(...outs) > 0.01 || Math.min(...outs) < c1) why.push("slat axes not on one line in front of the box");
+      if (Math.abs(Math.max(...alongs) + Math.min(...alongs)) > 0.05 || Math.max(...alongs) - Math.min(...alongs) > b.w || Math.max(...alongs) - Math.min(...alongs) < b.w * 0.85) why.push("slats not spanning the board");
+    }
+    const Fp = K.frames.p.slice(r.f[0], r.f[1]), bd = F.border;
+    const low = b.mount === "ground" ? Math.min(...b.at.legs.map((q) => q[1])) - py - 0.01 : b.mount === "roof" ? -(b.at.leg ?? ROOF_LEG) - bd - 0.2 : -bd - 0.01;
+    for (let i = 0; i < Fp.length; i += 3) {
+      const [a, h, c] = loc(Fp[i], Fp[i + 1], Fp[i + 2]);
+      if (Math.abs(a) > b.w / 2 + bd + 0.25 || h < low || h > b.h + bd + 0.2 || c < (b.mount === "roof" ? -ROOF_BRACE - 0.1 : b.mount === "ground" ? -0.4 : -0.01) || c > c1 + 1.3) { why.push(`a frame vertex out of the board's reach (${a.toFixed(2)}, ${h.toFixed(2)}, ${c.toFixed(2)})`); break; }
+    }
+    out.push({ id: b.id, ok: !why.length, why: why.join("; ") || "poster / slats / frame where `at` says" });
+  }
+  return out;
+}
+
 /** the poster texts' brand words */
 export function brandHits(p) {
   const txt = ` ${[p.brand, ...(p.lines || []), p.small].filter(Boolean).join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")} `;
@@ -272,6 +320,7 @@ export function check(doc, { quietRows = false } = {}) {
   const r = (ok, msg) => out.push({ ok, msg });
   const hidden = hiddenSolids(), posters = new Map(doc.posters.map((p) => [p.id, p]));
   for (const p of doc.posters) { const h = brandHits(p); r(!h.length, `poster ${p.id}: ${h.length ? `real brand word(s) ${h.join(", ")}` : "invented"}`); }
+  const drawn = new Map(drawnChecks(doc).map((q) => [q.id, q]));
   for (const b of doc.boards) {
     const tag = `board ${b.id} (${b.kind}, ${b.place})`;
     const S = SIZES[b.kind];
@@ -288,6 +337,7 @@ export function check(doc, { quietRows = false } = {}) {
       r(e <= TOL.at && en < 0.01, `${tag}: the file's position = the current city's (${e.toFixed(3)} m)`);
     } else r(false, `${tag}: the file has its derived position (run --write)`);
     if (b.at) { const v = seenFromStreet(b, b.at); r(v.ok, `${tag}: seen from the street it faces (${v.why})`); }
+    if (b.at) { const q = drawn.get(b.id); r(!!q?.ok, `${tag}: drawn where the data says (viewer/billboardsKit.js buildBoards: ${q?.why ?? "not built"})`); }
   }
   return out;
 }
@@ -309,6 +359,14 @@ function mutations(doc) {
   // the planted case (coordinator review 2026-11-24): waterloo_panel as first placed, an 8 x 3 m board 10 m up the
   // north gable of UrbIS 604726 (J5), 6 m from the J4 edge: a J4 building 8.6 m in front, its roof 3 m over the board's
   // foot, hid it from Ch. de Waterloo (the street-level tour view (1857.7, -29.1) saw no board at all)
+  // a board whose drawn geometry is not at `at`: the kit fed a different `at` than the one checked
+  const danco = doc.boards.find((b) => b.mount === "wall" && b.kind !== "trivision");
+  if (danco) {
+    const cells = Object.fromEntries(doc.posters.map((p) => [p.id, [0, 0, 1, 1]]));
+    const moved = { ...danco, at: { ...danco.at, p: [danco.at.p[0], danco.at.p[1] + 2, danco.at.p[2]] } };
+    const K = KIT.buildBoards({ ...doc, boards: [moved] }, cells), P = K.posters.p, cy = (P[1] + P[7] + P[13] + P[4] + P[10] + P[16]) / 6;
+    out.push({ ok: Math.abs(cy - (danco.at.p[1] + danco.h / 2)) > 1, msg: "mutation: a poster drawn 2 m off its `at` is seen by the drawn-geometry check" });
+  }
   const planted = { id: "planted", kind: "panel", mount: "wall", tile: "J5", solid: "604726", facing: [0.044, -0.999], u: 6.5, y0: 10, w: 8, h: 3 };
   const pd = derive(planted);
   out.push({ ok: !!pd.at && !seenFromStreet(planted, pd.at).ok, msg: "mutation: the first waterloo_panel (hidden behind the J4 building in front) fails the street view" });
@@ -331,7 +389,13 @@ if (isMain) {
   await prepare(doc);
   if (WHY) { const b = doc.boards.find((q) => q.id === WHY); const d = derive(b); console.log(JSON.stringify({ at: d.at, issues: d.issues, face: d.face && { width: d.face.width, base: d.face.base, top: d.face.top, partyH: d.face.partyH, street: d.face.street } }, null, 1)); process.exit(0); }
   if (WRITE) {
-    for (const b of doc.boards) { const d = derive(b); b.at = d.at; if (d.issues.length) console.log(`WARN ${b.id}: ${d.issues.join("; ")}`); }
+    for (const b of doc.boards) {
+      const d = derive(b); b.at = d.at; if (d.issues.length) console.log(`WARN ${b.id}: ${d.issues.join("; ")}`);
+      // the street eye the row found (a tour / shot from there sees the board whole; an eye inside a building's
+      // footprint is never one: an UrbIS block drawn without its walls is still a building)
+      const v = d.at && seenFromStreet(b, d.at);
+      if (v?.ok) { const C = boardCorners(b, d.at); b.view = { eye: v.eye, look: [+(C.reduce((s2, c) => s2 + c[0], 0) / 4).toFixed(1), +(C.reduce((s2, c) => s2 + c[1], 0) / 4).toFixed(1), +(C.reduce((s2, c) => s2 + c[2], 0) / 4).toFixed(1)] }; } else delete b.view;
+    }
     // one poster / board per line (diffs stay readable)
     const { posters, boards, ...head } = doc, lines = (a) => a.map((q) => "  " + JSON.stringify(q)).join(",\n");
     writeFileSync(FILE, JSON.stringify(head, null, 1).replace(/\n}$/, `,\n "posters": [\n${lines(posters)}\n ],\n "boards": [\n${lines(boards)}\n ]\n}\n`));
