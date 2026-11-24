@@ -347,7 +347,11 @@ if (fenceTops.length) {
       const n = Math.max(1, Math.ceil(L / 0.5));
       for (let k = 0; k < n; k++) {
         const x = ax + (bx - ax) * (k + 0.5) / n, z = az + (bz - az) * (k + 0.5) / n, p = drawnAt(x, z);
-        if (!p) continue;
+        // (claude/chenaie) a wall standing wholly over the drawn fence is not ITS wall: a road deck's parapet crossing over the
+        // fence line in plan (the car under the deck passes under it: colliders.js heightClear). Until 2026-11-24 the band
+        // decks' parapets over the L26 fences were counted here as fence ghosts (Avenue de la Chênaie: 1-1.5 m, read as
+        // "the fence's wall takes the deck's height"; the fence walls themselves stop at the drawn fence top)
+        if (!p || base > p[3]) continue;
         fence += L / n / 2;                                          // (a thin ring: both long sides)
         const ly = layers(x, z), under = [ly.top, ly.low].some((v) => Number.isFinite(v) && v + 1.6 < p[2] - 0.5);
         if (top > p[3] + 0.5 || (base < p[2] - 2 && under)) { ghost += L / n / 2; gx = x; gz = z; }

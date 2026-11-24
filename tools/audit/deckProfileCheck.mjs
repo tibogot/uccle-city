@@ -17,6 +17,15 @@
 // W  (claude/places2, rule deck-width-drawn) every band deck (no plan) is no wider than the street the road engine draws
 //    for it plus its parapet: its lanes' widths, or (no lanes) its road type's stack (ROAD_TYPES), never over 6.3 m half;
 //    Avenue de la Chênaie over L26 (way 28030785, an alley: a 7.6 m street) <= 4.2 m half (it was 6: 12 m wide)
+// W  (claude/chenaie, measured widths) data/overrides.json bridgeWidths is FRESH (tools/bridges/deckWidths.mjs measured
+//    again here: the same ways, deck / carr within 0.05 m); every band deck the tile worker gives a measured stack
+//    (roadBuild.js applyRoadOverrides) is within 0.5 m of its measurements: 2 x half vs the UrbIS bridge outline (deck),
+//    its carriageway 2 x carr vs the street model's measured kerbs (carr), unless capped by the other or by the width
+//    drawn without them (a measurement only narrows); Avenue de la Chênaie over L26: half 2.4-2.65 m (UrbIS bridge 899:
+//    5.03 m outside its parapets), its carriageway within 0.5 m of the measured 3.3 m
+// L  (claude/chenaie) every bridgeLooks entry names a bridge way and a known parapet style (bridgeDecks.js PARAPETS);
+//    Avenue de la Chênaie's is brick; every band deck drawn with its look has its style's slots (brick + stone for brick,
+//    neither for concrete); tileData.js gives the band decks their style
 import "../road_audit/register.mjs";
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -25,7 +34,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const QUIET = process.argv.includes("--quiet");
 const json = (p) => JSON.parse(readFileSync(join(ROOT, p), "utf8"));
-const { bridgeDescriptors, deckHeight, measuredTop } = await import(pathToFileURL(join(ROOT, "viewer/streets/bridgeDecks.js")).href);
+const { bridgeDescriptors, deckHeight, measuredTop, widths, PARAPETS, parapetStyle, deckMesh, PLAN_SLOTS } = await import(pathToFileURL(join(ROOT, "viewer/streets/bridgeDecks.js")).href);
+const { applyRoadOverrides } = await import(pathToFileURL(join(ROOT, "viewer/roadBuild.js")).href);   // (claude/chenaie) the roads as the worker has them
 
 const TOL = 0.15, STEP = 0.35, BLEND = 8;
 // the ways the DSM gives no clean deck top for (tools/bridges/deckProfiles.py report, 2026-11-23): they keep the
@@ -62,6 +72,8 @@ const ov = json("data/overrides.json"), P = ov.bridgeProfiles || {};
 const ways = new Map(), perTile = [];
 for (const t of tiles) {
   const roads = json(`data/tiles/${t.name}/roads.json`), N = new Map((roads.nodes || []).map((n) => [n.id, n]));
+  const raw = new Map((roads.roads || []).map((r) => [r.id, JSON.parse(JSON.stringify(r))]));   // (as built, before the overrides)
+  applyRoadOverrides(roads, ov);
   for (const r of roads.roads || []) {
     const br = r.meta?.bridge;
     if (!br || br === "no" || !r.meta?.osm) continue;
@@ -72,7 +84,7 @@ for (const t of tiles) {
     const k = String(r.meta.osm);
     if (!ways.has(k) || L > ways.get(k).L) ways.set(k, { name: r.meta.name || "", pts, L });
   }
-  perTile.push({ t, descs: bridgeDescriptors(roads, ground, ov.bridgePlans, P) });
+  perTile.push({ t, roads, raw, descs: bridgeDescriptors(roads, ground, ov.bridgePlans, P) });
 }
 
 // ---- P: measured or listed, fresh
@@ -139,8 +151,8 @@ say(`     O decks a tile's roads carry but a neighbour draws: ${foreign.length}$
   const { ROAD_TYPES } = await import(pathToFileURL(join(ROOT, "vendor/roads/roadCrossSection.js")).href);
   const sum = (a) => (a || []).reduce((s, l) => s + (+l.width || 0), 0);
   let nW = 0; const seen = new Set();
-  for (const { t, descs } of perTile) {
-    const roads = json(`data/tiles/${t.name}/roads.json`), byId = new Map((roads.roads || []).map((r) => [r.id, r]));
+  for (const { roads, descs } of perTile) {
+    const byId = new Map((roads.roads || []).map((r) => [r.id, r]));
     for (const d of descs) {
       if (d.plan || seen.has(d.id)) continue;
       seen.add(d.id); nW++;
@@ -153,6 +165,65 @@ say(`     O decks a tile's roads carry but a neighbour draws: ${foreign.length}$
   }
   if (![...seen].some((id) => perTile.some(({ descs }) => descs.some((d) => d.id === id && /Chênaie/.test(d.name))))) fail("W Avenue de la Chênaie's deck not found");
   say(`ok   W ${nW} band decks no wider than their drawn streets`);
+}
+
+// ---- W: measured widths (claude/chenaie)
+{
+  const BW = ov.bridgeWidths || {};
+  const { measureAll } = await import(pathToFileURL(join(ROOT, "tools/bridges/deckWidths.mjs")).href);
+  const fresh = measureAll();
+  for (const [k, v] of fresh) {
+    const e = BW[k];
+    if (v.none) { if (e) fail(`W bridgeWidths.${k} "${v.name}": no longer measurable (${v.why || "no measurement"}): run tools/bridges/deckWidths.mjs`); continue; }
+    if (!e) { fail(`W way ${k} "${v.name}": measured (deck ${v.deck ?? "-"}, carr ${v.carr ?? "-"}) but not in data/overrides.json bridgeWidths: run tools/bridges/deckWidths.mjs`); continue; }
+    for (const f of ["deck", "carr"]) if ((v[f] == null) !== (e[f] == null) || (v[f] != null && Math.abs(v[f] - e[f]) > 0.05)) fail(`W bridgeWidths.${k}.${f} = ${e[f] ?? "-"}, measured ${v[f] ?? "-"} now (stale: run tools/bridges/deckWidths.mjs)`);
+  }
+  for (const k of Object.keys(BW)) if (!k.startsWith("_") && !fresh.has(k)) fail(`W bridgeWidths.${k}: no such band bridge way (stale)`);
+  let nM = 0; const seen = new Set();
+  for (const { roads, raw, descs } of perTile) {
+    const byId = new Map((roads.roads || []).map((r) => [r.id, r]));
+    for (const d of descs) {
+      const r = byId.get(d.id), m = r?.meta?.bridgeWidth;
+      if (d.plan || seen.has(d.id) || !m) continue;
+      seen.add(d.id); nM++;
+      const drawn = widths(raw.get(d.id)).half;
+      if (d.half > drawn + 0.01) fail(`W deck ${d.id} "${d.name}": half ${d.half.toFixed(2)} m, wider than without its measurements (${drawn.toFixed(2)})`);
+      if (m.deck != null && d.half < drawn - 0.01 && Math.abs(2 * d.half - m.deck) > 0.5) fail(`W deck ${d.id} "${d.name}": ${(2 * d.half).toFixed(2)} m wide, its UrbIS bridge outline ${m.deck} m`);
+      // the street drawn on it: its stack's carriage lanes, kerb to kerb (the deck's own asphalt band is its wider side's)
+      const cs = (a) => (a || []).filter((l) => l.type !== "sidewalk" && l.type !== "verge" && l.type !== "barrier").reduce((q, l) => q + (+l.width || 0), 0);
+      const kk = cs(r.lanes.left) + cs(r.lanes.right) + (+r.lanes.center?.width || 0), capped = Math.max(cs(r.lanes.left), cs(r.lanes.right)) >= d.half - 0.3 - 0.06;
+      if (m.carr != null && !capped && Math.abs(kk - m.carr) > 0.5) fail(`W deck ${d.id} "${d.name}": carriageway ${kk.toFixed(2)} m kerb to kerb, measured ${m.carr} m`);
+      if (d.carr > d.half - 0.3 + 0.01) fail(`W deck ${d.id} "${d.name}": its asphalt band (${d.carr.toFixed(2)} m half) runs under its parapets (${(d.half - 0.3).toFixed(2)})`);
+    }
+  }
+  const ch = perTile.flatMap((p) => p.descs).find((d) => d.id === "r28030785_0" && !d.plan);
+  if (!ch || ch.half < 2.4 || ch.half > 2.65) fail(`W Avenue de la Chênaie over L26: half ${ch?.half?.toFixed(2) ?? "none"} m (2.4-2.65 wanted: the UrbIS bridge 899 is 5.03 m outside its parapets)`);
+  if (ch && Math.abs(2 * ch.carr - (BW["28030785"]?.carr ?? 0)) > 0.5) fail(`W Avenue de la Chênaie over L26: carriageway ${(2 * ch.carr).toFixed(2)} m vs measured ${BW["28030785"]?.carr}`);
+  say(`ok   W ${nM} band decks at their measured widths (${Object.keys(BW).filter((k) => !k.startsWith("_")).length} measured ways)${ch ? `; Chênaie ${(2 * ch.half).toFixed(2)} m outside, carriageway ${(2 * ch.carr).toFixed(2)} m` : ""}`);
+}
+
+// ---- L: parapet styles (claude/chenaie)
+{
+  const BL = ov.bridgeLooks || {};
+  for (const [k, v] of Object.entries(BL)) {
+    if (k.startsWith("_")) continue;
+    if (!ways.has(k)) fail(`L bridgeLooks.${k}: no such bridge way`);
+    if (!PARAPETS.includes(v?.parapet)) fail(`L bridgeLooks.${k}: parapet "${v?.parapet}" is not one of ${PARAPETS.join(" / ")}`);
+  }
+  if (parapetStyle(BL, 28030785) !== "brick") fail("L Avenue de la Chênaie over L26: parapet not brick (bridgeLooks.28030785)");
+  let nL = 0;
+  const seen = new Set();
+  for (const { descs } of perTile) for (const d of descs) {
+    if (d.plan || seen.has(d.id)) continue;
+    seen.add(d.id); nL++;
+    const style = parapetStyle(BL, d.osm), m = deckMesh({ ...d, look: { parapet: style } }), slots = new Set((m.groups || []).map((g) => PLAN_SLOTS[g.slot]));
+    if (!m.groups) { fail(`L deck ${d.id}: no material slots with a look`); continue; }
+    for (const w of style === "brick" ? ["brick", "stone"] : []) if (!slots.has(w)) fail(`L deck ${d.id} "${d.name}" (${style}): no ${w} slot drawn`);
+    if (style === "concrete" && (slots.has("brick") || slots.has("stone"))) fail(`L deck ${d.id} "${d.name}": a concrete parapet drawn with brick / stone`);
+  }
+  const td = readFileSync(join(ROOT, "viewer/tileData.js"), "utf8");
+  if (!/d\.look = \{ parapet: parapetStyle\(ov\.bridgeLooks, d\.osm\) \}/.test(td)) fail("L viewer/tileData.js no longer gives the band decks their parapet style");
+  say(`ok   L ${nL} band decks drawn in their parapet style (${Object.keys(BL).filter((k) => !k.startsWith("_")).length} listed, Chênaie brick)`);
 }
 
 console.log(`deck profiles: ${measured} measured of ${ways.size} bridge ways (${Object.keys(SKIPPED).length} listed as not measurable), ${checked} samples checked, worst ${worst.toFixed(2)} m off the measured top; ${foreign.length} neighbour-drawn deck(s) seen by their other tiles' node checks`);

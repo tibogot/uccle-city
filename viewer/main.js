@@ -462,8 +462,10 @@ function deckMaterials() {
   if (deckLookMats) return deckLookMats;
   const conc = libMaterial("concrete_white", { mapping: "world" });
   const steel = new THREE.MeshStandardNodeMaterial({ color: 0x1c1f22, roughness: 0.45, metalness: 0.6 });
-  deckLookMats = [asphaltMaterial(null), concreteMaterial(), concreteMaterial(), conc, steel];
-  deckLookMats.forEach((m, i) => { m.userData.shared = true; m.name = `road-bridge-deck ${["asphalt", "paving", "kerb", "concrete", "steel"][i]}`; });
+  // (claude/chenaie) + a band deck's brick parapet and blue-stone coping (bridgeLooks parapet "brick": Avenue de la Chênaie)
+  const brick = libMaterial("brick_red_brussels", { mapping: "world" }), stone = libMaterial("stone_blue", { mapping: "world" });
+  deckLookMats = [asphaltMaterial(null), concreteMaterial(), concreteMaterial(), conc, steel, brick, stone];
+  deckLookMats.forEach((m, i) => { m.userData.shared = true; m.name = `road-bridge-deck ${["asphalt", "paving", "kerb", "concrete", "steel", "brick", "stone"][i]}`; });
   return deckLookMats;
 }
 function bridgeDeckMesh(bd) {
@@ -777,7 +779,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", railT: RAIL_T, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
-    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", bridgeProf: params.get("bridgeprof") !== "old", deckWidth: params.get("deckwidth") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", movGround: params.get("movground") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", bridgeProf: params.get("bridgeprof") !== "old", deckWidth: params.get("deckwidth") !== "old", bridgeLook: params.get("bridgelook") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", movGround: params.get("movground") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
     deckLanes: params.get("decklanes") !== "old",                                                    // claude/drivecheck round 2: the traffic lanes over a hero road deck held clear of its parapets (rail/roadDeck.js squeezeDeckLanes), ?decklanes=old = as before

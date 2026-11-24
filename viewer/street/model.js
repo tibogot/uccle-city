@@ -29,6 +29,7 @@
 import { LANE_TYPES, ROAD_TYPES } from "../../vendor/roads/roadCrossSection.js";
 import { boundaryKind, centerKind, markingStyle } from "../../vendor/roads/roadMarkings.js";
 import { lineCode } from "../../vendor/roads/mesh/laneRoadMesh.js";
+import { measuredBridgeLanes } from "../streets/bridgeDecks.js";   // (claude/chenaie) a measured band bridge's stack
 
 export const MODEL_VERSION = 1;
 export const TILE = 500;                 // m: tile size (data/tiles/manifest.json tileSize)
@@ -303,8 +304,9 @@ const clone = (o) => JSON.parse(JSON.stringify(o));
  *  data/overrides.json centreLine "none" (applyRoadOverrides) */
 function stackOf(r, overrides) {
   const t = ROAD_TYPES[r.type] || ROAD_TYPES.local;
-  const st = r.lanes ? clone(r.lanes) : { center: { ...t.center, ...(t.center.kind === "line" ? { guess: true } : {}) }, left: t.left.map((l) => ({ ...l, ...(l.type === "bike" || l.type === "parking" ? { guess: true } : {}) })), right: t.right.map((l) => ({ ...l, ...(l.type === "bike" || l.type === "parking" ? { guess: true } : {}) })), _default: true };
-  const way = /^r(\d+)_/.exec(r.id)?.[1];
+  // (claude/chenaie, rule deck-width-drawn) a band bridge with measured widths: the stack roadBuild.js applyRoadOverrides gives it
+  const way = /^r(\d+)_/.exec(r.id)?.[1], bw = way && r.meta?.bridge && r.meta.bridge !== "no" ? overrides?.bridgeWidths?.[way] : null, bl = bw ? measuredBridgeLanes(r, bw) : null;
+  const st = bl ? bl : r.lanes ? clone(r.lanes) : { center: { ...t.center, ...(t.center.kind === "line" ? { guess: true } : {}) }, left: t.left.map((l) => ({ ...l, ...(l.type === "bike" || l.type === "parking" ? { guess: true } : {}) })), right: t.right.map((l) => ({ ...l, ...(l.type === "bike" || l.type === "parking" ? { guess: true } : {}) })), _default: true };
   if (way && overrides?.centreLine?.[way] === "none") st.center = { ...(st.center || {}), kind: "none" };
   for (const side of ["left", "right"]) st[side] = (st[side] || []).filter((l) => !(l.type === "bike" && (l.guess || l.sharrow)));
   st.rank = t.rank ?? 1; st.residential = RESIDENTIAL.has(r.type); st.type = r.type;
