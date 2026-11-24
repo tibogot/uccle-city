@@ -536,6 +536,10 @@ def load_raw(raw: Path):
                 for o in src["osm"]["elements"]:
                     if o.get("type") == "node" and o.get("id") == mv:
                         o["lon"], o["lat"] = e["lon"], e["lat"]
+                        # (claude/places2) the move may carry the address OSM lacks: addr:street picks the face's street
+                        # (Facades.attach), so a corner restaurant opens on its own street (Le Pigeon Noir, Rue Geleytsbeek 2)
+                        if e.get("tags"):
+                            o["tags"] = {**(o.get("tags") or {}), **e["tags"]}
                 continue
             if e.get("_anySide"):
                 src.setdefault("any_side", set()).add("x" + str(e["id"]))

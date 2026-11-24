@@ -16,7 +16,7 @@ import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { streetModelInputs } from "./street/inputs.js";
 import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
-import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, meshTopNodes, onCarriageway, deckContinuation, markRailCuts } from "./streets/bridgeDecks.js";
+import { bridgeDecks, setDeckWidthOld, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, meshTopNodes, onCarriageway, deckContinuation, markRailCuts, parapetStyle } from "./streets/bridgeDecks.js";
 import { tramTracks } from "./track.js";
 import { fitPlatforms } from "./streets/tramPlatforms.js";
 import { kitCollector } from "./facadeKit/placement.js";
@@ -141,6 +141,7 @@ const lookSet = (looks, entry) => {
     if (entry.cortenbosch === false && (v.set === "cortenbosch" || v.set === "cortenbosch2")) continue;
     if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
     if (entry.carrefour === false && v.set === "carrefour") continue;           // (claude/carrefour) ?carrefour=old
+    if (entry.places2 === false && v.set === "places2") continue;               // (claude/places2) ?places2=old
     out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
   }
   return out;
@@ -343,7 +344,8 @@ export async function buildTileData(entry, base) {
   // Before the road stage, which may adjust the surfaces in place; the verges read the measured carriageways as fetched.
   const grassTypes = entry.grass ? await step("grass types", async () => grassTypeData(feats, { x0, x1, z0, z1 }, { kinds: await grassKinds(base), surfaces: surfDoc })) : null;
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
-  const ov = await overrides(base);
+  // (claude/chenaie, rule deck-width-drawn) ?deckwidth=old: no measured bridge widths (bridgeWidths) either
+  const ov0 = await overrides(base), ov = entry.deckWidth === false && ov0?.bridgeWidths ? { ...ov0, bridgeWidths: null } : ov0;
   applyRoadOverrides(roads, ov);
   // surfvote (docs/SURFVOTE.md): the street-surface name vote of surfaces.js with the names repaired and normalised
   // (viewer/streetNames.js), the city-wide table as its fallback (data/roads/streetVote.json), and the OSM road surfaces
@@ -410,8 +412,11 @@ export async function buildTileData(entry, base) {
   // the cutting (bridgeDecks.js ringPlans: the Chaussee de Waterloo at Vivier d'Oie)
   const plans = entry.bridgePlan === false ? null : entry.vivier !== false && rail ? ringPlans(ov.bridgePlans, roads, rail.doc, baseGround, surf) : ov.bridgePlans;
   // (claude/places1, rule deck-profile-measured; ?bridgeprof=old: the straight line) the band decks' measured tops
+  setDeckWidthOld(entry.deckWidth === false);                  // (claude/places2) ?deckwidth=old: every lane-less deck 12 m wide
   const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans, entry.bridgeProf === false ? null : ov.bridgeProfiles);
   osmBridges.decks = osmBridges.decks.filter((d) => { const m = d.pts[Math.floor(d.pts.length / 2)]; return Number.isNaN(heroDeck(m[0], m[1])); });
+  // (claude/chenaie) the band decks' parapet style (data/overrides.json bridgeLooks; ?bridgelook=old: vertex colours, concrete)
+  if (entry.bridgeLook !== false) for (const d of osmBridges.decks) if (!d.plan) d.look = { parapet: parapetStyle(ov.bridgeLooks, d.osm) };
   const mid = (d) => { const L = d.cum[d.cum.length - 1] / 2; let i = 1; while (i < d.pts.length - 1 && d.cum[i] < L) i++;
     const t = (L - d.cum[i - 1]) / ((d.cum[i] - d.cum[i - 1]) || 1); return [d.pts[i - 1][0] + (d.pts[i][0] - d.pts[i - 1][0]) * t, d.pts[i - 1][1] + (d.pts[i][1] - d.pts[i - 1][1]) * t]; };
   const ownDeck = (d) => { if (!pad) return true; const [mx, mz] = mid(d); return mx >= x0 && mx < x1 && mz >= z0 && mz < z1; };

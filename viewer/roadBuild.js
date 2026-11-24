@@ -22,6 +22,7 @@ import { edgeField, onceEdgeList } from "./heightmap.js";
 import { retainingWalls, appendToPart } from "./streets/retainWalls.js";
 import { measureLineFit, fitLinesToStreet, laneShifter } from "./streets/lineFit.js";
 import { buildStreetModel } from "./street/model.js";
+import { measuredBridgeLanes } from "./streets/bridgeDecks.js";
 import { modelLineItems, lineQuery, engineLineCodes } from "./street/markings.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
@@ -66,6 +67,11 @@ export function applyRoadOverrides(roads, ov) {
   for (const r of roads.roads) {
     const s = ov?.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s;
     const way = /^r(\d+)_/.exec(r.id)?.[1], c = way ? ov?.centreLine?.[way] : null;
+    // (claude/chenaie, rule deck-width-drawn) a band bridge with measured widths (bridgeWidths: the UrbIS bridge outline,
+    // the measured kerbs of its approaches): its lane stack at those widths, so the street drawn on the deck and the deck
+    // (bridgeDecks.js widths) are as wide as the real bridge (Avenue de la Chênaie over L26: 5.0 m, was 8.2 m)
+    const bw = way && r.meta?.bridge && r.meta.bridge !== "no" ? ov?.bridgeWidths?.[way] : null, bl = bw ? measuredBridgeLanes(r, bw) : null;
+    if (bl) { (r.meta ??= {}).bridgeWidth = { deck: bw.deck ?? null, carr: bw.carr ?? null }; r.lanes = bl; }
     if (c === "none" && r.lanes) r.lanes = { ...r.lanes, center: { ...(r.lanes.center || {}), kind: "none" } };   // (built roads carry their stack)
   }
 }

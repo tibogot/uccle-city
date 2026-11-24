@@ -40,8 +40,9 @@ const SLOT = { iron_paint: 0, iron_tip: 1, steel_dark: 2, stone: 3, stone_cap: 4
 const lin = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
 // paints (linear rgb, roughness): black wrought iron, the parks' dark green
 const PAINTS = [[...lin(0.035, 0.036, 0.038).toArray(), 0.5], [...lin(0.085, 0.2, 0.12).toArray(), 0.55]];
-// stones: Wolvendael's pale dressed limestone / sandstone, the Sauvagère's grey rubble
-const STONES = [[...lin(0.66, 0.64, 0.58).toArray(), 0.85], [...lin(0.57, 0.55, 0.5).toArray(), 0.92]];
+// stones: Wolvendael's pale dressed limestone / sandstone, the Sauvagère's grey rubble; (claude/places2) the Papenkasteel's
+// white-rendered gate piers and its old red-brown brick garden wall on Rue Kinsendael
+const STONES = [[...lin(0.66, 0.64, 0.58).toArray(), 0.85], [...lin(0.57, 0.55, 0.5).toArray(), 0.92], [...lin(0.84, 0.83, 0.79).toArray(), 0.9], [...lin(0.47, 0.29, 0.23).toArray(), 0.93]];
 const uPaint = uniformArray(PAINTS.map((c) => new THREE.Vector4(...c)), "vec4");
 const uStone = uniformArray(STONES.map((c) => new THREE.Vector4(...c)), "vec4");
 
@@ -199,7 +200,10 @@ export const parkFence = {
   doc: null, docP: null, clearIdx: null, keepIdx: null, tiles: new Map(), group: null, stages: null, roots: new Map(), stats: { instances: 0, draws: 0, tris: 0, tiles: 0 },
   /** the line's plan (once) */
   loadDoc(base = new URL("../", import.meta.url)) {
-    return (this.docP ??= fetch(new URL("data/parkfence/parkfence.json", base)).then((r) => (r.ok ? r.json() : null)).then((d) => (this.doc = d)).catch(() => null));
+    // (claude/places2) a park of a job's set (the Papenkasteel's grounds: set places2) only with its switch on
+    const PLACES2_OLD = qs.get("places2") === "old";
+    const keep = (d) => { if (d && PLACES2_OLD) for (const [k, p] of Object.entries(d.parks)) if (p.set === "places2") delete d.parks[k]; return d; };
+    return (this.docP ??= fetch(new URL("data/parkfence/parkfence.json", base)).then((r) => (r.ok ? r.json() : null)).then((d) => (this.doc = keep(d))).catch(() => null));
   },
   /** (x, z) -> true within CLEAR_R m of a park's fence line, pier, post or gate leaf (main.js inClear: the generated
    *  garden pieces and plants step off it: a garden pier stood inside a Sauvagère gate pier) */

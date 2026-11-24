@@ -1,6 +1,28 @@
 {
  "about": "Curated shopfronts and terraces of the shopfront kit (viewer/shops/shopLayout.js), each checked on Google Street View (look only, never traced or stored; docs/assets/SHOPS.md). terraces.<OSM id>: depth (m out from the wall), from / to (m along the front, left to right seen from the street), hedge (planters along the outer edge), parasols, parasol (canvas palette index), none (no terrace); front: family classic | modern, paint / canvas (palette index of shopLayout.js), awning, stripes, lightbox.",
  "terraces": {
+  "osm:n4388790239": {
+   "_name": "Le Pigeon Noir (restaurant, one Michelin star), Rue Geleytsbeek 2 at the corner of Avenue de la Chênaie (claude/places2; Street View Apr 2024, looked at, not kept). A two-storey corner house with an attic, its render painted a warm ochre-mustard yellow over a dark grey painted plinth, small-paned windows in dark frames, a small iron balcony upstairs. Its entrance is on the NORTH face, on Rue Geleytsbeek (its address): a navy-blue awning over the door and the two ground-floor windows, LE PIGEON NOIR in white capitals on the valance, a dark glazed door. The east gable on Avenue de la Chênaie is blind but for a pigeon emblem on a plaque (not drawn: no logo artwork). No table terrace: three rust-brown planters with clipped box on the paved corner",
+   "none": true,
+   "front": {
+    "family": "classic",
+    "paint": 3,
+    "frame": 3,
+    "lightbox": false,
+    "awning": true,
+    "canvas": 2,
+    "stripes": false,
+    "fascia": false,
+    "valance": "LE PIGEON NOIR",
+    "valanceFont": "shopCaps",
+    "valanceFill": 1.2,
+    "awningInk": [
+     0.9,
+     0.89,
+     0.86
+    ]
+   }
+  },
   "osm:n255033292": {
    "_name": "Carrefour Market Marlow, Av. Wolvendael 2 / Square Georges Marlow 10, ~100 m north-west of the police station (claude/carrefour; Street View Apr 2024 + the UrbIS orthophoto 2024, looked at, not kept). The store: a single-storey box in plain greige-taupe horizontal panels, a thin dark coping. Its front faces the car park: a long run of full-height glazing in black aluminium frames with the automatic doors near its middle, under a deep flat cantilevered canopy (~3 m, greige like the walls, a darker soffit) that runs nearly the whole face; red promo screens behind the glass. Signage: the upper wall over the canopy carries a thin red line along the whole face and the name in big red letters, 'Carrefour' over 'market', with the brand's red-and-blue mark beside it (not drawn: no logo artwork, text only); a small red name panel over the entrance; a tall red pylon sign at the street corner (not drawn). The car park (data/overrides.json grounds carrefour_lot): asphalt, white bay lines, painted arrows, a red-and-white barrier at the entrance off the square, old dark-green lantern lamp posts, pollarded plane trees and a planted bank with a low brick wall along the street; trolleys returned under the canopy (no separate shelter seen). Next to it: a 1970s office block north of the lot, the Ma Poule takeaway kiosk and a white gabled house at its south-west corner on Av. Wolvendael",
    "none": true,

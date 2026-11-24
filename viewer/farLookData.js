@@ -17,7 +17,7 @@
 // Left out against the near analysis (cheap at 150 m and more): the ground fit (the base is UrbIS's), the street /
 // door / shop flags, the façade kit, cornice and detail geometry.
 import { hash01, wallStyle } from "./facadeGeom.js";
-import { classify, TYPE, typedStyle } from "./buildingTypes.js";
+import { classify, TYPE, typedStyle, renderToneStyle } from "./buildingTypes.js";
 
 const PROBE = 0.35;
 
@@ -86,7 +86,8 @@ export function farBuildings(doc, P, I, opts = {}) {
     // (cortenbosch2) the curated looks as the full tile (facadeGeom.js): far, the Cortenbosch houses kept their generated look
     const look = opts.looks?.[b.id.split("/").pop()];
     const btype = look?.type != null && cls ? look.type : cls && !landmark ? cls.type[bi] : TYPE.GENERIC;
-    const style = (cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height));
+    // (claude/places2) a curated render tone (buildingTypes.js renderToneStyle: Le Pigeon Noir's ochre-mustard) in the fraction
+    const style = renderToneStyle((cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height)), btype, look);
     stats.types[btype]++;
     // ---- walls: planar faces (as facadeGeom.js: ~3 degrees, 25 cm, then merged along one plane)
     const faces = new Map();

@@ -85,7 +85,7 @@ for (const [name, park] of Object.entries(doc.parks)) {
   const R = { panels: park.panels.length, plinths: park.plinths.length, piers: park.piers.length, leaves: park.leaves.length, entrances: park.entrances.length };
   // ---- 2. coverage
   const drawn = [...park.panels, ...park.plinths].map((q) => [q.a, q.b]);
-  let uncovered = 0, entM = 0, gapB = 0, gapR = 0; const where = [];
+  let uncovered = 0, entM = 0, gapB = 0, gapR = 0, gapO = 0; const where = [];
   const inGap = (p) => park.gaps.find((g) => dSeg(p, g.a, g.b) < 4.8);
   for (let s = 0; s < A.L; s += 0.5) {
     const p = A.at(s);
@@ -94,9 +94,10 @@ for (const [name, park] of Object.entries(doc.parks)) {
     const g = inGap(p);
     if (g?.reason === "building") { gapB += 0.5; continue; }
     if (g?.reason === "carriageway") { gapR += 0.5; continue; }
+    if (g?.reason === "obs") { gapO += 0.5; continue; }        // (claude/places2) closed by what the obs file says (a hedge, the castle's range, woods)
     uncovered += 0.5; if (where.length < 5) where.push(p.map((v) => v.toFixed(1)).join(","));
   }
-  Object.assign(R, { ringM: +A.L.toFixed(0), entranceM: entM, gapBuildingM: gapB, gapRoadM: gapR, uncoveredM: uncovered });
+  Object.assign(R, { ringM: +A.L.toFixed(0), entranceM: entM, gapBuildingM: gapB, gapRoadM: gapR, gapObsM: gapO, uncoveredM: uncovered });
   check(`${name}: the line covers the boundary but the entrances / listed gaps`, uncovered === 0, `${uncovered} m uncovered ${where.join(" ")}; entrances ${entM} m, gaps: building ${gapB} m, carriageway ${gapR} m of ${A.L.toFixed(0)} m`);
   check(`${name}: gap metres under the ceilings`, gapB <= CEIL.gapBuildingM && gapR <= CEIL.gapRoadM, `building ${gapB} <= ${CEIL.gapBuildingM}, carriageway ${gapR} <= ${CEIL.gapRoadM}`);
   // ---- (round 2) trunks: 0 tree-field trunks within TRUNK_MIN of a drawn panel / plinth (the run stops round them)
@@ -220,6 +221,35 @@ for (const [name, park] of Object.entries(doc.parks)) {
   check(`${name}: contact with the drawn ground (0 floating, 0 buried beyond tolerance)`, !floatN && !buryN && !plinthBad && !pierBad && !leafBad, `${nPanel} bare panels: floating ${floatN}, buried ${buryN}; plinths out ${plinthBad}; piers ${pierBad}; leaves ${leafBad} ${contactBad.join("; ")}`);
   check(`${name}: colliders match the drawn line`, !colMiss && !colShort && !colAcross, `missing ${colMiss}, under 1.3 m ${colShort}, across an open entrance ${colAcross}`);
   report.parks[name] = R;
+}
+// ---- (claude/places2, rule papen-grounds) the Papenkasteel's grounds: an obs ring (no OSM polygon) drawn as observed:
+// the street gate (white-render piers, a closed black double gate) on Rue Papenkasteel, the mesh on the wooded bank and the
+// old brick wall (>= 2 m, brick tone) on Rue Kinsendael; set places2 (?places2=old); no other gate (the owner: "gates all
+// round" was not what Street View shows: one gate); the hedge along Rue Papenkasteel in gardenRestyle (a line of beech /
+// hornbeam >= 1.9 m, with an opening at the gate)
+{
+  const pk = doc.parks.papenkasteel, obs = J("data/parkfence/papenkasteel.obs.json");
+  const bad = [];
+  if (!pk) bad.push("no papenkasteel park in data/parkfence/parkfence.json");
+  else {
+    if (pk.set !== "places2") bad.push(`set ${pk.set} (want places2)`);
+    const gate = pk.entrances.find((e) => e.osm === "obs/papenkasteel-gate");
+    if (!gate || gate.kind !== "double" || gate.state !== "closed") bad.push("the street gate: missing or not a closed double gate");
+    if (pk.entrances.length !== 1) bad.push(`${pk.entrances.length} entrances (one gate seen)`);
+    if (pk.piers.filter((q) => q.ent === "obs/papenkasteel-gate" && q.stone === 2).length !== 2) bad.push("the gate's two white-render piers (stone 2)");
+    if (pk.leaves.length !== 2 || pk.leaves.some((l) => l.open)) bad.push("the gate's two closed leaves");
+    const wallM = pk.plinths.filter((q) => q.stone === 3 && q.h >= 2).reduce((m, q) => m + Math.hypot(q.b[0] - q.a[0], q.b[1] - q.a[1]), 0);
+    if (wallM < 40) bad.push(`brick wall ${wallM.toFixed(0)} m (>= 40 m of >= 2 m brick on Rue Kinsendael)`);
+    const meshM = pk.panels.filter((q) => q.type === "mesh").reduce((m, q) => m + Math.hypot(q.b[0] - q.a[0], q.b[1] - q.a[1]), 0);
+    if (meshM < 15) bad.push(`mesh ${meshM.toFixed(0)} m on the wooded bank`);
+    if (!obs.ring || obs.default !== "none") bad.push("the obs file: no ring, or not closed by 'none' by default");
+    const gr = J("data/overrides.json").gardenRestyle || {};
+    const hedges = Object.entries(gr).filter(([k, v]) => k.startsWith("papenkasteel_hedge") && v?.line?.length >= 2);
+    if (hedges.length < 2 || hedges.some(([, v]) => !(v.height >= 1.9) || v.set !== "places2")) bad.push("the Rue Papenkasteel hedge (gardenRestyle papenkasteel_hedge_*: >= 2 runs, >= 1.9 m, set places2)");
+    const gp = gate?.at;
+    if (gp) for (const [k, v] of hedges) for (const p of v.line) if (Math.hypot(p[0] - gp[0], p[1] - gp[1]) < 1.8) bad.push(`hedge ${k} closes the gate`);
+  }
+  check("papenkasteel: the observed grounds (one closed street gate, white piers, mesh bank, brick wall, the hedge)", !bad.length, bad.join("; ") || `${pk.panels.length} mesh panels, ${pk.plinths.length} wall pieces, 1 gate`);
 }
 // ---- (round 2) the far mesh: the card's coverage at 30 / 60 / 120 m (the mip the GPU samples there) against the
 // modelled mesh's analytic share (6 mm wires, 50 mm across, 200 mm up + the edge pairs), within +-CEIL.cardCov

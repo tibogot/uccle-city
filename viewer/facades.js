@@ -410,8 +410,13 @@ export function wallMaterial(opts = {}) {
     // buff, salmon, cream-white, orange-red, brown-buff (linear albedo, from photos of Brussels-periphery lotissements)
     const yb0 = wl ? SCANS.brick_yellow?.meta?.mean_albedo_linear ?? [0.4, 0.27, 0.14] : [0.4, 0.27, 0.14];
     // (5 ochre, 6 white: the rendered 1990s houses, over the cream render set)
-    const tone6 = mix(mix(mix(mix(mix(C(0.55, 0.43, 0.26), C(0.56, 0.28, 0.16), band(nTone, 1)), mix(C(0.6, 0.55, 0.43), C(0.4, 0.13, 0.06), band(nTone, 3)), step(1.5, nTone)), C(0.33, 0.19, 0.1), band(nTone, 4)), C(0.55, 0.4, 0.19), band(nTone, 5)), C(0.68, 0.68, 0.65), band(nTone, 6));
+    // (claude/places2) 7 mustard: Le Pigeon Noir's ochre-mustard render
+    const tone6 = mix(mix(mix(mix(mix(mix(C(0.55, 0.43, 0.26), C(0.56, 0.28, 0.16), band(nTone, 1)), mix(C(0.6, 0.55, 0.43), C(0.4, 0.13, 0.06), band(nTone, 3)), step(1.5, nTone)), C(0.33, 0.19, 0.1), band(nTone, 4)), C(0.55, 0.4, 0.19), band(nTone, 5)), C(0.68, 0.68, 0.65), band(nTone, 6)), C(0.64, 0.4, 0.11), band(nTone, 7));
     col = mix(col, col.mul(tone6.div(mix(C(0.56, 0.47, 0.32), C(...yb0), isBrick0(style)))), isN);
+    // (claude/places2) a curated render tone on any other rendered house (buildingTypes.js renderToneStyle: style 3 / 4 +
+    // tone x 12 / 200): the render set's detail kept, its colour moved to the tone (white 3 / cream 4 as the base)
+    const isRT = float(1).sub(isN).sub(isCW).mul(step(0.5, tcode)).mul(step(2.5, style)).mul(float(1).sub(step(4.5, style)));
+    col = mix(col, col.mul(tone6.div(mix(C(0.62, 0.6, 0.55), C(0.56, 0.47, 0.32), step(3.5, style)))), isRT);
   }
   // ---- BLIND PARTY WALLS (owner playtest 2026-11-14: "they look empty"). A Brussels gable left bare above a lower
   // neighbour is never a clean sheet: it keeps the GHOST of an older, taller neighbour (the pitched outline of its roof

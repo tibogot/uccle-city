@@ -32,6 +32,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { bridgeDescriptors, deckHeight, inRing, ringPlans, deckSoffitCap, deckFootprint } = await imp("viewer/streets/bridgeDecks.js");
 const { heroFrame, heroBridgeNames, prepRail } = await imp("viewer/rail/railData.js");
+const { applyRoadOverrides } = await imp("viewer/roadBuild.js");   // (claude/chenaie) the roads as the worker has them: bridgeWidths
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
@@ -70,6 +71,7 @@ const plansOf = (roads, T) => (OLD ? ov.bridgePlans : ringPlans(ov.bridgePlans, 
 const decks = new Map();
 for (const t of tiles) {
   const roads = json(`data/tiles/${t.name}/roads.json`);
+  applyRoadOverrides(roads, ov);
   for (const d of bridgeDescriptors(roads, ground, plansOf(roads, t.name), OLD ? null : ov.bridgeProfiles)) {
     if (decks.has(d.id)) continue;
     // the tile holding the deck's middle draws it (tileData.js ownDeck: a road clipped by another tile's buffer, Avenue

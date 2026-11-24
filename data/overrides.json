@@ -829,8 +829,24 @@
     "31302810": {"name": "Rue du Bourdon - Horzelstraat", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [-1200.7, 2235.44, 69.45, -1201.24, 2233.57, 69.51, -1201.77, 2231.69, 69.55, -1202.31, 2229.82, 69.55, -1202.85, 2227.95, 69.55, -1203.38, 2226.07, 69.55, -1203.92, 2224.2, 69.55, -1204.46, 2222.32, 69.55, -1204.99, 2220.45, 69.54, -1205.53, 2218.58, 69.54, -1206.06, 2216.7, 69.54, -1206.6, 2214.83, 69.55, -1207.14, 2212.96, 69.55, -1207.67, 2211.08, 69.52, -1208.21, 2209.21, 69.47]},
     "35036093": {"name": "Chaussée de Waterloo - Waterloosesteenweg", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [1736.43, 308.44, 82.45, 1735.42, 310.09, 82.4, 1734.42, 311.73, 82.35, 1733.41, 313.38, 82.29, 1732.41, 315.02, 82.22, 1731.4, 316.67, 82.14, 1730.4, 318.31, 82.05, 1729.39, 319.96, 81.98, 1728.39, 321.6, 81.91, 1727.38, 323.25, 81.84, 1726.38, 324.89, 81.77, 1725.37, 326.54, 81.71]}
   },
+  "bridgeWidths": {
+    "_doc": "band decks' measured widths (tools/bridges/deckWidths.mjs, rule deck-width-drawn): deck = the outer width from the UrbIS road-bridge outline, carr = the carriageway kerb to kerb from the street model (on the bridge road, else its measured approaches), m. viewer/roadBuild.js applyRoadOverrides gives the bridge road a lane stack of these widths; the deck follows it (?deckwidth=old: the 12 m lane-less deck)",
+    "1002735646": {"name":"Avenue des Hospices - Godshuizenlaan","carr":7.13,"src":"carr: street model kerbs (M/D), on the bridge road, median of 38"},
+    "1002735650": {"name":"","carr":7.36,"src":"carr: street model kerbs (M/D), on the bridge road, median of 5"},
+    "185310974": {"name":"Avenue des Tilleuls - Lindenlaan","deck":11.05,"carr":7.06,"src":"deck: UrbIS road bridge 864 outline, median width across the line; carr: street model kerbs (M/D), the approaches within 12 m of its ends, median of 8"},
+    "185310976": {"name":"Avenue des Tilleuls - Lindenlaan","deck":11.69,"src":"deck: UrbIS road bridge 939 outline, median width across the line"},
+    "28030785": {"name":"Avenue de la Chênaie - Eikenboslaan","deck":5.03,"carr":3.32,"src":"deck: UrbIS road bridge 899 outline, median width across the line; carr: street model kerbs (M/D), on the bridge road, median of 4"},
+    "29872629": {"name":"Rue du Merlo - Merlostraat","deck":9.25,"carr":5.55,"src":"deck: UrbIS road bridge 833 outline, median width across the line; carr: street model kerbs (M/D), on the bridge road, median of 3"},
+    "31302810": {"name":"Rue du Bourdon - Horzelstraat","carr":8.23,"src":"carr: street model kerbs (M/D), the approaches within 12 m of its ends, median of 13"}
+  },
+  "bridgeLooks": {
+    "_doc": "OSM band road bridges' parapet style, keyed by OSM way (viewer/streets/bridgeDecks.js parapetStyle / deckMesh; rule deck-width-drawn, claude/chenaie): parapet = concrete (the default, also for a way not listed) | brick (red brick walls under a blue-stone coping). Same outline and colliders either way; ?bridgelook=old: vertex colours, concrete.",
+    "28030785": {"name": "Avenue de la Chênaie - Eikenboslaan", "parapet": "brick", "why": "the bridge over L26 is a narrow cobbled lane between ~1 m red-brick parapets with a stone coping (claude/places2 Street View check, look only)"}
+  },
   "buildingLooks": {
     "_doc": "UrbIS solid id -> { style (facades.js wall styles: 0 red brick, 1 brown, 2 yellow, 3 white render, 4 cream, 5 grey), roofColor (linear rgb; red-orange = clay tiles), bayScale [s, nx, nz] (the face facing (nx, nz) lays its painted window grid out in u x s: a narrow front with more windows than the 2.6 m bays give; facadeGeom.js) }: the looks a local recognises, each checked on Street View (look only). ?looks=old: none. type (viewer/buildingTypes.js TYPE: 0 generic, 1 maison de maitre, 2 art deco / modernist, 3 bel-etage, 4 block, 5 villa), garage false (no garage door), true (a garage door the classifier did not give). cortenbosch2 (docs/CORTENBOSCH2.md): type 6 = the 1990s house { tone buff|salmon|cream|orange|brown, frame white|brown|anthracite, fascia cream|stained|fibre }, type 7 = the glass curtain wall { grid burgundy|anthracite|silver|green, spandrel glass|metal|grey }; roofTile 'concrete' (interlocking concrete tiles, any type); v2: fields over the entry under round 2 (?cortenbosch2=old: without them); set 'cortenbosch2': only with round 2.",
+    "532108": {"_name": "Le Pigeon Noir, Rue Geleytsbeek 2 / Avenue de la Chênaie (claude/places2; Street View Apr 2024, look only): a warm ochre-mustard painted render over a dark grey plinth, dark window frames; the generated look was a pale cream / random wall. Rule curated-render-tone", "set": "places2", "style": 4, "tone": "mustard"},
+    "533351": {"_name": "Rue Geleytsbeek 4, Le Pigeon Noir's west neighbour (claude/places2; Street View Apr 2024, look only): white-painted render", "set": "places2", "style": 3},
     "533271": {"_name": "Chemin privé 't Cortenbosch (the 1990s part), north side by the east end: pale cream-white brick, a dark-stained timber upper band under the eaves, a detached house (Street View Apr 2024); roof keeps its orthophoto colour; type 0 (the generic grid, a two-step eaves moulding): the villa type would add a cottage's half-timbering, the façade system has no 1990s house yet", "set": "cortenbosch", "style": 3, "type": 0, "v2": {"_why": "the 1990s house type (6): pale cream-white face brick, dark-stained timber under the eaves (round 1; not seen again) (Street View Apr 2024, look only, 2026-11-17; round 2, docs/CORTENBOSCH2.md, ?cortenbosch2=old: round 1)", "type": 6, "tone": "cream", "frame": "white", "fascia": "stained", "roofTile": "concrete"}},
     "533330": {"_name": "Chemin privé 't Cortenbosch, north side: pale cream brick, white shutters, a detached house (Street View Apr 2024); roof keeps its orthophoto colour; type 0 (the generic grid, a two-step eaves moulding): the villa type would add a cottage's half-timbering, the façade system has no 1990s house yet", "set": "cortenbosch", "style": 4, "type": 0, "v2": {"_why": "the 1990s house type (6): buff-grey face brick, dark-stained horizontal timber cladding on the upper floor, anthracite frames (Street View Apr 2024, look only, 2026-11-17; round 2, docs/CORTENBOSCH2.md, ?cortenbosch2=old: round 1)", "type": 6, "tone": "buff", "frame": "anthracite", "fascia": "stained", "roofTile": "concrete"}},
     "537192": {"_name": "Chemin privé 't Cortenbosch, north side: pale cream brick, white shutters, a detached house (Street View Apr 2024); roof keeps its orthophoto colour; type 0 (the generic grid, a two-step eaves moulding): the villa type would add a cottage's half-timbering, the façade system has no 1990s house yet", "set": "cortenbosch", "style": 4, "type": 0, "v2": {"_why": "the 1990s house type (6): white render (cream brick ground floor not drawn), anthracite frames, varnished-timber soffits, the linked garages (Street View Apr 2024, look only, 2026-11-17; round 2, docs/CORTENBOSCH2.md, ?cortenbosch2=old: round 1)", "type": 6, "tone": "white", "frame": "anthracite", "fascia": "varnished", "garage": true, "roofTile": "concrete"}},
@@ -1082,6 +1098,8 @@
   },
   "gardenRestyle": {
     "_doc": "Polygons (city x, z) where the generated front-garden pieces (viewer/gardens/cityGardens.js: brick walls, railings, pillars, driveway gates) are what a local would NOT see: inside, every wall / railing run becomes a clipped hedge of `hedge` (gardenHedge.js species) `height` m high, set back off the street, the pillars and gates go (the driveways stay open). ?cortenbosch=old: none.",
+    "papenkasteel_hedge_north": {"set": "places2", "hedge": "beech", "height": 2.1, "width": 0.8, "why": "claude/places2: the Papenkasteel's grounds on Rue Papenkasteel are closed by a tall clipped beech / hornbeam hedge (~2.1 m) right behind the narrow verge, trees over it, broken only by the castle's street gate (white-render piers, black iron double gate: data/parkfence/papenkasteel.obs.json); the garden kit plans hedges for house fronts only and drew nothing on this frontage", "source": "Google Street View Apr 2024 (look only, 2026-11-23)", "line": [[-608.87,1115.3],[-608.38,1116.13],[-607.89,1116.95],[-607.39,1117.78],[-606.9,1118.61],[-606.41,1119.44],[-605.92,1120.26],[-605.42,1121.09],[-604.93,1121.92],[-604.44,1122.74],[-603.95,1123.57],[-603.45,1124.4],[-602.96,1125.22],[-602.47,1126.05],[-601.98,1126.88],[-601.49,1127.71],[-600.99,1128.53],[-600.5,1129.36],[-600.01,1130.19],[-599.52,1131.01],[-599.02,1131.84],[-598.53,1132.67],[-598.04,1133.5],[-597.55,1134.32],[-597.05,1135.15]]},
+    "papenkasteel_hedge_south": {"set": "places2", "hedge": "beech", "height": 2.1, "width": 0.8, "why": "claude/places2: the Papenkasteel's grounds on Rue Papenkasteel are closed by a tall clipped beech / hornbeam hedge (~2.1 m) right behind the narrow verge, trees over it, broken only by the castle's street gate (white-render piers, black iron double gate: data/parkfence/papenkasteel.obs.json); the garden kit plans hedges for house fronts only and drew nothing on this frontage", "source": "Google Street View Apr 2024 (look only, 2026-11-23)", "line": [[-594.29,1139.79],[-593.79,1140.63],[-593.29,1141.48],[-592.79,1142.32],[-592.28,1143.16],[-591.78,1144.01],[-591.28,1144.85],[-590.78,1145.69],[-590.28,1146.54],[-589.78,1147.38],[-589.27,1148.22],[-588.77,1149.07],[-588.27,1149.91],[-587.77,1150.75],[-587.27,1151.59],[-586.76,1152.44],[-586.26,1153.28]]},
     "cortenbosch_old_lane": {"hedge": "privet", "height": 1.6, "width": 0.7, "why": "Chemin privé 't Cortenbosch's old lane (setts, ~3 m, between n. 5 and Avenue du Lycée Français): green banks, overgrown hedges and conifers, a dark green metal railing, a few low white picket gates; no brick walls with pillars (the kit drew red-brick walls, white pillars and black iron gates)", "source": "Google Street View Apr 2024 (look only, 2026-11-16)", "ring": [[-345, 812], [-318, 812], [-240, 875], [-200, 940], [-188, 1018], [-205, 1027], [-236, 1000], [-266, 950], [-300, 895], [-345, 842]]},
     "cortenbosch_lane": {"hedge": "beech", "height": 1.4, "width": 0.6, "why": "Chemin privé 't Cortenbosch's 1990s part: every plot is closed by a clipped beech hedge (copper-brown leaves held all winter; a few ivy hedges), open driveways, no walls, no brick pillars, no iron gates (the kit drew red-brick walls, pillars and black gates)", "source": "Google Street View Apr 2024 (look only, 2026-11-16)", "ring": [[-205, 1020], [-200, 1052], [-160, 1074], [-100, 1042], [-52, 1012], [-58, 978], [-95, 976], [-150, 996], [-192, 1008]]}
   },
@@ -1106,5 +1124,94 @@
     "cortenbosch-49": {"at": [-159.6, 1042.2], "dir": [0.926, -0.378], "along": true, "lines": ["Private Weg", "Cortenbosch"], "L": 5.4, "h": 1.1, "gap": 0.2, "why": "the Chemin privé 't Cortenbosch: 'Private Weg' and 'Cortenbosch' in white mixed-case letters, two columns along the lane (the letters' tops to the left of the way in from Avenue du Lycée Français), by n. 49", "source": "Google Street View Apr 2024 (look only, 2026-11-17)"},
     "cortenbosch-50": {"at": [-122.4, 1023.1], "dir": [0.866, -0.5], "along": true, "lines": ["Private Weg", "Cortenbosch"], "L": 5.4, "h": 1.1, "gap": 0.2, "why": "the Chemin privé 't Cortenbosch: 'Private Weg' and 'Cortenbosch' in white mixed-case letters, two columns along the lane (the letters' tops to the left of the way in from Avenue du Lycée Français), by n. 50", "source": "Google Street View Apr 2024 (look only, 2026-11-17)"},
     "cortenbosch-54": {"at": [-98.6, 1007.1], "dir": [0.926, -0.377], "along": true, "lines": ["Private Weg", "Cortenbosch"], "L": 5.4, "h": 1.1, "gap": 0.2, "why": "the Chemin privé 't Cortenbosch: 'Private Weg' and 'Cortenbosch' in white mixed-case letters, two columns along the lane (the letters' tops to the left of the way in from Avenue du Lycée Français), by n. 54", "source": "Google Street View Apr 2024 (look only, 2026-11-17)"}
+  },
+  "playgrounds": {
+    "_doc": "(claude/places2) playground equipment from the park kit (viewer/playgroundCity.js, models/parkkit/playgroundkit) in the city: id -> { set (switch), why, source, osm, ring (the sand, city x / z), pieces: [[piece, x, z, yaw deg], ...] }, each piece inside its ring. ?places2=old: none.",
+    "chenaie": {
+      "set": "places2",
+      "osm": "way/1123841132",
+      "why": "owner playtest: 'the children's garden in front of Le Pigeon Noir'. Across Avenue de la Chênaie from the restaurant: a small public garden (OSM park 1123840941) behind an angled parking row on setts and a low clipped hedge: a sand playground (OSM 1123841132, surface sand) with natural timber play frames (log climbing frames with rope nets, a balance frame, a small timber tower), a lawn, a gravel path, park benches and bins, young globe-crowned trees, a lamp post, two boules pitches to the south. Not a fenced kindergarten: the garden is open. The city drew the sand and the benches but no equipment (the playground kit was only in the lab). Drawn with the kit's closest pieces: a timber climbing frame, a log-frame swing, a sandpit, a seesaw",
+      "source": "Google Street View Apr 2024 from Avenue de la Chênaie 5 (look only, 2026-11-23)",
+      "ring": [
+        [
+          -73.4,
+          756
+        ],
+        [
+          -75.6,
+          757.7
+        ],
+        [
+          -75.9,
+          758.3
+        ],
+        [
+          -74.6,
+          765.5
+        ],
+        [
+          -72.7,
+          767.5
+        ],
+        [
+          -68.2,
+          768.4
+        ],
+        [
+          -65.8,
+          766.7
+        ],
+        [
+          -62.5,
+          766.8
+        ],
+        [
+          -60.4,
+          765
+        ],
+        [
+          -60,
+          763.4
+        ],
+        [
+          -60.9,
+          758.1
+        ],
+        [
+          -61.6,
+          757.6
+        ],
+        [
+          -71.8,
+          755.9
+        ]
+      ],
+      "pieces": [
+        [
+          "pg_climb",
+          -71.5,
+          760.5,
+          0
+        ],
+        [
+          "pg_swing",
+          -65.5,
+          759.6,
+          0
+        ],
+        [
+          "pg_seesaw",
+          -64,
+          764.3,
+          0
+        ],
+        [
+          "pg_sandpit",
+          -70,
+          764.9,
+          0
+        ]
+      ]
+    }
   }
 }

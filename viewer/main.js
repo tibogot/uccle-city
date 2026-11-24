@@ -30,6 +30,7 @@ import { addStPierre } from "./stpierreCity.js";
 import { addRussian } from "./russianCity.js";
 import { addHeros } from "./heros/herosCity.js";
 import { addPublicArt } from "./publicart/artCity.js";
+import { addPlaygrounds } from "./playgroundCity.js";   // claude/places2: the playground kit in the city
 import { addChristmas, xmasActive } from "./christmas/xmasCity.js";
 import { addRosaire } from "./rosaireCity.js";
 import { addObservatory } from "./observatoryCity.js";
@@ -461,8 +462,10 @@ function deckMaterials() {
   if (deckLookMats) return deckLookMats;
   const conc = libMaterial("concrete_white", { mapping: "world" });
   const steel = new THREE.MeshStandardNodeMaterial({ color: 0x1c1f22, roughness: 0.45, metalness: 0.6 });
-  deckLookMats = [asphaltMaterial(null), concreteMaterial(), concreteMaterial(), conc, steel];
-  deckLookMats.forEach((m, i) => { m.userData.shared = true; m.name = `road-bridge-deck ${["asphalt", "paving", "kerb", "concrete", "steel"][i]}`; });
+  // (claude/chenaie) + a band deck's brick parapet and blue-stone coping (bridgeLooks parapet "brick": Avenue de la Chênaie)
+  const brick = libMaterial("brick_red_brussels", { mapping: "world" }), stone = libMaterial("stone_blue", { mapping: "world" });
+  deckLookMats = [asphaltMaterial(null), concreteMaterial(), concreteMaterial(), conc, steel, brick, stone];
+  deckLookMats.forEach((m, i) => { m.userData.shared = true; m.name = `road-bridge-deck ${["asphalt", "paving", "kerb", "concrete", "steel", "brick", "stone"][i]}`; });
   return deckLookMats;
 }
 function bridgeDeckMesh(bd) {
@@ -762,6 +765,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
                                                           // the façade kit's storeys fitted to each face's height (docs/STOREYS.md), ?storeys=old = the fixed 3.4 / 3.0 m storeys
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
     carrefour: params.get("carrefour") !== "old",                                                  // claude/carrefour: the Carrefour Market's retail-box look (buildingLooks set "carrefour"), ?carrefour=old = the generated block
+    places2: params.get("places2") !== "old",                                                      // claude/places2: Le Pigeon Noir's ochre-mustard render + its white neighbour (buildingLooks set "places2"), ?places2=old = the generated look
     cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2, vivier: VIVIER,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
     roadBend: params.get("roadbend") !== "old",                                                    // curvedroads: the engine strips trimmed at bends tighter than the road is wide (viewer/streets/roadBends.js, docs/roads/BENDS.md), ?roadbend=old = folded as built
     roadLines: params.get("roadlines") !== "old",                                                  // markings (census F, rule 33): the lane strips + their lines on the measured carriageway, clipped off sidewalks (viewer/streets/lineFit.js), ?roadlines=old = as the median width fit put them
@@ -775,7 +779,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", railT: RAIL_T, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
-    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", bridgeProf: params.get("bridgeprof") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", movGround: params.get("movground") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", bridgeProf: params.get("bridgeprof") !== "old", deckWidth: params.get("deckwidth") !== "old", bridgeLook: params.get("bridgelook") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", movGround: params.get("movground") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
     deckLanes: params.get("decklanes") !== "old",                                                    // claude/drivecheck round 2: the traffic lanes over a hero road deck held clear of its parapets (rail/roadDeck.js squeezeDeckLanes), ?decklanes=old = as before
@@ -1131,7 +1135,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     const v = (k) => { const dl = gDelta[k]; return hm.y[k] + (dl > 0 && dl !== 65535 ? dl * 0.01 : 0); };
     return Math.max(hm.surface(x, z), (v(i) * (1 - fc) + v(i + 1) * fc) * (1 - fr) + (v(i + h.cols) * (1 - fc) + v(i + h.cols + 1) * fc) * fr);
   };
-  const gardenCounts = await (GARDEN_SLICE ? cityGardens.addTileSliced : cityGardens.addTile).call(cityGardens, entry.name, await gardensP, own.features, gardenGround, (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z), CORTENBOSCH ? (await loadOverrides(DATA)).gardenRestyle : null);   // (cortenbosch: the lane's beech hedges, gardenRestyle)
+  // (claude/places2) the restyles by switch: the Cortenbosch pass's (no set) with ?cortenbosch, set "places2" with ?places2
+  const restyleFor = (rs) => rs && Object.fromEntries(Object.entries(rs).filter(([k, v]) => k.startsWith("_") || (v?.set === "places2" ? params.get("places2") !== "old" : CORTENBOSCH)));
+  const gardenCounts = await (GARDEN_SLICE ? cityGardens.addTileSliced : cityGardens.addTile).call(cityGardens, entry.name, await gardensP, own.features, gardenGround, (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z), restyleFor((await loadOverrides(DATA)).gardenRestyle));   // (cortenbosch: the lane's beech hedges, gardenRestyle; claude/places2: the Papenkasteel's hedge, set places2)
   await split("gardens");
   // (cortenbosch) the Lycée Français's front: railing, gate, flag poles, lettering (viewer/lyceeFront.js; tile F7)
   const lycee = CORTENBOSCH ? lyceeFront.tile(entry.name, own.features, (x, z) => hm.surface(x, z)) : null;
@@ -1550,6 +1556,9 @@ async function main() {
   // the public art kit (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md): the Dix Monolithes, La Victoire, the Gobert
   // memorial, the milestones and the Charles V stones; ?art=old = the city without them (the monoliths' UrbIS boxes back)
   if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
+  // (claude/places2) the park kit's playground pieces in the city's playgrounds (viewer/playgroundCity.js, data/overrides.json
+  // playgrounds: the Chênaie garden in front of Le Pigeon Noir); in the background; ?places2=old = none
+  if (params.get("places2") !== "old") heroes.push(() => { loadOverrides(DATA).then((ov) => addPlaygrounds({ scene, updaters, world, manifest, log, compiler: heroCompiler, overrides: ov, params })).catch((e) => log(`playgrounds failed (${e.message}): reload with ?places2=old`)); });
   // the Christmas layer (viewer/christmas/, docs/CHRISTMAS.md): 1 Dec - 6 Jan (the real date or ?day=), ?xmas=1 on, ?xmas=0 off:
   // the firs on Place de Saint-Job and the Parvis Saint-Pierre, garlands across the shopping streets, shopfront swags,
   // door wreaths, lamp-post snowflakes; emissive only (no light added). Loads in the background (does not hold the boot)

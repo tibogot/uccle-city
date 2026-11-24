@@ -19,9 +19,20 @@
 // S  (claude/carrefour, rule curated-shed-look) every look with shed: true names its place (_name) and a set with a switch
 //    (the Carrefour: set carrefour, ?carrefour=old); the Carrefour Market by Square Marlow: its box (529267) is a shed,
 //    its front says Carrefour, has the glazing (w >= 12) and the canopy, its car park (carrefour_lot) has its 3 bay rows
+// M  (claude/places2) every OSM point MOVED with an address (extra_pois.json _moves + tags addr:street) is placed on a
+//    face of that street: a corner shop opens on its own street (Le Pigeon Noir, Rue Geleytsbeek 2: the build put its front
+//    on the Avenue de la Chênaie gable, the nearest wall to OSM's point, which has no address); Le Pigeon Noir on
+//    building 1713722's Rue Geleytsbeek face, its curated awning saying LE PIGEON NOIR
+// R  (claude/places2, rule curated-render-tone) every look with a render tone: a rendered style (3 / 4), a render tone
+//    (buildingTypes.js NINETIES.tones from "ochre" on), a _name and a set (its switch); renderToneStyle puts it in the
+//    style's fraction; Le Pigeon Noir's house (532108) mustard, set places2
+// P  (claude/places2) every playground (data/overrides.json playgrounds: the park kit's pieces in the city,
+//    viewer/playgroundCity.js): a set, a why, a source, a ring; every piece in the kit (models/parkkit/playgroundkit.json)
+//    and its whole footprint (the kit's size, turned by its yaw) inside its ring (0.3 m slack) and in no building; the
+//    Chênaie garden in front of Le Pigeon Noir with >= 3 pieces
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const QUIET = process.argv.includes("--quiet");
@@ -128,6 +139,67 @@ if (!/Carrefour/.test([].concat(cm?.sign ?? [], ...(cm?.plaques || []).map((p) =
 if (!(cm?.w >= 12) || !cm?.canopy) fail("S osm:n255033292: not the supermarket's glazed run (w >= 12) under its canopy");
 const cl = grounds.find((g) => g.id === "carrefour_lot");
 if (!cl || cl.switch !== "?carrefour=old" || (cl.marks || []).filter((m) => m.kind === "bays").length !== 3) fail("S carrefour_lot: missing, not on ?carrefour=old, or not its 3 bay rows");
+
+// ---- M: moved OSM points with an address, on their street (claude/places2)
+let moved = 0;
+for (const e of extra) {
+  if (!e._moves || !e.tags?.["addr:street"]) continue;
+  moved++;
+  const id = `osm:n${String(e._moves).replace(/^n/, "")}`, want = e.tags["addr:street"].split(" - ")[0];
+  let poi = null;
+  for (const t of manifest.tiles) { poi = (slOf(t.name)?.pois || []).find((q) => q.id === id); if (poi) break; }
+  if (!e._source) fail(`M moved ${id}: no _source`);
+  if (!poi?.face) { fail(`M moved ${id}: not placed on a face (run tools/streetlife/build_streetlife.py <T> --pois-only)`); continue; }
+  if (!String(poi.face.street || "").startsWith(want)) fail(`M moved ${id} (${poi.name}): its front is on ${poi.face.street}, not on its address street ${want}`);
+}
+{
+  let pn = null;
+  for (const t of manifest.tiles) { pn = (slOf(t.name)?.pois || []).find((q) => q.id === "osm:n4388790239"); if (pn) break; }
+  if (!pn?.face || !/^Rue Geleytsbeek/.test(pn.face.street || "") || !/1713722$/.test(pn.face.bu || "")) fail(`M Le Pigeon Noir (osm:n4388790239): not on building 1713722's Rue Geleytsbeek face (${pn?.face?.street} ${pn?.face?.bu})`);
+  const pf = cur["osm:n4388790239"]?.front;
+  if (!pf?.awning || !/LE PIGEON NOIR/.test(pf.valance || "")) fail("M osm:n4388790239: the curated front has no awning saying LE PIGEON NOIR");
+}
+say(`ok   M ${moved} moved OSM points with an address on their street`);
+
+// ---- R: render tones (claude/places2, rule curated-render-tone)
+const { renderToneStyle, NINETIES } = await import(pathToFileURL(join(ROOT, "viewer/buildingTypes.js")).href);
+let toned = 0;
+for (const [id, v] of Object.entries(looks)) {
+  if (!v || typeof v !== "object" || !v.tone || v.type === 6 || v.v2?.type === 6) continue;
+  toned++;
+  if (v.style !== 3 && v.style !== 4) fail(`R buildingLooks ${id}: a render tone on style ${v.style} (only the renders 3 / 4 take one)`);
+  if (NINETIES.tones.indexOf(v.tone) < 5) fail(`R buildingLooks ${id}: tone ${v.tone} is not a render tone (${NINETIES.tones.slice(5).join(" / ")})`);
+  if (!v._name || !v.set) fail(`R buildingLooks ${id}: a render tone without its _name / set (switch)`);
+  const s2 = renderToneStyle(v.style, v.type ?? 0, v);
+  if (!(s2 > v.style && s2 < v.style + 0.5)) fail(`R buildingLooks ${id}: renderToneStyle gives ${s2} (no tone in the style's fraction)`);
+}
+if (looks["532108"]?.tone !== "mustard" || looks["532108"]?.set !== "places2") fail("R buildingLooks 532108 (Le Pigeon Noir): not the mustard render tone of set places2");
+say(`ok   R ${toned} render-toned looks`);
+
+// ---- P: playgrounds (claude/places2)
+{
+  const pgs = Object.entries(ov.playgrounds || {}).filter(([k]) => !k.startsWith("_"));
+  const kitP = json("models/parkkit/playgroundkit.json").pieces;
+  let nP = 0;
+  for (const [id, g] of pgs) {
+    for (const k of ["set", "why", "source"]) if (!g[k]) fail(`P playground ${id}: no ${k}`);
+    if (!(g.ring?.length >= 3)) { fail(`P playground ${id}: no ring`); continue; }
+    for (const [piece, x, z, deg] of g.pieces || []) {
+      nP++;
+      const sz = kitP[piece]?.size_m;
+      if (!sz) { fail(`P playground ${id}: no piece ${piece} in the kit`); continue; }
+      const a = (deg * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a), hx = sz[0] / 2, hz = sz[1] / 2;
+      for (const [u, v] of [[-hx, -hz], [hx, -hz], [hx, hz], [-hx, hz], [0, 0]]) {
+        const px = x + u * c + v * sn, pz = z - u * sn + v * c;
+        if (!inRing(g.ring, px, pz) && ringD(g.ring, px, pz) > 0.3) { fail(`P playground ${id}: ${piece} at (${x}, ${z}) runs out of its ring at (${px.toFixed(1)}, ${pz.toFixed(1)})`); break; }
+        const T = tileOf(px, pz);
+        if (T && feet(T).some((r) => inRing(r, px, pz))) { fail(`P playground ${id}: ${piece} in a building at (${px.toFixed(1)}, ${pz.toFixed(1)})`); break; }
+      }
+    }
+  }
+  if (!((ov.playgrounds?.chenaie?.pieces?.length ?? 0) >= 3) || ov.playgrounds?.chenaie?.set !== "places2") fail("P playground chenaie (in front of Le Pigeon Noir): missing, < 3 pieces or not set places2");
+  say(`ok   P ${pgs.length} playgrounds, ${nP} pieces inside their rings`);
+}
 
 console.log(fails ? `CURATED PLACES: FAIL (${fails})` : `CURATED PLACES: PASS (${extra.length} extra POIs placed, ${grounds.length} hard grounds clear of buildings)`);
 process.exit(fails ? 1 : 0);
