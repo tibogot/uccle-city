@@ -1,0 +1,95 @@
+{
+ "about": "SUN SHADOW STEP views (claude/sunstep, docs/rules/sun-shadow-step.md): the tour view far-300m (golden) with the sun shadow far plane sized by the sun (default), as before (sunfar=old) and with far 2000 m (shadowfar=old: the true shadows past the old far plane); plus Saint-Job at a low sun.",
+ "common": {
+  "quick": "1",
+  "quality": "native",
+  "rscale": "1",
+  "dynres": "0",
+  "still": "1",
+  "xmas": "0",
+  "time": "golden"
+ },
+ "size": [
+  1280,
+  720
+ ],
+ "settle": {
+  "minFrames": 60,
+  "minMs": 2000,
+  "maxMs": 15000,
+  "exposureTol": 0.004,
+  "tslTime": 12.5
+ },
+ "readyLimitMs": 150000,
+ "thresholds": {
+  "pixel": 24,
+  "pixels": 0.5,
+  "cell": 10,
+  "ssim": 0.985
+ },
+ "views": [
+  {
+   "id": "far-300m",
+   "what": "default",
+   "q": {
+    "at": "1500,900,300",
+    "look": "700,250,0",
+    "radius": "300",
+    "far": "2"
+   }
+  },
+  {
+   "id": "far-300m-sunfarold",
+   "what": "as before",
+   "q": {
+    "at": "1500,900,300",
+    "look": "700,250,0",
+    "radius": "300",
+    "far": "2",
+    "sunfar": "old"
+   }
+  },
+  {
+   "id": "far-300m-shadowfarold",
+   "what": "far 2000 m",
+   "q": {
+    "at": "1500,900,300",
+    "look": "700,250,0",
+    "radius": "300",
+    "far": "2",
+    "shadowfar": "old"
+   }
+  },
+  {
+   "id": "far-300m-sunstepold",
+   "what": "both old",
+   "q": {
+    "at": "1500,900,300",
+    "look": "700,250,0",
+    "radius": "300",
+    "far": "2",
+    "sunstep": "old",
+    "sunfar": "old"
+   }
+  },
+  {
+   "id": "stjob-60m",
+   "what": "Saint-Job from 60 m: roofs, the church, the square, gardens",
+   "q": {
+    "at": "1110,640,60",
+    "look": "1190,560",
+    "radius": "350"
+   }
+  },
+  {
+   "id": "stjob-60m-sunfarold",
+   "what": "as before",
+   "q": {
+    "at": "1110,640,60",
+    "look": "1190,560",
+    "radius": "350",
+    "sunfar": "old"
+   }
+  }
+ ]
+}
