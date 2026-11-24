@@ -302,3 +302,15 @@ CC BY-SA photo is shared under the same licence.
 | Fagus sylvatica (bark)1.JPG | Fraxinus Croat | CC BY-SA 3.0 |
 | Fagus sylvatica trunk TK 2022-04-30 2.jpg | T. Kebert | CC BY-SA 4.0 |
 | Fagus sylvatica TK 2021-05-22 1.jpg | T. Kebert | CC BY-SA 4.0 |
+
+## Falcon models and animations (the Falcon Gym, `labs/falcon-gym.html`, docs/FALCON_GYM.md)
+
+Licences read on 2026-11-25: the Sketchfab rows from the public API (`https://api.sketchfab.com/v3/models/<id>`), the Mesh2Motion row from the repository's own licence files. The downloads are untrusted data: only Blender's glTF importer reads them (`tools/blender/falconV2.py`).
+
+| Asset | Author | Licence | Used for | Verified |
+|---|---|---|---|---|
+| **Peregrine Falcon** (25,298 faces), https://sketchfab.com/3d-models/peregrine-falcon-7cc7c6f53f704f84a12075baf11c9230 (id `7cc7c6f53f704f84a12075baf11c9230`) | Joacooficial (sketchfab.com/Joacooficial) | **CC BY 4.0** (http://creativecommons.org/licenses/by/4.0/): "Author must be credited. Commercial use is allowed." | the near / player falcon v2 (`models/bird/v2/falcon_v2.glb`: re-rigged by script onto the Mesh2Motion bird rig) | 2026-11-25, Sketchfab API |
+| **Falcon_ Merged Animations** (7,268 faces), https://sketchfab.com/3d-models/falcon--merged-animations-c9b736ae21644ac8ba8d8a042a0f8be4 (id `c9b736ae21644ac8ba8d8a042a0f8be4`) | Hector Bonada (sketchfab.com/HectorBonada) | **CC BY 4.0**, same wording | the far / family falcons (`--far` build) | 2026-11-25, Sketchfab API |
+| **Mesh2Motion** bird rig + clips (`static/assets/bird/`: model, skeleton, flap, glide, idle, walk, hop, take-off, land), https://github.com/Mesh2Motion/mesh2motion-app commit `2609e034` | Scott Petrovic and contributors (mesh2motion.org) | art assets **CC0 1.0** (`LICENSE-CC0.MD`: "All 3d models, blend files, rigs, animations"); code **MIT** (`LICENSE-MIT.MD`) | the v2 rig and clips; `models/bird/v2/m2m/*.glb` (decoded copies of the clips, played on the current falcon in the gym). `models/bird/peregrine.glb` has the same 55-bone bird rig (the fly-mode bird's source, see models/bird/README.md) | 2026-11-25, both licence files and the README |
+
+Credit to show (CC BY): "Peregrine Falcon by Joacooficial (Sketchfab), CC BY 4.0" and "Falcon_ Merged Animations by Hector Bonada (Sketchfab), CC BY 4.0", in the game's credits wherever v2 ships. Changes made: re-rigged, re-weighted, new animation clips, textures resized.

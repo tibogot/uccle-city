@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Falcon Gym</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8e9aa6; font: 13px/1.4 system-ui, sans-serif; }
+  canvas { display: block; }
+  #title { position: fixed; left: 10px; top: 10px; padding: 6px 10px; border-radius: 6px; background: rgba(20, 24, 30, .72); color: #e6e9ee; z-index: 2; max-width: calc(100vw - 380px); }
+  #title a { color: #9cc4ff; }
+  #hud { position: fixed; left: 10px; bottom: 10px; padding: 8px 10px; border-radius: 6px; background: rgba(20, 24, 30, .72); color: #e6e9ee;
+         font: 12px/1.35 ui-monospace, monospace; z-index: 2; white-space: pre; min-width: 300px; }
+  #speed { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); color: #fff; font: 700 30px/1 ui-monospace, monospace; text-shadow: 0 1px 6px rgba(0,0,0,.7); z-index: 2; text-align: center; pointer-events: none; }
+  #speed small { display: block; font: 600 13px/1.4 system-ui; opacity: .85; }
+  #hud .bar { display: inline-block; height: 8px; width: 120px; background: rgba(255,255,255,.15); border-radius: 4px; vertical-align: middle; overflow: hidden; }
+  #hud .bar i { display: block; height: 100%; background: #7fd18b; }
+  #msg { position: fixed; left: 50%; top: 16%; transform: translateX(-50%); color: #fff; font: 600 16px/1.4 system-ui; text-shadow: 0 1px 4px rgba(0,0,0,.7); z-index: 2; text-align: center; pointer-events: none; }
+  #help { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(20, 24, 30, .92); color: #e6e9ee; padding: 14px 18px; border-radius: 10px;
+          font: 13px/1.5 system-ui; z-index: 5; max-width: 600px; display: none; }
+  #help b { color: #9cc4ff; }
+  .ring { position: fixed; border: 2px solid rgba(255,255,255,.85); border-radius: 50%; pointer-events: none; z-index: 2; transform: translate(-50%, -50%); display: none; }
+  #aim { width: 26px; height: 26px; border-color: rgba(255, 255, 255, .6); }
+  #tgt { width: 34px; height: 34px; border-color: #6fe08a; }
+  #perch { width: 30px; height: 30px; border-style: dashed; border-color: #ffd36a; border-radius: 4px; }
+  #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font: 15px system-ui; background: #5c6873; z-index: 6; }
+  @media (max-width: 700px) { #title { max-width: calc(100vw - 32px); font-size: 12px; } #speed { font-size: 22px; } }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+    "three/src/": "https://cdn.jsdelivr.net/npm/three@0.187.0/src/",
+    "meshoptimizer/simplifier": "https://cdn.jsdelivr.net/npm/meshoptimizer@1.2.0/meshopt_simplifier.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="loading">loading the falcon gym…</div>
+<div id="title"><b>Falcon Gym</b> — a greybox under the city's sky: take off from the ground, the alley, the passage; perch on sills, railings, the tower; stoop from height on the pigeons · <b>H</b> help · <a href="./">all labs</a></div>
+<div id="hud"></div>
+<div id="speed"></div>
+<div id="msg"></div>
+<div id="aim" class="ring"></div><div id="tgt" class="ring"></div><div id="perch" class="ring"></div>
+<div id="help">
+<b>Gym controller</b> (the panel's "controller"; "current" = the city game's, to compare)<br>
+<b>Mouse</b> (click the view: pointer lock): point where to fly — the falcon banks and pitches there; leave the mouse and it levels out. Left button = power (hard wingbeats), right button = stoop<br>
+<b>Keys</b>: A / D turn · W / S nose down / up (on the ground: W walk, Shift + W hop) · <b>Space</b> power / climb (on the ground: take off) · <b>Shift</b> hold = stoop (tuck, dive where you point) · <b>C</b> half fold · <b>Q</b> flare (brake) · <b>F</b> hold = chase the pigeon in the ring (talons) · <b>E</b> land on the ledge / roof ahead · <b>V</b> camera · <b>R</b> reset · <b>H</b> this help<br><br>
+Take-off like a real falcon: room above → a jump and hard wingbeats, almost straight up out of the alley; a ledge → a drop off the edge; no room (the passage) → it walks or hops to where it can launch.
+Level hands-off: ~75 km/h (flap-flap-glide). Space level: ~110 km/h. Stoop from 300 m: 300+ km/h; the record 389 km/h is the ceiling.
+</div>
+<script type="module" src="./falcon-gym.js"></script>
+</body>
+</html>
