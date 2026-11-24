@@ -106,6 +106,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   - a real villa there (Street View, look only), modelled in Blender at the hero quality bar;
   - a big driveway gate that OPENS, which the player can drive through with the car into the grounds;
   - an awesome-looking house, maybe with an interior later.
+- [ ] FALCON FUN IDEAS (owner 2026-11-25: "keep them for later", controls + look + feel first, on claude/falconfun): the hunting loop (carry the catch to a plucking post / feed the chicks on the church, they grow and fledge), crows mobbing you (make you drop the pigeon), smart flocks (split the flock, pick the straggler), rising air (thermals over squares, wind up building fronts), a rival falcon over the church, dive challenges (Saint-Pierre spire, Observatory) with best scores, a cinematic catch replay.
 - [ ] VILLA V3 (owner 2026-11-24: "make the villa Prince d'Orange way better"): a new Street View comparison (look only), then a facade realism pass (stone/brick wear, roof detail, window depth, ironwork), richer grounds (garden, trees, lighting at night) and a richer interior; the owner's own list of what looks weak comes first. Heavy job (Blender): only when the owner is away.
 - [ ] GO (owner 2026-11-20): the street model plan (docs/STREET_MODEL_PLAN.md) and shops v2 (docs/SHOPS_V2_PLAN.md, "if confident") are approved.
 - [ ] LOOK: Neverness to Everness as the art reference (memory art-direction-nte): reference shots in data/raw/refs/nte/ (outside git); fine-tune, don't change the look.
