@@ -7,6 +7,7 @@
 import { QUICK, quickCamera, quickReady } from "./quick.js";   // FIRST of all: ?quick=1 rewrites the URL's switches before any module reads them (docs/QUICKTEST.md)
 import { soundGate } from "./audio/soundGate.js";   // FIRST: every AudioContext after it is gated (all sound off by default; ?sound=1)
 import { laneHits } from "./traffic/borderPark.js";   // trafpark: parked cars under a neighbour tile's lanes
+import { createCarProbe, CARPROBE_OFF } from "./carProbe.js";   // claude/cars1: the cars' reflection probe
 import * as THREE from "three/webgpu";
 import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs, uv, vec3,
@@ -896,7 +897,7 @@ function pumpBoot() {
 /** Far level of detail of a tile (tileData.js buildLiteData): orthophoto-draped 4 m terrain and
  *  flat-coloured UrbIS solids. 2 draw calls, no shadows, no per-frame work. */
 const texLoader = new THREE.TextureLoader();
-async function loadLiteTile(entry, group) {
+async function loadLiteTile(entry, group, { probe = false } = {}) {   // (probe: the cars' reflection probe's copy, viewer/carProbe.js: no trees, no main-view compile)
   const d = await tileData(entry, true);
   const g = new THREE.Group();
   g.name = `${entry.name}-lite`;
@@ -929,7 +930,7 @@ async function loadLiteTile(entry, group) {
   // its trees, as the full tile's impostors (the same placements and variants: no change when it swaps), so a
   // tile no longer brings a whole forest with it at ~500 m (smooth LOD; none with ?impostors=0)
   let trees = null;
-  if (SMOOTH && entry.files.features) {
+  if (SMOOTH && entry.files.features && !probe) {
     const f = await getJSON(entry.files.features).catch(() => null);
     const b = { x0: entry.bounds.x[0], x1: entry.bounds.x[1], z0: entry.bounds.z[0], z1: entry.bounds.z[1] };
     if (f?.trees) f.trees = await groundTreesClear(villaTreesClear(cityFuel.treesClear(f.trees)));   // as the full tile (viewer/fuel/cityFuel.js; the villa's built rings)
@@ -938,8 +939,8 @@ async function loadLiteTile(entry, group) {
       ? buildFarTreeField(f.trees, (x, z) => ys.get(`${x},${z}`), (x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) : null;
     if (trees) { g.add(trees.mesh); updaters.push(trees.update); }
   }
-  await preCompile(g, TILE_FADE);       // its shaders (and its fading copies') before its first frame
-  group.add(g);
+  if (!probe) await preCompile(g, TILE_FADE);       // its shaders (and its fading copies') before its first frame
+  if (group) group.add(g);
   // heap (docs/HEAP.md, ?litedrop=old): its terrain and solids are read by nothing on the CPU once uploaded
   if (LITE_DROP) { dropAfterUpload(g, { tag: "far", filter: (o) => o.name !== "far-trees" && o !== trees?.mesh }); }
   return {
@@ -1390,6 +1391,20 @@ async function main() {
   // --- perf4 end
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
   if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
+  // CARS LOOK (claude/cars1, docs/rules/car-look.md): the cars' reflection probe (viewer/carProbe.js): the sky AND the
+  // city round the player in every car's clear coat, from the far tiles' proxy, one cube face every 3 frames, made
+  // before any car material (packMaterial reads carEnv.node). OFF by default since round 2 (GPU p95 +1.8 ms): ?carprobe=1 on
+  if (!CARPROBE_OFF) {
+    const live = manifest.tiles.filter((t) => t.status !== "missing");
+    const near = (x, z, R) => live.filter((t) => Math.max(t.bounds.x[0] - x, x - t.bounds.x[1], 0) ** 2 + Math.max(t.bounds.z[0] - z, z - t.bounds.z[1], 0) ** 2 < R * R)
+      .sort((a, b) => Math.hypot((a.bounds.x[0] + a.bounds.x[1]) / 2 - x, (a.bounds.z[0] + a.bounds.z[1]) / 2 - z) - Math.hypot((b.bounds.x[0] + b.bounds.x[1]) / 2 - x, (b.bounds.z[0] + b.bounds.z[1]) / 2 - z));
+    const probe = createCarProbe({ renderer, scene, sky: () => scene.environment,
+      key: () => ({ dir: lighting.sunDir, color: lighting.keyColor }),
+      groundAt: (x, z) => (world.tiles.length ? world.surface(x, z) : NaN),
+      tiles: { near, load: (e) => loadLiteTile(e, null, { probe: true }).then((l) => ({ group: l.group, dispose: l.dispose })) } });
+    updaters.push(probe.update);
+    window.__carProbe = probe;
+  }
   if (!NIGHT) updaters.push(lampLightPool(scene));   // the city's lamp lights: ONE fixed pool for the session (light count never changes)
   else cityNight = nightMod.startCityNight({ scene, renderer, updaters, groundAt: (x, z) => world.surface(x, z), log, holding: NIGHT_HOLD ? () => playLoader.active : null });   // ?night=1: instead, the night pool + 2 shadowed lamps (fixed, before the warm-up)
   updaters.push(updateSignals);           // the signal heads' cycle (viewer/traffic/signals.js), shared with the traffic

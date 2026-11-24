@@ -53,10 +53,17 @@ export function shares(h, weekday, out = {}) {
   out.bin = weekday && h >= 6.5 && h < 11 ? 0.006 : weekday && h >= 13 && h < 15 ? 0.002 : 0;
   const cars = 1 - out.van_c - out.van_p - out.taxi - out.police_t - out.ambulance - out.fire - out.bin;
   out.hatch_s = cars * 0.21; out.hatch_c = cars * 0.23; out.estate = cars * 0.15; out.saloon = cars * 0.11; out.suv = cars * 0.30;
+  // (claude/cars1 round 2) the boxy 4x4 is PARKED only for now (TYPE_MIX 6 %): with it at 8 % (or 5 %) of the traffic's
+  // cars, trafmix seed 7 formed 19 (8) junction wait-for loops (ceiling 3) and two new stuck places at D6 / D7 (the
+  // known chaotic junctions); 0 % keeps them at 1. A traffic job turns it on (X4_TRAFFIC) once those junctions hold.
+  if (!X4_OLD && X4_TRAFFIC) { out.suv = cars * (0.30 - X4_TRAFFIC); out.x4 = cars * X4_TRAFFIC; }
   return out;
 }
 /** the place: patrols x6 within 700 m of the station; fire engines only within 3 km of the fire station; ambulances and
  *  fire engines on main roads (rank >= 2) x2, elsewhere x0.3; bin lorries never on boulevards (rank >= 4) */
+const X4_OLD = typeof location !== "undefined" && /[?&]carlook=old(&|$)/.test(location.search);
+/** the 4x4's share of the traffic's cars: 0 (parked only) until the D6 / D7 junctions hold it (see shares) */
+export const X4_TRAFFIC = 0;
 export function placeBoost(name, x, z, rank) {
   switch (name) {
     case "police_t": return (x - STATION.x) ** 2 + (z - STATION.z) ** 2 < 700 * 700 ? 6 : 1;

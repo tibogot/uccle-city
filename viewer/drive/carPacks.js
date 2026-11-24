@@ -14,6 +14,7 @@ import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodMesh, lodOpts, partLevel } from "./carLod.js";
 import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 import { DENT_OLD, dentFrame, frameRows, dentNodes, shadeDent } from "./carDent.js";   // claude/dent: dents without holes
+import { carEnv, CARLOOK_OLD } from "../carProbe.js";   // claude/cars1: the cars' reflection probe + the new paint
 
 // ?vfix2=old: the traffic's light bits decoded as before round 2 of the visual fixes (A/B)
 const CARLIGHTS_OLD = typeof location !== "undefined" && /[?&](carlights|polish1)=old(&|$)/.test(location.search);   // polish1 item 6
@@ -35,7 +36,8 @@ export const PACK_SOURCES = {
   // ours, round 2 (docs/CARS2.md): tools/blender/cars2.py, smooth lofted bodies at real proportions, Cycles AO, AUTHORED
   // LODs in the GLB (Body / Wheel_* = LOD0 ~7.5-9k tris, *_L1 = LOD1 ~1.5-2.1k, *_L2 = LOD2 ~350). The fleets keep their
   // four levels (levels 0-1 the near material, 2-3 the far one, level 3 casts no shadow); `src` = the authored LOD drawn
-  cars2: { label: "Cars 2 (cars2.py)", url: new URL("../../models/cars/cars2.glb", import.meta.url).href, credit: "uccle-city, scripted",
+  // (claude/cars1: ?carlook=old loads the GLB as before CARS LOOK round 1, models/cars/cars2_r0.glb: the A/B)
+  cars2: { label: "Cars 2 (cars2.py)", url: new URL(CARLOOK_OLD ? "../../models/cars/cars2_r0.glb" : "../../models/cars/cars2.glb", import.meta.url).href, credit: "uccle-city, scripted",
     rich: true, authored: true,
     lods: [{ src: 0, until: 30 }, { src: 1, until: 60 }, { src: 1, until: 130 }, { src: 2, until: 600 }] },
 };
@@ -113,7 +115,7 @@ function lodGeometry(g, o) {
 
 /** Live look switches for every pack material: glass = multiplier on the glass colour (Kenney's windows are pale
  *  blue-white swatches: 1 = as designed, ~0.12 = tinted dark like the city's real cars). */
-export const packLook = { glass: uniform(1), glassOpacity: uniform(0.76), clearcoat: uniform(0.7),
+export const packLook = { glass: uniform(1), glassOpacity: uniform(0.76), clearcoat: uniform(CARLOOK_OLD ? 0.7 : 1),
   // the traffic's lamp strengths (packMaterial motion path; docs/VISUAL_FIXES.md round 2): brake, night tail, reversing,
   // indicators (?vfix2=old: 5 / 1.2 / 4 / 6)
   brake: uniform(0.35), tailNight: uniform(0.4), reversing: uniform(1.8), indicator: uniform(0.5),
@@ -183,6 +185,9 @@ export const GLASS_PASS = UPSCALED && !CARGLASS2_OLD;
  *  the player's car (no glass pass for single meshes); ?carglass2=old: stochastic as before */
 export const standingSeeThrough = (rich) => !!rich && !GLASS_PASS;
 const GLASS = 4;
+/** ?carssr=1 (claude/cars1, the SSR-on-paint A/B): the paint keeps a little metalness, so the post chain's SSR (its mask
+ *  is the metalness) lands on it as an extra layer over the probe, as before the new look */
+const CARSSR = typeof location !== "undefined" && /[?&]carssr=1(&|$)/.test(location.search);
 /** the glass-only part of a car geometry: every triangle with a glass vertex (the material's per-fragment kind test
  *  splits the mixed ones exactly like the opaque material's), its vertices compacted; null when the car has none.
  *  Instanced attributes are not copied (the caller shares its batch's). */
@@ -216,7 +221,7 @@ export function glassGeometry(geo) {
  * an InstancedBufferAttribute). lights: { head, tail, brake } uniforms (carModel.js carLights), optional.
  */
 export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = null, rich = false, crossFade = false,
-  clearcoat = rich, seeThrough = rich, motion = null, glass = null } = {}) {
+  clearcoat = rich, seeThrough = rich, motion = null, glass = null, noProbe = false } = {}) {
   // glass (GLASS_PASS only): "split" = the opaque material of a fleet that also draws a "pass" glass mesh: its glass
   // fragments are dropped; "pass" = the blended glass material (glass fragments only)
   const split = GLASS_PASS && glass === "split" && seeThrough, pass = GLASS_PASS && glass === "pass";
@@ -228,16 +233,37 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
   const kind = attribute("_kind", "float").add(0.5).floor(), vc = attribute("color", "vec3");
   const isPaint = kind.equal(1), isGlass = kind.equal(4), isHead = kind.equal(2), isTail = kind.equal(3);
   const uPaint = paint === "instance" ? attribute("paint", "vec3") : uniform(paint);
-  m.colorNode = select(isPaint, vc.mul(uPaint), select(isGlass, vc.mul(packLook.glass), vc));
+  // (claude/cars1) kind 12 = a shut line / panel gap: the paint's colour, darker, and NO clear coat (below)
+  m.colorNode = select(isPaint.or(kind.equal(12)), vc.mul(uPaint), select(isGlass, vc.mul(packLook.glass), vc));
   const isChrome = kind.equal(5), isRubber = kind.equal(6), isPlate = kind.equal(7), isInterior = kind.equal(8);
-  m.roughnessNode = select(isPaint, float(rich ? 0.34 : 0.32), select(isGlass, float(0.06), select(isChrome, float(0.22),
-    select(isRubber, float(0.9), select(isPlate, float(0.45), select(isInterior, float(0.85), float(0.62)))))));
-  m.metalnessNode = select(isPaint, float(0.25), select(isGlass, float(0.1), select(isChrome, float(1), float(0))));
-  if (clearcoat) {
-    // clear coat on the paint only: a second, sharp specular lobe (environment + sun) over the base paint
-    m.clearcoatNode = select(isPaint, packLook.clearcoat, float(0));
-    m.clearcoatRoughnessNode = float(0.05);
+  if (CARLOOK_OLD) {
+    m.roughnessNode = select(isPaint, float(rich ? 0.34 : 0.32), select(isGlass, float(0.06), select(isChrome, float(0.22),
+      select(isRubber, float(0.9), select(isPlate, float(0.45), select(isInterior, float(0.85), float(0.62)))))));
+    m.metalnessNode = select(isPaint, float(0.25), select(isGlass, float(0.1), select(isChrome, float(1), float(0))));
+    if (clearcoat) {
+      // clear coat on the paint only: a second, sharp specular lobe (environment + sun) over the base paint
+      m.clearcoatNode = select(isPaint, packLook.clearcoat, float(0));
+      m.clearcoatRoughnessNode = float(0.05);
+    }
+  } else {
+    // CARS LOOK (claude/cars1, docs/rules/car-look.md): a car-paint clear coat over a soft dielectric base. The base
+    // (roughness 0.42, NOT metallic: the post chain's SSR takes metalness as its mask, so the paint gets no SSR, rule
+    // SMOOTH OR NOTHING) carries the colour; the coat (factor 1, roughness 0.035) is the mirror that shows the sky and
+    // the city (the probe, carEnv.node). Gloss black (kind 10: window surrounds, pillars, grilles, mirror caps) has
+    // the coat too; alloy rims (kind 11) are metal. Far LODs (no coat): a glossier base stands in for it.
+    const isGloss = kind.equal(10), isAlloy = kind.equal(11);
+    m.roughnessNode = select(isPaint, float(clearcoat ? 0.6 : 0.36), select(isGlass, float(0.05), select(isChrome, float(0.18),
+      select(isRubber, float(0.88), select(isPlate, float(0.45), select(isInterior, float(0.85), select(isGloss, float(clearcoat ? 0.3 : 0.2),
+        select(isAlloy, float(0.38), select(kind.equal(12), float(0.8), float(0.6))))))))));
+    m.metalnessNode = select(isPaint, float(CARSSR ? 0.2 : 0), select(isGlass, float(0.1), select(isChrome, float(1), select(isAlloy, float(0.75), float(0)))));
+    if (clearcoat) {
+      m.clearcoatNode = select(isPaint.or(isGloss), packLook.clearcoat, float(0));
+      m.clearcoatRoughnessNode = float(0.035);
+    }
   }
+  // the reflection probe (viewer/carProbe.js): the sky AND the city round the player, for every car material made
+  // after it exists (none in the labs: the scene's sky environment)
+  if (carEnv.node && !noProbe) m.envNode = carEnv.node;
   let glassShadow = null;
   if (split) {
     // the glass is the glass pass's; the light glass shadow stays here (one shadow-map texel in three under glass)

@@ -109,12 +109,12 @@ const BEACON = new Set(["police_t", "ambulance", "fire"]);
 }
 
 // ---------------------------------------------------------------- 2. the mix tables
-const GROUP = (n) => (["hatch_s", "hatch_c", "estate", "saloon", "suv"].includes(n) ? "car" : n === "van_c" || n === "van_p" ? "van" : n);
+const GROUP = (n) => (["hatch_s", "hatch_c", "estate", "saloon", "suv", "x4"].includes(n) ? "car" : n === "van_c" || n === "van_p" ? "van" : n);
 {
   const bad = [];
   for (const h of [3, 8, 13, 18, 22]) {
-    const s = shares(h, true), car = s.hatch_s + s.hatch_c + s.estate + s.saloon + s.suv, van = s.van_c + s.van_p;
-    if (Math.abs(s.suv / car - 0.30) > 0.05) bad.push(`${h} h SUV ${(s.suv / car * 100).toFixed(0)} % of cars`);
+    const s = shares(h, true), suv = s.suv + (s.x4 || 0), car = s.hatch_s + s.hatch_c + s.estate + s.saloon + suv, van = s.van_c + s.van_p;
+    if (Math.abs(suv / car - 0.30) > 0.05) bad.push(`${h} h SUV + 4x4 ${(suv / car * 100).toFixed(0)} % of cars`);
     if (h >= 7 && h < 19 ? van < 0.08 || van > 0.15 : van > 0.08) bad.push(`${h} h vans ${(van * 100).toFixed(1)} %`);
     if (!(s.police_t > 0.003 && s.police_t < 0.012)) bad.push(`${h} h patrols ${(s.police_t * 100).toFixed(2)} %`);
     if (!(s.ambulance > 0.001 && s.ambulance < 0.005)) bad.push(`${h} h ambulances`);
@@ -311,12 +311,12 @@ const res = {};
 for (const [label, where, hour, secs] of [["8 h Alsemberg", "alsemberg", 8, SECS], ["13 h Rue Rouge", "station", 13, SECS], ["18 h Alsemberg", "alsemberg", 18, Math.round(SECS / 2)]]) {
   const T = run(where, hour, secs), s = shares(hour, true);
   res[label] = T;
-  const tCar = s.hatch_s + s.hatch_c + s.estate + s.saloon + s.suv, tVan = s.van_c + s.van_p;
+  const tCar = s.hatch_s + s.hatch_c + s.estate + s.saloon + s.suv + (s.x4 || 0), tVan = s.van_c + s.van_p;   // (claude/cars1: the 4x4 is a car)
   const tol = (p) => 3 * Math.sqrt((p * (1 - p)) / mixN(T)) + 0.02;
   const bad = [];
   if (Math.abs(share(T, "car") - tCar) > tol(tCar)) bad.push(`cars ${pct(share(T, "car"))} (target ${pct(tCar)})`);
   if (Math.abs(share(T, "van") - tVan) > tol(tVan)) bad.push(`vans ${pct(share(T, "van"))} (target ${pct(tVan)})`);
-  const suvC = (T.by.suv || 0) / Math.max(1, T.by.car || 0);
+  const suvC = ((T.by.suv || 0) + (T.by.x4 || 0)) / Math.max(1, T.by.car || 0);   // (the SUVs + the 4x4s)
   if (Math.abs(suvC - 0.30) > 0.08) bad.push(`SUV ${pct(suvC)} of the cars`);
   if (!(T.by.police_t > 0)) bad.push("no patrol car");
   if (!(T.by.bus > 0)) bad.push("no bus");
