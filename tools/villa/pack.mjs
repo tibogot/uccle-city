@@ -1,6 +1,6 @@
 // PACK THE VILLA (claude/villa1): the mesh audit on the raw GLBs (tools/mesh_audit: z-fighting, leaks, bad normals;
 // it stops the pack on a blocking item), then tools/hero_pack.mjs (COLOR_0 -> uint8, the baked light _LSKY / _LSUN /
-// _LNIGHT -> RGBM uint8, meshopt on every buffer view; the exterior's LOD1 = LOD0 simplified, LOD2 = the far variant
+// _LNIGHT -> RGBM uint8, meshopt on every buffer view; the exterior's LOD1 = scripted (villa.py, villa2), LOD2 = the far variant
 // trimmed), then the packed files audited again (report only).
 //   node tools/villa/pack.mjs [--force-audit] [--no-audit]
 import { spawnSync } from "node:child_process";
@@ -10,8 +10,8 @@ const OY = 100, GROUND_MIN = 115.0 - OY - 0.5;
 const ARGV = process.argv.slice(2);
 const EXT = {
   name: "villa",
-  groups: [{ name: "lod0", nodes: ["Villa", "Villa_gateL", "Villa_gateR", "Villa_door", "Villa_water"] }, { name: "far", nodes: ["Villa_far"] }],
-  range: { Villa_ivy: 80, Villa: 80, Villa_gateL: 80, Villa_gateR: 80, Villa_door: 80, Villa_water: 400, Villa_far: 2000, Villa_lod1: 260, Villa_lod2: 2000 },
+  groups: [{ name: "lod0", nodes: ["Villa", "Villa_gateL", "Villa_gateR", "Villa_door", "Villa_water", "Villa_bay"] }, { name: "lod1", nodes: ["Villa_lod1"] }, { name: "far", nodes: ["Villa_far"] }],
+  range: { Villa_ivy: 80, Villa: 80, Villa_bay: 80, Villa_gateL: 80, Villa_gateR: 80, Villa_door: 80, Villa_water: 400, Villa_far: 2000, Villa_lod1: 260, Villa_lod2: 2000 },
   ignoreBelow: GROUND_MIN, offset: [0, OY, 0], reportDir: "models/villa/audit", allowFile: "models/villa/audit/villa.allow.json",
 };
 const INT = {

@@ -1,27 +1,12 @@
 {
- "Villa_lod1_noFight": {
-  "rounds": 0,
-  "before": {
-   "pairs": 0,
-   "m2": 0
-  },
-  "after": {
-   "pairs": 0,
-   "m2": 0
-  },
-  "dropped": 0,
-  "locked": 0
- },
  "Villa_lod1": {
-  "from": "Villa",
-  "sourceTris": 56994,
-  "tris": 16006
+  "scripted": true
  },
  "Villa_lod2": {
   "from": "Villa_far",
-  "sourceTris": 102,
-  "tris": 102
+  "sourceTris": 170,
+  "tris": 170
  },
- "glbBytes": 1229768,
- "rawBytes": 5495980
+ "glbBytes": 1309564,
+ "rawBytes": 6206472
 }

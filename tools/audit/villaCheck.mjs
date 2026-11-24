@@ -56,6 +56,13 @@ for (const [node, lim] of [["Villa", B.lod0], ["Villa_lod1", B.lod1], ["Villa_lo
 }
 const cellTris = ["Cell", "Soft", "Glass"].reduce((s, n) => s + tri(cell.parts, n), 0), cellDraws = ["Cell", "Soft", "Glass"].reduce((s, n) => s + draws(cell.parts, n), 0);
 check(cellTris <= B.cellTris && cellDraws <= B.cellDraws, `interior cell <= ${B.cellTris} tris, <= ${B.cellDraws} draws`, `${cellTris} tris, ${cellDraws} draws`);
+// villa2 (rule villa-lod-shells): LOD1 is the SCRIPTED middle level (meshopt of LOD0 opened the entrance recess and bent
+// the flat faces), and the hall's open bay has its far pane (Villa_bay), outside the root and hidden with the far glass
+const lods = J("models/villa/villa.lods.json");
+check(lods.Villa_lod1?.scripted === true && tri(ext.parts, "Villa_lod1") > 0, "LOD1 is the scripted level (villa.py), not meshopt of LOD0", JSON.stringify(lods.Villa_lod1));
+const cityTxt = readFileSync(new URL("viewer/villa/villaCity.js", ROOT), "utf8");
+check(ext.parts.some((p) => p.node === "Villa_bay" && p.slot === "glass_window") && /m\.part\("Villa_bay"\)/.test(cityTxt) && /bay\?\.traverse\(\(o\) => \{ if \(o\.isMesh\) extGlass\.push\(o\)/.test(cityTxt),
+  "the open bay's far pane (Villa_bay) ships, outside the root, hidden with the far glass when the interior shows");
 const cj = cell.json;
 const prims = cj.meshes.flatMap((m, mi) => m.primitives.map((p) => ({ p, node: cj.nodes.find((n) => n.mesh === mi)?.name })));
 const unbaked = prims.filter(({ p, node }) => (node === "Cell" || node === "Soft") && !["_LSKY", "_LSUN", "_LNIGHT"].every((a) => a in p.attributes));

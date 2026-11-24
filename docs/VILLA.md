@@ -57,7 +57,7 @@ node tools/villa/pack.mjs
 | file | what |
 |---|---|
 | villaPlot.js | the frame + rings, synchronous for main.js: the plot clears the generated garden pieces / shrubs (and 2.5 m over the property line: the old house's front wall), the built rings clear the LiDAR trees and the grass |
-| villaModel.js | the exterior GLB, its materials, LOD0 < 70 m, LOD1 < 240 m, LOD2 (dithered cross-fades), the animated parts, the pool water |
+| villaModel.js | the exterior GLB, its materials, LOD0 < 70 m, LOD1 < 240 m (scripted), LOD2 (dithered cross-fades), the animated parts, the open bay's far pane, the pool water |
 | villaGrounds.js + villaGroundsGeom.js | the paved grounds (one mesh, one draw; the garage floor's drape smoothed) |
 | villaCars.js | the parked cars (one merged mesh each) + the bike; their rings for the car's colliders |
 | villaInterior.js | the interior cell: per-corner baked light, the glass fading in over the exterior's, probes for the walker |
@@ -88,6 +88,25 @@ New interior slots: ceramic_white, books (a palette per code: spines, bottles), 
 - Luxury car models; a garage door; the pedestrian gate; interior doors.
 - The interior's first floor rooms are sparse (no bathrooms, no wardrobes); the master suite needs a dressing / bath.
 - The slat façade aliases at 40-80 m (thin bars: a pack-side prefilter like docs/JITTER.md §2).
-- LOD1 is meshopt of LOD0 (its packed audit reports normal streaks): a scripted mid level would be cleaner.
+- (done in round 3a: LOD1 scripted.)
 - Night: the interior's night bake and the exterior glow are set by eye; a night pass against NTE's blue hour.
 - The pool: an infinity edge; a swimming animation for the walker.
+
+## Round 3a (claude/villa2, 2026-11-23): every level closed (gate `heroshell`)
+
+The `heroshell` probe read the villa for the first time (rule gate-dir-deps): 17.7 / 23.2 / 6.8 m2 open at L0 / L1 / L2.
+A diagnostic copy of the probe (each failing ray's entry / exit / hit in the villa frame) sorted the clusters:
+
+| cluster | cause | done | rule / check |
+|---|---|---|---|
+| L0-L2: front u 12..14, the south strip, the back overhang, the pergola (16.5 m2 at L0, all "through", 0 back) | open air under the cantilevered upper box: rays graze under the soffit and come out at its ends | allowed: 4 capsule entries in heroShell.allow.json (new `to` = a segment, `noBack` = never excuses a cluster with a back hit) | villa-lod-shells, `heroshell` |
+| L0: 1.2 m2, 6 back hits at the back (u 37.8, w 7.1) | the hall's OPEN BAY (its panel parked open for the walker): from 30 to 70 m the interior is not shown and the street saw the front wall's inside | a far pane in its own node `Villa_bay` (outside the root: never a collider), drawn while LOD0 is, hidden with the far glass when the interior shows (villaCity.js) | villa-lod-shells, `villa` row |
+| L1: back hits through the entrance; packed audit 7,847 blocking | LOD1 was meshopt of LOD0: the recess's back wall kept the door's hole (the leaf is Villa_door), reveals collapsed, flat faces bent | a SCRIPTED LOD1 (villa.py lod1, 8.1k tris, 7 draws, its own AO bake): walls with openings, reveals, glass panes (the bay too), box frames and mullions, the recess closed, the slat screens as one plane (codes screen / channel: anti-aliased stripes in the wood_cladding TSL, dark glass in the gaps over the ribbon windows, lit at night), stepped hedge boxes; hero_pack.mjs keeps a raw <Name>_lod1. Raw and packed audits 0 blocking | villa-lod-shells, `villa` row (LOD1 scripted) |
+| L2: the overhang rays only (the far box was closed) | (a duplicate roof face: the living box's top under the LPAR rect) | the far box's street side: flush dark panes in the front / side openings, the recess as walnut, the upper box's front + south as the screen codes, its top a grey roof (it was wood: a brown roof popped in at the 240 m cross-fade, seen in the browser A/B); the duplicate face removed (170 tris) | villa-lod-shells |
+
+Ceilings (heroShell.ceil.json): villa L0 0, L1 0, L2 0. Budgets: LOD0 56,994 tris / 8 draws, LOD1 8,098 / 7, LOD2 170 / 6,
+download 5.50 MB, interior 179,420 / 16.
+
+Cross-fades checked in the browser (forced levels, same camera; shots in uccle-villa-ab/round4): LOD0 -> LOD1 at 70 m mean
+pixel difference 1.7/255 over the house (only the climbers, LOD0-only as before); LOD1 -> LOD2 at 240 m the same masses and
+tones after the roof fix. The bay pane: shown at 47 m (interior hidden), hidden at 20 m (interior shown) and beyond LOD0.
