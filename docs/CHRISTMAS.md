@@ -513,12 +513,68 @@ GPU p50, mean of 6 alternated rounds (the min / max of the per-round differences
   casters (far fronds, layer 25) ~0.20 ms at night; the rest of LOD0 (solid needles, bark, baubles, LEDs, star, planter)
   ~0.25 ms. The three parts add up to ~0.66 ms, against 0.9-1.0 ms for the whole fir: the noise is about +-0.3 ms.
 - No extras are registered yet.
-- **Verdict: FAIL on both budgets.** Next (plan section 6, in this order): the shadow casters at night (the moon's map;
+- **Verdict: FAIL on both budgets** (superseded by 7.3: PASS, the first numbers were mostly the automatic render scale and noise). Next (plan section 6, in this order): the shadow casters at night (the moon's map;
   are they needed at all?), LOD0's solid needles and bark under the cards, the cards' pre-pass. Re-measure on a GREEN page
   check with a recorded baseline before acting on any of these.
 
 Browser row `xmasperf` (tools/audit/gate.d/browser/xmasperf.mjs) runs the probe plus the request lists above
 (`debug/xmasBoot.js` after `debug/bootTimeline.js`).
+
+## 7.3 The layer's GPU cost (claude/xmas3, 2026-11-24): both budgets met
+
+**Result** (`debug/xmasPerf.js run()`, `?quick=1&place=stjob-street&xmas=1&time=night`, render scale pinned at 0.75,
+10 rounds, preflight YELLOW before and after: system CPU / GPU OK, the page check CPU +15 % / boot -12 %, GPU -1 %;
+browser.lock held, no gate or Blender running; one page, old and new swapped live in it):
+
+| row | budget | before (`?firlight=old`) | after (default) |
+|---|---|---|---|
+| layer-street (the whole layer, 31 m from the fir) | 0.30 ms | 0.140 +- 0.015 | **0.121 +- 0.014** |
+| fir-8m (the fir alone, filling the view) | 0.10 ms | 0.179 +- 0.022 | **0.086 +- 0.014** |
+| the cut alone, `lightAB()` (14 rounds, alternated) | | | 8 m **-0.084 +- 0.017**, street -0.012 +- 0.010 |
+
+**Why the first numbers (0.53 / 0.90 ms) were so high and so spread (+-0.3 ms).** (1) The render scale was AUTOMATIC
+(upscale.js dynres): it stepped between 0.6 and 0.85 during a run, and each step moves the whole frame by more than the
+budgets. (2) One p50 per 2.5 s round, 6 rounds, always off-then-on. (3) The machine heats up under a timed session: the
+same fir read 0.65 ms at 81 C with the power cap active, 0.32 ms later the same hour, 0.18 ms on a quiet machine (costs
+scale with the GPU clock: compare only inside one alternated run). The probe now pins the scale (0.75, dynres restored
+after), flips the order every round, takes the trimmed mean of the frames (viewer `gpuStats().tmean`, the 10-90 % band:
+the shadow-cache redraw frames drop out) and reports the standard error. Rule: a timing row pins the render scale.
+
+**Each cost, its cause, its cut:**
+- **The fir's shadow casters at night: not a cost.** They are static casters of the sun's cached map (`christmas` is
+  not a mover in lighting.js `MOVER_TOP`): drawn on the cache's redraws only (counted: 6 draws in 180 frames, the
+  30-frame refresh), and of the lamps' cached maps (layer 6, never the per-frame mover layer 11). Forcing a full sun-map
+  redraw EVERY frame, the copies cost 0.03 +- 0.06 ms per redraw: ~0.001 ms a frame. The "~0.20 ms" of the first split
+  was noise. **Kept by night**: the moon casts the city's shadows (intensity 1.2), and the lamp maps take the fir's
+  shadow too. No hand-over to build, no snapping. Node check (row `xmas`): "fir shadow at night: static casters".
+- **The needle cards' lighting: the cut.** The lit EQUAL pass runs once per visible card pixel, but at night with the
+  night's whole light set: the cluster loop over the pooled lamp lights + the two shadowed lamp spots (their shadow
+  maps). Measured by swapping the cards' material live: sun / moon + sky only -0.14 ms (a hot run), the cluster loop
+  alone or the spots alone ~-0.03 (only both gone frees the shader: a register / occupancy cliff), the night loop's
+  foliage path (`nightFoliage`) -0.03, per-vertex sun on top of sun + sky -0.01 (not taken). The lamps' light on the
+  crown is not seen: at 6 m, 8 m, 24 m at night and 8 m at dusk the frames match (mean brightness 12.48 / 12.45, 10.83 /
+  10.84, dusk 10.59 / 10.61 of 255; the remaining pixel differences are the LEDs' twinkle). **Cut (`?firlight=old` =
+  before, features row `firlight`):** the cards' lit materials take `foliageLights()` (foliage/vertexLight.js: the sun /
+  moon + the hemisphere, as the city's grass, plants and ivy); the moon's shadow, the canopy normals, the sky light, the
+  snow and the depth pre-pass are unchanged; by day the lamps are off: no change. Both levels' cards (near + middle shell:
+  one material) take it: no step at the 45 m switch. The 150 m switch is to the far fronds (all lights), whose lamp
+  light is as invisible at that range. Node checks: row `xmas` "fir light", `xmastest` "fir light".
+- **The rest of the near level.** In the same page: the twin (depth pre-pass) ~0 (the lit pass carries the cost);
+  bark, cone, bulbs: sun + sky only gains -0.004 +- 0.008 (not taken); baubles and gold caps with sun + sky only: -0.09 +-
+  0.07 but their lamp glints go (the small warm crescents on the baubles: a visible loss) - **not taken**, the
+  budget is met without it. Unlit, the ornaments' many small triangles cost 0.03 +- 0.03 (micro-triangles: not the
+  cost). The FLOOR: the whole fir unlit (MeshBasic, same geometry and passes) still costs 0.17 +- 0.03 ms in a hot run
+  (vs 0.32 lit): the pixels it takes from the sky go through the scene MRT, GTAO and SSR (sky pixels skip them). Any
+  opaque object filling that much of the view pays it; below ~half of the fir's cost at 8 m cannot come from shading.
+- **Triangle and draw budgets per level** (node, row `xmas`): 150,368 / 36,572 / 12,578 triangles (160 k / 45 k / 15 k),
+  9 / 9 / 5 draws (+ the cards' depth twin on the card levels, + 2 shadow-only copies in the sun's map).
+
+**Look:** `C:/Users/tibog/Downloads/uccle-xmas3-ab/` `fir8m_night_old_vs_new.jpg`, `stjob24m_night_old_vs_new.jpg`,
+`fir8m_dusk_old_vs_new.jpg` (left old, right new; the separate frames beside them).
+
+**To re-measure:** `const X = await import('/debug/xmasPerf.js'); await X.run()` (budgets) and `await X.lightAB()`
+(the cut, live); `run({ split: true })` splits the fir at 8 m into cards / shadow copies / the rest. The baseline of
+the page check was recorded by this branch (`docs/perf/preflight_baseline.json`, 1280 x 720, GREEN system preflight).
 
 ## 8. Browser turn checklist (server 8828, one tab)
 

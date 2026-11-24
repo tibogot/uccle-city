@@ -2226,7 +2226,9 @@ async function main() {
   // gpuStats(): GPU ms per frame over the last ≤600 samples (avg, p50, p95, max), for measurements
   const gpuStats = () => {
     const s = [...gpu.samples].sort((a, b) => a - b), q = (p) => s.length ? +s[Math.min(s.length - 1, Math.floor(p * s.length))].toFixed(2) : null;
-    return { n: s.length, avg: s.length ? +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(2) : null, p50: q(0.5), p95: q(0.95), max: q(1) };
+    // tmean (claude/xmas3, debug/xmasPerf.js): the mean of the 10-90 % band, finer than p50 under the timestamps' quantum
+    const band = s.slice(Math.floor(s.length * 0.1), Math.ceil(s.length * 0.9));
+    return { n: s.length, avg: s.length ? +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(2) : null, p50: q(0.5), p95: q(0.95), max: q(1), tmean: band.length ? +(band.reduce((a, b) => a + b, 0) / band.length).toFixed(3) : null };
   };
   // gpuPasses(): ms per render pass of the last resolved frame, biggest first (uid minus the frame suffix)
   const gpuPasses = () => {

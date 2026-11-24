@@ -137,6 +137,36 @@ for (const [i, c] of (site.chalets ?? []).entries()) standsWell(`chalet ${i}`, r
     && /export const FIR_SHADOW_LEVEL = 2;/.test(citySrc) && /shadow\.camera\.layers\.enable\(XMAS_SHADOW_LAYER\)/.test(citySrc);
   out(ok, "fir: depth pre-pass on by default (?firprepass=0), the shadow from the far level's solid fronds (?firshadow=cards), its layer enabled on the sun's shadow camera");
 }
+// FIR ROUND 4 (claude/xmas3, docs/CHRISTMAS.md 7.3): the GPU cost at night (debug/xmasPerf.js, timed on GREEN / YELLOW).
+// (1) the needle cards are lit by the sun / moon + the sky only (foliage/vertexLight.js foliageLights, as the city's
+//     grass, plants and ivy): the night's lamp loop + the two shadowed lamp spots over every card pixel were the cards'
+//     cost (the lamps' light on the crown is not seen); ?firlight=old = before.
+// (2) the fir's shadow casters at night are NOT a per-frame cost: they are static casters of the sun's cached map (drawn
+//     only on its redraws, ~1 frame in 30: 0.03 +- 0.06 ms per redraw measured, ~0.001 ms a frame) and of the lamps'
+//     cached maps (never the lamps' per-frame mover layer). They stay at night: the moon casts the city's shadows. A
+//     change that made them movers (the group's name matching lighting.js MOVER_TOP, a sunMover flag, the lamps' mover
+//     layer 11) would draw them every frame: this row fails then.
+// (3) the draws per tree level (christmas.json; + the cards' depth twin + 2 shadow-only copies drawn in the sun's map).
+{
+  const kitSrc = fs.readFileSync(path.join(ROOT, "viewer/christmas/xmasKit.js"), "utf8"), citySrc = fs.readFileSync(path.join(ROOT, "viewer/christmas/xmasCity.js"), "utf8");
+  out(/cards: QS\.get\("firlight"\) !== "old"/.test(kitSrc) && /slot === "fir_cards"\) \{ const L = foliageLights\(\); if \(L\) m\.lightsNode = L;/.test(kitSrc),
+    "fir light: the needle cards lit by the sun / moon + the sky only by default (foliageLights; ?firlight=old: every scene light)");
+  const lightSrc = fs.readFileSync(path.join(ROOT, "viewer/lighting.js"), "utf8"), nightSrc = fs.readFileSync(path.join(ROOT, "viewer/nightLights/cityNight.js"), "utf8");
+  const mt = /const MOVER_TOP = \/(.*)\/;/.exec(lightSrc), moverTop = mt ? new RegExp(mt[1]) : null;
+  const grp = /this\.group = new THREE\.Group\(\); this\.group\.name = "(\w+)"/.exec(citySrc)?.[1];
+  const dir = path.join(ROOT, "viewer/christmas"), xsrc = fs.readdirSync(dir).filter((f) => f.endsWith(".js")).map((f) => fs.readFileSync(path.join(dir, f), "utf8")).join("\n");
+  const lampMover = /const MOVER_LAYER = (\d+);/.exec(nightSrc)?.[1];
+  const staticOk = !!moverTop && !!grp && !moverTop.test(grp) && !/sunMover/.test(xsrc) && !!lampMover && !new RegExp(`layers\\.(set|enable)\\((${lampMover}|MOVER_LAYER)\\)`).test(xsrc);
+  out(staticOk, `fir shadow at night: the casters are static in the sun's cache (group "${grp}" not a mover by lighting.js MOVER_TOP, no sunMover) and never on the lamps' mover layer ${lampMover}: drawn on cache redraws only, not per frame`);
+  // (4) the probe's timing is not the render scale's (the first numbers moved +-0.3 ms with dynres' steps): run() and
+  //     lightAB() pin the scale before timing and give it back after
+  const probe = fs.readFileSync(path.join(ROOT, "debug/xmasPerf.js"), "utf8");
+  const fnBody = (name) => { const i = probe.indexOf(`export async function ${name}(`); return i < 0 ? "" : probe.slice(i, probe.indexOf("\nexport ", i + 10) < 0 ? undefined : probe.indexOf("\nexport ", i + 10)); };
+  out(["run", "lightAB"].every((f) => /const unpin = pinScale\(\)/.test(fnBody(f)) && /unpin\(\)/.test(fnBody(f))) && /U\.setScale\(s, \{ dynres: false \}\)/.test(probe),
+    "fir perf probe: run() and lightAB() pin the render scale (dynres off) for the timing, restored after");
+  const info = J("models/christmas/christmas.json"), L = info.lods?.tree?.lods ?? [], DRAWS = [9, 9, 5];
+  out(L.length === 3 && L.every((l, k) => l.draws <= DRAWS[k]), `fir draws per level ${L.map((l) => l.draws).join(" / ")} (budget ${DRAWS.join(" / ")}; + the cards' depth twin on the card levels, + 2 shadow-only copies in the sun's map)`);
+}
 // THE SITE FITS THE CURRENT CITY (rule xmas-fit-current-city, claude/xmas1: tools/christmas/siteFit.mjs). site.json is
 // baked; the data under it moves (street-life extras, scripted models hiding UrbIS solids, curated wide fronts). Fronts
 // = the current street life's (complete, unmoved, on a drawn wall); every swag run inside the front the shop kit DRAWS

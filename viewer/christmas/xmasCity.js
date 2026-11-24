@@ -13,7 +13,7 @@
 //     the levels cross-fade per pixel (xmasKit.js bandMask): shared materials, no pop.
 // Lights are emissive only (no new light: the fixed light count). Cost and checks: docs/CHRISTMAS.md.
 import * as THREE from "three/webgpu";
-import { loadXmasKit, spanMaterial, xmasLook, FIR, XMAS_SHADOW_LAYER, XMAS_FETCH } from "./xmasKit.js";
+import { loadXmasKit, spanMaterial, xmasLook, FIR, XMAS_SHADOW_LAYER, XMAS_FETCH, XMAS_LIGHT } from "./xmasKit.js";
 import { lampSiteSets, lampSitesVersion } from "../lamps.js";
 import * as lampsMod from "../lamps.js";
 import { swagRun } from "./xmasSwag.js";
@@ -73,6 +73,7 @@ export class XmasField {
             // garland and the fir's planter are inside other shadows; measured 2026-11-17: 27 -> 6 shadow draws)
             im.castShadow = !!shadows[name] && SHADOW_SLOTS.has(slot) && name !== "tree"; im.receiveShadow = true;
             im.name = `xmas ${name} lod${k} ${slot}${fade ? " fade" : ""}${cards ? " lit" : ""}`; im.userData.slot = slot;
+            im.userData.matArgs = { uvs: !!geometry.attributes.uv, instanced: true, mask: fade, pass: cards ? "colour" : null };
             this.group.add(im);
             return im;
           });
@@ -81,7 +82,7 @@ export class XmasField {
             const tw = new THREE.InstancedMesh(im.geometry, kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: fade, pass: "depth" }), cap);
             tw.instanceMatrix = mat; tw.count = 0; tw.visible = false; tw.boundingSphere = sphere; tw.frustumCulled = true;
             tw.castShadow = tw.receiveShadow = false; tw.renderOrder = -1; tw.userData.depthPrepass = true; tw.userData.slot = "fir_cards";
-            tw.name = `xmas ${name} lod${k} fir_cards${fade ? " fade" : ""} depth`;
+            tw.name = `xmas ${name} lod${k} fir_cards${fade ? " fade" : ""} depth`; tw.userData.matArgs = { uvs: true, instanced: true, mask: fade, pass: "depth" };
             this.group.add(tw); meshes.push(tw);
           }
           // the tree's shadow: shadow-only copies (this level's instances and band) of the FAR level's solid fronds +
@@ -96,6 +97,7 @@ export class XmasField {
               const sh = new THREE.InstancedMesh(g, kit.slotMaterial(slot, { uvs: !!geometry.attributes.uv, instanced: true, mask: fade }), cap);
               sh.instanceMatrix = mat; sh.count = 0; sh.visible = false; sh.boundingSphere = sphere; sh.frustumCulled = true;
               sh.castShadow = true; sh.receiveShadow = false; sh.layers.set(XMAS_SHADOW_LAYER); sh.userData.slot = slot; sh.userData.shadowOnly = true;
+              sh.userData.matArgs = { uvs: !!geometry.attributes.uv, instanced: true, mask: fade };
               sh.name = `xmas ${name} lod${k} ${slot}${fade ? " fade" : ""} shadow (${firShadow === "far" ? `lod${FIR_SHADOW_LEVEL}` : "own"})`;
               this.group.add(sh); meshes.push(sh);
             }
@@ -334,7 +336,14 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
     field.update(eye);
   });
   log(`christmas: ${trees.length} trees, ${site.spans.length} street garlands (${spans.counts.bulbs} LEDs, ${spans.mid.length} stars), ${chalets.length} market chalets, ${nSwag} shopfront swags, ${site.wreaths.length} wreaths, lamp snowflakes along ${site.streets.length} street lines; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms (?xmas=0: without)`);
-  const api = { fir: { ...FIR, shadowLevel: FIR_SHADOW_LEVEL, suns: suns.length }, site, kit, field, spans, trees, chalets, look: xmasLook, group: field.group, tLoad, tComp, stats: () => field.stats };
+  /** (claude/xmas3, debug/xmasPerf.js) the live A/B of the light path (xmasKit.js XMAS_LIGHT): every mesh of the layer
+   *  takes its slot's material built for `light` ({ cards }; null = the URL's); both sets compile once, then swap */
+  const setLight = (light = null) => {
+    const L = light ?? XMAS_LIGHT;
+    field.group.traverse((o) => { const a = o.userData.matArgs; if (a && o.userData.slot) o.material = kit.slotMaterial(o.userData.slot, { ...a, light: L }); });
+    wireMesh.material = spanMaterial("wire_dark", kit, 650, L); bulbMesh.material = spanMaterial("bulb_warm", kit, 650, L);
+  };
+  const api = { setLight, light: XMAS_LIGHT, fir: { ...FIR, shadowLevel: FIR_SHADOW_LEVEL, suns: suns.length }, site, kit, field, spans, trees, chalets, look: xmasLook, group: field.group, tLoad, tComp, stats: () => field.stats };
   window.xmas = api;
   return api;
 }
