@@ -49,3 +49,8 @@ Check whether UrbIS maps the reservation as sidewalk); E3 Ch. d'Alsemberg (-908.
   poles data/stops puts on a platform follow it (`platformFollow`, main.js; an area platform's pole sat on its outline,
   half off the slab: now 0.4 m in). Rail under a platform (census, as drawn): 705 m (`--old`) -> 0; platform poles off
   every platform: 44 -> 16 (no OSM platform within 3 m of them in their tile: data/stops, pre-existing).
+
+- claude/defects1 (2026-11-24): platform poles off every platform 16 -> 0: such a pole is no longer kept as a platform
+  pole (viewer/streets/tramPlatforms.js `platformUnflag`, `?platpole=old` / `--platold` = 16); it goes behind the kerb and
+  streetProps.mjs checks it is out of the lanes. Rails: 26 m raised + 1 m kerb in 7 runs, unchanged (the Rue de Stalle
+  terminus B5, the Carsoel deck's west end H6 872 524, F1 Churchill 1.5 m); the owner's Ch. d'Alsemberg spot is clear.

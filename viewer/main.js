@@ -76,7 +76,7 @@ import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
 import { cityStreetLife } from "./streetlife/cityStreetLife.js";
 import { cityStops } from "./stops/cityStops.js";
-import { platformFollow } from "./streets/tramPlatforms.js";
+import { platformFollow, platformUnflag } from "./streets/tramPlatforms.js";
 import { cityFuel } from "./fuel/cityFuel.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityTLights } from "./tlights/cityTLights.js";
@@ -424,6 +424,8 @@ let trackProf = null, worldRef = null;
 // (a bridge is in every tile whose roads.json buffer reaches it: counted, removed with its last tile)
 const bridgeDeckRefs = new Map();     // road id -> { fn, n }
 const FURN_SNAP = params.get("furnsnap") !== "old";      // data-layer furniture out of the driven lanes
+const PLAT_POLE = params.get("platpole") !== "old";      // (claude/defects1, rule nothing-hard-in-carriageway) a STIB pole flagged `platform` stays put only ON a drawn tram platform
+const PROP_REACH = params.get("propreach") !== "old";   // (claude/defects1) a prop with no kerb within 6 m looks up to 16 m (carriageway.js FAR_REACH)
 const STREET_PROPS = params.get("streetprops") !== "old"; // (class D, rule 30) + off the tram tracks, the OSM width without a measured street; plates + posts, boxes, Villo baked
 const PARK_CLEAR = params.get("parkclear") !== "old";     // parked cars by the measured width, the traffic lanes clear of them
 const TRAFPARK = params.get("trafpark") !== "old";       // traffic vs parked cars (docs/TRAFPARK.md)
@@ -1045,6 +1047,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // claude/tramfit: a STIB pole on a tram platform moves with the platform (viewer/streets/tramPlatforms.js: the
   // platforms beside their fitted tracks); ?tramfit=old: no platform moved, nothing to follow
   if (stopsDoc?.stops) { const n = platformFollow(stopsDoc.stops.map((s) => (s.pole?.platform ? s.pole : null)), feats); if (n) say(`tram platforms: ${n} stop pole(s) moved with their platform`); }
+  // (claude/defects1, ?platpole=old: kept) a `platform` pole with no platform drawn under it is an ordinary pole (snapped below)
+  if (PLAT_POLE && stopsDoc?.stops) { const n = platformUnflag(stopsDoc.stops, feats); if (n) say(`tram platforms: ${n} platform stop pole(s) with no platform drawn under them`); }
   const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { place: cityStreetKit.keepLampsClear(cityFurniture.keepLampsClear(cityStops.keepLampsClear(fit?.placeLamp, stopsDoc), furnDoc), skDoc), lift: fit?.lift });   // its heads join the city lamp-light pool (lampLightPool)
   own.features.add(lamps.group);
   ups.push(lamps.update);
@@ -1094,7 +1098,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const railBedT = railBedP ? await railBedP : null;
   const bed = railBedT ? railBedT.rd.railBed(railBedT.doc, bounds, railBedT.heroes) : null;
   const heroDeckY = railBedT?.decks.length ? (x, z) => { for (const f of railBedT.decks) { const y = f(x, z); if (y != null) return y; } return null; } : null;
-  const propOpt = STREET_PROPS ? { osm: true, tram: tracksAt, ground: (x, z) => hm.ground(x, z), ...(bed ? { rail: bed } : {}) } : {};
+  const propOpt = STREET_PROPS ? { osm: true, far: PROP_REACH, tram: tracksAt, ground: (x, z) => hm.ground(x, z), ...(bed ? { rail: bed } : {}) } : {};
   await split("lanes");
   const snap = (doc, paths, opt = propOpt) => deckDoc(!lanesAt ? doc : (() => { const r = docOffLanes(doc, paths, lanesAt, fit, opt); snapMoved += r.moved; return r.doc; })(), paths);
   // (vivier) the baked points (y = the DTM at build time) on a road deck: up onto it
