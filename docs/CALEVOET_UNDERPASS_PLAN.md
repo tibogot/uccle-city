@@ -286,3 +286,23 @@ Calevoet (abri et tunnel)", 2024) and the "Ukkel-Kalevoet station 2019" set: loo
 - Kid game: the bike **rides the stair gutters** (a stunt), not carried.
 - The owner does not remember the inside: go with the photos plus the Street View look (job 0).
 - Today's stairs, not the unbuilt ramp project (default kept).
+
+## Job 0: the Street View look (2026-11-24, looked at only, nothing kept)
+
+- **West kiosk (Rue Egide Van Ophem, 2024 pano)**: a flat white roof slab on a thin white fascia overhanging ~0.4 m,
+  rendered light-grey piers, three window bays a long side, each three panes of **wired frosted glass in blue steel
+  frames** (tags on the glass), the lower wall (~1.1 m) **painted** (a tile-and-pipe motif with big leaves, not the
+  ochre of the plan's photo), a dark downpipe at the closed end, a red-painted pier at the mouth end, two **brown
+  bollards with a red band** on the pavement in front. The mouth faces the street corner.
+- **East kiosk (Rue Engeland / Dieweg)**: hidden behind trees and ivy in 2024; the 2014 pano shows a long low glazed
+  enclosure of the same kind. Built with the same kit.
+- Not settled: no indoor photo sphere; the inside follows the Commons photos (yellow nosings, tube rails, box lights,
+  tiled floor) with our own mural.
+
+## Jobs 1 + 2: built (claude/underpass1)
+
+tools/underpass/site.mjs -> tools/blender/underpass.py -> tools/underpass/pack.mjs; viewer/underground/ (worker cut +
+city module), the walker's field voids (viewer/character/world.js), gate row `underpass`, rule underpass-wells, tour
+views tools/tour/views_underpass.json. Kiosks LOD0 / 1 / 2 = 6.4k / 288 / 88 triangles (5 / 5 / 3 draws), the inside
+21k triangles in 7 draws, collision 46 triangles. Left: U2 (the station subway + the platform-2 hole), the browser
+stream-in row (0 frames over 33 ms), a night look.
