@@ -29,7 +29,7 @@ The stoop was physically real: 40 m/s only after ~200 m of drop. Over Uccle's 10
   - Held for 6 s without getting closer: the bird is let go (skipped for 8 s).
   - Out of breath (stamina < 12 %): no dive up at a bird.
 - **The catch.**
-  - The grab is automatic within 5.5 m (swept between frames). A short slow motion (x0.35, at most 0.45 s) plays in the last 0.3 s before contact, then the hit-stop.
+  - The grab is automatic within 5.5 m (swept between frames). Over a bird sitting on a roof or the setts, the height counts 0.6 (the talons reach down), and touching down within reach of the locked bird catches it (the pounce): in the browser the roofs round the tame pigeon kept the swoop ~8 m over it, and a slow dive perched beside it. A short slow motion (x0.35, at most 0.45 s) plays in the last 0.3 s before contact, then the hit-stop.
   - Points: 10 + km/h / 6, then the bonuses:
     - PERFECT STOOP x2 (>= 30 m/s, diving > 17 deg)
     - HEAD-ON +5 (within 15 deg)

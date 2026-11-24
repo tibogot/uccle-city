@@ -180,6 +180,12 @@ export class FalconGame {
     // ---- modes
     if (this.mode === "perch") {
       f.stamina = Math.min(1, f.stamina + f.P.stamina.perchRegen * dt);
+      // (falcon fun, round 2: the POUNCE: touched down within reach of the locked bird = caught; browser check: a slow
+      // auto-dive onto the tame pigeon's roof perched beside it and the first catch never came)
+      if (this.fun && this.target >= 0 && this.pigeons && this.pigeons.state[this.target] !== 3) {
+        this.pigeons.pos(this.target, this._v);
+        if (Math.hypot(this._v.x - f.pos.x, this._v.y - f.pos.y, this._v.z - f.pos.z) < FUN.reach + 1) this.funCatch(this.target, 0.5, flockOf(this.pigeons, this.target)?.kindName(this.target) ?? "");
+      }
       if (inp.take("land") || C.flap > 0.5) this.takeoff();
     } else if (this.mode === "land") {
       const L = this.landing; L.t += dt;
@@ -306,13 +312,15 @@ export class FalconGame {
     if (i >= 0 && P.state[i] === 3) i = -1;
     // (after a catch: FUN.cool s with the prey in the talons before the next lock: one bird at a time)
     if (F.cool > 0) { F.cool -= dt; this.target = -1; F.lock = -1; this.window = null; F.slowK = 1; F.arrowTick(dt, P, f); return; }
-    // (round 2) the FIRST CATCH is the tame pigeon: while it is uncaught it holds the lock whenever it is in range and
+    // (round 2) the FIRST CATCH is the tame pigeon: while it is uncaught it holds the lock within 150 m, or in range and
     // within 70 deg of the view (the hint says "the pigeon on the roof below": the ring must be on that one)
     const si = F.starter ? (P === F.starter.flock ? F.starter.i : P.flock === F.starter.flock ? F.starter.i : -1) : -1;
     if (si >= 0 && P.state[si] !== 3) {
       P.pos(si, this._v);
       const dx = this._v.x - f.pos.x, dy = this._v.y - f.pos.y, dz = this._v.z - f.pos.z, d = Math.hypot(dx, dy, dz);
-      if (d < FUN.lockRange * 1.3 && (dx * vd.x + dy * vd.y + dz * vd.z) / Math.max(d, 0.1) > Math.cos(1.2)) { i = si; this.lockTarget = true; }
+      // (within 150 m: whatever the view; browser check: at the hand-over from the nest intro the view still looked
+      // along the ledge and a church pigeon 5 m off took the lock)
+      if (d < 150 || (d < FUN.lockRange * 1.3 && (dx * vd.x + dy * vd.y + dz * vd.z) / Math.max(d, 0.1) > Math.cos(1.2))) { i = si; this.lockTarget = true; }
       else if (i === si) this.lockTarget = false;
     } else if (F.starter) { F.starter = null; this.lockTarget = false; }
     if (i >= 0 && !this.lockTarget) {
@@ -355,7 +363,10 @@ export class FalconGame {
       }
       // the grab: within reach this frame or crossing it (fast birds pass the target between frames)
       const tca = clamp((dx * rvx + dy * rvy + dz * rvz) / Math.max(rvx * rvx + rvy * rvy + rvz * rvz, 1e-3), 0, dt * 1.5);
-      const mx = dx - rvx * tca, my = dy - rvy * tca, mz = dz - rvz * tca, dmin = Math.hypot(mx, my, mz);
+      // (a bird sitting on a roof / the setts, the falcon passing over it: the talons reach DOWN, the height counts 0.6;
+      // browser check: the roof round the tame pigeon kept the swoop ~8 m over it and the falcon circled it)
+      const kv = P.state[i] === 0 && dy - rvy * tca < 0 ? 0.6 : 1;
+      const mx = dx - rvx * tca, my = (dy - rvy * tca) * kv, mz = dz - rvz * tca, dmin = Math.hypot(mx, my, mz);
       if (dmin < reach) { this.funCatch(i, angle, W.kind); F.slowK = 1; return; }
       // the last metres of an auto-dive: the HOMING (the talons swing onto it): the path turned toward a point 2 m over
       // the bird (2.5 m over the solid under it, its velocity's lead) at up to FUN.home rad/s, the speed kept: no
