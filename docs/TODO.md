@@ -17,7 +17,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 
 **Step 1: defect census (detectors city-wide, counts per class, before any fix)**
 - [ ] Car blocked by colliders near the Lycée Français / bridge on the Verrewinkel side (collider view: bridge parapet / wall colliders stand across the cobbled road; "like everywhere"). Class: colliders on drivable surface. Detector: drive every street centreline headless and list blocks. **claude/drivecheck (offline turn, docs/DRIVECHECK.md, rule 27 provisional, gate row drivecheck, ?heroground=old):** cause = the hero bridge's car band measured from the layer nearest the CAR (driveMode.ground, built once in a poll) and from the railway cutting under the deck's edge; fixed at heroColliders.js (the place's own layers, deck only on a deck). City-wide census 280 places (hero 9, Verrewinkel 6 = 136 m of lanes) -> 274 (hero 3: the E8 Bigarreaux drive-surface cliff, open); the other 271 (buildings / gardens / trees / bollards in lanes, mostly lane data) are the census for next jobs. Round 2: census by cause (tools/audit/driveCause.mjs) a lane/band data 153, b generator 83 -> 20, c measured bollards 34, d drive surface 4; fixed the LiDAR trunks on drawn carriageways with no measured surface (viewer/streets/roadTrees.js, ?roadtrees=old: 63 -> 0, 448 moved / 212 dropped city-wide; browser turn done: bridge passes both ways, collider view fixed, tree look kept (vi), tour 1 flag (intended)) and the Verrewinkel deck lanes (?decklanes=old); 274 -> 211. WORKER BUNDLE REBUILD needed. Next: a (routing / band data), b gardens 20, c bollards. 
-- [ ] Buildings with missing walls (Saint-Pierre church: whole wall pieces missing). Class: open meshes. Detector: open-edge / hole scan of every building + landmark.
+- [ ] Buildings with missing walls (Saint-Pierre church: whole wall pieces missing). Class: open meshes. Detector: open-edge / hole scan of every building + landmark. Also (found 2026-11-24 by the billboards tour): UrbIS solid 520249 (building 1787335, tile I3, Langeveld near Ch. de Waterloo, roof 124.9 m) is drawn as floating balcony slabs and pillars with no walls around them, seen from inside its footprint at (1504.6, -947.3).
 - [ ] Balconies / terraces open at the sides (apartment blocks, Alsemberg). Class: generator. Detector: balcony side check.
 - [ ] Terrain: blocky shapes, saw-tooth slopes, a hole, sidewalk ground with saw edges + trees in the middle (unusable sidewalk). Class: terrain fit. Detector: slope / step / hole scan over every tile.
 - [ ] Street-name plate floating away from its pole; signs in the wrong rotation. Detector: sign-to-pole distance + facing vs the street.
@@ -154,6 +154,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [ ] Collège Saint-Pierre: better.
 - [ ] The building at the top of Rue Engeland: gates and fences.
 - [ ] Saint-Pierre church: missing walls (step 1).
+- [ ] Billboards (claude/billboards, ready, gate + tour passed on e2fea155): merge when the owner is away (2026-11-24: owner working, merge later).
 
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
