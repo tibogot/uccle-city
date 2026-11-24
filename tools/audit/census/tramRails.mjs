@@ -25,6 +25,7 @@ const { CHILD, TILES, OUT, JOBS, WORST, flag } = cli();
 const OLD = flag("--old");          // ?tramfit=old: the OSM ways as they are (claude/tramfit)
 const PERSEG = flag("--persegment"); // the census's first sampler (2026-11-18 numbers: 421 m / 152 m)
 const QUIET = flag("--quiet"), REQFIT = flag("--requirefit");
+const PLATOLD = flag("--platold");   // (claude/defects1) ?platpole=old: a `platform` pole with no platform drawn under it stays flagged (and where it is)
 const MAXARG = (() => { const a = process.argv.slice(2), i = a.indexOf("--max"); return i >= 0 ? a[i + 1] : null; })();
 const MAX = MAXARG ? Object.fromEntries(MAXARG.split(",").map((kv) => kv.split("=")).map(([k, v]) => [k, +v])) : null;
 const RAIL_C = 1.435 / 2 + 0.036, STEP = 0.5, KERB_D = 0.15;
@@ -32,7 +33,7 @@ const RAISED = new Set([SC.sidewalk, SC.median, SC.ramp, SC.pit, SC.path]);
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: tramRails.mjs [--all | T ...] [--out FILE]"); process.exit(2); }
-  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(PERSEG ? ["--persegment"] : [])] });
+  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(PERSEG ? ["--persegment"] : []), ...(PLATOLD ? ["--platold"] : [])] });
   const sum = { tiles: 0, trackM: 0, raisedM: 0, kerbM: 0, squareM: 0, platM: 0, poles: 0, polesOff: 0, runs: 0 }, runs = [], offPoles = [];
   for (const r of res) {
     if (r.error || (!r.trackM && !r.poles)) continue;
@@ -67,8 +68,13 @@ const { tram, fit, classAt, inB, nameAt, platforms } = S;
 const { onPlatform, platformFollow } = await imp("viewer/streets/tramPlatforms.js");
 // the STIB poles data/stops puts on a tram platform (`platform: true`), moved with it as main.js does: on one as drawn?
 const stopsDoc = (await import("node:fs")).existsSync(join(ROOT, "data/stops", `${T}.json`)) ? JSON.parse((await import("node:fs")).readFileSync(join(ROOT, "data/stops", `${T}.json`), "utf8")) : null;
-const platPoles = (stopsDoc?.stops || []).map((s) => (s.pole?.platform ? { ...s.pole } : null)).filter(Boolean);
-if (!OLD) platformFollow(platPoles, { lines: platforms });
+const { platformUnflag } = await imp("viewer/streets/tramPlatforms.js");
+const stops2 = (stopsDoc?.stops || []).map((s) => (s.pole ? { ...s, pole: { ...s.pole } } : s));
+if (!OLD) platformFollow(stops2.map((s) => (s.pole?.platform ? s.pole : null)), { lines: platforms });
+// (claude/defects1, as main.js) a flagged pole with no platform drawn under it is an ordinary pole (streetProps.mjs checks it
+// is out of the lanes): what is left flagged must stand on a platform as drawn, so the ceiling is 0 (--platold: 16)
+if (!OLD && !PLATOLD) platformUnflag(stops2, { lines: platforms });
+const platPoles = stops2.map((s) => (s.pole?.platform ? s.pole : null)).filter(Boolean);
 const polesOff = platPoles.filter((p) => !platforms.some((l) => onPlatform(l, p.x, p.z))).map((p) => at(p.x, p.z));
 // the platforms near each point (8 m grid of their boxes)
 const PG = new Map(), pk = (x, z) => Math.floor(x / 8) * 100003 + Math.floor(z / 8);

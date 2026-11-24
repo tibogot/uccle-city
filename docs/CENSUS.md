@@ -144,6 +144,31 @@ A5 C1 Ch. de Ruisbroek (-2685.4, 126); B5 B5 sign (-2012.3, 220.2); C3 plate pos
 (-1573.9, -914.5); B8 plate post Rue du Bois (-2019.2, 1874.9). In Flanders (A-B tiles) nothing moves anything at load,
 because there is no measured street there.
 
+### Round 3: claude/defects1 (2026-11-24, rule 27 round 3)
+
+The owner's two D3 spots are clear (post boxes in a lane 0, Villo stations in a lane / on a track 0, since
+claude/streetprops). What was still in a driven lane, all 120 tiles: **41 -> 2** pieces (gap register, gate row `streetprops`).
+- **Platform poles (22 + 18 listed by mistake).** data/stops puts a tram stop's pole on the nearest OSM tram platform line
+  within 25 m (`pole.platform`, tools/stops/build_stops.py) and main.js kept every such pole where it stood. Since
+  claude/tramfit the platforms are drawn fitted beside their tracks, and 16 flagged poles have no platform drawn under them
+  at all (Brugmann F1 / G1 "Molière", Churchill F1 "Vanderkindere", Legrand I1 "Bascule", the Flemish B4 / B6 / B7 stops,
+  D5, E1): 5 of them stood 0-3 m into a lane. **Fix:** viewer/streets/tramPlatforms.js `platformUnflag` (main.js, after
+  `platformFollow`): a flagged pole with no DRAWN platform under it is an ordinary pole (its 25 cm slab height taken off),
+  so the load-time snap moves it behind the kerb. `?platpole=old` = as before. The census also tested the RAW OSM platforms
+  and skipped `platformFollow`: 18 poles that stand on a drawn platform were listed as in the road; it now does what main.js
+  does (`--platold` = before). Info: 36 of the 79 poles on a drawn platform stand on a platform a driven lane covers (the
+  Ch. d'Alsemberg / Churchill boarding platforms in shared tram roads: the platform slab, tramfit's class, not a prop).
+- **Wide junction roadways (17).** OSM sign / street-name post nodes lie on the way's centre line; in a wide measured
+  junction (Rue Engeland F9, Av. d'Homborchveld E9, Av. des Archères G4, Av. Moscicki H3, Place Jean Vander Elst D3 / D4,
+  Churchill G2, ...) no kerb is within 6 m and no free spot within 8 m, and `offLane` left them in the lane. **Fix:**
+  viewer/streets/carriageway.js `offLane` a far pass: the nearest kerb within `FAR_REACH` (16 m), its raised side, else the
+  nearest raised free spot (`?propreach=old`, census `--farold`). The signs move at load (main.js); the 8 street-name posts
+  and their plates are baked (tools/streetkit/build_streetkit.py D5 E8 E9 F2 F9 H3 J3 N5 re-run: those 8 plates + posts
+  moved 9-13 m, nothing else changed).
+- **Left (registered):** the F4 Allée Charles Viane bench + bin (a park allée measured as roadway, no kerb or raised
+  surface within 16 m: lane-data); one C1 sign moved 9.5 m to a corner now faces across (N5 Av. des Coccinelles,
+  sign-data, the sign keeps the yaw of the way it was tagged on).
+
 ## Class E: Tram rails into the sidewalk / kerb ([e.md](census/e.md))
 
 ### Worst spots
@@ -191,6 +216,11 @@ Check whether UrbIS maps the reservation as sidewalk); E3 Ch. d'Alsemberg (-908.
   poles data/stops puts on a platform follow it (`platformFollow`, main.js; an area platform's pole sat on its outline,
   half off the slab: now 0.4 m in). Rail under a platform (census, as drawn): 705 m (`--old`) -> 0; platform poles off
   every platform: 44 -> 16 (no OSM platform within 3 m of them in their tile: data/stops, pre-existing).
+
+- claude/defects1 (2026-11-24): platform poles off every platform 16 -> 0: such a pole is no longer kept as a platform
+  pole (viewer/streets/tramPlatforms.js `platformUnflag`, `?platpole=old` / `--platold` = 16); it goes behind the kerb and
+  streetProps.mjs checks it is out of the lanes. Rails: 26 m raised + 1 m kerb in 7 runs, unchanged (the Rue de Stalle
+  terminus B5, the Carsoel deck's west end H6 872 524, F1 Churchill 1.5 m); the owner's Ch. d'Alsemberg spot is clear.
 
 ## Class F: Road lines off the carriageway / skewed ([f.md](census/f.md))
 

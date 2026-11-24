@@ -26,13 +26,14 @@ const { CHILD, TILES, OUT, JOBS, WORST, flag, opt } = cli();
 // move without the tram tracks and the OSM width, the plate posts moved at load); --max k=v,...: count ceilings (exit 1
 // over); --register (claude/street1, rule gap-register): every finding judged against data/gaps.json by its stable id
 // (`streetprops.<check>:<kind>@<x>,<z>:0-0`, tools/audit/gaps.mjs), no counts; --write-register rewrites those entries
+const PLATOLD = flag("--platold"), FAROLD = flag("--farold");   // --farold: ?propreach=old (offLane without its 16 m pass)   // (claude/defects1) ?platpole=old: every `platform` STIB pole kept, the platforms as OSM put them
 const OLD = flag("--old"), MAX = opt("--max", null), QUIET = flag("--quiet"), RAILOLD = flag("--railold"), REG = flag("--register"), WREG = flag("--write-register");
 const GATED = ["plateGap", "signFacing", "signConflict", "inRoad", "villo", "onRail", "inHero"].map((k) => `streetprops.${k}`);   // --railold: ?rail=old (no track-bed keep-clear, rule 39)
 const TRAM_HW = 1.3, GAP = 0.15, FACE_TOL = 45, NEAR_ROAD = 12;
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: streetProps.mjs [--all | T ...] [--out FILE]"); process.exit(2); }
-  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(RAILOLD ? ["--railold"] : [])], log: !QUIET });
+  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(RAILOLD ? ["--railold"] : []), ...(PLATOLD ? ["--platold"] : []), ...(FAROLD ? ["--farold"] : [])], log: !QUIET });
   const sum = {}, items = { plateGap: [], signFacing: [], inRoad: [], villo: [], onRail: [] };
   for (const r of res) {
     if (r.error) continue;
@@ -74,6 +75,10 @@ const sl = json(join(ROOT, "data/streetlife", `${T}.json`)) || {};
 const sk = json(join(ROOT, "data/streetkit", `${T}.json`)) || {};
 const furn = json(join(ROOT, "data/furniture", `${T}.json`));
 const stops = json(join(ROOT, "data/stops", `${T}.json`));
+// (claude/defects1) as main.js loadTile: the platform poles follow their fitted platform (platformFollow), and one with no
+// platform DRAWN under it is an ordinary pole (platformUnflag, ?platpole=old: kept as flagged)
+const TP = await imp("viewer/streets/tramPlatforms.js");
+if (!OLD && stops?.stops) { TP.platformFollow(stops.stops.map((s) => (s.pole?.platform ? s.pole : null)), { lines: S.platforms }); if (!PLATOLD) TP.platformUnflag(stops.stops, { lines: S.platforms }); }
 // as main.js: snap(doc, paths) (no road decks here: the few deck points are left as they are)
 const { trackIndex } = await imp("viewer/streets/carriageway.js");
 const { smoothPolyline } = await imp("viewer/track.js");
@@ -108,11 +113,11 @@ if (OLD) {
   // (CLASS T, rule 39) + the track beds (railData.js railBed; main.js propOpt.rail), the furniture inside a hero road
   // bridge dropped (its model draws the deck's benches), the rest lifted onto its deck (main.js deckDoc heroDeckY)
   const R = RAIL.off ? null : RAIL;
-  const o = { osm: true, tram: tracks, ...(R ? { rail: R.bed } : {}) };
+  const o = { osm: true, far: !FAROLD, tram: tracks, ...(R ? { rail: R.bed } : {}) };
   const snap = (doc, paths, op = o) => (doc ? docOffLanes(doc, paths, lanes, fit, op).doc : doc);
   skS = R ? R.lift(snap(sk, [["signs"]]), [["signs"]]) : snap(sk, [["signs"]]);
   furnS = snap(furn, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]], R ? { ...o, drop: (p) => R.bed.inHero(p.x, p.z) } : o);
-  stopsS = snap(stops, [["stops", "pole"], ["stops", "shelter"], ["panels"]], { osm: true, keep: (p) => p.platform, ...(R ? { rail: R.bed } : {}) });
+  stopsS = snap(stops, [["stops", "pole"], ["stops", "shelter"], ["panels"]], { osm: true, far: !FAROLD, keep: (p) => p.platform, ...(R ? { rail: R.bed } : {}) });
   if (R) R.lift(stopsS, [["stops", "pole"], ["stops", "shelter"], ["panels"]]);
 }
 const counts = { plates: 0, plateGap: 0, plateNoPost: 0, signs: 0, signFacing: 0, signMovedFar: 0, pieces: 0, inRoad: 0, inLane: 0, onTram: 0 };
@@ -221,10 +226,12 @@ for (const k of ["benches", "bins", "hoops", "boxes", "banks"]) for (const p of 
 const { isTramPlatform, platformRing, inRing2, TRAM_PLATFORM } = await imp("viewer/drive/colliders.js");
 const plats = (S.feats.lines || []).filter(isTramPlatform), platRings = plats.map(platformRing).filter(Boolean);
 const platLines = lineIndex(plats.filter((l) => !platformRing(l)).map((l) => l.line));
-const onPlatform = (x, z) => platRings.some((r) => inRing2(r, x, z)) || (platLines.dist(x, z, 4)?.d ?? 9) <= TRAM_PLATFORM.W / 2 + 0.2;
-counts.onPlatform = 0;
+const onPlatformOsm = (x, z) => platRings.some((r) => inRing2(r, x, z)) || (platLines.dist(x, z, 4)?.d ?? 9) <= TRAM_PLATFORM.W / 2 + 0.2;
+// (claude/defects1) the platforms as DRAWN (fitted beside their tracks, S.platforms), not where OSM put them; --old / --platold: OSM
+const onPlatform = OLD || PLATOLD ? onPlatformOsm : (x, z) => S.platforms.some((l) => TP.onPlatform(l, x, z));
+counts.onPlatform = 0; counts.platInLane = 0;   // (info) poles on a drawn platform that a driven lane covers (the platform slab in the lane: tramfit's class, not a prop)
 for (const s of stopsS?.stops || []) {
-  if (s.pole?.platform && onPlatform(s.pole.x, s.pole.z)) { counts.onPlatform++; if (s.shelter) test("shelter", s.shelter.x, s.shelter.z, { stop: s.fr }); continue; }
+  if (s.pole?.platform && onPlatform(s.pole.x, s.pole.z)) { counts.onPlatform++; if (lanes.inside(s.pole.x, s.pole.z, 0)) counts.platInLane++; if (s.shelter) test("shelter", s.shelter.x, s.shelter.z, { stop: s.fr }); continue; }
   if (s.pole) test("stop pole", s.pole.x, s.pole.z, { stop: s.fr }); if (s.shelter) test("shelter", s.shelter.x, s.shelter.z, { stop: s.fr }); }
 for (const p of stopsS?.panels || []) test("ad panel", p.x, p.z);
 

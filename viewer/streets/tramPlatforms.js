@@ -179,3 +179,22 @@ export function platformFollow(points, feats) {
   }
   return moved;
 }
+
+/**
+ * (claude/defects1, rule nothing-hard-in-carriageway) the STIB poles data/stops put on a tram platform (`pole.platform`,
+ * y = the DTM + the 25 cm slab) with NO platform drawn under them after platformFollow (none in their tile, or the
+ * platform fitted away from them): the flag dropped and the slab's height taken off, so the load-time snap moves them
+ * out of the driven lane like any pole (main.js keep: p.platform). Before (?platpole=old): every flagged pole stayed
+ * where it was, 16 with no platform within 3 m (tramRails.mjs "poles"), 5 of them inside a driven lane
+ * (Brugmann / Churchill / Legrand). In place; -> the number unflagged. slab: TRAM_PLATFORM.H (drive/colliders.js).
+ */
+export function platformUnflag(stops, feats, slab = 0.25) {
+  const plats = (feats?.lines || []).filter(isPlat);
+  let n = 0;
+  for (const s of stops || []) {
+    const p = s?.pole;
+    if (!p?.platform || plats.some((l) => onPlatform(l, p.x, p.z))) continue;
+    delete p.platform; if (typeof p.y === "number") p.y -= slab; n++;
+  }
+  return n;
+}
