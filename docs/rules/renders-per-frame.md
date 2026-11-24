@@ -33,6 +33,18 @@ Falcon flight (default): 19 full redraws in 558 frames = 0.034 (refresh 11, step
 
 debug/sunDepthStep.js: the cache laid back after a 25 m step equals a full redraw on every caster texel. That holds with the movers and the wind's groups hidden and the LOD dither held: worst 3e-7 of the depth range. Without the offset, 100 % of the texels are off.
 
+**Tour view far-300m** (2026-11-24, one build, tours renders-ab1 / ab2). This view differs from the baseline in the lower-right foreground. The cause is the far plane's extra SUN_QZ (25 m), which `sundepthstep` needs:
+- `&sundepthstep=old` gives the baseline image (0.01 % of pixels);
+- `&sunfadecast=old` changes nothing (0.01 %).
+
+What moves is a pre-existing artifact. Under the reversed depth buffer, every receiver past the sun shadow's far plane reads as shadowed, because r187's frustum test checks only z <= 1. So the region past the far plane is dark, and the +25 m moves that dark band 25 m deeper.
+
+The far plane is box x 1.42 + 110 m past the focus (shadowfar). That assumes the receivers lie close to the box in depth. With a low sun (golden, 9 deg), the ground inside the box's square across the sun runs to box / tan(elevation): ~2.4 km for a 400 m box. Seen from 300 m up, that foreground is past the far plane.
+
+`&shadowfar=old` (far 2000 m) shows the true shadows there. Measured against it, the baseline is off on 0.97 % of pixels, this branch on 0.54 %.
+
+Fading the past-far region to lit was tried and dropped: it removes the real shadows there, and is too bright. The real fix is a far plane, or a box fade, sized by the sun's elevation. That is a separate job (perf: more casters at a low sun).
+
 **Not cut, and why** (candidates for later; each needs a look check or touches vendor/):
 - **Bloom's 12 quads.** three's BloomNode has 5 mips with a blur pair each. Fewer mips, or bloom every 2nd frame, changes the glow, or lags it one frame behind the police lights.
 - **SSR's 6.** The roughness blur mips.
