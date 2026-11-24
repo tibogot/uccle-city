@@ -287,3 +287,11 @@ Left (not touched, Street View look first):
   Fixed by cause: data/gardens E8 / G5 / I4 rebuilt (tools/gardens/build_gardens.py --tile, then fitGardens --lanes until
   nothing moves and --steps; a raw rebuild with ?wallempty=old faces reproduces the old counts, so the change is E2 only:
   E8 +1 garden / +10 segments, G5 +1 garden).
+- After the garden rebuild (second gate run): `gates` open by mistake back to 320; ungated paths 1520 -> 1523 and gated
+  824 -> 823 per mille: E2 gives 4 new house fronts with a door path (8,617 -> 8,621), each meeting its property line
+  inside a driveway opening (the known cause inDrive): D5 (-1123.1, 349.9), H4 (664.5, -378.1), H5 (814.4, 322.2),
+  I6 (1255.5, 778); I4 (1182.4, -105.5) is gated now. Ceilings 1523 / 823, named in the row.
+- `ground` bareBank 554 -> 555: the rebuilt E8 garden (the new front at -867.5, 1706.4) has one bare bank behind its wall
+  at (-877.6, 1702.9), 2.5 m2 (with the old E8 garden file: 8 on the tile, now 9). Ceiling 555, named in the row.
+- `trafmix` failed once on "sim cost: too noisy to measure" (another agent's gate ran at the same time): a timing read,
+  rerun on a quiet machine.
