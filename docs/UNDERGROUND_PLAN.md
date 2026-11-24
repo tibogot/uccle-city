@@ -266,3 +266,10 @@ Sources (web, read 2026-11-24): Uccle, Brochure Easy Mobility 2025 (Parking du D
 dhnet.be, "Le projet de parking souterrain dans le centre d'Uccle tombe à l'eau"; Brussels Times, "Hidden Belgium:
 Square Coghen"; Uccle council interpellation 2020-09-10, îlot Coghen-Doyenné; Google Maps listing "Parking Sint-Pieter"
 (text only); OpenStreetMap via Overpass (ODbL).
+
+## Owner answers (2026-11-24)
+
+- **Parking Saint-Pierre: real only.** Two decks, no fictional level -1.
+- **P2 "Gatti de Gamond" is NOT underground** (owner, local knowledge). It is the Carrefour's surface car park at Rue Gatti de Gamond / Rue de Stalle. The OSM node 9627537495 (`parking=underground`, no entrance mapped) is taken as a wrong tag. P2 leaves the candidates to open. Job 0 (the look) confirms it, and the OSM fix is left to the owner.
+- That Carrefour has the same design as Carrefour Market Marlow near the police station (claude/carrefour: `shed:true` box, glazed front under a canopy, red sign, car park with painted bays). A small curation job reuses that work.
+- Which car parks open fully: still open; candidates are E1-E4 Avenue Van Bever and P3 CHIREC.
