@@ -26,6 +26,7 @@ import { FalconInput } from "./falconInput.js";
 import { FalconCamera } from "./falconCamera.js";
 import { FalconAudio } from "./falconAudio.js";
 import { FalconGame } from "./falconGame.js";
+import { FUN_OLD, CAM_FUN } from "./falconFun.js";
 import { G } from "./flightModel.js";
 import { STREET } from "../treesStylized.js";
 import { wx } from "../weather/weatherState.js";
@@ -113,6 +114,7 @@ export class CityFlyer {
     this.input = new FalconInput(this.dom, { invert: P.get("invert") === "1", enabled: false, skip: ["KeyM", "KeyH"] });
     this.fcam = new FalconCamera(this.camera, this.scene);
     this.fcam.streaks.visible = false;
+    if (!FUN_OLD) Object.assign(this.fcam.params, CAM_FUN);       // (falcon fun: the speed feel comes in earlier)
     this.hints = new ThermalHints(this.air, { scale: 1.4 });
     this.hints.group.visible = false;
     this.scene.add(this.hints.group);
@@ -375,7 +377,10 @@ export class CityFlyer {
       // life size on foot / in a car, 1.4 x in the falcon flight (readable from the falcon's chase camera)
       if (this.params.get("birds") !== "0") P.scale = flying ? 1.4 : 1.0;
       // (not flying: the ground threats, the walker / the car / the traffic, viewer/birds/cityBirds.js; quiet at night)
-      P.update(dt * this.game.timeScale, this.tAmb, flying ? { x: f.pos.x, y: f.pos.y, z: f.pos.z, speed: f.V, stoop: f.fold > 0.7 } : this._noFalcon ??= { x: 1e6, y: 0, z: 1e6, speed: 0, stoop: false },
+      // (falcon fun: the falcon's velocity too, for the pigeons' dodge; one reused object; the slow motion before contact)
+      let th = this._noFalcon ??= { x: 1e6, y: 0, z: 1e6, speed: 0, stoop: false };
+      if (flying) { th = this._threat ??= { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, speed: 0, stoop: false }; th.x = f.pos.x; th.y = f.pos.y; th.z = f.pos.z; th.vx = f.vel.x; th.vy = f.vel.y; th.vz = f.vel.z; th.speed = f.V; th.stoop = f.fold > 0.7; }
+      P.update(dt * this.game.timeScale * (this.game.fun?.slowK ?? 1), this.tAmb, th,
         flying ? null : this.groundThreats?.() ?? null, !flying && (this.birdsQuiet?.() ?? false));
       for (const e of P.events.splice(0)) if (e.kind === "burst" && this.on && this.audio) this.audio.pigeonBurst(e.x, e.y, e.z, e.n);
     }
@@ -411,7 +416,7 @@ export class CityFlyer {
     this.pos.set(f.pos.x, f.pos.y, f.pos.z);
     this.ambient(this.camera.position, dt);
     const t4 = performance.now();
-    this.hints.update(dt * g.timeScale, g.t, f.pos);
+    this.hints.update(dt * g.timeScale * (g.fun?.slowK ?? 1), g.t, f.pos);
     const t5 = performance.now();
     // the camera (the chase / head camera of the lab; V: chase / head, wheel: distance)
     if (this.input.take("camera")) this.fcam.mode = this.fcam.mode === "chase" ? "head" : "chase";

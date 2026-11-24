@@ -19,7 +19,9 @@ export class FalconCamera {
     this.roll = 0; this.shakeT = 0; this.fov = 58; this.inited = false;
     this.fix = new THREE.Vector3();                   // the clearance offset on the eased chase position (keepClear)
     this.ceil = Infinity;
-    this.params = { fov0: 58, fov1: 82, dist: 1.0, shake: 1, streaks: true, vignette: true };
+    // (fovV / streakV / vigV: the airspeeds (m/s) over which the FOV widens, the streaks and the vignette come in; the
+    // falcon fun sets falconFun.js CAM_FUN: earlier, so a 150 km/h stoop feels fast)
+    this.params = { fov0: 58, fov1: 82, dist: 1.0, shake: 1, streaks: true, vignette: true, fovV: [18, 90], streakV: [32, 85], vigV: [35, 95] };
     // air streaks: 140 segments in a box round the camera, stretched along the air velocity
     const N = 140;
     this.N = N; this.sp = new Float32Array(N * 3);
@@ -176,7 +178,7 @@ export class FalconCamera {
     }
     this.inited = true;
     // FOV with airspeed
-    const fovT = P.fov0 + (P.fov1 - P.fov0) * smooth(V, 18, 90) + (this.mode === "head" ? 8 : 0);
+    const fovT = P.fov0 + (P.fov1 - P.fov0) * smooth(V, P.fovV[0], P.fovV[1]) + (this.mode === "head" ? 8 : 0);
     this.fov += (fovT - this.fov) * (1 - Math.exp(-3 * dt));
     if (still && Math.abs(fovT - this.fov) < 0.01) this.fov = fovT;
     if (Math.abs(cam.fov - this.fov) > 0.01) { cam.fov = this.fov; cam.updateProjectionMatrix(); }
@@ -202,7 +204,7 @@ export class FalconCamera {
     cam.rotateZ(-this.roll + sx * 0.5);
     cam.rotateX(sy); cam.rotateY(sx);
     // streaks: segments in a 50 m box round the camera, along the air velocity; only fast
-    const so = P.streaks ? smooth(V, 32, 85) : 0;
+    const so = P.streaks ? smooth(V, P.streakV[0], P.streakV[1]) : 0;
     this.streakOpacity.value = so * 0.55;
     this.streaks.visible = so > 0.01;
     if (this.streaks.visible) {
@@ -226,6 +228,6 @@ export class FalconCamera {
       }
       this.sPos.needsUpdate = true;
     }
-    this.vignette.style.opacity = P.vignette ? (0.9 * smooth(V, 35, 95)).toFixed(3) : "0";
+    this.vignette.style.opacity = P.vignette ? (0.9 * smooth(V, P.vigV[0], P.vigV[1])).toFixed(3) : "0";
   }
 }

@@ -14,6 +14,13 @@ import { attribute, vec3, vec4, float, sin, cos, abs, sign, normalize, cross, mi
 import { InstancePrev } from "../instMotion.js";   // --- instmotion
 
 const PERCH = 0, FLY = 1, LAND = 2, GONE = 3;
+/** FALCON FUN (claude/falconfun, docs/rules/falcon-catch-fun.md): readable prey. ?falconfun=old = every pigeon as before
+ *  (one kind, flushing at 32-75 m, a jink at 7 m with no warning, fleeing at up to 21 m/s) */
+const FUN_OLD = typeof location !== "undefined" && /[?&]falconfun=old(&|$)/.test(location.search);
+export const KIND = { NORMAL: 0, EASY: 1, RACER: 2 };
+/** per kind: cruise / max speed alarmed (m/s), the flush distance from the falcon (m), the flee range (m) and strength,
+ *  the dodge's impulse (m/s); a TIRED bird (two escapes): max 11 m/s, half the flee, no dodge */
+const FUNK = { 1: { cruise: 10, max: 14.5, startle: 13, flee: 22, fleeK: 0.45, dodge: 3.5 }, 2: { cruise: 16, max: 26, startle: 45, flee: 40, fleeK: 1.0, dodge: 7.5 } };
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const rand = (a, b) => a + Math.random() * (b - a);
 
@@ -116,6 +123,15 @@ export class Pigeons {
     this.phase = new Float32Array(n); this.alarm = new Float32Array(n); this.glide = new Float32Array(n); this.yaw = new Float32Array(n);
     this.fold = new Float32Array(n).fill(1); this.amp = new Float32Array(n); this.liftV = new Float32Array(n); this.bank = new Float32Array(n);
     this.flock = new Uint8Array(n); this.jink = new Float32Array(n);
+    // (falcon fun) the kind (easy: feeding on the setts / a roof, slow to notice and slow off the ground; racer: a fast
+    // bonus bird, every 8th), the dodge's warning (tele: 0.3 s of hard flapping before it jinks), its cooldown, the
+    // escapes (a falcon pass within 10 m that did not catch it: two and it is TIRED), the take-off clock, a tame bird
+    // (the first catch's pigeon under the eyrie: it stays put until the falcon is ~8 m off)
+    this.fun = !FUN_OLD;
+    this.kind = new Uint8Array(n); this.tele = new Float32Array(n); this.dodgeCD = new Float32Array(n);
+    this.esc = new Uint8Array(n); this.nearMin = new Float32Array(n).fill(1e9); this.upT = new Float32Array(n).fill(9); this.tame = new Uint8Array(n);
+    this.skipI = -1;                     // (falcon fun) a bird the lock lets go for a while
+    this.escapes = 0;                    // every escape so far (the game's "it got away" line)
     this.why = new Uint8Array(n);        // 1: the alarm came from a ground threat (a person, a car): a local flush, not the whole roof
     this.owner = new Int32Array(roosts.length).fill(-1);
     this.params = { sep: 1.6, align: 1.0, coh: 0.7, home: 0.5, flee: 40, startle: 32, cruise: 14, maxSpeed: 21, neighbour: 6 };
@@ -137,6 +153,11 @@ export class Pigeons {
     // jackdaws among them (a share of the birds, every k-th): black-grey (viewer/birds/cityBirds.js; the shape stays the pigeon's)
     this.jackdaw = new Uint8Array(n);
     if (jackdaws > 0) for (let i = 0; i < n; i++) if (((i * 0.754877) % 1) < jackdaws) { this.jackdaw[i] = 1; tint.set([0.2, 0.2, 0.22], i * 3); }
+    if (this.fun) for (let i = 0; i < n; i++) {
+      this.kind[i] = !this.jackdaw[i] && i % 8 === 5 ? KIND.RACER : KIND.EASY;
+      // racers: the pale "show" racing-pigeon look (a lighter, bluer grey: readable from the chase camera)
+      if (this.kind[i] === KIND.RACER) tint.set([1.3, 1.36, 1.5], i * 3);
+    }
     g.setAttribute("iPos", this.aPos); g.setAttribute("iDir", this.aDir); g.setAttribute("iAnim", this.aAnim);
     g.setAttribute("iTint", new THREE.InstancedBufferAttribute(tint, 3));
     g.boundingSphere = new THREE.Sphere(new THREE.Vector3(home.x, 100, home.z), 600);
@@ -177,8 +198,11 @@ export class Pigeons {
     this.p[i * 3] = R.x; this.p[i * 3 + 1] = R.y; this.p[i * 3 + 2] = R.z;
     this.v.fill(0, i * 3, i * 3 + 3);
     this.yaw[i] = R.yaw + rand(-0.4, 0.4); this.timer[i] = rand(60, 260); this.alarm[i] = 0;
+    if (this.fun) { this.tele[i] = 0; this.nearMin[i] = 1e9; }
   }
-  vanish(i) { if (this.roost[i] >= 0 && this.owner[this.roost[i]] === i) this.owner[this.roost[i]] = -1; this.roost[i] = -1; this.state[i] = GONE; this.timer[i] = rand(25, 45); }
+  /** (falcon fun) the kind's name for the HUD */
+  kindName(i) { return !this.fun ? "" : this.esc[i] >= 2 ? "tired" : this.kind[i] === KIND.RACER ? "racer" : "easy"; }
+  vanish(i) { if (this.fun) { this.esc[i] = 0; this.tame[i] = 0; this.tele[i] = 0; } if (this.roost[i] >= 0 && this.owner[this.roost[i]] === i) this.owner[this.roost[i]] = -1; this.roost[i] = -1; this.state[i] = GONE; this.timer[i] = rand(25, 45); }
 
   /** the falcon took bird i: it is gone (a new one comes back to a roost later) */
   take(i) { const x = this.p[i * 3], y = this.p[i * 3 + 1], z = this.p[i * 3 + 2]; this.vanish(i); return { x, y, z }; }
@@ -204,6 +228,9 @@ export class Pigeons {
     let ax = this.p[o] - fx, az = this.p[o + 2] - fz; const L = Math.hypot(ax, az) || 1; ax /= L; az /= L;
     const ya = this.yaw[i];
     this.v[o] = ax * 5 + Math.sin(ya) * 2 + rand(-1, 1); this.v[o + 1] = rand(3.5, 5.5); this.v[o + 2] = az * 5 + Math.cos(ya) * 2 + rand(-1, 1);
+    // (falcon fun) an easy bird lifts off slowly (a heavy, flappy take-off: ~1 s to get going)
+    if (this.fun && this.kind[i] === KIND.EASY) { this.v[o] *= 0.45; this.v[o + 2] *= 0.45; this.v[o + 1] = rand(1.8, 2.6); }
+    this.upT[i] = 0;
     this.state[i] = FLY; this.timer[i] = rand(18, 40); this.fold[i] = 0.6;
     this.stats.takeoffs++;
     this._burst = (this._burst || 0) + 1; this._bx = this.p[o]; this._by = this.p[o + 1]; this._bz = this.p[o + 2];
@@ -239,7 +266,11 @@ export class Pigeons {
       }
       if (s !== PERCH) { flying++; continue; }
       const o = i * 3, d = Math.hypot(p[o] - fx, p[o + 1] - fy, p[o + 2] - fz);
-      if (d < startle) this.alarm[i] = Math.max(this.alarm[i], 0.05 + Math.random() * 0.25 * (d / startle));
+      // (falcon fun) an easy bird feeding notices the falcon late (13 m, x1.4 when it comes fast); a tame one at 8 m
+      // and only from the falcon (not its neighbours' flush, not a spontaneous flight)
+      const stl = !this.fun || !this.kind[i] ? startle : this.tame[i] ? 8 : FUNK[this.kind[i]].startle * (fs > 30 ? 1.4 : 1) * (falcon?.stoop ? 1.15 : 1);
+      if (this.tame[i] && d >= stl) { this.alarm[i] = 0; continue; }
+      if (d < stl) this.alarm[i] = Math.max(this.alarm[i], 0.05 + Math.random() * 0.25 * (d / startle));
       // a person / a car walking or driving at it: up at its flight initiation distance (the neighbours follow: spread)
       const g = others && others.length ? this.nearThreat(p[o], p[o + 1], p[o + 2]) : null;
       if (g && this.alarm[i] <= 0) { this.alarm[i] = 0.02 + Math.random() * 0.12; this.why[i] = 1; this._gx = g.x; this._gy = g.y; this._gz = g.z; }
@@ -296,12 +327,14 @@ export class Pigeons {
         const hx = tx - x, hy = ty - y, hz = tz - z, hl = Math.hypot(hx, hy, hz) || 1;
         ax += hx / hl * P.home * 3; ay += hy / hl * P.home * 2; az += hz / hl * P.home * 3;
         // flee: stronger the closer (HoPE: the escape grows with closeness), a jink when it is about to strike
-        if (df < P.flee) {
-          const k = (1 - df / P.flee) ** 2 * 16;              // up to ~1.6 g of escape
+        const FK = this.fun && this.kind[i] ? FUNK[this.kind[i]] : null, fleeR = FK ? FK.flee : P.flee;
+        if (df < fleeR) {
+          const k = (1 - df / fleeR) ** 2 * 16 * (FK ? FK.fleeK * (this.esc[i] >= 2 ? 0.5 : 1) : 1);   // up to ~1.6 g of escape
           ax += dfx / df * k; ay += (dfy / df) * k * 0.6 + k * 0.15; az += dfz / df * k;
-          this.alarm[i] = Math.max(this.alarm[i], 1 - df / P.flee);
-          if (df < 7 && this.jink[i] <= 0) { this.jink[i] = 0.6; const side = Math.random() < 0.5 ? -1 : 1; v[o] += -v[o + 2] / 3 * side; v[o + 2] += v[o] / 3 * side; v[o + 1] -= 3; }
+          this.alarm[i] = Math.max(this.alarm[i], 1 - df / fleeR);
+          if (!this.fun && df < 7 && this.jink[i] <= 0) { this.jink[i] = 0.6; const side = Math.random() < 0.5 ? -1 : 1; v[o] += -v[o + 2] / 3 * side; v[o + 2] += v[o] / 3 * side; v[o + 1] -= 3; }
         }
+        if (this.fun) this.funFlee(i, df, dfx, dfy, dfz, falcon, dt);
         this.alarm[i] = Math.max(0, this.alarm[i] - dt * 0.4);
         if (this.jink[i] > 0) this.jink[i] -= dt;
         // back to a roost after a while (and calm)
@@ -325,8 +358,16 @@ export class Pigeons {
       // speed: cruise, faster in alarm
       v[o] += ax * dt; v[o + 1] += ay * dt; v[o + 2] += az * dt;
       const sp = Math.hypot(v[o], v[o + 1], v[o + 2]);
-      const vmax = s === LAND ? P.cruise : P.cruise + (P.maxSpeed - P.cruise) * Math.min(1, this.alarm[i] * 1.5);
-      const vmin = s === LAND ? 0 : 7;
+      let vmax = s === LAND ? P.cruise : P.cruise + (P.maxSpeed - P.cruise) * Math.min(1, this.alarm[i] * 1.5);
+      let vmin = s === LAND ? 0 : 7;
+      if (this.fun && this.kind[i]) {
+        const FK = FUNK[this.kind[i]];
+        // an easy bird flutters on low: it does not climb away from the falcon (at most 2.5 m/s up, back under 26 m)
+        if (s === FLY && this.kind[i] === KIND.EASY) { if (v[o + 1] > 2.5) v[o + 1] = 2.5; if (y > fl + 26) v[o + 1] = Math.min(v[o + 1], -1); }
+        if (s === FLY) vmax = this.esc[i] >= 2 ? Math.min(11, FK.cruise + 2) : FK.cruise + (FK.max - FK.cruise) * Math.min(1, this.alarm[i] * 1.5);
+        // the slow take-off: ~1 s from ~3 m/s to the cruise
+        if (this.upT[i] < 1.2) { this.upT[i] += dt; if (this.kind[i] === KIND.EASY) { vmax = Math.min(vmax, 3 + 8 * this.upT[i]); vmin = 0; } }
+      }
       const k = sp > vmax ? vmax / sp : sp < vmin && sp > 0.01 ? vmin / sp : 1;
       v[o] *= k; v[o + 1] *= k; v[o + 2] *= k;
       if (v[o + 1] > 6) v[o + 1] = 6;
@@ -373,6 +414,8 @@ export class Pigeons {
         amp = ease(amp, gliding ? 0.08 : landing && sp < 4 ? 1.0 : 0.85 + this.alarm[i] * 0.2, 6);
         lift = ease(lift, gliding ? 0.45 : landing ? 0.25 : 0, 4);
         this.phase[i] += dt * Math.PI * 2 * (gliding ? 1 : 7 + (climbing ? 2 : 0) + this.alarm[i] * 2);
+        // (falcon fun) the dodge's warning: 0.3 s of big, fast wingbeats (the flash of the pale underwing)
+        if (this.tele[i] > 0) { amp = 1.5; lift = 0; this.phase[i] += dt * Math.PI * 2 * 8; }
         if (landing) { D[q + 1] += 0.5 * Math.max(0, 1 - sp / 6); }   // the flare: nose up
       }
       this.fold[i] = fold; this.amp[i] = amp; this.liftV[i] = lift;
@@ -384,7 +427,7 @@ export class Pigeons {
   }
 
   /** the best pigeon to strike: in front of the falcon (within `cone` rad of its velocity), nearest, flying or perched */
-  target(fx, fy, fz, dx, dy, dz, maxD = 160, cone = 0.5) {
+  target(fx, fy, fz, dx, dy, dz, maxD = 160, cone = 0.5, byAngle = false) {
     let best = -1, bs = Infinity;
     const L = Math.hypot(dx, dy, dz) || 1; dx /= L; dy /= L; dz /= L;
     const cc = Math.cos(cone);
@@ -394,10 +437,39 @@ export class Pigeons {
       if (d > maxD || d < 0.01) continue;
       const c = (ex * dx + ey * dy + ez * dz) / d;
       if (c < cc) continue;
-      const score = d * (2 - c);
+      // (falcon fun, the lock-on: the bird nearest the VIEW CENTRE; the distance only a tie-break)
+      // (a bird well ABOVE the falcon only when nothing else is there: a falcon does not climb onto prey)
+      const score = byAngle ? (1 - c) * 400 + d * 0.25 + Math.max(0, ey - 6) * 4 + (i === this.skipI ? 1e4 : 0) - (this.tame[i] ? 250 : 0) : d * (2 - c);
       if (score < bs) { bs = score; best = i; }
     }
+    this.bestScore = bs;
     return best;
+  }
+
+  /** (falcon fun) the falcon's pass, per flying bird: the dodge (a 0.3 s warning, then a jink sideways: easy 3.5 m/s,
+   *  racer 7.5 m/s, a tired bird none) and the escapes (within 10 m, then away past 16 m without being caught: +1; at
+   *  two the bird is TIRED: slow, no dodge, half the flee: the next pass gets it). falcon: { x, y, z, vx, vy, vz } */
+  funFlee(i, df, dfx, dfy, dfz, falcon, dt) {
+    const o = i * 3, v = this.v, kind = this.kind[i];
+    if (this.dodgeCD[i] > 0) this.dodgeCD[i] -= dt;
+    if (df < 10) this.nearMin[i] = Math.min(this.nearMin[i], df);
+    else if (df > 16 && this.nearMin[i] < 10) { this.nearMin[i] = 1e9; if (this.esc[i] < 255) this.esc[i]++; this.escapes++; }
+    if (!kind || !falcon || falcon.vx === undefined) return;
+    if (this.tele[i] > 0) {
+      this.tele[i] -= dt;
+      if (this.tele[i] <= 0) {
+        // the jink: sideways to the falcon's line, a little up
+        const side = (i * 0.618 + this.esc[i] * 0.5) % 1 < 0.5 ? -1 : 1, fl = Math.hypot(falcon.vx, falcon.vz) || 1, J = FUNK[kind].dodge;
+        v[o] += -falcon.vz / fl * side * J; v[o + 2] += falcon.vx / fl * side * J; v[o + 1] += 1.2;
+        this.dodgeCD[i] = 2.5; this.tele[i] = 0;
+      }
+      return;
+    }
+    if (this.esc[i] >= 2 || this.dodgeCD[i] > 0 || df > 22) return;
+    // the falcon's closing speed on it: the warning 0.55 s before it would arrive (the jink ~0.25 s before)
+    const rvx = falcon.vx - v[o], rvy = falcon.vy - v[o + 1], rvz = falcon.vz - v[o + 2];
+    const closing = (rvx * dfx + rvy * dfy + rvz * dfz) / df;           // (dfx: falcon -> bird)
+    if (closing > 4 && df / closing < 0.55) this.tele[i] = 0.3;
   }
   pos(i, out) { out.x = this.p[i * 3]; out.y = this.p[i * 3 + 1]; out.z = this.p[i * 3 + 2]; return out; }
   vel(i, out) { out.x = this.v[i * 3]; out.y = this.v[i * 3 + 1]; out.z = this.v[i * 3 + 2]; return out; }

@@ -11,6 +11,7 @@
 //   strike    a thump and the falcon's "kek-kek-kek" (saw chirps ~2.2 kHz)
 // Starts on the first click / key (browsers need a gesture).
 import { soundGate } from "../audio/soundGate.js";
+import { windLevels } from "./falconFun.js";
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 
@@ -61,11 +62,12 @@ export class FalconAudio {
     if (!this.ctx) return;
     const ctx = this.ctx, t = ctx.currentTime, V = b.V;
     this.master.gain.setTargetAtTime(this.on ? this.volume : 0, t, 0.1);
-    const lvl = clamp((V / 30) ** 1.6, 0.02, 2.2);
+    // (falcon fun: falconFun.js windLevels, the wind louder earlier: a 150 km/h stoop roars; ?falconfun=old the old ramp)
+    const L = this.levels = windLevels(V, b.fold);
     this.windBand.frequency.setTargetAtTime(280 + V * 22, t, 0.08);
-    this.windGain.gain.setTargetAtTime(0.16 * lvl, t, 0.08);
-    this.hissGain.gain.setTargetAtTime(0.25 * smooth(V, 38, 95), t, 0.1);
-    const tuck = smooth(b.fold, 0.6, 1) * smooth(V, 35, 80);
+    this.windGain.gain.setTargetAtTime(L.wind, t, 0.08);
+    this.hissGain.gain.setTargetAtTime(L.hiss, t, 0.1);
+    const tuck = L.tuck;
     this.lfo.frequency.setTargetAtTime(8 + V * 0.08, t, 0.2);
     this.lfoGain.gain.setTargetAtTime(0.35 * tuck, t, 0.1);
     this.pan.pan.setTargetAtTime(clamp(-b.phi * 0.35, -0.6, 0.6), t, 0.1);

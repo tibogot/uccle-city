@@ -11,11 +11,16 @@
 //             (+0.33 kg: heavier, more tiring), the score = the strike speed
 //   carry     bring it to the eyrie: land on the eyrie's ledge -> delivered (score x2 in the first minute), and the
 //             female takes it in to feed the young (fam.force("feed"))
+// FALCON FUN (claude/falconfun, falconFun.js, docs/rules/falcon-catch-fun.md; ?falconfun=old = the above): the lock-on
+// (the pigeon nearest the view centre), the AUTO-DIVE while the strike button is held, an automatic grab within 5.5 m
+// with speed / angle as bonus points, a slow motion just before contact, the arcade stoop and the flap sprint, combos,
+// the run goal (5 in 2:00), hunting on with prey in the talons (the eyrie a bonus), the tame first pigeon.
 // Traces: every 0.1 s, time / airspeed / height above the floor / altitude / stamina / specific energy (h + V^2/2g) /
 // the air's vertical speed / mode, for the lab's graph and the verification records.
 import * as THREE from "three/webgpu";
 import { FalconFlight, FlightControls, G } from "./flightModel.js";
-import { FlightAssist } from "./flightAssist.js";
+import { FlightAssist, ASSIST } from "./flightAssist.js";
+import { FUN, FUN_OLD, FunState, flockOf } from "./falconFun.js";
 import { CTL_OLD } from "./falconInput.js";
 /** ?falconcol=old also keeps round 1's take-off (a drop forward from the perch's own height: from the ground or a flat
  *  roof it touched down again at once) */
@@ -30,7 +35,10 @@ export class FalconGame {
     Object.assign(this, { world, air, bird, pigeons, fam, audio, input });
     this.f = new FalconFlight();
     // the flight assist (falconfix: the player says where, the assist flies; ?falconctl=old = the raw controls)
-    this.assist = CTL_OLD ? null : new FlightAssist();
+    this.fun = FUN_OLD ? null : new FunState();
+    this.assist = CTL_OLD ? null : new FlightAssist(this.fun ? { ...ASSIST, chase: FUN.chase } : ASSIST);
+    if (this.fun) { this.f.arcade = FUN.arcade; this.f.P = { ...this.f.P, nMax: FUN.nMax }; }
+    this._cam = new THREE.Vector3();
     if (this.assist && typeof location !== "undefined" && /[?&]falconavoid=0(&|$)/.test(location.search)) this.assist.avoid = false;
     this.steerT = -1; this._ov = { psi: 0, gamma: 0 };
     this.mode = "fly";                         // fly | perch | land
@@ -136,6 +144,7 @@ export class FalconGame {
     const v1 = face.clone().multiplyScalar(0.8).add(new THREE.Vector3(0, -0.6, 0));
     this.landing = { q, p0, v0, v1, T, t: 0, yaw0: f.heading };
     f.stun = 0; f.lift = 0;                                   // (falconfix: no tumble / rough-air shake in the flare)
+    f.sprint = 0;
     this.mode = "land";
     this.say(`landing on ${q.church ? `the ${q.name === "ledge" ? "eyrie's ledge" : q.name}` : q.tree ? "a tree's crown" : q.spot ? (q.roof ? "the roof" : "the ground") : "a roof ridge"}: the flare`);
     if (q.spot) this.landing.q = { name: q.roof ? "roof" : "ground", pos: q.pos.clone(), yaw: q.yaw, roof: q.roof };
@@ -163,6 +172,7 @@ export class FalconGame {
     // the hit-stop after a catch (the game-feel pause), slow motion option
     let dt = dtReal * this.timeScale;
     if (this.hitStop > 0) { this.hitStop -= dtReal; dt *= 0.15; }
+    if (this.fun) dt *= this.fun.slowK;                       // (falcon fun) the slow motion just before contact
     this.t += dt;
     const f = this.f, inp = this.input;
     const C = inp.update(dt, f);
@@ -198,13 +208,20 @@ export class FalconGame {
       // frame (hunt.js sets steerT): the assist follows the path it gives instead of pulling back to the aim
       f.assisted = !!this.assist && !inp.script;
       if (f.assisted) {
-        const ov = this.t - this.steerT < 0.1 ? this._ov : null;
-        if (ov) { ov.psi = f.heading; ov.gamma = f.gamma; }
+        let ov = null, I = inp.intent;
+        if (this.fun) { I = this.funSteer(dt, inp); if (this.fun.diving) ov = this.fun.ov; }
+        else { ov = this.t - this.steerT < 0.1 ? this._ov : null; if (ov) { ov.psi = f.heading; ov.gamma = f.gamma; ov.floorY = null; } }
         this.assist.override = ov;
-        const W = this.window; this.assist.chase = !!(W && W.i >= 0 && W.d < 90 && W.angle < 0.6 && !this.bird.prey);
-        this.assist.apply(dt, f, inp.intent, C, this.world);
+        const W = this.window; this.assist.chase = this.fun ? this.fun.diving : !!(W && W.i >= 0 && W.d < 90 && W.angle < 0.6 && !this.bird.prey);
+        this.assist.apply(dt, f, I, C, this.world);
       }
       if (this.takeoffT > 0) { this.takeoffT -= dt; C.flap = 1; C.pitch = Math.max(C.pitch, 0.3); C.fold = 0; }
+      // (falcon fun) the flap sprint: a quick tap of Space (gamepad RB, a tap on FLAP): ~1 s of hard beats
+      if (this.fun && inp.take("sprint")) {
+        if (f.stamina > FUN.sprintMin && f.sprint <= 0) { f.sprint = FUN.sprintT; f.stamina -= FUN.sprintCost; this.say("sprint!"); }
+        else if (f.sprint <= 0) this.say("too tired to sprint");
+      }
+      if (f.sprint > 0) { C.flap = 1; C.fold = Math.min(C.fold, 0.3); }
       const t1 = performance.now();
       f.step(dt, C, this.air, this.world);
       this.cpu.flight = this.cpu.flight * 0.95 + (performance.now() - t1) * 0.05;
@@ -224,9 +241,10 @@ export class FalconGame {
       if (f.brush > 0.05 && (!this._brushT || this.t - this._brushT > 1.5)) { this.say("through the leaves"); this.audio?.leaves?.(); }
       if (f.brush > 0.05) this._brushT = this.t;
       this.score.maxSpeed = Math.max(this.score.maxSpeed, f.V);
-      this.strike(dt, inp);
+      if (this.fun) this.strikeFun(dt, dtReal, inp, cam); else this.strike(dt, inp);
     }
-    inp.take("strike");
+    inp.take("strike"); if (this.fun) inp.take("sprint");
+    if (this.fun && this.mode !== "fly") { this.fun.slowK = 1; this.fun.release(dt, f); }
     // ---- the bird (size: the readable size in the air, life size near the perches and the ground)
     const fl = this.world.floorAt ? this.world.floorAt(f.pos.x, f.pos.z, f.pos.y) : this.world.floor(f.pos.x, f.pos.z), agl = f.pos.y - fl;
     const wantSpan = this.mode === "fly" ? this.size.life + (this.size.readable - this.size.life) * smooth(agl, 6, 30) : this.size.life;
@@ -243,6 +261,143 @@ export class FalconGame {
     }
     this.agl = agl;
     this.cpu.game = this.cpu.game * 0.95 + (performance.now() - t0) * 0.05;
+  }
+
+  /** (falcon fun) the strike button held with a lock = the auto-dive: the intent copy the assist flies (falconFun.js
+   *  dive), else the player's own intent */
+  funSteer(dt, inp) {
+    const F = this.fun, f = this.f, P = this.pigeons, I0 = inp.intent, i = this.target;
+    F.held = !!(inp.talons || (I0.stoop && i >= 0));
+    if (F.held && i >= 0 && P && P.state[i] !== 3) P.pos(i, this._v);
+    // (out of breath: no auto-dive UP at a bird; the wings cannot climb, the chase ended in the walls)
+    const tiredUp = F.held && i >= 0 && f.stamina < FUN.tiredUp && this._v.y > f.pos.y - 2;
+    if (tiredUp && !F.tiredSaid) { F.tiredSaid = true; this.say("out of breath: dive on one below, or rest a moment"); }
+    if (!tiredUp) F.tiredSaid = false;
+    if (F.held && i >= 0 && P && P.state[i] !== 3 && !tiredUp) {
+      P.vel(i, this._w);
+      const w = this.world, v = this._v;
+      const fl = (x, z, y) => (w.column ? w.column(x, z, y).floor : w.floor(x, z));
+      const floorY = F.floorY = fl(v.x, v.z, v.y + 0.5);
+      // the line to the bird: the highest solid under it (10 samples, the last 3 m left out): the dive stays 3 m over
+      // it (node checks: a low bird 60 m off behind a row of houses, or one flying in low beside a roof, drew the
+      // falcon down into their walls)
+      const hx = v.x - f.pos.x, hz = v.z - f.pos.z, hd = Math.hypot(hx, hz);
+      let lineMax = -Infinity, lineD = 0;
+      if (hd > 5) for (let k = 1; k <= 10; k++) {
+        const s = k / 10 * (hd - 3) / hd, h = fl(f.pos.x + hx * s, f.pos.z + hz * s, f.pos.y);
+        if (h > lineMax) { lineMax = h; lineD = s * hd; }
+      }
+      F.dive(dt, f, v, this._w, floorY, I0, P.state[i] === 0, lineMax, lineD, fl(f.pos.x, f.pos.z, f.pos.y));
+      if (f.V > 11) f.noLand = Math.max(f.noLand, 0.1);         // (no touch-down in a fast auto-dive; a slow one may land)
+      F.diving = true;
+      return F.I;
+    }
+    F.release(dt, f);
+    return I0;
+  }
+
+  /** (falcon fun) the lock-on, the automatic grab within FUN.reach, the bonus score, the slow motion before contact */
+  strikeFun(dt, dtReal, inp, cam) {
+    const f = this.f, P = this.pigeons, F = this.fun;
+    if (!P) return;
+    this.talonsOut = F.diving || !!this.window?.near;
+    const vd = F.viewDir(cam && cam.getWorldDirection ? cam.getWorldDirection(this._cam) : null, f, inp.intent.aim);
+    let i = this.target;
+    if (i >= 0 && P.state[i] === 3) i = -1;
+    // (after a catch: FUN.cool s with the prey in the talons before the next lock: one bird at a time)
+    if (F.cool > 0) { F.cool -= dt; this.target = -1; F.lock = -1; this.window = null; F.slowK = 1; F.arrowTick(dt, P, f); return; }
+    if (i >= 0 && !this.lockTarget) {
+      P.pos(i, this._v);
+      const dx = this._v.x - f.pos.x, dy = this._v.y - f.pos.y, dz = this._v.z - f.pos.z, d = Math.hypot(dx, dy, dz);
+      const c = (dx * vd.x + dy * vd.y + dz * vd.z) / Math.max(d, 0.1);
+      // kept while it stays near the view centre (a wide cone), and always while the button is held (in range)
+      if (d > FUN.lockRange * 1.25 || (!F.held && c < Math.cos(FUN.keepCone))) i = -1;
+    }
+    if (i < 0) this.lockTarget = false;
+    if (i < 0) i = P.target(f.pos.x, f.pos.y, f.pos.z, vd.x, vd.y, vd.z, FUN.lockRange, FUN.lockCone, true);
+    if (F.skipFlock && this.t > F.skipUntil) { F.skipFlock.skipI = -1; F.skipFlock = null; }
+    if (i !== this.target) { F.slowUsed = 0; F.bestD = Infinity; F.bestT = this.t; }
+    this.target = i; F.lock = i;
+    this.window = null;
+    F.arrowTick(dt, P, f);
+    const line = F.runTick(this.t, false);
+    if (line) this.say(line);
+    let slowWant = 1;
+    if (i >= 0) {
+      P.pos(i, this._v); P.vel(i, this._w);
+      const vx = f.vel.x, vy = f.vel.y, vz = f.vel.z;
+      const dx = this._v.x - f.pos.x, dy = this._v.y - f.pos.y, dz = this._v.z - f.pos.z, d = Math.max(Math.hypot(dx, dy, dz), 1e-3);
+      const rvx = vx - this._w.x, rvy = vy - this._w.y, rvz = vz - this._w.z;
+      const closing = (rvx * dx + rvy * dy + rvz * dz) / d;
+      const angle = Math.acos(clamp((vx * dx + vy * dy + vz * dz) / (d * Math.max(f.V, 0.1)), -1, 1));
+      const reach = FUN.reach, tti = closing > 0 ? d / closing : Infinity;
+      const W = (this._win ??= {});
+      W.i = i; W.d = d; W.closing = closing; W.angle = angle; W.ok = true; W.near = d < 12; W.reach = reach; W.tti = tti; W.lock = true;
+      const Fl = flockOf(P, i);                                // (the mux's pigeons keep their flock index)
+      W.tele = Fl ? Fl.tele[i] > 0 : false; W.kind = Fl ? Fl.kindName(i) : "";
+      this.window = W;
+      // held on and not getting closer for FUN.giveUp s (a bird climbing / racing away): let it go, skip it a while
+      if (!F.held || d < F.bestD - 0.5) { F.bestD = Math.min(F.bestD, d); F.bestT = this.t; }
+      else if (this.t - F.bestT > FUN.giveUp && Fl) {
+        Fl.skipI = i; F.skipFlock = Fl; F.skipUntil = this.t + 8;
+        this.target = -1; this.window = null; F.lock = -1;
+        this.say("it got away: try another one (the arrow)");
+        return;
+      }
+      // the grab: within reach this frame or crossing it (fast birds pass the target between frames)
+      const tca = clamp((dx * rvx + dy * rvy + dz * rvz) / Math.max(rvx * rvx + rvy * rvy + rvz * rvz, 1e-3), 0, dt * 1.5);
+      const mx = dx - rvx * tca, my = dy - rvy * tca, mz = dz - rvz * tca, dmin = Math.hypot(mx, my, mz);
+      if (dmin < reach) { this.funCatch(i, angle, W.kind); F.slowK = 1; return; }
+      // the last metres of an auto-dive: the HOMING (the talons swing onto it): the path turned toward a point 2 m over
+      // the bird (2.5 m over the solid under it, its velocity's lead) at up to FUN.home rad/s, the speed kept: no
+      // endless orbit round a bird that turns tighter than the falcon
+      if (F.diving && d < FUN.homeD && angle < 1.5 && !(this.assist && (this.assist.avoiding > 0.3 || this.assist.guard))) {
+        const lt = Math.min(tti, 0.5), V = Math.max(f.V, 0.5);
+        let ax = this._v.x + this._w.x * lt - f.pos.x, az = this._v.z + this._w.z * lt - f.pos.z;
+        let ay = Math.max(this._v.y + 2, F.floorY + 2.5) - f.pos.y;
+        // (low over a solid: the homing never points down)
+        const w = this.world, under = w.column ? w.column(f.pos.x, f.pos.z, f.pos.y).floor : w.floor(f.pos.x, f.pos.z);
+        if (f.pos.y - under < 5 && ay < 0) ay = 0;
+        const al = Math.hypot(ax, ay, az) || 1; ax /= al; ay /= al; az /= al;
+        // (a solid on the way, 3 / 7 m along it, at the falcon's height: no homing: the avoid flies; node check: the
+        // homing turned the falcon into a tower a pigeon flew round)
+        let clear = true;
+        for (let k = 3; k <= 7 && clear; k += 4) { const px = f.pos.x + ax * k, pz = f.pos.z + az * k, py = f.pos.y + ay * k; if ((w.column ? w.column(px, pz, py).floor : w.floor(px, pz)) > py - 1) clear = false; }
+        if (!clear) ax = NaN;
+        const ux = vx / V, uy = vy / V, uz = vz / V, c = clamp(ux * ax + uy * ay + uz * az, -1, 1), ang = Math.acos(c);
+        if (ang > 1e-3 && ang === ang) {
+          const turn = Math.min(ang, FUN.home * dt), sn = Math.sin(ang), a = Math.sin(ang - turn) / sn, b = Math.sin(turn) / sn;
+          f.vel.x = (ux * a + ax * b) * V; f.vel.y = (uy * a + ay * b) * V; f.vel.z = (uz * a + az * b) * V;
+        }
+      }
+      if (closing > 5 && tti < FUN.slow.tti && d < reach * 4 && F.slowUsed < FUN.slow.max) { slowWant = FUN.slow.scale; F.slowUsed += dtReal; }
+    }
+    F.slowK += (slowWant - F.slowK) * (1 - Math.exp(-25 * dtReal));
+    if (slowWant === 1 && F.slowK > 0.98) F.slowK = 1;
+  }
+  funCatch(i, angle, kind) {
+    const f = this.f, P = this.pigeons, F = this.fun;
+    const starter = F.starter && F.starter.i === i && flockOf(P, i) === F.starter.flock;
+    // the birds round it see it go: they flush (a ground flock is not mown down one by one)
+    flockOf(P, i)?.spread(i, 14);
+    P.take(i);
+    F.cool = FUN.cool;
+    this.bird.carry(this.fam?.preyMesh, this.fam?.nestMat);
+    if (!f.extraMass) f.extraMass = FUN.carryMass;
+    f.stamina = Math.min(1, f.stamina + FUN.catchStamina);    // (a catch gives breath back: the hunt goes on)
+    const v = f.V;
+    let pts = F.score(v, f.gamma, angle, kind, this.t);
+    const run = F.runTick(this.t, true);
+    if (run.startsWith("RUN COMPLETE")) pts += FUN.run.bonus;
+    const sc = this.score;
+    sc.catches++; sc.bestStrike = Math.max(sc.bestStrike, Math.round(v)); sc.lastStrike = Math.round(v); sc.points += pts; sc.carriedSince = this.t;
+    F.last.pts = pts;
+    this.say(`CAUGHT at ${Math.round(v * 3.6)} km/h: +${pts}${F.last.labels.length ? ` (${F.last.labels.join(", ")})` : ""}`);
+    if (run) this.say(run);
+    this.hitStop = 0.35; this.audio?.strike(true);
+    this.target = -1; this.window = null; F.lock = -1;
+    this.lastCatch = { t: this.t, V: v, x: f.pos.x, y: f.pos.y, z: f.pos.z, pts, labels: F.last.labels };
+    if (starter) { F.starter = null; F.hint = ""; }
   }
 
   /** the strike: target, catch window, catch / miss */

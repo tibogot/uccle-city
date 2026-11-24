@@ -18,6 +18,7 @@ import { makeMissions } from "./falconMissions.js";
 import { warm } from "../police/warm.js";
 import { PLACE } from "../falconFlight/church.js";
 import { CTL_OLD } from "../falconFlight/falconInput.js";
+import { FUN_OLD, placeStarter } from "../falconFlight/falconFun.js";
 
 const DEG = Math.PI / 180;
 const S = {
@@ -78,14 +79,15 @@ function duskHour(L, elev) {
 }
 
 /** a catch / a delivery: score (the game record), a radio line now and then */
-function onCatch(t, kmh) {
+function onCatch(t, kmh, g) {
   const kit = S.kit, rec = kit.record;
-  const pts = Math.round(10 + kmh / 6);
+  // (falcon fun: the game's bonus score: PERFECT STOOP x2, HEAD-ON, RACER, COMBO, the run's +100; falconFun.js score)
+  const pts = g?.fun && g.lastCatch?.pts != null ? g.lastCatch.pts : Math.round(10 + kmh / 6);
   rec.score += pts; kit.save.touch();
   const fl = S.flyer();
   if (fl.bird.prey && t && t.kind !== "feral pigeon" && t.kind !== "jackdaw") fl.bird.prey.scale.multiplyScalar(t.kind === "starling" ? 0.55 : 0.75);
   if (kit.current?.mode === "free" && (S.freeCatches = (S.freeCatches || 0) + 1) === 1)
-    kit.radio("The falcon", `A ${t?.kind ?? "catch"} at ${kmh} km/h! Bring it to the eyrie: land on the ledge.`, { icon: "falcon" });
+    kit.radio("The falcon", g?.fun ? `A ${t?.kind ?? "catch"} at ${kmh} km/h! Hunt on (the arrow shows the next pigeons): bringing prey to the eyrie's ledge is a bonus.` : `A ${t?.kind ?? "catch"} at ${kmh} km/h! Bring it to the eyrie: land on the ledge.`, { icon: "falcon" });
 }
 function onDeliver(t) {
   const kit = S.kit, H = S.hunt.hunger;
@@ -113,7 +115,8 @@ export const FALCON_GAME = {
   options: [{ id: "assist", label: "Aim assist in the strike", default: true }, { id: "avoid", label: "Flight assist: steer clear of roofs, trees and the ground", default: true }],   // (no sound tick: the speaker button is the one switch, docs/SOUND_CITY.md)
   idleText: { missions: "Rest on a perch or circle the tower: the falcon will call.", free: "Free flight. Hunt anytime: pigeons on the squares, starlings and parakeets over the parks." },
   keys: { default: CTL_OLD ? "<kbd>W S A D</kbd> fly · <kbd>Space</kbd> flap · <kbd>Shift</kbd> stoop · <kbd>F</kbd> talons · <kbd>E</kbd> land · <kbd>V</kbd> camera · click: mouse aim · <kbd>Esc</kbd> pause"
-    : "click + mouse or <kbd>A D</kbd> steer · <kbd>W S</kbd> down / up · <kbd>Space</kbd> climb · <kbd>Shift</kbd> stoop · <kbd>E</kbd> land · <kbd>F</kbd> talons · <kbd>V</kbd> camera · <kbd>Esc</kbd> pause" },
+    : FUN_OLD ? "click + mouse or <kbd>A D</kbd> steer · <kbd>W S</kbd> down / up · <kbd>Space</kbd> climb · <kbd>Shift</kbd> stoop · <kbd>E</kbd> land · <kbd>F</kbd> talons · <kbd>V</kbd> camera · <kbd>Esc</kbd> pause"
+    : "click + mouse or <kbd>A D</kbd> steer · look at a pigeon, hold <kbd>F</kbd> (or <kbd>Shift</kbd>) = dive onto it · <kbd>Space</kbd> climb, tap = sprint · <kbd>Shift</kbd> stoop · <kbd>E</kbd> land · <kbd>V</kbd> camera · <kbd>Esc</kbd> pause" },
 
   async start(kit, { mode, options }) {
     S.kit = kit;
@@ -192,6 +195,12 @@ export const FALCON_GAME = {
       if (S.eyrie && host.areaReady && window.__playLoader?.active) await host.areaReady({ x: S.eyrie.x, z: S.eyrie.z, label: "Falcon", near: 550 });
       // the nest start (the intro: the scrape, the hop to the ledge, the launch; Space skips)
       await host.fly();
+      // (falcon fun) the first catch near-free: a tame pigeon on a roof right under the launch from the eyrie
+      if (fl.game.fun && fl.pigeons && S.out) {
+        const st = placeStarter(fl.pigeons, S.eyrie, S.out);
+        fl.game.fun.starter = st ? { i: st.i, flock: fl.pigeons } : null;
+        host.log(st ? `falcon fun: the first pigeon on a roof ${Math.hypot(st.x - S.eyrie.x, st.z - S.eyrie.z).toFixed(0)} m out, ${(S.eyrie.y - st.y).toFixed(0)} m under the eyrie` : "falcon fun: no roof under the launch for the first pigeon");
+      }
       S.prev = { P: fl.game.f.P };
       // the tiercel: a fit adult (the flight lab's numbers are a juvenile's): wingbeats last ~22 s, rest back in ~20 s
       const P0 = fl.game.f.P;

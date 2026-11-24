@@ -8,6 +8,7 @@
 //             catch a starling (the flock scatters from a stooping falcon: harder), bring it home
 //   defend    Defend the eyrie: carrion crows mob the ledge: fly at them until they leave; then a herring gull chases
 //             you for the pigeon in your talons: get it home
+import { FUN_OLD } from "../falconFlight/falconFun.js";
 import { PLACE } from "../falconFlight/church.js";
 
 const km = (v) => Math.round(v * 3.6);
@@ -44,11 +45,11 @@ export function makeMissions(S) {
         radio: { ...NARR, text: "Good height. The pigeons are on the Place and the roofs round it: look for them below." },
         check: () => { const f = S.game().f, w = S.game().window; return Math.hypot(f.pos.x - PLACE.x, f.pos.z - PLACE.z) < 110 || (!!w && w.d < 150); },
         status: () => { const f = S.game().f; return { line: `the Place: ${metres(Math.hypot(f.pos.x - PLACE.x, f.pos.z - PLACE.z))}` }; } },
-      { type: "custom", text: "Stoop and catch one: Shift to tuck, F talons", marker: false, time: 240,
+      { type: "custom", text: FUN_OLD ? "Stoop and catch one: Shift to tuck, F talons" : "Catch one: look at a pigeon, hold F (or Shift) to dive onto it", marker: false, time: 240,
         radio: { ...NARR, text: "Drop on them: they burst up when you come. Take one in the air, fast and straight: a slow attack misses, the pigeon out-turns you." },
         onStart: (c) => { c.vars.c0 = S.game().score.catches; },
         check: (c) => S.game().score.catches > c.vars.c0,
-        status: () => { const g = S.game(), w = g.window; return { line: w ? `${Math.round(w.d)} m · ${km(g.f.V)} km/h${w.ok ? " · IN THE WINDOW" : w.closing <= 8 ? " · too slow: dive" : " · line up"}` : `${km(g.f.V)} km/h · no prey ahead` }; } },
+        status: () => { const g = S.game(), w = g.window; return { line: w ? `${Math.round(w.d)} m · ${km(g.f.V)} km/h${g.fun ? (g.fun.diving ? " · DIVING" : " · hold F") : w.ok ? " · IN THE WINDOW" : w.closing <= 8 ? " · too slow: dive" : " · line up"}` : `${km(g.f.V)} km/h · ${g.fun ? "follow the arrow" : "no prey ahead"}` }; } },
       deliverStep(S),
     ],
     reward: { score: 200 }, timeBonus: { under: 170, score: 100 },
