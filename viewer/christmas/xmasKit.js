@@ -248,6 +248,9 @@ function make(slot, uvs, instanced, mask = instanced, pass = null) {
       break;
     }
     case "wire_dark": std({ roughness: 0.5 }); m.colorNode = lin(0x14181a); break;
+    // (claude/xmas4) the Christmas poles of the pole garlands (xmasCity.js buildPoleGeometry): the tram poles' painted
+    // steel (viewer/tram.js: 0x3b4044, roughness 0.5, metalness 0.7), wet / snow by the weather
+    case "pole_steel": std({ roughness: 0.5, metalness: 0.7 }); m.colorNode = lin(0x3b4044).mul(ao); wxMat(m, { porosity: 0 }); break;
     // ---- the market chalets: stained boards (the instance's tone in xlod.w: dark walnut .. natural pine; each board its
     // own shade, COLOR_0.r), dark trim, green felt roof, fake snow, the warm-lit inside, the cream sign board
     case "chalet_wood": {
