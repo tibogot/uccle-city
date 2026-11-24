@@ -1,0 +1,1061 @@
+{
+ "summary": {
+  "triangles": 836,
+  "vertices_welded": 472,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 28,
+  "counts": {
+   "sliver": 28,
+   "seam": 41
+  },
+  "ms": 39
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.00002252962440252304,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.02,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "tl_tower_lod2",
+   "slot": "playground",
+   "triangles": 836,
+   "maxDistance": 160
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.585,
+     1.095,
+     0.207
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 44,
+    "longest": 1.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.585,
+     1.085,
+     -0.207
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 44,
+    "longest": 1.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.195,
+     1.095,
+     -0.62
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 42,
+    "longest": 1.17
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.195,
+     1.085,
+     -0.62
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 42,
+    "longest": 1.17
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.585,
+     1.095,
+     -0.207
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 44,
+    "longest": 1.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.585,
+     1.085,
+     0.207
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 44,
+    "longest": 1.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.195,
+     1.095,
+     0.62
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 42,
+    "longest": 1.17
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.195,
+     1.085,
+     0.62
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 42,
+    "longest": 1.17
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.838,
+     2.387,
+     0.648
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 52,
+    "longest": 1.249
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.838,
+     2.644,
+     0.32
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 52,
+    "longest": 1.249
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.279,
+     2.913,
+     0.003
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 70,
+    "longest": 1.675
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.279,
+     2.907,
+     -0.003
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 70,
+    "longest": 1.675
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.838,
+     2.65,
+     0.325
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 52,
+    "longest": 1.249
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.838,
+     2.381,
+     0.643
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 52,
+    "longest": 1.249
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.279,
+     2.124,
+     0.971
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 70,
+    "longest": 1.675
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.279,
+     2.118,
+     0.966
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 70,
+    "longest": 1.675
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.846,
+     2.65,
+     -0.325
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 52,
+    "longest": 1.249
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.846,
+     2.381,
+     -0.643
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 52,
+    "longest": 1.249
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.282,
+     2.124,
+     -0.971
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 71,
+    "longest": 1.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.282,
+     2.118,
+     -0.966
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 71,
+    "longest": 1.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.846,
+     2.387,
+     -0.648
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 52,
+    "longest": 1.249
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.846,
+     2.644,
+     -0.32
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 52,
+    "longest": 1.249
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.282,
+     2.913,
+     -0.003
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 70,
+    "longest": 1.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.282,
+     2.907,
+     0.003
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 70,
+    "longest": 1.692
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.293,
+     2.944,
+     -0.08
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 68,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.293,
+     2.936,
+     -0.08
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 68,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.293,
+     2.944,
+     0.08
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 68,
+    "longest": 1.76
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.293,
+     2.936,
+     0.08
+    ],
+    "part": "tl_tower_lod2/playground",
+    "aspect": 68,
+    "longest": 1.76
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.218,
+     0.23,
+     1.232
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.39,
+    "pieces": 30,
+    "min_angle_deg": 35.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.653,
+     2.248,
+     -0.575
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.6,
+    "pieces": 29,
+    "min_angle_deg": 29.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.281,
+     0.225,
+     1.228
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.38,
+    "pieces": 28,
+    "min_angle_deg": 37.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.22,
+     0.548,
+     1.025
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.37,
+    "pieces": 28,
+    "min_angle_deg": 35.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.277,
+     0.548,
+     1.025
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.37,
+    "pieces": 26,
+    "min_angle_deg": 37.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.268,
+     0.844,
+     0.848
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.37,
+    "pieces": 26,
+    "min_angle_deg": 35.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.649,
+     2.25,
+     0.562
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.54,
+    "pieces": 25,
+    "min_angle_deg": 25.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.642,
+     1.043,
+     -0.535
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.48,
+    "pieces": 24,
+    "min_angle_deg": 36.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.227,
+     0.83,
+     0.849
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.36,
+    "pieces": 24,
+    "min_angle_deg": 32.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.643,
+     2.225,
+     -0.546
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.51,
+    "pieces": 23,
+    "min_angle_deg": 29.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.55,
+     1.003,
+     -0.561
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.41,
+    "pieces": 22,
+    "min_angle_deg": 40.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.631,
+     2.29,
+     -0.028
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.4,
+    "pieces": 21,
+    "min_angle_deg": 33.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.643,
+     2.237,
+     0.551
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.51,
+    "pieces": 21,
+    "min_angle_deg": 38.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.509,
+     1.587,
+     -0.611
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.3,
+    "pieces": 20,
+    "min_angle_deg": 55.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.57,
+     2.282,
+     -0.027
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.4,
+    "pieces": 19,
+    "min_angle_deg": 33.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.595,
+     2.796,
+     0.039
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.37,
+    "pieces": 19,
+    "min_angle_deg": 19.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.576,
+     1.576,
+     -0.574
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.24,
+    "pieces": 17,
+    "min_angle_deg": 21.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.577,
+     1.583,
+     0.546
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.31,
+    "pieces": 16,
+    "min_angle_deg": 42.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.555,
+     1.957,
+     -0.64
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.28,
+    "pieces": 16,
+    "min_angle_deg": 36.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.64,
+     2.777,
+     0.013
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.32,
+    "pieces": 16,
+    "min_angle_deg": 41.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.585,
+     1.103,
+     -0.528
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.36,
+    "pieces": 15,
+    "min_angle_deg": 45.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.571,
+     1.577,
+     -0.573
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.23,
+    "pieces": 15,
+    "min_angle_deg": 23.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.576,
+     1.977,
+     -0.568
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.23,
+    "pieces": 15,
+    "min_angle_deg": 22.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.575,
+     1.977,
+     -0.576
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.23,
+    "pieces": 15,
+    "min_angle_deg": 58.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.214,
+     1.085,
+     0.62
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.25,
+    "pieces": 15,
+    "min_angle_deg": 33.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.286,
+     1.089,
+     0.62
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.25,
+    "pieces": 15,
+    "min_angle_deg": 33.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.584,
+     1.035,
+     0.543
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.35,
+    "pieces": 14,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.601,
+     1.99,
+     0.518
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.31,
+    "pieces": 14,
+    "min_angle_deg": 40.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.582,
+     1.585,
+     0.546
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.28,
+    "pieces": 14,
+    "min_angle_deg": 42.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.579,
+     1.981,
+     0.542
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.28,
+    "pieces": 14,
+    "min_angle_deg": 37.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.553,
+     1.55,
+     -0.643
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.25,
+    "pieces": 14,
+    "min_angle_deg": 36.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.587,
+     1.592,
+     -0.535
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 14,
+    "min_angle_deg": 43.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.614,
+     1.985,
+     -0.52
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.27,
+    "pieces": 14,
+    "min_angle_deg": 43.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.515,
+     1.989,
+     -0.616
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.29,
+    "pieces": 14,
+    "min_angle_deg": 53.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.609,
+     1.025,
+     0.555
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 12,
+    "min_angle_deg": 7.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.581,
+     1.582,
+     -0.536
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.25,
+    "pieces": 12,
+    "min_angle_deg": 82.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.569,
+     1.976,
+     -0.541
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.25,
+    "pieces": 12,
+    "min_angle_deg": 83.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.838,
+     2.898,
+     0.004
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 3.39,
+    "pieces": 12,
+    "min_angle_deg": 78.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.546,
+     1.104,
+     0.62
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 11,
+    "min_angle_deg": 44.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.585,
+     1.103,
+     0.551
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.27,
+    "pieces": 11,
+    "min_angle_deg": 68
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.554,
+     1.104,
+     -0.62
+    ],
+    "parts": [
+     "tl_tower_lod2/playground",
+     "tl_tower_lod2/playground"
+    ],
+    "length_m": 0.26,
+    "pieces": 11,
+    "min_angle_deg": 66
+   }
+  ]
+ },
+ "file": "timberkit.glb"
+}

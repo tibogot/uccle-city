@@ -10,13 +10,24 @@
 //     tolerances (CONTACT: floating <= 0.15 m, buried <= 0.10 m; the posts and plinths go 0.4 / 0.6 m into the ground,
 //     the skirt, so they never float);
 //   - a PIER stands on the lowest ground under its footprint (its base 0.5 m deep: the skirt on the high side);
-//   - a LEAF hangs from its hinge, open (swung into the park) or closed as observed.
+//   - a LEAF hangs from its hinge, open (swung into the park) or closed as observed;
+//   - (claude/places3, rule brick-wall-stepped) an old BRICK WALL (a plinth of piece pf_brick: the Papenkasteel's on Rue
+//     Kinsendael) is NOT sheared: its courses stay level and the wall STEPS down the street, as built: the modules are
+//     grouped while the ground under the group spans <= STEP_SPAN, each group LEVEL at a whole number of courses
+//     (BRICK_COURSE, world-quantised: the courses of two groups line up), its foot at top - h, its brick skirt 1.0 m
+//     under that (the low end never floats), a step's end shows its bricks and coping (the kit's ends are finished);
+//     ?parkpieces=old: the plinth piece sheared to the slope in the brick tone, as before.
 // The colliders are boxes from the same placement (one source: the drawn line and the colliders cannot differ).
 export const MODULE = 2.5;
-export const NOMINAL = { pf_rail: [2.5, 1.8], pf_bars: [2.5, 1.6], pf_mesh: [2.5, 1.8], pf_post: [0.06, 1.86], pf_gate2: [2.0, 2.4], pf_gate1: [1.1, 1.8], pf_pier: [0.7, 3.0], pf_plinth: [2.5, 0.8] };
+export const NOMINAL = { pf_rail: [2.5, 1.8], pf_bars: [2.5, 1.6], pf_mesh: [2.5, 1.8], pf_post: [0.06, 1.86], pf_gate2: [2.0, 2.4], pf_gate1: [1.1, 1.8], pf_pier: [0.7, 3.0], pf_plinth: [2.5, 0.8], pf_brick: [2.5, 2.3] };
 export const IRON = ["pf_rail", "pf_bars", "pf_mesh", "pf_post", "pf_gate2", "pf_gate1"];
 export const STONE = ["pf_pier", "pf_plinth"];
-export const PIECES = [...IRON, ...STONE];
+/** (claude/places3) the brick wall: its own LOD bands (viewer/parkFence.js BRICK_BANDS) */
+export const BRICK = ["pf_brick"];
+export const PIECES = [...IRON, ...STONE, ...BRICK];
+/** the brick wall: a course (55 mm brick + 10 mm joint: tools/blender/parkFenceKit.py BR_H + BR_J), the ground span a
+ *  level group may cover, the skirt under its foot (the kit's BW_FOOT) */
+export const BRICK_COURSE = 0.065, STEP_SPAN = 0.35, BRICK_SKIRT = 1.0;
 export const FIT_TOL = 0.1, MAX_SPLIT = 2, MIN_SPLIT = 2.4;
 /** the ground the line is fitted to: the drawn ground averaged over a 0.35 m cross (a line on a bank's edge or a
  *  sidewalk's back edge reads the two sides in turn: fitted to every sample, a plinth zig-zagged 0.5 m by 0.5 m) */
@@ -82,7 +93,7 @@ export function panelContact(p, g, step = 0.25) {
  *   boxes: [{ a: [x, y, z], b: [x, y, z], t (thickness), h (height over the foot line at each end: [ha, hb]) }]  (colliders),
  *   fitted: [{ a, b, kind, h }]  (the panels' and plinths' foot lines, the contact check), counts }
  */
-export function tileItems(park, T, g) {
+export function tileItems(park, T, g, { brickOld = false } = {}) {
   const inst = Object.fromEntries(PIECES.map((p) => [p, []]));
   const boxes = [], fitted = [];
   const push = (piece, m, v, c, r) => inst[piece].push({ m, v, c, r });
@@ -90,8 +101,12 @@ export function tileItems(park, T, g) {
   const plinthOf = new Map((park.plinths || []).map((q) => [`${q.a}|${q.b}`, q]));
   const runs = [];
   for (const p of park.panels || []) if (p.t === T) runs.push({ p, plinth: plinthOf.get(`${p.a}|${p.b}`) || null });
-  for (const q of park.plinths || []) if (q.t === T && !(park.panels || []).some((p) => `${p.a}|${p.b}` === `${q.a}|${q.b}`)) runs.push({ p: null, plinth: q });   // a wall run: plinths alone
+  const bricks = [];
+  for (const q of park.plinths || []) if (q.t === T && !(park.panels || []).some((p) => `${p.a}|${p.b}` === `${q.a}|${q.b}`)) {
+    if (q.piece === "pf_brick" && !brickOld) bricks.push(q); else runs.push({ p: null, plinth: q });   // a wall run: plinths alone
+  }
   const gs = smoothGround(g);
+  brickWall(bricks, gs, push, boxes, fitted);
   for (const { p, plinth } of runs) {
     const a = (p || plinth).a, b = (p || plinth).b;
     // (a plinth run is not split, fitted to the smoothed ground end to end: its skirt and its 0.8 m body take the
@@ -154,6 +169,36 @@ export function tileItems(park, T, g) {
   }
   const counts = Object.fromEntries(Object.entries(inst).map(([k, v]) => [k, v.length]));
   return { inst, boxes, fitted, counts };
+}
+
+/** (claude/places3) the brick wall's modules, LEVEL and stepped: chains of consecutive modules (a of one = b of the
+ *  last), grouped greedily while the ground under the group spans <= STEP_SPAN; a group's top = its mean ground + h,
+ *  rounded to whole courses; every module of it at that level (x along a -> b, y up unscaled, z its normal) */
+export function brickWall(list, gs, push, boxes, fitted) {
+  if (!list.length) return;
+  const mods = list.map((q) => {
+    let lo = Infinity, hi = -Infinity, sum = 0;
+    for (let k = 0; k <= 6; k++) { const f = k / 6, y = gs(q.a[0] + (q.b[0] - q.a[0]) * f, q.a[1] + (q.b[1] - q.a[1]) * f); lo = Math.min(lo, y); hi = Math.max(hi, y); sum += y; }
+    return { q, lo, hi, mean: sum / 7 };
+  });
+  const groups = [];
+  for (const m of mods) {
+    const G = groups[groups.length - 1], prev = G?.[G.length - 1];
+    const chained = prev && Math.hypot(prev.q.b[0] - m.q.a[0], prev.q.b[1] - m.q.a[1]) < 0.05;
+    if (chained && Math.max(m.hi, ...G.map((x) => x.hi)) - Math.min(m.lo, ...G.map((x) => x.lo)) <= STEP_SPAN) G.push(m);
+    else groups.push([m]);
+  }
+  for (const G of groups) {
+    const h = G[0].q.h, mean = G.reduce((s, m) => s + m.mean, 0) / G.length;
+    const top = Math.round((mean + h) / BRICK_COURSE) * BRICK_COURSE, y0 = top - h;
+    for (const { q, lo } of G) {
+      const dx = q.b[0] - q.a[0], dz = q.b[1] - q.a[1], L = Math.hypot(dx, dz), Zc = [-dz / L, 0, dx / L];
+      const c = [(q.a[0] + q.b[0]) / 2, y0 + h / 2, (q.a[1] + q.b[1]) / 2];
+      push("pf_brick", mat([dx / MODULE, 0, dz / MODULE], [0, h / NOMINAL.pf_brick[1], 0], Zc, [q.a[0], y0, q.a[1]]), [0, q.stone ?? 3, hash(c[0], c[2]), 0], c, L / 2 + h);
+      fitted.push({ a: [q.a[0], y0, q.a[1]], b: [q.b[0], y0, q.b[1]], kind: "brick", h, top, skirt: BRICK_SKIRT });
+      boxes.push({ a: [q.a[0], lo, q.a[1]], b: [q.b[0], lo, q.b[1]], t: 0.34, h: top - lo });
+    }
+  }
 }
 
 /** the colliders' triangle soup (9 floats a triangle): every box as 5 faces (no bottom), its foot 0.1 m in the ground */

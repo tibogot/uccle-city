@@ -233,17 +233,23 @@ say(`ok   R ${toned} render-toned looks`);
 // ---- P: playgrounds (claude/places2)
 {
   const pgs = Object.entries(ov.playgrounds || {}).filter(([k]) => !k.startsWith("_"));
-  const kitP = json("models/parkkit/playgroundkit.json").pieces;
+  // (claude/places3) each playground's own kit (kit, default playgroundkit) and the plastic stand-ins kept for
+  // ?parkpieces=old (piecesOld: the playground kit); a piece's footprint from its kit (footprint_m when the kit gives
+  // one: [x0, x1, y0, y1] in the Blender frame, glTF z = -y; else size_m centred)
+  const kitOf = {};
+  const kitJ = (name) => (kitOf[name] ??= json(`models/parkkit/${name}.json`).pieces);
   let nP = 0;
   for (const [id, g] of pgs) {
     for (const k of ["set", "why", "source"]) if (!g[k]) fail(`P playground ${id}: no ${k}`);
     if (!(g.ring?.length >= 3)) { fail(`P playground ${id}: no ring`); continue; }
-    for (const [piece, x, z, deg] of g.pieces || []) {
+    for (const [list, kname] of [[g.pieces || [], g.kit || "playgroundkit"], [g.piecesOld || [], "playgroundkit"]]) for (const [piece, x, z, deg] of list) {
       nP++;
-      const sz = kitP[piece]?.size_m;
-      if (!sz) { fail(`P playground ${id}: no piece ${piece} in the kit`); continue; }
-      const a = (deg * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a), hx = sz[0] / 2, hz = sz[1] / 2;
-      for (const [u, v] of [[-hx, -hz], [hx, -hz], [hx, hz], [-hx, hz], [0, 0]]) {
+      const kp = kitJ(kname)[piece], sz = kp?.size_m;
+      if (!sz) { fail(`P playground ${id}: no piece ${piece} in ${kname}`); continue; }
+      const fp = kp.footprint_m;
+      const [x0, x1, z0, z1] = fp ? [fp[0], fp[1], -fp[3], -fp[2]] : [-sz[0] / 2, sz[0] / 2, -sz[1] / 2, sz[1] / 2];
+      const a = (deg * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a);
+      for (const [u, v] of [[x0, z0], [x1, z0], [x1, z1], [x0, z1], [0, 0]]) {
         const px = x + u * c + v * sn, pz = z - u * sn + v * c;
         if (!inRing(g.ring, px, pz) && ringD(g.ring, px, pz) > 0.3) { fail(`P playground ${id}: ${piece} at (${x}, ${z}) runs out of its ring at (${px.toFixed(1)}, ${pz.toFixed(1)})`); break; }
         const T = tileOf(px, pz);
@@ -252,6 +258,9 @@ say(`ok   R ${toned} render-toned looks`);
     }
   }
   if (!((ov.playgrounds?.chenaie?.pieces?.length ?? 0) >= 3) || ov.playgrounds?.chenaie?.set !== "places2") fail("P playground chenaie (in front of Le Pigeon Noir): missing, < 3 pieces or not set places2");
+  // (claude/places3, rule park-pieces-real) the Chênaie garden draws its real timber equipment (tower, log frame with nets, balance logs)
+  const ch = ov.playgrounds?.chenaie;
+  if (ch?.kit !== "timberkit" || !["tl_tower", "tl_climb", "tl_beam"].every((q) => ch.pieces.some((p) => p[0] === q))) fail("P playground chenaie: not the timber kit's tower, log frame and balance logs (kit timberkit)");
   say(`ok   P ${pgs.length} playgrounds, ${nP} pieces inside their rings`);
 }
 

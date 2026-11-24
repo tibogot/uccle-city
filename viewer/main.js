@@ -30,7 +30,7 @@ import { addStPierre } from "./stpierreCity.js";
 import { addRussian } from "./russianCity.js";
 import { addHeros } from "./heros/herosCity.js";
 import { addPublicArt } from "./publicart/artCity.js";
-import { addPlaygrounds } from "./playgroundCity.js";   // claude/places2: the playground kit in the city
+import { addPlaygrounds, playgroundRootNames } from "./playgroundCity.js";   // claude/places2: the playground kit in the city (claude/places3: the timber kit, its colliders)
 import { addChristmas, xmasActive } from "./christmas/xmasCity.js";
 import { addRosaire } from "./rosaireCity.js";
 import { addObservatory } from "./observatoryCity.js";
@@ -1795,7 +1795,7 @@ async function main() {
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
   // (cortenbosch2) the Lycée Français's railing, sliding gate and flag poles (viewer/lyceeFront.js, tile F7) collide like the
   // landmarks: car blocks from their triangles in the 0.3-1.3 m band, the triangles for walk / third person
-  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); if (PARKFENCE) for (const n of await parkFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
+  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); if (PARKFENCE) for (const n of await parkFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (params.get("places2") !== "old") for (const n of playgroundRootNames(await loadOverrides(DATA), params)) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
   else {
     if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});
     for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);

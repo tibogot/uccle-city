@@ -1136,11 +1136,11 @@
     "cortenbosch-54": {"at": [-98.6, 1007.1], "dir": [0.926, -0.377], "along": true, "lines": ["Private Weg", "Cortenbosch"], "L": 5.4, "h": 1.1, "gap": 0.2, "why": "the Chemin privé 't Cortenbosch: 'Private Weg' and 'Cortenbosch' in white mixed-case letters, two columns along the lane (the letters' tops to the left of the way in from Avenue du Lycée Français), by n. 54", "source": "Google Street View Apr 2024 (look only, 2026-11-17)"}
   },
   "playgrounds": {
-    "_doc": "(claude/places2) playground equipment from the park kit (viewer/playgroundCity.js, models/parkkit/playgroundkit) in the city: id -> { set (switch), why, source, osm, ring (the sand, city x / z), pieces: [[piece, x, z, yaw deg], ...] }, each piece inside its ring. ?places2=old: none.",
+    "_doc": "(claude/places2) playground equipment from the park kit (viewer/playgroundCity.js, models/parkkit/playgroundkit) in the city: id -> { set (switch), why, source, osm, ring (the sand, city x / z), kit (claude/places3: the park kit drawn, default playgroundkit; timberkit = the log play frames), pieces: [[piece, x, z, yaw deg], ...], piecesOld (?parkpieces=old: the plastic stand-ins drawn before) }, each piece inside its ring. ?places2=old: none.",
     "chenaie": {
       "set": "places2",
       "osm": "way/1123841132",
-      "why": "owner playtest: 'the children's garden in front of Le Pigeon Noir'. Across Avenue de la Chênaie from the restaurant: a small public garden (OSM park 1123840941) behind an angled parking row on setts and a low clipped hedge: a sand playground (OSM 1123841132, surface sand) with natural timber play frames (log climbing frames with rope nets, a balance frame, a small timber tower), a lawn, a gravel path, park benches and bins, young globe-crowned trees, a lamp post, two boules pitches to the south. Not a fenced kindergarten: the garden is open. The city drew the sand and the benches but no equipment (the playground kit was only in the lab). Drawn with the kit's closest pieces: a timber climbing frame, a log-frame swing, a sandpit, a seesaw",
+      "why": "owner playtest: 'the children's garden in front of Le Pigeon Noir'. Across Avenue de la Chênaie from the restaurant: a small public garden (OSM park 1123840941) behind an angled parking row on setts and a low clipped hedge: a sand playground (OSM 1123841132, surface sand) with natural timber play frames (log climbing frames with rope nets, a balance frame, a small timber tower), a lawn, a gravel path, park benches and bins, young globe-crowned trees, a lamp post, two boules pitches to the south. Not a fenced kindergarten: the garden is open. The city drew the sand and the benches but no equipment (the playground kit was only in the lab). (claude/places3) drawn with the timber kit made for it (tools/blender/timberPlayKit.py): a small log tower with a rope net, a log climbing frame with two rope nets, a balance course of logs on stumps; piecesOld = the playground kit's plastic stand-ins drawn before (?parkpieces=old)",
       "source": "Google Street View Apr 2024 from Avenue de la Chênaie 5 (look only, 2026-11-23)",
       "ring": [
         [
@@ -1196,7 +1196,28 @@
           755.9
         ]
       ],
+      "kit": "timberkit",
       "pieces": [
+        [
+          "tl_tower",
+          -71.0,
+          760.6,
+          0
+        ],
+        [
+          "tl_climb",
+          -65.0,
+          759.8,
+          0
+        ],
+        [
+          "tl_beam",
+          -64.5,
+          764.6,
+          15
+        ]
+      ],
+      "piecesOld": [
         [
           "pg_climb",
           -71.5,

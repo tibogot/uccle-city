@@ -100,6 +100,19 @@
     1.4
    ]
   },
+  "pf_brick_lod0": {
+   "slots": [
+    "mortar",
+    "brick",
+    "coping"
+   ],
+   "triangles": 6236,
+   "size_m": [
+    2.516,
+    0.41,
+    3.298
+   ]
+  },
   "pf_pier_lod1": {
    "slots": [
     "stone",
@@ -124,6 +137,18 @@
     1.4
    ]
   },
+  "pf_brick_lod1": {
+   "slots": [
+    "brick",
+    "coping"
+   ],
+   "triangles": 40,
+   "size_m": [
+    2.5,
+    0.41,
+    3.3
+   ]
+  },
   "pf_pier_lod2": {
    "slots": [
     "stone",
@@ -145,6 +170,18 @@
     2.5,
     0.44,
     1.4
+   ]
+  },
+  "pf_brick_lod2": {
+   "slots": [
+    "brick",
+    "coping"
+   ],
+   "triangles": 26,
+   "size_m": [
+    2.5,
+    0.37,
+    3.3
    ]
   }
  },

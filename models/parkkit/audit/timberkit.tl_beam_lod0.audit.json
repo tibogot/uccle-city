@@ -1,0 +1,130 @@
+{
+ "summary": {
+  "triangles": 2148,
+  "vertices_welded": 1094,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 0,
+  "counts": {
+   "seam": 4
+  },
+  "ms": 41
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0.00002252962440252304,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.02,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "tl_beam_lod0",
+   "slot": "playground",
+   "triangles": 2148,
+   "maxDistance": 20
+  }
+ ],
+ "items": {
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.209,
+     0.357,
+     -0.287
+    ],
+    "parts": [
+     "tl_beam_lod0/playground",
+     "tl_beam_lod0/playground"
+    ],
+    "length_m": 0.6,
+    "pieces": 50,
+    "min_angle_deg": 44.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.537,
+     0.358,
+     0.182
+    ],
+    "parts": [
+     "tl_beam_lod0/playground",
+     "tl_beam_lod0/playground"
+    ],
+    "length_m": 0.58,
+    "pieces": 47,
+    "min_angle_deg": 38.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.33,
+     0.259,
+     -0.14
+    ],
+    "parts": [
+     "tl_beam_lod0/playground",
+     "tl_beam_lod0/playground"
+    ],
+    "length_m": 0.57,
+    "pieces": 46,
+    "min_angle_deg": 40.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.698,
+     0.259,
+     0.435
+    ],
+    "parts": [
+     "tl_beam_lod0/playground",
+     "tl_beam_lod0/playground"
+    ],
+    "length_m": 0.61,
+    "pieces": 45,
+    "min_angle_deg": 43.3
+   }
+  ]
+ },
+ "file": "timberkit.glb"
+}

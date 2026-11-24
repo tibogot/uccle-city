@@ -38,7 +38,9 @@ export const TYPES = {
   // (claude/places2) an old garden wall in brick ~2.3 m (the Papenkasteel's on Rue Kinsendael: the plinth piece in the
   // brick tone, viewer/parkFence.js STONES[3]); none: a stretch the obs file says is closed by something else (a hedge
   // the garden kit draws, the castle's own range on the street, woods): no piece, a listed gap (reason "obs")
-  brickwall: { panel: null, h: 2.3, plinth: 2.3, pierEvery: 0, stone: 3 },
+  // (claude/places3) its own piece: the scripted 2.3 m brick wall with a stepped coping (tools/blender/parkFenceKit.py
+  // pf_brick), set level and stepped down the street (viewer/parkFenceLayout.js brickWall; ?parkpieces=old: the plinth)
+  brickwall: { panel: null, h: 2.3, plinth: 2.3, pierEvery: 0, stone: 3, piece: "pf_brick" },
   none: { panel: null, h: 0, none: true },
 };
 export const MODULE = 2.5;                 // the kit's panel module (m)
@@ -359,7 +361,7 @@ export async function build() {
         runPanels.forEach((pn, j) => {
           if (!pn) return;
           if (T.panel) panels.push(pn);
-          if (T.plinth) plinths.push({ a: pn.a, b: pn.b, n: pn.n, h: T.plinth, stone: T.stone ?? (type === "wall" ? 1 : stone), t: pn.t });
+          if (T.plinth) plinths.push({ a: pn.a, b: pn.b, n: pn.n, h: T.plinth, stone: T.stone ?? (type === "wall" ? 1 : stone), t: pn.t, ...(T.piece ? { piece: T.piece } : {}) });
           const prev = runPanels[j - 1], next = runPanels[j + 1];
           if (T.post) {
             // the panel module carries its own post at x = 0 (its start): a post is added only at a run's free END
