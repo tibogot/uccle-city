@@ -645,7 +645,18 @@ them as an upper side; the alternation inside a page keeps the extras' differenc
 The extras: poles 0.004-0.028 ms, windows within noise (<= 0.005 ms): both under 0.05 ms. The whole layer with them:
 0.18-0.20 ms in the alternated default / without pages (without: 0.20-0.21), under 0.30; the first page's 0.39 / 0.33
 (the extras switched off in it) came from the machine's state, not from the extras.
-See the re-measure line below for the run after the other gate.
+**Re-measured on GREEN** (after the other gate; system preflight GREEN, page check GREEN: CPU -0.8 %, GPU +4.4 %, boot
+-0.7 %; rAF 60.5 fps; after the runs the system check went RED on memory only: Chrome 7 GB, the page then closed):
+
+| page | layer-street (budget 0.30) | extra-poles (0.05) | extra-windows (0.05) |
+|---|---|---|---|
+| default | **0.192 +- 0.009** | **0.008 +- 0.004** | **0.001 +- 0.011** |
+| `?xmaspoles=0&xmaswin=0` | 0.338 +- 0.031 [0.20, 0.45] | | |
+| default | **0.131 +- 0.007** | **0.023 +- 0.016** | **-0.010 +- 0.005** |
+
+PASS: each extra < 0.05 ms, the whole layer with both 0.13-0.19 ms < 0.30. The whole-layer row moves by up to 0.2 ms
+between page LOADS of the same code (the xmas3 layer alone read 0.20-0.34 in this session, 0.121 on xmas3's day):
+compare rows only inside one page; the extras' own rows are the in-page A/B.
 
 ## 8. Browser turn checklist (server 8828, one tab)
 
