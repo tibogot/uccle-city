@@ -257,5 +257,58 @@
  "estimated": "wing B's south face, both backs, wing A's north face and the link (no view: the counted rhythm), the levels (+-15 cm), the window joinery's sections, the screens' positions (as seen in April 2024), the gate leaf's parked place, the hedge's height, the flagpoles' exact places, the roof hatch",
  "landmarks": {
   "roof_deck": 58.62
- }
+ },
+ "flag_poles": [
+  {
+   "name": "north",
+   "design": "eu",
+   "base_city_xyz": [
+    -496.162,
+    47.121,
+    -357.258
+   ],
+   "tip_city_xyz": [
+    -496.162,
+    55.721,
+    -357.258
+   ],
+   "hoist_m": 1,
+   "fly_m": 1.5
+  },
+  {
+   "name": "centre",
+   "design": "belgium",
+   "base_city_xyz": [
+    -494.503,
+    47.165,
+    -354.759
+   ],
+   "tip_city_xyz": [
+    -494.503,
+    55.765,
+    -354.759
+   ],
+   "hoist_m": 1,
+   "fly_m": 1.5
+  },
+  {
+   "name": "south",
+   "design": "eu",
+   "base_city_xyz": [
+    -492.843,
+    47.248,
+    -352.259
+   ],
+   "tip_city_xyz": [
+    -492.843,
+    55.848,
+    -352.259
+   ],
+   "hoist_m": 1,
+   "fly_m": 1.5
+  }
+ ],
+ "rigid_flag_slots": [
+  "flag_fabric"
+ ]
 }

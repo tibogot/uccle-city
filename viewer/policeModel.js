@@ -55,6 +55,9 @@ const SOURCE = libSource("police", "./materials/shipped.js");   // 2026-11-13: t
 export const poLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.55), weather: uniform(1.0), thinFar: uniform(1.0),
   glassRefl: uniform(1.0), relief: uniform(1.0) };
 
+/** (claude/flags2) the GLB's modelled flags out of every level, cloth flags flown instead (?policeflag=old: kept) */
+export const RIGID_FLAGS_OUT = (typeof location === "undefined" ? "" : new URLSearchParams(location.search).get("policeflag")) !== "old";
+
 let promise = null;
 export function loadPolice() {
   return (promise ??= (async () => {
@@ -87,9 +90,13 @@ export function loadPolice() {
     const b = notes.bounds_city;
     const boundsWorld = new THREE.Box3(new THREE.Vector3(b.x[0], b.y[0], b.z[0]), new THREE.Vector3(b.x[1], b.y[1], b.z[1]));
     const groups = [];
+    // the modelled still flags (police.json rigid_flag_slots) are left out: the city flies cloth flags on the poles
+    // (policeCity.js -> flagsCity.js flyHeroFlags; rule flags-are-cloth). ?policeflag=old keeps them (the old look).
+    const rigid = new Set(RIGID_FLAGS_OUT ? notes.rigid_flag_slots ?? [] : []);
     const make = (k) => {
       const g = new THREE.Group(); g.name = `police_lod${k}`;
       for (const { slot, geometry } of lods[k]) {
+        if (rigid.has(slot)) continue;
         const m = new THREE.Mesh(geometry, materials[slot]);
         m.name = slot; m.userData.slot = slot; m.userData.base = m.material; m.userData.aoScale = PO_LOD_AO[k];
         m.castShadow = slot !== "glass_window"; m.receiveShadow = true;
@@ -120,7 +127,7 @@ export function loadPolice() {
       aoBytes: aoTex.userData.bytes, glbBytes: lods_json.glbBytes, lodsJson: lods_json,
       tempMaterial: (s) => wrapAO(TEMP[s](), aoTex, s),
       libraryMaterial: (name) => sourceMaterial(name, lib),
-      drawCalls: lods.map((l) => l.length),
+      drawCalls: lods.map((l) => l.filter((x) => !rigid.has(x.slot)).length), rigidFlagSlots: [...rigid],
     };
   })());
 }
