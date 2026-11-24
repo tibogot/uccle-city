@@ -63,6 +63,7 @@ import { buildPlazas, loadOverrides } from "./plazas.js";
 import { buildGrounds } from "./grounds.js";
 import { lyceeFront } from "./lyceeFront.js";
 import { parkFence, PARKFENCE } from "./parkFence.js";
+import { billboards, BILLBOARDS } from "./billboards.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
@@ -1586,6 +1587,8 @@ async function main() {
   // ... and the Lycée Français's three (viewer/lyceeFront.js: once tile F7 has built the poles; ?cortenbosch=old none)
   if (CORTENBOSCH && params.get("flags") !== "0") lyceeFront.flags({ scene, updaters, renderer, compiler: heroCompiler, params, log }).catch((e) => log(`lycée flags failed: ${e.message}`));
   if (PARKFENCE) parkFence.start({ scene, updaters, world, compiler: heroCompiler, log }).catch((e) => log(`park fences failed: ${e.message} (?parkfence=0: none)`));
+  // (billboards) the big ad boards on gables and roofs, invented posters, the trivision prisms turning (viewer/billboards.js; ?billboards=0 none)
+  if (BILLBOARDS) billboards.start({ scene, updaters, compiler: heroCompiler, log }).catch((e) => log(`billboards failed: ${e.message} (?billboards=0: none)`));
   if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: heroCompiler, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   // the tram tracks' smooth vertical profile, before the first tile's rails (?trackprofile=0: the old per-point ground)
   // the tile worker starts on the start tile and its ring NOW (the hide list and the ponds are complete): it builds them
