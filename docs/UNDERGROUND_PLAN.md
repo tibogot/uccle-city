@@ -273,3 +273,7 @@ Square Coghen"; Uccle council interpellation 2020-09-10, îlot Coghen-Doyenné; 
 - **P2 "Gatti de Gamond" is NOT underground** (owner, local knowledge). It is the Carrefour's surface car park at Rue Gatti de Gamond / Rue de Stalle. The OSM node 9627537495 (`parking=underground`, no entrance mapped) is taken as a wrong tag. P2 leaves the candidates to open. Job 0 (the look) confirms it, and the OSM fix is left to the owner.
 - That Carrefour has the same design as Carrefour Market Marlow near the police station (claude/carrefour: `shed:true` box, glazed front under a canopy, red sign, car park with painted bays). A small curation job reuses that work.
 - Which car parks open fully: still open; candidates are E1-E4 Avenue Van Bever and P3 CHIREC.
+- **Owner, later the same day:** "I think none of them are underground parkings, but I'm not sure; maybe we can invent one in a hidden place". Suggestions recorded, not decided (not urgent):
+  1. one of the 6 real residential basement garages (layer -1) opened up: small but real;
+  2. **an invented, abandoned underground car park near the Calevoet / Stalle industrial land**, combined with the stunt-area idea (TODO): half-closed ramp, dark concrete levels, puddles, a few wrecked cars; police chases and hiding, moto and bike stunts. This is the coordinator's pick;
+  3. both, later.
