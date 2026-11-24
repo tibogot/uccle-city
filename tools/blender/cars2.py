@@ -51,13 +51,15 @@ scn = bpy.context.scene
 # (name, kind, linear rgb). Paint entries hold a SHADE (the viewer multiplies the per-instance paint colour).
 PAL = [
     ("paint", 1, (1, 1, 1)),
-    ("paint_seam", 1, (0.16, 0.16, 0.16)),        # shut lines: a dark line in the paint colour
+    ("paint_seam", 12, (0.05, 0.05, 0.05)),       # shut lines: a dark gap in the paint colour (kind 12: paint colour, NO
+                                                  # clear coat: the gap stays dark under the reflections, claude/cars1)
     ("trim", 0, (0.020, 0.020, 0.022)),            # black textured plastic
     ("rubber", 6, (0.012, 0.012, 0.013)),          # window seals
     ("glass", 4, (0.020, 0.024, 0.028)),
     ("glass_dark", 4, (0.006, 0.007, 0.008)),      # privacy glass (estates, SUVs, vans: rear)
     ("chrome", 5, (0.60, 0.61, 0.62)),
-    ("gloss", 0, (0.012, 0.012, 0.013)),           # piano black: B pillars, grilles, lamp housings (kind 0: no mirror look)
+    ("gloss", 10, (0.012, 0.012, 0.013)),          # piano black: B pillars, grilles, lamp housings (kind 10: clear coat,
+                                                  # the black trim mirror of the NTE look, claude/cars1)
     ("head", 2, (0.86, 0.87, 0.90)),               # head lamp lens / DRL
     ("head_in", 2, (0.26, 0.27, 0.29)),            # inside the lens: the reflector (smoked)
     ("tail", 3, (0.33, 0.012, 0.010)),
@@ -74,7 +76,7 @@ PAL = [
     ("under", 0, (0.016, 0.016, 0.017)),
     ("tyre", 6, (0.020, 0.020, 0.021)),
     ("tyre_side", 6, (0.030, 0.030, 0.031)),
-    ("rim", 0, (0.34, 0.35, 0.37)),
+    ("rim", 11, (0.50, 0.51, 0.53)),               # alloy (kind 11: metal, claude/cars1)
     ("rim_dark", 0, (0.030, 0.030, 0.032)),
     ("disc", 5, (0.22, 0.22, 0.22)),
     ("white", 0, (0.78, 0.78, 0.76)),
@@ -84,6 +86,10 @@ PAL = [
     ("pol_blue", 0, (0.010, 0.040, 0.30)),         # Belgian police: blue
     ("pol_yellow", 0, (0.72, 0.80, 0.0)),          # fluorescent yellow (lime)
     ("pol_white", 0, (0.80, 0.80, 0.79)),          # the police estate's white (keepPaint: drawn as fixed colour)
+    # claude/cars1 (CARS LOOK round 1): LOD0 wheel detail
+    ("rim_lip", 11, (0.78, 0.78, 0.79)),           # the machined / polished outer lip and spoke faces
+    ("tread", 6, (0.008, 0.008, 0.009)),           # the tread blocks' grooves (darker rubber)
+    ("lug", 5, (0.45, 0.45, 0.46)),                # wheel nuts
 ]
 M = {n: i for i, (n, _, _) in enumerate(PAL)}
 MATS = [bpy.data.materials.new(n) for n, _, _ in PAL]
@@ -798,12 +804,28 @@ def build_car(cid, sp, detail):
         if in_mat is not None:
             for f in fs: f.material_index = M[in_mat]
         return band, fs
+    proj = []                                                       # (claude/cars1) head lamp frames: projectors
+    def lamp_frame(fs):
+        """a lamp region's centre, outward normal, long axis and half sizes (car coords), from its faces' vertices"""
+        fs = [f for f in fs if f.is_valid]
+        if not fs: return None
+        P = np.array([[v.co.x, v.co.z, -v.co.y] for f in fs for v in f.verts])
+        nv = sum((f.normal * f.calc_area() for f in fs), Vector((0, 0, 0)))
+        n = np.array([nv.x, nv.z, -nv.y]); n /= (np.linalg.norm(n) or 1)
+        c = P.mean(axis=0); Q = P - c; Q -= np.outer(Q @ n, n)
+        _, _, Vt = np.linalg.svd(Q, full_matrices=False)
+        ax = Vt[0]; ay = np.cross(n, ax)
+        # (the lamp wraps round the corner: its centroid is inside the body; projectors sit on a FACE of it, below)
+        fc = np.array([[f.calc_center_median().x, f.calc_center_median().z, -f.calc_center_median().y] for f in fs])
+        fn = np.array([[f.normal.x, f.normal.z, -f.normal.y] for f in fs])
+        return dict(c=c, n=n, ax=ax, ay=ay, hx=float(np.abs(Q @ ax).max()), hy=float(np.abs(Q @ ay).max()), fc=fc, fn=fn, hv=float(P[:, 1].max() - P[:, 1].min()) / 2)
     if detail == 0:
         for sd in "LR":
             fs = tags.get("head" + sd, [])
             inset(fs, 0.006, -0.004, "trim")                      # thin dark surround
             _, inner = inset(fs, 0.004, -0.018, "gloss", "gloss")  # housing
             _, inner = inset(inner, 0.012, 0.008, "gloss", "head")  # the lens (DRL band round it)
+            proj.append(lamp_frame(inner))                          # (claude/cars1) its projector lenses, below
             inset(inner, 0.014, -0.004, "head", "head_in")          # reflector inside
             fs = tags.get("tail" + sd, [])
             inset(fs, 0.005, -0.003, "trim")
@@ -955,10 +977,29 @@ def build_car(cid, sp, detail):
             # plates
             plate(dt, (0, sp["plateF"], rake(0, sp["plateF"], zF) + 0.006), 0.05, 1, rng, 0)
             plate(dt, (0, sp["plateR"], rake(0, sp["plateR"], zR) - 0.004), -0.08, -1, rng, 0)
-            # grille bars: two thin horizontal bars across the recessed grille
+            # (claude/cars1) head lamp PROJECTORS: two lenses in bright bezels on each reflector, along the lamp
+            for L in proj:
+
+                if not L or L["hv"] < 0.015: continue
+                rr = min(0.028, 0.55 * L["hv"])
+                for t in (-0.42, 0.18):
+                    if abs(t) * L["hx"] + rr > L["hx"]: continue
+                    u_ = (L["fc"] - L["c"]) @ L["ax"]; v_ = (L["fc"] - L["c"]) @ L["ay"]
+                    j = int(np.argmin(np.abs(u_ - t * L["hx"]) + 0.3 * np.abs(v_)))
+                    nrm = L["fn"][j] / (np.linalg.norm(L["fn"][j]) or 1)
+                    c0 = L["fc"][j] + nrm * 0.001
+                    up = np.array([0.0, 1.0, 0.0]); ex = np.cross(up, nrm); ex /= (np.linalg.norm(ex) or 1); ey = np.cross(nrm, ex)
+                    ring = lambda r_, d_: [dt.v(tuple(c0 + nrm * d_ + r_ * (math.cos(a_) * ex + math.sin(a_) * ey))) for a_ in (2 * math.pi * q / 14 for q in range(14))]
+                    r0, r1, r2 = ring(rr, 0.0), ring(rr, 0.006), ring(rr * 0.72, 0.004)
+                    for q in range(14):
+                        q1 = (q + 1) % 14
+                        dt.quad([r0[q], r0[q1], r1[q1], r1[q]], M["chrome"])
+                        dt.quad([r1[q], r1[q1], r2[q1], r2[q]], M["chrome"])
+                    dt.quad(r2, M["head"])                         # (CCW round n: faces out of the lamp)
+            # grille bars: thin horizontal slats across the recessed grille (claude/cars1: five, was two)
             for r in [r for r in sp["front"] if r[0] == "grille"]:
                 y0, y1 = r[2]; f1 = r[3][1]
-                for t in (0.36, 0.68):
+                for t in (0.2, 0.36, 0.52, 0.68, 0.84):
                     yy = lerp(y0, y1, t); b = body(zF); xr = prof_pt(b, s_of_y(b, yy))[0] * f1 - 0.03
                     zz = rake(xr * 0.5, yy, zF) - 0.014
                     rbox(dt, (0, yy, zz), (2 * xr, 0.008, 0.012), M["chrome"] if sp["type"] in ("sedan", "estate") else M["gloss"],
@@ -1072,29 +1113,54 @@ def build_wheel(sp, detail):
     style = sp.get("rim", "6")
     # LOD0: 32-40 segments (a round tyre / rim silhouette; spokes 2 segments wide), LOD1: 8
     N = {"5": 40, "6": 36, "multi": 40, "cover": 32}[style] if detail == 0 else 12   # (LOD1 from 30 m: 12, not an octagon)
+    # (claude/cars1, CARS LOOK round 1) LOD0 rims on their own segment count: the twin 5-spoke needs 60 (a spoke pair =
+    # 2 + 1 gap + 2 segments); the tyre keeps N
+    Nr = {"5": 60, "6": 36, "multi": 40, "cover": 32}[style] if detail == 0 else N
     if detail == 0:
-        # bead, bulged sidewall, rounded shoulder (two points), tread, inner shoulder, inner bead
-        prof = [(RR + 0.004, h * 0.80), (lerp(RR, RW, 0.45), h * 1.02), (RW - 0.022, h * 0.93), (RW - 0.006, h * 0.75),
-                (RW, h * 0.45), (RW, -h * 0.55), (RW - 0.02, -h * 0.95), (RR, -h * 0.8)]
+        # (claude/cars1) a real tyre: bead, rim protector rib, sidewall bulge with a lettering band ridge, rounded
+        # shoulder with TREAD BLOCKS (the shoulder bands alternate rubber / dark groove per segment), two V tread
+        # grooves round the crown, inner shoulder, inner bead
+        g = 0.007
+        prof = [(RR + 0.004, h * 0.80), (RR + 0.013, h * 0.90), (RR + 0.019, h * 0.97), (RR + 0.028, h * 0.93),
+                (lerp(RR, RW, 0.45), h * 1.02), (lerp(RR, RW, 0.62), h * 1.005), (lerp(RR, RW, 0.67), h * 0.985),
+                (RW - 0.022, h * 0.93), (RW - 0.006, h * 0.75), (RW, h * 0.45),
+                (RW, h * 0.30), (RW - g, h * 0.24), (RW, h * 0.18),
+                (RW, -h * 0.10), (RW - g, -h * 0.16), (RW, -h * 0.22),
+                (RW, -h * 0.55), (RW - 0.02, -h * 0.95), (RR, -h * 0.8)]
+        side_k = {0, 1, 2, 3, 4, 5, 6}                     # sidewall bands (one smooth rubber, the ribs shade it)
+        groove_k = {10, 11, 13, 14}                         # the V grooves' walls
+        block_k = {7, 8, 16}                                # shoulder bands: blocks
+        def tyre_mat(k, s_):
+            if k in groove_k: return M["tread"]
+            if k in block_k and s_ % 2: return M["tread"]
+            return M["tyre_side"] if k in side_k else M["tyre"]
+        lathe(w, prof, N, tyre_mat)
     else:
         prof = [(RR, h * 0.85), (RW, h * 0.75), (RW, -h * 0.75), (RR, -h * 0.85)]
-    side_bands = (0,)                     # (one tyre material over sidewall and shoulder: no hard edge, a smooth roll)
-    lathe(w, prof, N, lambda k, s: M["tyre_side"] if k in side_bands else M["tyre"])
+        side_bands = (0,)                     # (one tyre material over sidewall and shoulder: no hard edge, a smooth roll)
+        lathe(w, prof, N, lambda k, s: M["tyre_side"] if k in side_bands else M["tyre"])
     # rim: lip ring (proud), then the face
     xf = h * 0.62
-    lip = [(RR + 0.004, h * 0.80), (RR - 0.018, xf)] if detail == 0 else [(RR, h * 0.85), (RR - 0.01, xf)]
-    rings = lathe(w, lip, N, lambda k, s: M["rim"], phase=0)
     if detail == 0:
+        # (claude/cars1) a polished flat lip, a step down to the barrel, then the face (two-tone: machined spoke faces)
+        lip = [(RR + 0.004, h * 0.80), (RR - 0.006, h * 0.83), (RR - 0.012, h * 0.74), (RR - 0.018, xf)]
+        rings = lathe(w, lip, Nr, lambda k, s: M["rim_lip"] if k == 0 else M["rim"], phase=0)
+    else:
+        lip = [(RR, h * 0.85), (RR - 0.01, xf)]
+        rings = lathe(w, lip, N, lambda k, s: M["rim"], phase=0)
+    if detail == 0:
+        N = Nr
         # face: hub ring .. spoke ring; 5 spokes (1 of 3 segments), the openings (2 of 3) set back 4 cm with walls
         r_hub, r_mid, r_out = 0.06, 0.095, RR - 0.018
         outer = rings[-1]
         ang = lambda q: 2 * math.pi * q / N
         ring_hub = [w.v((xf + 0.014, r_hub * math.cos(ang(q)), r_hub * math.sin(ang(q)))) for q in range(N)]
         ring_mid = [w.v((xf + 0.008, r_mid * math.cos(ang(q)), r_mid * math.sin(ang(q)))) for q in range(N)]
-        # 5-spoke: 1 of 4 segments a spoke; 6-spoke: 1 of 3; multi-spoke: every other; cover (vans): a plastic wheel
-        # cover with 8 shallow slots
+        # twin 5-spoke (claude/cars1): pairs of 2-segment spokes with a 1-segment slot, 7 open of 12; 6-spoke: 1 of 3;
+        # multi-spoke: every other; cover (vans): a plastic wheel cover with 8 shallow slots
         dep = 0.012 if style == "cover" else 0.045
-        opening = {"5": lambda q: q % 8 > 1, "6": lambda q: q % 6 > 1, "multi": lambda q: q % 4 > 1, "cover": lambda q: q % 4 == 2}[style]
+        opening = {"5": lambda q: q % 12 not in (0, 1, 3, 4), "6": lambda q: q % 6 > 1, "multi": lambda q: q % 4 > 1, "cover": lambda q: q % 4 == 2}[style]
+        face_mat = M["rim"] if style in ("6", "cover") else M["rim_lip"]     # machined spoke faces: twin 5 and multi
         # DRAFTED walls (the back of an opening is narrower than its mouth, 40 % of a segment each side, and 1.2 cm in
         # radially): with the wheel's smooth angle the spoke edges shade as a bevel, not a flat-shaded block
         def back_ang(q):
@@ -1115,9 +1181,15 @@ def build_wheel(sp, detail):
                 if not opening((q - 1) % N): w.quad([ring_mid[q], bk_mid[q], bk_out[q], outer[q]], M["rim"])
                 if not opening(q1): w.quad([ring_mid[q1], outer[q1], bk_out[q1], bk_mid[q1]], M["rim"])
             else:
-                w.quad([ring_mid[q], ring_mid[q1], outer[q1], outer[q]], M["rim"])
+                w.quad([ring_mid[q], ring_mid[q1], outer[q1], outer[q]], face_mat)
         cap = w.v((xf + 0.018, 0, 0))
         for q in range(N): w.quad([ring_hub[q], ring_hub[(q + 1) % N], cap], M["rim_dark"])      # a dark centre cap
+        # (claude/cars1) five wheel nuts on the hub and a small bright centre badge disc (no logo)
+        for q in range(5):
+            a = 2 * math.pi * q / 5 + math.pi / 10
+            rbox(w, (xf + 0.021, 0.042 * math.cos(a), 0.042 * math.sin(a)), (0.012, 0.015, 0.015), M["lug"])
+        badge = [w.v((xf + 0.0215, 0.022 * math.cos(2 * math.pi * q / 12), 0.022 * math.sin(2 * math.pi * q / 12))) for q in range(12)]
+        w.quad(badge, M["rim_lip"])
         # brake disc + caliper behind the face
         dsc = [w.v((xf - 0.07, 0.8 * RR * math.cos(2 * math.pi * q / 10), 0.8 * RR * math.sin(2 * math.pi * q / 10))) for q in range(10)]
         w.quad(dsc, M["disc"])

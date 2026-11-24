@@ -221,3 +221,20 @@ camera beside a parked car at 1.7 m; `closeCar()`, `hideUI()` for screenshots). 
 - Contact-shadow quads under far cars (slop's trick) for the cars beyond the shadow box.
 - More fascia variety per type (today the hatch family shares one face; SUV and vans have their own).
 - An atlas for printed lamp graphics, if wanted (section 3).
+
+## 10. CARS LOOK round 1 (claude/cars1, 2026-11-24; rule car-look)
+Owner's bar: Neverness to Everness's cars (stylised, glossy, reflecting the street). `?carlook=old` = everything before.
+- **Paint** (viewer/drive/carPacks.js): one shared clear-coat material: dielectric base (metal 0, rough 0.6), coat 1 /
+  0.035; gloss black trim (kind 10) with the coat; alloy rims (kind 11, metal 0.75); panel gaps (kind 12: paint colour
+  x 0.05, no coat). `?carssr=1` = SSR on the paint (rejected: still-camera flicker +8 %).
+- **Reflection probe** (viewer/carProbe.js, main.js hook): far tiles (ortho terrain + far-look buildings) + the sky round
+  the camera, 64 px cube, one face every 3 frames, two cubes cross-faded, PMREM per completed cube; reflections only
+  (diffuse stays on the sky env). CPU ~0.15-0.28 ms a frame averaged (`__carProbe.stats`). `?carprobe=0` = new paint, sky only.
+- **LOD0 detail** (tools/blender/cars2.py): tyres with a rim-protector rib, sidewall ridges, tread blocks + two V grooves;
+  rims with a polished lip, machined faces, twin 5-spoke, five nuts + centre disc; two projector lenses in each head
+  lamp; five grille slats; darker panel gaps. LOD1 / LOD2 unchanged (gate `carlook`).
+- Budgets (tris, LOD0 / LOD1 / LOD2, before -> after): hatch_s 10578 -> 14910, hatch_c 11046 -> 16994, estate 11692 ->
+  16440, saloon 10894 -> 15642, suv 12562 -> 18510, van_c 9716 -> 13632, van_p 9444 -> 13360, taxi 11334 -> 15666,
+  police 15006 -> 20954; LOD1 and LOD2 identical. Draws unchanged (+2-8 probe draws every 3rd frame, at 64 px).
+- Check: `node tools/audit/carLookGate.mjs`; browser `debug/carLook.js` (`go(dist)`, `strip({kind})`, `probe()`).
+- Next (round 2): new shapes one at a time at this quality, the boxy 4x4 first (tall, square, spare wheel on the back).
