@@ -12,7 +12,7 @@
 //                 within 3.5 m of the pole, median <= 2 m)
 //               - an ambulance on a run: the cars ahead of it slow and pull right, the crossing traffic holds
 //               - no service vehicle stuck: the longest standstill (not a planned stop) <= 90 s, none removed as stuck
-//               - the step's cost with the mix <= 1.15 x without it (COST_MAX) (same tiles, same seed, interleaved runs)
+//               - the step's cost with the mix <= 1.20 x without it (COST_MAX) (same tiles, same seed, interleaved runs)
 //   node --import ./tools/road_audit/register.mjs tools/audit/trafmixGate.mjs [--old] [--quiet] [--secs 240]
 //   --old: ?trafmix=old (the mix as before): must FAIL (no patrols, no buses, no emergency yield).
 import { join } from "node:path";
@@ -495,7 +495,10 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
   // (coordinator 2026-11-23, rule timing-rows: COST_MAX 1.10 -> 1.15. claude/allocrate2 timed the SAME sim code (old vs
   // new colliders.js, the only changed module the sim loads) A B B A in one quiet session: clean reads 1.03-1.18 on both;
   // the true ratio sits ~1.08, so a 1.10 median was a coin toss on this laptop. 1.15 still fails a mix that got ~7 % dearer)
-  const COST_MAX = 1.15;
+  // (coordinator 2026-11-24, rule timing-rows: 1.15 -> 1.20. claude/defects1's A/B in one quiet session, 4 runs per build:
+  // the OLD parent fe4ce01a read clean 1.067 / median 1.116 / 1.173, so 1.15 failed unchanged code; 1.20 sits above that
+  // spread and still fails a mix ~7.5 % dearer than today's median)
+  const COST_MAX = 1.20;
   const reads = [];
   let MT = null;
   for (let k = 0; k < 6 && !TRAFMIX_OLD; k++) {
