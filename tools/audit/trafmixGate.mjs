@@ -311,12 +311,12 @@ const res = {};
 for (const [label, where, hour, secs] of [["8 h Alsemberg", "alsemberg", 8, SECS], ["13 h Rue Rouge", "station", 13, SECS], ["18 h Alsemberg", "alsemberg", 18, Math.round(SECS / 2)]]) {
   const T = run(where, hour, secs), s = shares(hour, true);
   res[label] = T;
-  const tCar = s.hatch_s + s.hatch_c + s.estate + s.saloon + s.suv, tVan = s.van_c + s.van_p;
+  const tCar = s.hatch_s + s.hatch_c + s.estate + s.saloon + s.suv + (s.x4 || 0), tVan = s.van_c + s.van_p;   // (claude/cars1: the 4x4 is a car)
   const tol = (p) => 3 * Math.sqrt((p * (1 - p)) / mixN(T)) + 0.02;
   const bad = [];
   if (Math.abs(share(T, "car") - tCar) > tol(tCar)) bad.push(`cars ${pct(share(T, "car"))} (target ${pct(tCar)})`);
   if (Math.abs(share(T, "van") - tVan) > tol(tVan)) bad.push(`vans ${pct(share(T, "van"))} (target ${pct(tVan)})`);
-  const suvC = (T.by.suv || 0) / Math.max(1, T.by.car || 0);
+  const suvC = ((T.by.suv || 0) + (T.by.x4 || 0)) / Math.max(1, T.by.car || 0);   // (the SUVs + the 4x4s)
   if (Math.abs(suvC - 0.30) > 0.08) bad.push(`SUV ${pct(suvC)} of the cars`);
   if (!(T.by.police_t > 0)) bad.push("no patrol car");
   if (!(T.by.bus > 0)) bad.push("no bus");

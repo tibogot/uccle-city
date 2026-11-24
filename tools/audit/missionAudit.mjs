@@ -29,6 +29,7 @@ const { loadTile, ROOT } = await import("../road_audit/tile.mjs");
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { densifyShapes, createTramSched } = await imp("viewer/tramSched.js");
 const P = await imp("viewer/police/missionPremise.js");
+const { X4_TRAFFIC } = await imp("viewer/traffic/trafMix.js");   // (claude/cars1: the 4x4 parked only while 0)
 const { pickTramSpot, tramBlock, tramPremise, TRAM_BLOCK, arriveMin, placeAccident, accidentPremise, stolenPremise, pickSpeeder, speederMissed } = P;
 const HOLD_S = 180, AVAIL_MIN = 0.8, SPEED_MIN = 0.6;
 
@@ -200,7 +201,7 @@ const inBuilt = (x, z) => built.some((b) => x >= b.x[0] && x < b.x[1] && z >= b.
   const c2 = (() => { const b = readFileSync(join(ROOT, "models/cars/cars2.glb")); return parseCarGlb(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)); })();
   const types = TYPE_MIX.map(([name, w]) => {
     const c = c2.find((q) => q.id === name), s = c.extras.size, wf = c.parts.find((p) => p.name === "Wheel_FL").pos, wr = c.parts.find((p) => p.name === "Wheel_RL").pos;
-    return { name, len: s[2], w: s[0], h: s[1], wb: wf[2] - wr[2], wheelR: wf[1], weight: w };
+    return { name, len: s[2], w: s[0], h: s[1], wb: wf[2] - wr[2], wheelR: wf[1], weight: name === "x4" && !X4_TRAFFIC ? 0 : w };   // (claude/cars1: as traffic.js, the 4x4 parked only)
   });
   const inT = (x, z) => bounds.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1);
   const spots = rd("data/game/police_spots.json").speed.filter((s) => inT(s.x, s.z));

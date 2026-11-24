@@ -341,7 +341,7 @@ X4 = remap(VAN_C, zmap=[(-2.22, -2.10), (-1.36, -1.37), (1.36, 1.37), (2.27, 2.1
            label="boxy 4x4", type="x4", paint=(0.11, 0.13, 0.10), wheelR=0.375, rimR=0.229, tyreW=0.245, wheelX=0.82, rim="5",
            archGap=0.04, archFlare=0.03, archPow=3.2, tuck=0.05, upperN=4.2, lowerN=3.6, waist=0.004, clad=0.62, rails=True,
            spare=True, slide=False)
-X4["halfWidth"] = [[z, v - 0.012] for z, v in X4["halfWidth"]]
+X4["halfWidth"] = [[z, v - 0.022] for z, v in X4["halfWidth"]]   # (1.84 m: not a "wide" body for the traffic, trafficSim TP_PASS)
 X4["tumble"] = [[2.12, 0.05], [1.0, 0.045], [-2.10, 0.045]]
 X4["nose"] = dict(halfWidth=[0.22, 0.80, 3.6], edge=[0.06, 1.05, 3.4], crown=[0.06, 0.004, 2], sill=[0.2, 0.40, 2], shoulder=[0.16, 0.80, 3.4])
 X4["tail"] = dict(halfWidth=[0.10, 0.86, 3.6], edge=[0.04, 1.20, 3], crown=[0.04, 0.0, 2], sill=[0.12, 0.46, 2], shoulder=[0.08, 0.92, 3.2])

@@ -252,7 +252,10 @@ Owner's bar: Neverness to Everness's cars (stylised, glossy, reflecting the stre
   3), a narrower tapered glasshouse on a 50 mm shoulder ledge, a rising belt to the rear, a taller lamp + grille band and
   a bigger lower intake. Sizes within 1 cm, LOD1 / LOD2 at or under r0 (gate `carlook`). Sheet:
   uccle-cars1-ab/r2/shapes_before_after.jpg.
-- **Boxy 4x4** (`x4`, generic Defender / G / Land Cruiser class): 4.52 x 1.86 x 1.88, WB 2.74, wheels 0.375, boxy section
+- **Boxy 4x4** (`x4`, generic Defender / G / Land Cruiser class): 4.52 x 1.84 x 1.88, WB 2.74, wheels 0.375, boxy section
   (4.2 / 3.6), upright screen, flat bonnet, black cladding, rails, the spare wheel on the tailgate (all LODs). LODs
-  17,200 / 2,180 / 340. Mix: parked 6 % (TYPE_MIX re-weighted for a wealthy commune), traffic 8 % of the cars (SUV
-  30 -> 22 %); SIZES, WHEELS, MASS set. `?carlook=old` keeps the r0 mix (no 4x4).
+  17,200 / 2,180 / 340. 1.84 m wide (1.86 made it a "wide" body for the traffic: parkClamped 737 > 660). Mix: PARKED
+  6 % (TYPE_MIX re-weighted for a wealthy commune); NOT in the traffic yet (trafMix.js X4_TRAFFIC = 0, traffic.js and
+  missionAudit weight 0): at 8 % (5 %) of the traffic's cars trafmix seed 7 formed 19 (8) junction wait-for loops
+  (ceiling 3) + two new stuck places at D6 / D7, and one radar spot got no speeder in 150 s; at 0 all pass. A traffic
+  job raises X4_TRAFFIC once those junctions hold. SIZES, WHEELS, MASS set. `?carlook=old` keeps the r0 mix (no 4x4).

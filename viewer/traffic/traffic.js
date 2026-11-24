@@ -13,7 +13,7 @@ import { TrafficFleet, TYPE_NAMES } from "./trafficFleet.js";
 import { TYPE_MIX, SIZES, PAINTS, FADE_TO } from "../carFleet.js";
 import { CARS_OLD } from "../drive/carPacks.js";
 import { TRAFFIC_TYPES } from "../moto/cityTwoWheelers.js";
-import { TRAFMIX_OLD, HEAVY, TrafMix, DATA_URL } from "./trafMix.js";   // TRAFMIX (docs/TRAFMIX.md): the mix by hour and place
+import { TRAFMIX_OLD, HEAVY, TrafMix, DATA_URL, X4_TRAFFIC } from "./trafMix.js";   // TRAFMIX (docs/TRAFMIX.md): the mix by hour and place
 
 /** motorbike round 2 (docs/MOTO.md): motorbikes and scooters in the city's traffic (createTraffic twoWheelers: the city;
  *  ?twowheelers=0: cars only). They are sim types after the cars' (drawn by viewer/moto/cityTwoWheelers.js
@@ -33,7 +33,7 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
   // (TRAFMIX: the service vehicles after the street types: models/cars/heavy.glb; zc = the body's centre off the axles)
   const types = TYPE_NAMES.map((name) => HEAVY[name]
     ? { name, len: HEAVY[name].size[2], w: HEAVY[name].size[0], h: HEAVY[name].size[1], wb: HEAVY[name].wb, wheelR: HEAVY[name].wheelR, zc: HEAVY[name].zc, weight: 0, heavy: true }
-    : { name, len: SIZES[name][2], w: SIZES[name][0], h: SIZES[name][1], wb: WHEELS[name][0], wheelR: WHEELS[name][1], weight: mix.get(name) });
+    : { name, len: SIZES[name][2], w: SIZES[name][0], h: SIZES[name][1], wb: WHEELS[name][0], wheelR: WHEELS[name][1], weight: name === "x4" && !X4_TRAFFIC ? 0 : mix.get(name) });   // (claude/cars1: the 4x4 parked only, trafMix.js X4_TRAFFIC)
   if (TWO_TRAFFIC && twoWheelers) for (const t of TRAFFIC_TYPES) types.push({ ...t });
   const c = new THREE.Color();
   const paints = PAINTS.map((h) => { c.setHex(h); return [c.r, c.g, c.b]; });
