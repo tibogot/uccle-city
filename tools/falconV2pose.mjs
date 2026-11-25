@@ -99,9 +99,20 @@ export function loadV2(file) {
   // per vertex: its main joint's name and weight
   const main = new Array(NV), mainW = new Float64Array(NV);
   for (let v = 0; v < NV; v++) { let b = 0; for (let c = 1; c < 4; c++) if (WT[v * 4 + c] > WT[v * 4 + b]) b = c; main[v] = J.nodes[joints[JN[v * 4 + b]]].name; mainW[v] = WT[v * 4 + b]; }
-  return { J, NV, IDX, P, main, mainW, clips, pose };
+  return { J, NV, IDX, P, main, mainW, clips, pose, byName };
 }
 
+/** the tail's feather cards: small loose parts (<= 80 vertices) mainly on a tail bone */
+export function tailParts(B, parts) { return [...parts.values()].filter((vs) => vs.length <= 80 && B.main[vs[0]].startsWith("tail")); }
+/** the tail's width (m) across its outer 40 % (along tail_2 -> tail_tip), the lateral (x) extent of its cards */
+export function tailTipWidth(B, parts, p) {
+  const a = p.at("tail_2"), b = p.at("tail_tip"), ax = sub(b, a), L = len(ax), u = ax.map((x) => x / L), X = p.X;
+  const vs = tailParts(B, parts).flat(); let smax = 0;
+  for (const v of vs) smax = Math.max(smax, dot(sub([X[v * 3], X[v * 3 + 1], X[v * 3 + 2]], a), u));
+  let mn = Infinity, mx = -Infinity;
+  for (const v of vs) if (dot(sub([X[v * 3], X[v * 3 + 1], X[v * 3 + 2]], a), u) > 0.6 * smax) { mn = Math.min(mn, X[v * 3]); mx = Math.max(mx, X[v * 3]); }
+  return mx - mn;
+}
 export function v2PoseChecks(file) {
   const out = [], ok = (c, what, val) => out.push([!!c, what, val]);
   const B = loadV2(file), { NV, IDX, main, mainW } = B;
@@ -161,6 +172,13 @@ export function v2PoseChecks(file) {
   const cg = Math.min(curl(glide, "L"), curl(glide, "R")), cp = Math.min(curl(perch, "L"), curl(perch, "R")), ct = Math.max(curl(talons, "L"), curl(talons, "R")), ct0 = Math.min(curl(talons, "L"), curl(talons, "R"));
   ok(cg >= 45 && cp >= 45, "v2 toes closed in flight (Glide) and on the perch (curl >= 45 deg toward the sole)", `glide ${cg.toFixed(0)}, perch ${cp.toFixed(0)} deg`);
   ok(ct <= 25 && ct0 >= -35, "v2 Talons: toes open (curl <= 25 deg, not bent back past -35)", `${ct0.toFixed(0)} .. ${ct.toFixed(0)} deg`);
+  // V2 FIX: the tail closes in the folded poses and fans in the glide / flare (its own feather bones, tail_fan_*):
+  // the width across the tail's outer 40 % (its feather cards' tips, along tail_2 -> tail_tip), the lateral (x) extent
+  ok(tailParts(B, parts).length >= 10 && Object.keys(B.byName).filter((n) => n.startsWith("tail_fan_")).length >= 6, "v2 tail: its own feather bones (tail_fan_*), the feather cards on them", `${Object.keys(B.byName).filter((n) => n.startsWith("tail_fan_")).length} bones`);
+  const tw = {}; for (const c of ["Perch", "Walk", "Hop", "Stoop", "Talons", "Glide", "Flare"]) if (B.clips[c]) tw[c] = tailTipWidth(B, parts, B.pose(c));
+  const folded = ["Perch", "Walk", "Hop", "Stoop", "Talons"].filter((c) => tw[c] != null), wmax = Math.max(...folded.map((c) => tw[c]));
+  ok(wmax < 0.10, "v2 tail closed when folded (Perch / Walk / Hop / Stoop / Talons: < 10 cm across its tip half)", folded.map((c) => `${c} ${(tw[c] * 100).toFixed(1)}`).join(", ") + " cm");
+  ok(tw.Glide > wmax + 0.03 && tw.Flare >= 0.25 && tw.Flare > tw.Glide, "v2 tail fans in flight (Glide wider than folded, Flare >= 25 cm, the widest)", `Glide ${(tw.Glide * 100).toFixed(1)}, Flare ${(tw.Flare * 100).toFixed(1)} cm`);
   // the juvenile plumage (the player): its KTX2 beside the glb, named in it, the base colour's size
   const v = B.J.asset?.extras?.variants?.juvenile, f = v && path.join(path.dirname(file), v.file);
   const okFile = f && fs.existsSync(f) && fs.readFileSync(f).subarray(0, 12).toString("latin1").includes("KTX 20");

@@ -385,6 +385,8 @@ PART = np.array([find(i) for i in range(NV)])
 parts = {}
 for i, p_ in enumerate(PART): parts.setdefault(p_, []).append(i)
 CARD = np.zeros(NV, bool)
+TAILFAN = {}                                         # the tail's feather bones (V2 FIX): bone -> (full fold, side)
+COVT = np.zeros(NV, bool)                            # the tail's covert sheets (blended over the feather bones)
 if OWN:
     # THE LEGS: the download's own leg weights, bone for bone; the rest of such a vertex keeps its transferred
     # (body) weights; the transferred leg weights elsewhere (the belly near the hips) go: the belly does not follow
@@ -449,6 +451,74 @@ if OWN:
         avg = acc / np.maximum(deg, 1)[:, None]
         Wt[sm] = 0.5 * Wt[sm] + 0.5 * avg[sm]
     print(f"[falconV2] covert sheets: {int(sm.sum())} vertices smoothed")
+    # THE TAIL CLOSES (V2 FIX, rule falcon-gym "the v2 model"): the download's bind spreads its tail as a full fan
+    # (~96 deg, 35 cm wide) and the rig has ONE tail chain, so every folded pose (perched, walking, the stoop) showed
+    # the fan. Each fanned feather position (a cluster of cards: the download doubles them) gets its own bone, a child
+    # of tail_2 with its head at the cards' root, Z up the tail's plane. The clips turn those bones (tail_fold): in the
+    # plane, until the card's tip lies near the centre line (the outer ones closest to it: a closed tail is a stack),
+    # and a little down (the outer feathers fold UNDER the central pair). The covert sheets over the tail's base
+    # follow by blended weights (their angle about the tail's base), the base itself still.
+    tcards = [vs for vs in CARDS.get("tail_2", []) if len(vs) <= 80]
+    info = []
+    for vs in tcards:
+        P_ = CO[vs]; r_ = P_[np.argmin(P_[:, 1])]; t_ = P_[np.argmax(np.linalg.norm(P_ - r_, axis=1))]
+        info.append((math.atan2(t_[0] - r_[0], t_[1] - r_[1]), r_, t_, vs))
+    info.sort(key=lambda x: x[0])
+    clus = []
+    for th, r_, t_, vs in info:
+        if clus and abs(th - clus[-1][-1][0]) < math.radians(5) and abs(r_[0] - clus[-1][-1][1][0]) < 0.012: clus[-1].append((th, r_, t_, vs))
+        else: clus.append([(th, r_, t_, vs)])
+    fanc = []
+    for cl in clus:
+        th = float(np.mean([c[0] for c in cl])); r_ = np.mean([c[1] for c in cl], 0); t_ = np.mean([c[2] for c in cl], 0)
+        if abs(r_[0]) < 0.012 and abs(th) < math.radians(6): continue      # the central feather: stays on tail_2
+        fanc.append((th, r_, t_, [c[3] for c in cl]))
+    if fanc:
+        upd(); select([arm]); bpy.ops.object.mode_set(mode="EDIT"); EB = arm.data.edit_bones
+        fan2 = []
+        for s, sg in (("L", 1), ("R", -1)):
+            side = sorted([c for c in fanc if sg * c[1][0] > 0], key=lambda c: abs(c[0]))
+            for i, (th, r_, t_, vss) in enumerate(side, 1):
+                n = f"tail_fan_{i}_{s}"; eb = EB.new(n); d_ = Vector(t_ - r_).normalized()
+                eb.head = Vector(r_); eb.tail = Vector(r_) + d_ * 0.04; eb.parent = EB["tail_2"]; eb.use_connect = False
+                eb.align_roll(Vector((0, 0, 1)))
+                fan2.append((th, r_, t_, vss, n, i, sg))
+        fanc = fan2
+        bpy.ops.object.mode_set(mode="OBJECT"); upd()
+        for th, r_, t_, vss, n, i, sg in fanc:
+            GN.append(n); GI[n] = len(GN) - 1; Wt = np.hstack([Wt, np.zeros((NV, 1))])
+            for vs in vss: Wt[vs] = 0; Wt[vs, GI[n]] = 1
+            # the folded angle: the tip 4 mm x its rank off the centre line, on its own side
+            L_ = float(np.hypot(t_[0] - r_[0], t_[1] - r_[1])); tx = sg * 0.004 * i
+            tht = math.atan2(tx - r_[0], math.sqrt(max(L_ * L_ - (tx - r_[0]) ** 2, 1e-8)))
+            Rw = Matrix.Rotation(th - tht, 3, "Z")                          # in the plane (CCW by phi: angle - phi)
+            dn = (Rw @ Vector(t_ - r_)).normalized(); side_ax = dn.cross(Vector((0, 0, 1))).normalized()
+            Rp = Matrix.Rotation(math.radians(1.1 * i), 3, side_ax)
+            if (Rp @ dn).z > dn.z: Rp = Matrix.Rotation(-math.radians(1.1 * i), 3, side_ax)   # (down: under the centre)
+            R3 = arm.data.bones[n].matrix_local.to_3x3()
+            TAILFAN[n] = ((R3.inverted() @ (Rp @ Rw) @ R3).to_quaternion(), sg)
+        # the covert sheets over the tail's base (the bigger tail parts): blended by their angle about the base
+        allr = np.array([c[1] for c in fanc]); y0 = float(allr[:, 1].min()) - 0.03
+        ang = sorted([(math.atan2(c[2][0], c[2][1] - y0), c[4]) for c in fanc] + [(0.0, None)])
+        ncov = 0
+        for b_, lst in CARDS.items():
+            if not b_.startswith("tail"): continue
+            for vs in lst:
+                if len(vs) <= 80: continue
+                for vi in vs:
+                    x_, y_ = CO[vi, 0], CO[vi, 1]; a_ = math.atan2(x_, y_ - y0); rr = math.hypot(x_, y_ - y0)
+                    ws = {}
+                    if a_ <= ang[0][0]: ws[ang[0][1]] = 1.0
+                    elif a_ >= ang[-1][0]: ws[ang[-1][1]] = 1.0
+                    else:
+                        for (a0, n0), (a1, n1) in zip(ang, ang[1:]):
+                            if a0 <= a_ <= a1: u_ = (a_ - a0) / max(a1 - a0, 1e-6); ws[n0] = 1 - u_; ws[n1] = ws.get(n1, 0) + u_; break
+                    k_ = float(np.clip((rr - 0.02) / 0.04, 0, 1)); k_ = k_ * k_ * (3 - 2 * k_)     # the base stays
+                    row = Wt[vi] * (1 - k_ * sum(w for n_, w in ws.items() if n_))
+                    for n_, w in ws.items():
+                        if n_: row[GI[n_]] += k_ * w
+                    Wt[vi] = row; ncov += 1; COVT[vi] = True
+        print(f"[falconV2] tail fan: {len(fanc)} feather bones ({', '.join(sorted(TAILFAN))}), {ncov} covert vertices blended")
 else:
     # THE LEGS RIGID (no own rig): every vertex below the thighs or mostly on a leg bone follows its side's thigh alone
     hz = min((arm.matrix_world @ arm.data.bones[f"UpperLeg_{s_}"].head_local).z for s_ in ("L", "R"))
@@ -497,7 +567,7 @@ def retarget(src_act, name):
             n = b.name
             frame0 = (PM[b.parent.name] @ (R1[b.parent.name].inverted() @ R1[n])) if b.parent else R1[n].copy()
             F3 = frame0.to_3x3()
-            if (OWN and n in TOEKEEP) or n in BEAK: T3 = F3
+            if (OWN and n in TOEKEEP) or n in BEAK or n not in R0: T3 = F3     # (the tail's feather bones: ours, keyed after)
             elif OWN and n in LEGDIR:
                 d = (P0[n].to_3x3() @ YAX).normalized(); cur = (F3 @ YAX).normalized()
                 T3 = cur.rotation_difference(d).to_matrix() @ F3
@@ -660,6 +730,16 @@ def fold_wings(tweak=None):
             T3 = frame_align(a1, Vector((0, 0, 1)), Rb @ m3(line), Rb @ m3(surf)) @ R3
             upd(); pb = arm.pose.bones[n]; M = pb.matrix.copy(); R = T3.to_4x4(); R.translation = M.translation; pb.matrix = R
     upd()
+# THE TAIL'S FOLD per clip (V2 FIX): 1 = closed (a stack of feathers along the centre line), 0 = the bind's full fan.
+# Closed when perched, walking, hopping, in the tight stoop and striking; half open in the glide and the flap (a
+# peregrine's tail is mostly closed in straight flight, spread in a soar); fully open in the flare / landing (the
+# brake) and nearly so taking off. The gym's flare / brake layer opens it on top (viewer/falconGym/gymBird.js).
+TAILFOLD = {"Perch": 1.0, "Idle": 1.0, "Walk": 1.0, "Hop": 1.0, "Stoop": 1.0, "Talons": 1.0, "Glide": 0.55, "Flap": 0.5,
+            "TakeOff": 0.25, "Land": 0.0, "Flare": 0.0}
+def tail_fold(k):
+    for n_, (qf, sg) in TAILFAN.items():
+        pb = arm.pose.bones[n_]; pb.rotation_mode = "QUATERNION"; pb.rotation_quaternion = Quaternion((1, 0, 0, 0)).slerp(qf, k)
+    upd()
 def p_stoop():
     apply_base({}); fold_wings(); aims(STOOP); [curl(s, 10, 10) for s in "LR"]
 def p_talons(): apply_base({}); aims(TALONS); [curl(s, -50, -20) for s in "LR"]
@@ -676,7 +756,7 @@ def body_angle():
     return math.degrees(math.atan2(d.z, -d.y))
 def p_perch(base, look=0.0):
     def f():
-        apply_base(base)
+        apply_base(base); tail_fold(TAILFOLD["Perch"])
         # the body upright: the whole bird turned nose-up (the root) to PERCH_PITCH, then moved (the root's
         # translation: the one translation track) so the hip joints sit PERCH_HIP above the feet, over them
         a0 = body_angle(); pb = arm.pose.bones["root"]; M = pb.matrix.copy()
@@ -762,8 +842,16 @@ def ground_clip(name, per_frame=True):
     set_action(arm, None)
 for n_ in ("Walk", "Idle"): ground_clip(n_)
 ground_clip("Hop", per_frame=False)
+# the tail's fold keyed on every clip's frames (the feather bones are leaves: nothing else moves)
+for name_, act_ in actions.items():
+    if not TAILFAN: break
+    set_action(arm, act_); k_ = TAILFOLD.get(name_, 0.5)
+    for f in range(int(act_.frame_range[0]), int(act_.frame_range[1]) + 1):
+        scene.frame_set(f); tail_fold(k_)
+        for n_ in TAILFAN: arm.pose.bones[n_].keyframe_insert("rotation_quaternion", frame=f)
+    set_action(arm, None)
 pose_reset(); set_action(arm, None)
-print(f"[falconV2] clips {sorted(actions)}")
+print(f"[falconV2] clips {sorted(actions)}" + (f", the tail folded per clip {TAILFOLD}" if TAILFAN else ""))
 
 # the checks the gate repeats on the shipped glb (tools/falconV2pose.mjs), printed here for the build
 def metrics(clip, frame=0):
@@ -772,7 +860,7 @@ X0 = eval_co()
 for c in ("Perch", "Stoop", "Glide"):
     X = metrics(c)
     e0 = np.linalg.norm(X0[E[:, 0]] - X0[E[:, 1]], axis=1); e1 = np.linalg.norm(X[E[:, 0]] - X[E[:, 1]], axis=1)
-    rel = np.abs(e1 / np.maximum(e0, 1e-6) - 1); card = CARD[E[:, 0]]
+    rel = np.abs(e1 / np.maximum(e0, 1e-6) - 1); card = CARD[E[:, 0]] & ~COVT[E[:, 0]]
     bad = rel > 0.3; vb = np.concatenate([E[bad, 0], E[bad, 1]]); hb_ = {}
     for vi in vb[:4000]:
         g_ = GN[max(me.vertices[int(vi)].groups, key=lambda g: g.weight).group]; hb_[g_] = hb_.get(g_, 0) + 1

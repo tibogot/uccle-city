@@ -18,6 +18,7 @@ import { loadFalconAssets } from "../falcons.js";
 import { BirdRig } from "../birdRig.js";
 import { birdRoll, rigBank } from "./gymFlight.js";
 
+const _I = new THREE.Quaternion();
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
 const M2M = new URL("../../models/bird/v2/m2m/", import.meta.url);
 const V2 = new URL("../../models/bird/v2/falcon_v2.glb", import.meta.url);
@@ -110,6 +111,10 @@ export class GymBird {
     this.rig.addLayer("raiseL", "wing_1_L", "wing_tip_L", [0, 1, 0]); this.rig.addLayer("raiseR", "wing_1_R", "wing_tip_R", [0, 1, 0]);
     this.rig.addLayer("talonL", "UpperLeg_L", "Toes_tip_L", [0, -0.4, -1]); this.rig.addLayer("talonR", "UpperLeg_R", "Toes_tip_R", [0, -0.4, -1]);
     this.rig.addLayer("headDown", "head", "mouth_upper_tip", [0, -1, 0]);
+    // (v2) the tail's own feather bones (tail_fan_*, tools/blender/falconV2.py "the tail closes"): every clip keys their
+    // fold; the flare / brake layer opens the fan on top (the bind is the full fan: identity). The mixer rewrites them
+    // each frame, so nothing accumulates
+    this.fan = []; model.traverse((o) => { if (o.isBone && o.name.startsWith("tail_fan_")) this.fan.push(o); });
     this.lay = { fold: 0, tuck: 0, flare: 0, talons: 0, bank: 0, legs: 0.4, head: 0, pitch: 0 };
     this.extra = { spreadL: 0, spreadR: 0, handL: 0, handR: 0, wristL: 0, wristR: 0, raiseL: 0, raiseR: 0, talonL: 0, talonR: 0, headDown: 0 };
     this.tw = Object.fromEntries(KEYS.map((k) => [k, 0]));
@@ -189,6 +194,7 @@ export class GymBird {
     E.headDown = L.head;
     this.rig.restore();
     this.mixer.update(dt);
+    if (L.flare > 1e-3) for (const b of this.fan) b.quaternion.slerp(_I, L.flare);
     this.rig.apply({ fold: L.fold, bank: L.bank, legs: L.legs, brake: L.flare, extra: E });
   }
 }

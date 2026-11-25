@@ -65,6 +65,16 @@ The fixes (all in the script):
 
 **Check.** Gate row `falcongym` (`tools/falconGymTest.mjs` runs `tools/falconV2pose.mjs`). The first build fails 6 of these checks.
 
+## The v2 fixes (V2 FIX, 2026-11-25)
+
+### The tail closes when folded
+
+**Rule.** The tail is a closed stack of feathers when the falcon is folded: perched, walking, hopping, in the stoop and in Talons, < 10 cm across its outer 40 %. It is half spread in the glide and the flap (wider than folded by > 3 cm), and a full fan in the flare and the landing (>= 25 cm, the widest). The gym's flare / brake layer opens it on top (`gymBird.js`). Built by `tools/blender/falconV2.py` ("the tail closes"): each fanned feather position has its own bone (`tail_fan_<i>_<L|R>`, children of `tail_2`, heads at the cards' roots), and every clip keys their fold (`TAILFOLD`). The outer feathers fold under the central pair.
+
+**Why.** Coordinator's review of the V2 POLISH: "the tail stays fanned in folded poses". The download's bind spreads the tail as a full fan (96 deg, 35 cm). The Mesh2Motion rig has one tail chain (`tail_1..tail_tip`), so all 22 tail cards were rigid on `tail_2` and no clip could close them. Nothing measured the tail's width.
+
+**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs` `tailTipWidth`): the feather bones exist, the folded width, and the glide / flare spread. The first build fails 3 of these (folded 25.6 cm everywhere).
+
 ## Bank into the turn (2026-11-25)
 
 **Rule.** One bank convention everywhere: `phi > 0` = the RIGHT wing down, a right turn (`flightModel.js`'s). Every controller writes it that way. The bird reads it through `birdRoll` / `rigBank` (`gymFlight.js`, used by `gymBird.js`), and the camera reads it as `falconCamera.js` does. A right turn (D, the right arrow, or the mouse moved right) drops the right wingtip below the left in world space. The heading turns clockwise seen from above, and the chase camera rolls the same way. A left turn is the mirror. The lab's input mapping is `fillGymControls`, one function shared by the lab and the test.
