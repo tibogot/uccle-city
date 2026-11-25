@@ -306,3 +306,39 @@ city module), the walker's field voids (viewer/character/world.js), gate row `un
 views tools/tour/views_underpass.json. Kiosks LOD0 / 1 / 2 = 6.4k / 288 / 88 triangles (5 / 5 / 3 draws), the inside
 21k triangles in 7 draws, collision 46 triangles. Left: U2 (the station subway + the platform-2 hole), the browser
 stream-in row (0 frames over 33 ms), a night look.
+
+## Round 2 (claude/underpass1, 2026-11-25)
+
+`?underpass=old` = round 1 (its files in models/underpass/r1/, its shader paths behind `R2` in
+viewer/underground/underpassCity.js); `?underpass=0` = the UrbIS kiosks. Screenshots: Downloads/uccle-underpass2/
+(before/ and after/, day_ + night_: both street ends, both kiosks close, the corridor both ways, the mural, the signs,
+both stairs).
+
+1. **Stream-in hitch.** Cause (node-build log over `debug/underpassStream.js`): the kiosks' five shadow node builds
+   landed on one frame, the first static redraw of the cached sun shadow with LOD0 in the light's box; warmBridge's
+   stand-ins only warm the shadow's movers pass (another render context). Round 2's heavier materials made it a
+   50-53 ms frame. Fix: `warmStaticShadow` (stand-ins one a frame in the static pass, on a shadow-only layer, once the
+   camera is within 220 m; rule shadow-warm-static-pass). Also: the AO as a BC4 KTX2 with baked mips, one meshopt
+   pool (rule ao-ktx2). Numbers (quick mode, `?dynres=0`, YELLOW preflight: another agent's server up): before the fix
+   1 frame over 34 ms + a 52-53 ms long task in 2 / 2 runs; after: 0 frames over 34 ms, no long task in 3 / 3 runs
+   (worst 33.4 / 16.9 / 16.9 ms). Round 1 in quick mode: 0 over 34 ms (worst 33.5 / 17.3). In the full city the walk
+   also shows the city's own first-sight node builds (tiles C6 / D5 / E5 roads + terrain, 20-30 ms) with or without
+   the underpass: not the underpass's (left for a city job).
+2. **Mural + kiosks.** The mural stays our own invented scene (no copy): a diver, an octopus and a manta added, then a
+   seeded "paint on a wall" pass in underpass.py (`paint_wear`: contour lines, horizontal brush streaks, grain, chips,
+   damp at the foot, sparse water streaks, faded paint); KTX2 with UASTC RDO (2.7 MB). In the corridor the tiled dado's
+   joints show faintly through the paint, grime on the bottom 25 cm. Kiosks: a downpipe at each closed end, red bands
+   on the brown bollards [Street View], a generic blue pedestrian-underpass sign over each mouth with our own
+   pictogram (no operator logo); grime under the fascia, damp at the plinth, chipped frames, tags on some panes, light
+   frosted glass.
+3. **Heroshell 9.9 m2.** The panes' outside and inside faces were coplanar, facing away: the probe's ray tie went to the
+   back face. Inside faces 12 mm in (rule pane-faces-apart); L0 0 m2, ceiling lowered to 0.
+4. **Night + west kiosk.** The panes glow from the lamps at night and scatter daylight by day (emissive, no light); the
+   throat (the mouth before the inside streams in) is lit a little at night; the inside panes were black: now lit by
+   the daylight outside; the inside's night gain 1.4 -> 1.15. West kiosk: downpipe, bollard bands, sign, weathering.
+5. **Signs.** The GLB already maps them left to right (28 faces, 1.667 atlas m per m both ways); round 1's shader mirror
+   reversed them. Sampled as mapped now (rule sign-uv-reads-right).
+
+Left: U2; the lower-wall motif of the west kiosk is still our generic tile-and-leaf pattern; the east kiosk's ivy;
+the throat's inner walls are white where the streamed inside is mural-blue (only seen beyond 50 m); a city job for
+the C6 / D5 / E5 first-sight builds and for checking other landmarks' static-shadow warm (warmBridge / warmShadows).

@@ -21,7 +21,8 @@
 //                 face (the beams, the direction signs) reads left to right and upright and is not stretched (UV0 x grows to
 //                 the viewer's right, v down as glTF stores it, the same scale both ways within 2 %), and the shader samples
 //                 it as mapped (no mirror: rule sign-uv-reads-right); STREAM: the AO map ships as a BC4 KTX2 listed with
-//                 its PNG's hash and the mural KTX2 has its mips (rule ao-ktx2), the meshopt pool is made once; KIOSKS: the
+//                 its PNG's hash and the mural KTX2 has its mips (rule ao-ktx2), the meshopt pool is made once, the kiosks
+//                 warm the sun's static shadow pass (rule shadow-warm-static-pass); KIOSKS: the
 //                 Street View details are in LOD0 (the downpipe, the bollards' red band, the underpass sign); A/B: round 1's
 //                 files in models/underpass/r1/ for ?underpass=old
 //   node tools/audit/underpassCheck.mjs [--quiet]
@@ -271,8 +272,9 @@ const uMid = (lv.corridor_uw[0][0] + lv.corridor_uw[0][1]) / 2;
   const aoOk = existsSync(aoK) && list.includes(`"models/underpass/calevoet_ao.png": "${hash}"`) && lv(aoK) > 1 && /withAOKtx2\(png, aoPng\)/.test(src);
   const muralLv = lv(new URL("models/underpass/mural.ktx2", ROOT));
   const onePool = /if \(!meshoptReady \|\| UP_OLD\)/.test(src);
-  check(aoOk && muralLv > 1 && onePool, "stream: the AO map a BC4 KTX2 with baked mips, listed with its PNG's hash (no GPU mip generation at upload); the mural KTX2 has mips; one meshopt worker pool",
-    `AO ktx2 ${existsSync(aoK) ? lv(aoK) + " levels" : "missing"}, listed ${list.includes(hash)}, mural ${muralLv} levels, one pool ${onePool}`);
+  const staticWarm = /async function warmStaticShadow\(/.test(src) && /-shadowwarm`/.test(src) && /p\.layers\.set\(L\)/.test(src) && /markSunShadowDirty\(\); await frame\(\)/.test(src) && /shadowWarm === "todo" && d < SHADOW_WARM/.test(src);
+  check(aoOk && muralLv > 1 && onePool && staticWarm, "stream: the AO map a BC4 KTX2 with baked mips, listed with its PNG's hash (no GPU mip generation at upload); the mural KTX2 has mips; one meshopt worker pool; the kiosks warm the sun's STATIC shadow pass (stand-ins one a frame on a shadow-only layer, before LOD0 can cast: rule shadow-warm-static-pass)",
+    `AO ktx2 ${existsSync(aoK) ? lv(aoK) + " levels" : "missing"}, listed ${list.includes(hash)}, mural ${muralLv} levels, one pool ${onePool}, static shadow warm ${staticWarm}`);
   // KIOSKS: the Street View details in LOD0
   const MGc = notes.codes.painted_metal_grey;
   const lod0mg = tris(surf.parts.filter((p) => p.node === "Underpass_lod0" && p.slot === "painted_metal_grey"));

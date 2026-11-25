@@ -44,7 +44,7 @@ const STREAM = { fetch: 80, show: 50, hide: 70, unloadS: 20 };
 /** live look: the bakes' gains, the eye adaptation inside, a debug view (0 final, 1 light, 2 albedo) */
 export const upLook = { dayGain: uniform(1.6), nightGain: uniform(R2 ? 1.15 : 1.4), adapt: uniform(1), adaptInside: 1.8, view: uniform(0), dayOverride: uniform(-1),
   // round 2: the kiosks' local frame (eaves / base heights, model y = m TAW - oy; the two kiosks split by w), the panes' glow
-  kiosk: null, paneNight: uniform(0.9), paneDay: uniform(0.35) };
+  kiosk: null, paneNight: uniform(0.12), paneDay: uniform(0.06) };
 
 const lin = (hex) => { const c = new THREE.Color(hex); return vec3(c.r, c.g, c.b); };
 // the face code: COLOR_0.r = code / 16 + 1/32, the same at a face's three corners: floor(r * 16) is exact (rule no-coplanar:
@@ -87,7 +87,7 @@ function surfaceMaterial(slot, aoTex, codes) {
     if (R2) col = mix(weather(col), col, isC(C.inner ?? 3));
     m.colorNode = col; m.roughnessNode = float(0.88);
     // (the throat's inner faces, lit by the stair's lamps at night: an emissive share of their albedo, no light)
-    if (R2) m.emissiveNode = col.mul(isC(C.inner ?? 3)).mul(nightGlow).mul(0.45);
+    if (R2) m.emissiveNode = col.mul(isC(C.inner ?? 3)).mul(nightGlow).mul(0.12);
     void tx; void ty;
   } else if (slot === "paint_fascia") {
     let fc = mix(mix(lin(0xe3e2dd), lin(0xd3d1ca), n1.mul(0.5)), lin(0x5a5b5c).mul(mix(0.9, 1.1, n1)), isC(C.roof ?? 1));
@@ -95,7 +95,7 @@ function surfaceMaterial(slot, aoTex, codes) {
     if (R2) fc = fc.mul(float(1).sub(smoothstep(0.6, 0.9, noise2D(vec2(along.mul(5.0), 2.3))).mul(0.12)));
     m.colorNode = fc;
     m.roughnessNode = float(0.75);
-    if (R2) m.emissiveNode = fc.mul(isC(C.soffit ?? 2)).mul(nightGlow).mul(0.35);
+    if (R2) m.emissiveNode = fc.mul(isC(C.soffit ?? 2)).mul(nightGlow).mul(0.1);
   } else if (slot === "painted_metal_grey") {
     let col = lin(0x2d5a9a).mul(mix(0.9, 1.05, n1));                     // [Street View] blue frames
     let rough = float(0.5);
@@ -124,16 +124,16 @@ function surfaceMaterial(slot, aoTex, codes) {
     } else {
       // round 2: frosted wired glass reads LIGHT from the street (it scatters the daylight inside the kiosk), a grime film
       // low on each pane, spray tags on some panes (our own scribbles: contour lines of a noise, one colour a pane)
-      let gc = mix(mix(lin(0xc4cdc8), lin(0xb1bbb6), n1), lin(0x6e7471), g.mul(0.3));
+      let gc = mix(mix(lin(0xb4beb9), lin(0xa1aba6), n1), lin(0x6e7471), g.mul(0.3));
       gc = gc.mul(float(1).sub(smoothstep(0.5, 0.0, over.sub(1.05)).mul(0.18)));
       const pane = floor(along.div(0.55)), ph = hash2D(vec2(pane, 3.3));
-      const scrib = smoothstep(0.035, 0.0, abs(noise2D(positionLocal.xy.add(positionLocal.zy).mul(vec2(2.2, 3.4)).add(pane)).sub(0.5)))
+      const scrib = smoothstep(0.055, 0.0, abs(noise2D(positionLocal.xy.add(positionLocal.zy).mul(vec2(2.2, 3.4)).add(pane)).sub(0.5)))
         .mul(step(0.62, ph)).mul(smoothstep(0.2, 0.5, over.sub(1.05))).mul(smoothstep(0.1, 0.4, under));
       const tagCol = select(ph.greaterThan(0.86), lin(0x161616), select(ph.greaterThan(0.74), lin(0xd94a8c), lin(0xf0f0ea)));
       gc = mix(gc, tagCol, scrib.mul(0.9));
       m.colorNode = gc; m.roughnessNode = mix(float(0.55), float(0.8), scrib); m.metalnessNode = float(0.0);
       // the glow: the lamps behind the panes at night, the daylight scattered through them by day (emissive, no light)
-      m.emissiveNode = lin(0xe9eee6).mul(float(1).sub(scrib)).mul(nightGlow.mul(upLook.paneNight).add(float(1).sub(nightGlow).mul(upLook.paneDay)));
+      m.emissiveNode = lin(0xf0eadb).mul(float(1).sub(scrib)).mul(nightGlow.mul(upLook.paneNight).add(float(1).sub(nightGlow).mul(upLook.paneDay)));
     }
   } else {   // concrete: the landing slab, its yellow nosing, the throat's steps and its dark card
     let col = mix(lin(0x8e8b84), lin(0x9d9992), n1).mul(mix(0.93, 1.05, grit));
@@ -141,7 +141,7 @@ function surfaceMaterial(slot, aoTex, codes) {
     col = mix(col, lin(0x17191b), isC(C.throat ?? 2));
     m.colorNode = col; m.roughnessNode = float(0.9);
     // round 2: the throat's steps lit by the stair lamps at night (the landing too, a little)
-    if (R2) m.emissiveNode = col.mul(isC(C.tread ?? 3).add(isC(C.riser ?? 4)).mul(0.5).add(isC(C.slab ?? 0).mul(0.15)).add(isC(C.nosing ?? 1).mul(0.3))).mul(nightGlow);
+    if (R2) m.emissiveNode = col.mul(isC(C.tread ?? 3).add(isC(C.riser ?? 4)).mul(0.15).add(isC(C.slab ?? 0).mul(0.06)).add(isC(C.nosing ?? 1).mul(0.1))).mul(nightGlow);
   }
   const ao = texture(aoTex, uv(1)).r;
   m.aoNode = mix(float(1), ao, 0.95);
@@ -193,7 +193,7 @@ function insideMaterial(slot, mural, codes) {
       // round 2: the corridor's glazed dado (15 cm tiles to 1.2 m, our estimate from the photos' kind of finish) shows
       // through the paint as fine joints and a slight sheen change; grime gathers on the bottom 25 cm
       const tj = max(filteredPulse(p.x.div(0.15), float(0), float(0.06), fw.div(0.15)), filteredPulse(p.y.div(0.15), float(0), float(0.06), fw.div(0.15)));
-      col = col.mul(float(1).sub(tj.mul(0.22).mul(step(p.y, 1.2)).mul(isC(C.mural ?? 0))));
+      col = col.mul(float(1).sub(tj.mul(0.12).mul(step(p.y, 1.2)).mul(isC(C.mural ?? 0))));
       col = col.mul(float(1).sub(smoothstep(0.32, 0.12, p.y.add(n1.mul(0.08))).mul(0.25).mul(isC(C.mural ?? 0))));
     }
     col = mix(col, lin(0x3a3d40), step(p.y, 0.12));
@@ -214,11 +214,48 @@ function insideMaterial(slot, mural, codes) {
   let col = alb.mul(light);
   // round 2: the frosted panes seen from inside glow with the daylight outside (round 1: black, the bake has no light
   // through them); at night only the bake (the lamps on them) and a faint street glow
-  if (R2 && slot === "glass_frosted") col = col.add(lin(0xdfe6ea).mul(float(1).sub(nightK()).mul(1.3).add(nightK().mul(0.04))).mul(upLook.adapt.mul(0.6)));
+  if (R2 && slot === "glass_frosted") col = col.add(lin(0xdfe6ea).mul(float(1).sub(nightK()).mul(0.45).add(nightK().mul(0.03))).mul(upLook.adapt.mul(0.6)));
   if (slot === "lamp_glow") col = lin(0xfff6e6).mul(mix(2.2, 3.4, nightK()));
   m.colorNode = select(upLook.view.equal(1), light, select(upLook.view.equal(2), alb, col));
   m.name = `underpass inside ${slot}`; m.userData.slot = slot;
   return m;
+}
+
+/** Round 2 (measured 2026-11-25, debug/underpassStream.js + a node-build log; rule shadow-warm-static-pass): warmBridge
+ *  draws stand-ins far under the city in a "-warm" group, which the cached sun shadow (viewer/lighting.js
+ *  CachedSunShadowNode) draws in its MOVERS pass; the real kiosks cast in the STATIC pass (the cache's full redraw), so
+ *  their shadow node builds (5 materials, 3.5-7 ms each) still landed on ONE frame, the first static redraw with LOD0 in
+ *  the light's box: a 50-53 ms frame in the stream-in walk. Here, once the kiosks' tile is in and the camera within
+ *  SHADOW_WARM m, stand-ins of the LOD0 + throat meshes (same geometry + material: the same node cache key) are drawn in
+ *  the STATIC pass ONE A FRAME: at the kiosks' own place, on a layer only the sun's shadow camera sees (never on screen),
+ *  not frustum-culled, the cache marked dirty for that frame. */
+const SHADOW_WARM = 220;
+async function warmStaticShadow(scene, root, groups) {
+  let sun = null; scene.traverse((o) => { if (!sun && o.isDirectionalLight && o.castShadow) sun = o; });
+  if (!sun?.shadow?.camera) return 0;
+  const { markSunShadowDirty } = await import("../lighting.js");
+  const L = 7, ms = [];
+  for (const g of groups) g.traverse((o) => { if (o.isMesh && o.castShadow) ms.push(o); });
+  const g = new THREE.Group(); g.name = `${UNDERPASS_ROOT}-shadowwarm`;            // (not "-warm": a STATIC caster)
+  g.position.copy(root.position); g.rotation.copy(root.rotation); scene.add(g); g.updateMatrixWorld(true);
+  const had = sun.shadow.camera.layers.isEnabled(L);
+  sun.shadow.camera.layers.enable(L);
+  const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
+  let n = 0;
+  try {
+    for (const o of ms) {
+      g.clear();
+      const p = new THREE.Mesh(o.geometry, o.userData.base ?? o.material);
+      p.castShadow = true; p.receiveShadow = o.receiveShadow; p.frustumCulled = false; p.layers.set(L); p.userData = { ...o.userData, fade: 1 };
+      g.add(p); p.updateMatrixWorld(true);
+      markSunShadowDirty(); await frame(); await frame(); n++;
+    }
+  } finally {
+    g.clear(); scene.remove(g);
+    if (!had) sun.shadow.camera.layers.disable(L);
+    markSunShadowDirty();
+  }
+  return n;
 }
 
 /** the two kiosks in the model frame: eaves / base heights (model y = m TAW - oy) and the w between them (round 2) */
@@ -303,6 +340,8 @@ export async function addUnderpass({ scene, updaters, hide, world, manifest, log
     let comp = compiler(); while (!comp) { await new Promise((r) => setTimeout(r, 250)); comp = compiler(); }
     const { openParallelPipelines } = await import("../../vendor/engine/parallelPipelines.js");
     const warm = await warmBridge({ group: root }, { compile: comp, renderer, scene, openParallel: renderer?.backend?.isWebGPUBackend ? openParallelPipelines : null }).catch((e) => ({ ms: 0, err: e.message }));
+    // round 2: the sun's STATIC shadow pass warmed with the real LOD0 + throat meshes (rule shadow-warm-static-pass)
+    let shadowWarm = R2 && renderer?.backend?.isWebGPUBackend ? "todo" : "off";
     // the kiosks' box (LOD distance) and the home tile
     const box = new THREE.Box3();
     for (const k of Object.values(notes.kiosks)) for (const [x, z] of k.ring) { box.expandByPoint(new THREE.Vector3(x, k.eaves - 4, z)); box.expandByPoint(new THREE.Vector3(x, k.eaves + 0.2, z)); }
@@ -319,6 +358,11 @@ export async function addUnderpass({ scene, updaters, hide, world, manifest, log
       root.visible = state.home;
       if (!state.home) return;
       const d = box.distanceToPoint(camPos); state.d = d;
+      if (shadowWarm === "todo" && d < SHADOW_WARM) {
+        shadowWarm = "running";
+        warmStaticShadow(scene, root, [levels[0], throat]).then((n) => { shadowWarm = "done"; log(`underpass: the kiosks' static shadow pass warmed (${n} meshes, one a frame)`); })
+          .catch((e) => { shadowWarm = "done"; log(`underpass: static shadow warm failed (${e.message})`); });
+      }
       const t1 = ramp(d, 0), t2 = ramp(d, 1);
       if (!SMOOTH) { levels.forEach((g, k) => { g.visible = k === (t1 < 0.5 ? 0 : t2 < 0.5 ? 1 : 2); }); }
       else {

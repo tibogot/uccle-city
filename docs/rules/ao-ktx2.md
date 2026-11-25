@@ -13,8 +13,7 @@ is re-baked (the list carries the PNG's hash).
 **Why.** The Calevoet underpass (claude/underpass1 round 1) came after fix3 and loaded its 1024 px AO as a PNG
 decoded to R8 with `generateMipmaps` (GPU mip generation at upload, its own pass per level), and called
 `MeshoptDecoder.useWorkers(2)` on every load (the surface at boot, the inside each time it streams back in after an
-unload). Round 2 measured the stream-in on 2026-11-25 (YELLOW preflight, another agent's server up): no main-thread
-long task came from the underpass itself (traced: its load slice is ~5 ms); the frames over 34 ms seen in the full
-city came from the city's own first sight of tiles C6 / D5 / E5 (their roads and terrain node builds, 20-30 ms each)
-and showed the same with `?underpass=0`. The AO and worker paths are the underpass's own upload costs that the city's
-rule already covered; they were brought under it.
+unload). These are upload costs the city's rule already covered; they were brought under it. The stream-in hitch
+itself was the kiosks' first cast into the sun's static shadow pass (rule shadow-warm-static-pass); in the full city
+the frames over 34 ms also came from the city's own first sight of tiles C6 / D5 / E5 (their roads and terrain node
+builds, 20-30 ms each), the same with `?underpass=0`.
