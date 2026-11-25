@@ -152,10 +152,12 @@ function randomInputs(seed, n) {
   }, 4);
   const on = s.z > KERB.z0 + 1 && Math.abs(s.yLow - KERB.h) < 0.06;
   check("hop clears the 15 cm kerb", on && s.crashes === 0 && s.blocked === 0, `z ${f1(s.z)} y ${f2(s.yLow)} crashes ${s.crashes} blocked ${s.blocked} hops ${s.hops}`, "on the pavement, no crash, not blocked");
-  const s2 = spawn(env, 15, 12, 0);
-  s2.vz = 2.5;
+  // (forgiving falls: walking pace stops at the face; 2.5 m/s, above climbV, rolls up it)
+  const s2 = spawn(env, 15, 17, 0);
+  s2.vz = 1.2;
   ride(s2, env, () => ({}), 4);
-  check("no hop: the front wheel stops at the kerb (2.5 m/s)", s2.blocked > 0 && s2.z < KERB.z0, `z ${f2(s2.z)} blocked ${s2.blocked} crashes ${s2.crashes}`, "stopped before the face");
+  const s2b = spawn(env, 15, 12, 0); s2b.vz = 2.5; ride(s2b, env, () => ({}), 4);
+  check("no hop: the front wheel stops at the kerb at walking pace (1.2 m/s); rolls up at 2.5 m/s", s2.z < KERB.z0 && s2.crashes === 0 && s2b.z > KERB.z0 + 1 && s2b.crashes === 0, `1.2 m/s: z ${f2(s2.z)} crashes ${s2.crashes}; 2.5 m/s: z ${f2(s2b.z)} crashes ${s2b.crashes}`, "stopped before the face; on the pavement");
   // (forgiving falls, 2026-11-25: a kerb up to stepClimb ridden at speed is ROLLED UP - a thump, speed lost, a wobble;
   // the hop stays the clean way. Before: over the bars at 22 km/h. A face the wheel cannot climb still is: 30 cm)
   const s3 = spawn(env, 15, 12, 0);
