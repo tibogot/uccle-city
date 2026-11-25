@@ -157,7 +157,7 @@ function randomInputs(seed, n) {
   s2.vz = 1.2;
   ride(s2, env, () => ({}), 4);
   const s2b = spawn(env, 15, 12, 0); s2b.vz = 2.5; ride(s2b, env, () => ({}), 4);
-  check("no hop: the front wheel stops at the kerb at walking pace (1.2 m/s); rolls up at 2.5 m/s", s2.z < KERB.z0 && s2.crashes === 0 && s2b.z > KERB.z0 + 1 && s2b.crashes === 0, `1.2 m/s: z ${f2(s2.z)} crashes ${s2.crashes}; 2.5 m/s: z ${f2(s2b.z)} crashes ${s2b.crashes}`, "stopped before the face; on the pavement");
+  check("no hop: the front wheel stops at the kerb at walking pace (1.2 m/s); rolls up at 2.5 m/s", s2.z < KERB.z0 && s2.crashes === 0 && s2b.z - BIKE.wheelbase / 2 > KERB.z0 && s2b.crashes === 0, `1.2 m/s: z ${f2(s2.z)} crashes ${s2.crashes}; 2.5 m/s: z ${f2(s2b.z)} crashes ${s2b.crashes}`, "stopped before the face; both wheels on the pavement");
   // (forgiving falls, 2026-11-25: a kerb up to stepClimb ridden at speed is ROLLED UP - a thump, speed lost, a wobble;
   // the hop stays the clean way. Before: over the bars at 22 km/h. A face the wheel cannot climb still is: 30 cm)
   const s3 = spawn(env, 15, 12, 0);
