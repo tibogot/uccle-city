@@ -8,7 +8,7 @@
 //   const kid = prepareKid(gltf)       after GLTFLoader; { meshes: [LOD0, LOD1, LOD2], material, setLod(i), setColor(slot, hex) }
 //   kid.autoLod(distance)               LOD by camera distance with hysteresis (LOD0 < 14 m < LOD1 < 40 m < LOD2)
 import * as THREE from "three/webgpu";
-import { attribute, uniformArray, int, float, vec3, mix, normalView, positionViewDirection, dot, max, pow, clamp } from "three/tsl";
+import { attribute, uniformArray, int, float, vec3, mix, normalView, positionViewDirection, dot, max, pow, clamp, texture, uv, select } from "three/tsl";
 
 /** the default outfit (sRGB hex): a yellow ringer tee with a teal trim, denim-blue shorts, white tube socks with red
  *  stripes, white sneakers with a red stripe, a red cap, brown hair, green eyes (docs/KID.md: change them here or live) */
@@ -39,14 +39,52 @@ export function kidMaterial(slots, palette = KID_PALETTE) {
   return m;
 }
 
-/** after GLTFLoader: the LOD meshes found, one shared palette material, LOD1/2 hidden. */
-export function prepareKid(gltf, { palette = KID_PALETTE } = {}) {
+/** THE MPFB KID (docs/KIDCHAR.md phase 2: models/characters/kidA.glb): one atlas (kidA_atlas.ktx2) for the colour, the
+ *  slots for the roughness, the skin's warmth and the cap's brim (both brims are in the mesh: the hidden one's slot is
+ *  alpha-tested away: a uniform write, no rebuild). Alpha-tested (hair cards, brows, lashes) and double sided (the cards). */
+export const KIDA_ROUGH = { skin: 0.62, eyes: 0.28, hair: 0.78, brows: 0.85, lashes: 0.85, tee: 0.92, shorts: 0.9, shoes: 0.55,
+  jacket: 0.5, socks: 0.95, cap: 0.85, brim_f: 0.75, brim_b: 0.75 };
+const TRANSCODER = "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/libs/basis/";
+export function kidAtlasMaterial(slots, url, renderer) {
+  const ph = new THREE.DataTexture(new Uint8Array([214, 170, 140, 255]), 1, 1); ph.colorSpace = THREE.SRGBColorSpace; ph.needsUpdate = true;
+  const tex = texture(ph, uv());
+  const uRough = uniformArray(slots.map((n) => KIDA_ROUGH[n] ?? 0.8), "float");
+  const uHide = uniformArray(slots.map((n) => (n === "brim_b" ? 1 : 0)), "float");
+  const slot = int(attribute("_slot", "float").add(0.5));
+  const ao = attribute("color", "vec4").x;
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: THREE.DoubleSide });
+  m.alphaTest = 0.5;
+  const base = tex.rgb;
+  // painted: the AO softened toward a warm tint, a faint rim; the skin a touch of warm "subsurface" glow (no shine)
+  // (a lighter AO than the old kid's: his textures already carry their shading, the full tint made the face muddy
+  // under the cap in the lab's light)
+  const aoTint = mix(vec3(0.70, 0.60, 0.56), vec3(1, 1, 1), ao);
+  const rim = pow(float(1).sub(clamp(dot(normalView, positionViewDirection), 0, 1)), float(3)).mul(0.10);
+  const isSkin = select(slot.equal(int(Math.max(0, slots.indexOf("skin")))), float(1), float(0));
+  m.colorNode = base.mul(aoTint).add(base.mul(rim));
+  m.emissiveNode = base.mul(vec3(0.07, 0.025, 0.015)).mul(isSkin).mul(ao);
+  m.opacityNode = tex.a.mul(float(1).sub(uHide.element(slot)));
+  m.roughnessNode = uRough.element(slot);
+  m.userData.slots = slots; m.userData.uHide = uHide; m.userData.tex = tex;
+  if (url && url !== "none" && typeof window !== "undefined") {
+    import("three/addons/loaders/KTX2Loader.js").then(({ KTX2Loader }) => {
+      const ktx = new KTX2Loader().setTranscoderPath(TRANSCODER);
+      if (renderer) ktx.detectSupport(renderer);
+      ktx.load(url, (t) => { t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; tex.value = t; m.needsUpdate = true; ktx.dispose(); },
+        undefined, (e) => console.warn("[kid] atlas failed", url, e));
+    });
+  }
+  return m;
+}
+
+/** after GLTFLoader: the LOD meshes found, one shared palette material, LOD1/2 hidden. atlas: the MPFB kid's KTX2 (URL). */
+export function prepareKid(gltf, { palette = KID_PALETTE, atlas = null, renderer = null } = {}) {
   const meshes = [];
   gltf.scene.traverse((o) => { if (o.isSkinnedMesh && /kid_LOD\d/.test(o.name)) meshes.push(o); });
   meshes.sort((a, b) => a.name.localeCompare(b.name));
   if (!meshes.length) throw new Error("kid.glb: no kid_LOD meshes");
   const slots = meshes[0].geometry.userData?.slots || gltf.parser?.json?.meshes?.[0]?.extras?.slots || Object.keys(palette);
-  const material = kidMaterial(slots, palette);
+  const material = atlas ? kidAtlasMaterial(slots, atlas, renderer) : kidMaterial(slots, palette);
   for (const m of meshes) { m.material = material; m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
   let lod = 0;
   const kid = {
@@ -64,7 +102,12 @@ export function prepareKid(gltf, { palette = KID_PALETTE } = {}) {
       if (want !== lod) kid.setLod(want);
       return lod;
     },
-    setColor(slotName, hex) { const i = slots.indexOf(slotName); if (i >= 0) material.userData.uCol.array[i].set(hex); },
+    setColor(slotName, hex) { const i = slots.indexOf(slotName); if (i >= 0 && material.userData.uCol) material.userData.uCol.array[i].set(hex); },
+    /** the MPFB kid's cap: "fwd" | "back" (the other brim's slot hidden) */
+    setCap(mode) {
+      const H = material.userData.uHide; if (!H) return;
+      slots.forEach((n, i) => { if (n === "brim_f") H.array[i] = mode === "back" ? 1 : 0; if (n === "brim_b") H.array[i] = mode === "back" ? 0 : 1; });
+    },
     tris: meshes.map((m) => (m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3)),
   };
   kid.setLod(0);
