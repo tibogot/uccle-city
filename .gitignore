@@ -98,3 +98,4 @@ docs/bike/tex/_work/
 
 # the gate cache (tools/audit/mergeGate.mjs: traced deps, memo, logs; docs/WORKFLOW.md)
 .cache/
+models/kid/candidates/*.raw.glb
