@@ -317,6 +317,7 @@ if (qp.get("start")) { const k = { field: "on the field", alley: "in the alley (
 if (S.ctl === "current") game.start(0, Y0 + 40, 60, 0, 18);
 START[S.start]();
 $("loading").remove();
-Object.assign(lab, { renderer, scene, camera, world, gym, air, pigeons, input, fcam, game, gf, C, S, START, demo, birds, get bird() { return bird; }, setModel, setCompare, placeStand, get standBirds() { return standBirds; }, switchCtl, lighting, step });
+Object.assign(lab, { renderer, scene, camera, world, gym, air, pigeons, input, fcam, game, gf, C, S, START, demo, birds, get bird() { return bird; }, setModel, setCompare, placeStand, switchCtl, lighting, step });
+Object.defineProperty(lab, "standBirds", { get: () => standBirds });   // (live: Object.assign would copy null)
 window.lab = lab;
 log(`ready: ${world.boxes.length} boxes, ${world.ledges.length} ledges, v2 ${HAS_V2 ? "found" : "not built"}`);
