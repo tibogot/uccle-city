@@ -1,8 +1,13 @@
-// TRAM 92 ON THE FITTED TRACKS (claude/tramfit): the trams' GTFS shapes snapped onto the tracks as viewer/tramline.js
-// does (3 m reach, stay on the previous track, prefer the shape's way, two [1 2 1]/4 passes), for all tiles at once,
+// TRAM 92 ON THE FITTED TRACKS (claude/tramfit): the trams' GTFS shapes snapped onto the tracks by the city's own code
+// (viewer/tramSched.js createTrackSnap, which viewer/tramline.js runs per loaded tile; claude/tramfix: this audit had its
+// own copy of the loop, so the city's snap threw `finish is not defined` for a day with the row green, rule
+// no-undefined-refs): 3 m reach, stay on the previous track, prefer the shape's way, two [1 2 1]/4 passes, for all tiles at once,
 // on the fitted tracks (data/tramfit) and on the OSM ways as before (?tramfit=old). Reports per mode: shape points
 // left unsnapped (no track within 3 m), the snapped path's steps (|step - 1 m|: a jump sideways), its heading change
 // per metre (the tram's yaw rate at 1 m/s) and the tightest radius over 4 m.
+//
+// First a SELF-TEST on a made-up line (two parallel tracks over two tiles, a shape 0.8 m off one): both snap paths
+// (default and ?tramalloc=old) finish, every snapped point sits on its track (< 0.2 m), pts / cum / tan swapped in.
 //
 //   node --import ./tools/road_audit/register.mjs tools/tramfit/tramSnap.mjs
 import { readFileSync, existsSync } from "node:fs";
@@ -11,6 +16,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
 const { tramTracks } = await import(pathToFileURL(join(ROOT, "viewer/track.js")).href);
+const { densifyShapes, createTrackSnap } = await import(pathToFileURL(join(ROOT, "viewer/tramSched.js")).href);
 const manifest = JSON.parse(readFileSync(join(ROOT, "data/tiles/manifest.json"), "utf8"));
 const doc = JSON.parse(readFileSync(join(ROOT, "data/transit/stib-92.json"), "utf8"));
 
@@ -28,50 +34,56 @@ function tracksOf(fitOn) {
   return { tracks: out, boxes };
 }
 
-function run(fitOn) {
+// ------------------------------------------------------------------ self-test (claude/tramfix)
+const segDist = (x, z, l) => { let m = Infinity; for (let k = 1; k < l.length; k++) { const [ax, az] = l[k - 1], [cx, cz] = l[k], dx = cx - ax, dz = cz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1e-9))); m = Math.min(m, Math.hypot(ax + dx * t - x, az + dz * t - z)); } return m; };
+async function selfTest() {
+  const fails = [];
+  for (const alloc of [true, false]) {
+    const tag = alloc ? "default" : "?tramalloc=old";
+    // a 200 m line along x with a gentle bend, two tracks 3 m apart; the shape 0.8 m off the near one; two tiles
+    const yOf = (x) => 5 * Math.sin(x / 60);
+    const trackA = [], trackB = [];
+    for (let x = 0; x <= 200; x += 5) { trackA.push([x, yOf(x)]); trackB.push([x, yOf(x) + 3]); }
+    const shapes = densifyShapes({ shapes: { a: [[0, yOf(0) + 0.8], [50, yOf(50) + 0.8], [100, yOf(100) + 0.8], [150, yOf(150) + 0.8], [200, yOf(200) + 0.8]] } });
+    const sn = createTrackSnap(shapes, { alloc, slice: async () => {}, hits: true });
+    const cut = (l, x0, x1) => l.filter(([x]) => x >= x0 && x <= x1);
+    sn.addTracks([cut(trackA, 0, 100), cut(trackB, 0, 100)], { x0: 0, x1: 100, z0: -20, z1: 20 });
+    sn.addTracks([cut(trackA, 100, 200), cut(trackB, 100, 200)], { x0: 100, x1: 200, z0: -20, z1: 20 });
+    const s = shapes.a, before = s.pts;
+    let err = null;
+    try { await sn.snapAll(); } catch (e) { err = e; }
+    if (err) { fails.push(`${tag}: snapAll threw: ${err.message}`); continue; }
+    if (s.pts === before || s.cum?.length !== s.pts.length || s.tan?.length !== 2 * s.pts.length) fails.push(`${tag}: pts / cum / tan not swapped in together (${s.pts.length} pts, ${s.cum?.length} cum, ${s.tan?.length} tan)`);
+    if (s.snapNext || s.hitNext) fails.push(`${tag}: a half-swapped shape left behind`);
+    let worst = 0, off = 0;
+    for (const [x, z] of s.pts) { const d = segDist(x, z, trackA); worst = Math.max(worst, d); if (segDist(x, z, trackB) < d) off++; }
+    if (!(worst < 0.2)) fails.push(`${tag}: a snapped point ${worst.toFixed(3)} m off the track (>= 0.2)`);
+    if (off) fails.push(`${tag}: ${off} points on the far track`);
+    if (s.hit.some((h) => !h)) fails.push(`${tag}: ${s.hit.filter((h) => !h).length} points unsnapped`);
+    const L = s.cum[s.cum.length - 1];
+    if (!(Math.abs(L - 200) < 2)) fails.push(`${tag}: arc length ${L.toFixed(2)} m, not ~200`);
+    console.log(`self-test ${tag}: ${s.pts.length} pts, worst ${worst.toFixed(3)} m off the track, length ${L.toFixed(1)} m`);
+  }
+  return fails;
+}
+const selfFails = await selfTest();
+if (selfFails.length) console.log("FAIL self-test:", selfFails.join("; "));
+
+async function run(fitOn) {
   const { tracks, boxes } = tracksOf(fitOn);
-  const grid = new Map(), gk = (i, j) => i * 100003 + j;
-  tracks.forEach((l, li) => { for (let k = 1; k < l.length; k++) {
-    const [ax, az] = l[k - 1], [cx, cz] = l[k];
-    for (let i = Math.floor((Math.min(ax, cx) - 3) / 4); i <= Math.floor((Math.max(ax, cx) + 3) / 4); i++)
-      for (let j = Math.floor((Math.min(az, cz) - 3) / 4); j <= Math.floor((Math.max(az, cz) + 3) / 4); j++) { const key = gk(i, j); if (!grid.has(key)) grid.set(key, []); grid.get(key).push([ax, az, cx, cz, li]); }
-  } });
-  const loaded = (x, z) => boxes.some((q) => x >= q.x0 && x <= q.x1 && z >= q.z0 && z <= q.z1);
+  const shapes = densifyShapes(doc);
+  const sn = createTrackSnap(shapes, { alloc: true, hits: true });
+  // all tiles at once (the city adds them one at a time and re-snaps: the same result once all are in)
+  boxes.forEach((b, i) => sn.addTracks(i ? [] : tracks, b));
+  await sn.snapAll();
   const res = { points: 0, unsnapped: 0, stepDevMax: 0, stepDevP999: 0, yawRateMax: 0, yawRateP999: 0, rMin4: Infinity, rUnder18: 0, spots: [] };
   const devs = [], yaws = [];
-  for (const line of Object.values(doc.shapes)) {
-    const o = [];
-    for (let i = 1; i < line.length; i++) {
-      const [ax, az] = line[i - 1], [bx, bz] = line[i], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az)));
-      for (let k = i === 1 ? 0 : 1; k <= n; k++) o.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]);
-    }
-    let prevLine = -1, prevPt = null;
-    const snap = o.map((p) => p.slice()), ok = new Uint8Array(o.length);
+  for (const s of Object.values(shapes)) {
+    const o = s.orig, p = s.pts, ok = new Uint8Array(o.length);
     for (let i = 0; i < o.length; i++) {
-      const [x, z] = o[i];
-      if (!loaded(x, z)) { prevLine = -1; prevPt = null; continue; }
+      if (!sn.loaded(o[i][0], o[i][1])) continue;
       res.points++;
-      const a0 = o[Math.max(0, i - 1)], a1 = o[Math.min(o.length - 1, i + 1)];
-      const sx = a1[0] - a0[0], sz = a1[1] - a0[1], sl = Math.hypot(sx, sz) || 1;
-      let best = Infinity, bx = x, bz = z, bl = -1;
-      for (const [ax, az, cx, cz, li] of grid.get(gk(Math.floor(x / 4), Math.floor(z / 4))) || []) {
-        const dx = cx - ax, dz = cz - az, L2 = dx * dx + dz * dz || 1e-9;
-        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), px = ax + dx * t, pz = az + dz * t;
-        const d2 = (px - x) ** 2 + (pz - z) ** 2;
-        if (d2 > 9) continue;
-        const back = (dx * sx + dz * sz) / (Math.sqrt(L2) * sl) < 0 ? 1 : 0;
-        const cont = li === prevLine || (prevPt && (px - prevPt[0]) ** 2 + (pz - prevPt[1]) ** 2 < 2.25 && Math.abs(Math.hypot(px - prevPt[0], pz - prevPt[1]) - Math.hypot(x - o[Math.max(0, i - 1)][0], z - o[Math.max(0, i - 1)][1])) < 0.5);
-        const cost = d2 + (prevLine >= 0 && !cont ? 100 : 0) + back;
-        if (cost < best) { best = cost; bx = px; bz = pz; bl = li; }
-      }
-      if (bl < 0) res.unsnapped++; else ok[i] = 1;
-      snap[i] = [bx, bz]; prevLine = bl; prevPt = [bx, bz];
-    }
-    let p = snap;
-    for (let pass = 0; pass < 2; pass++) {
-      const q = p.map((v) => v.slice());
-      for (let i = 1; i + 1 < p.length; i++) { q[i][0] = (p[i - 1][0] + 2 * p[i][0] + p[i + 1][0]) / 4; q[i][1] = (p[i - 1][1] + 2 * p[i][1] + p[i + 1][1]) / 4; }
-      p = q;
+      if (s.hit[i]) ok[i] = 1; else res.unsnapped++;
     }
     for (let i = 2; i + 2 < p.length; i++) {
       if (!ok[i - 2] || !ok[i + 2] || !ok[i]) continue;
@@ -93,7 +105,7 @@ function run(fitOn) {
   return res;
 }
 const SPOT = +(process.argv[process.argv.indexOf("--spots") + 1] || 0) || Infinity;   // --spots DEG: list where the yaw rate > DEG / m
-const old = run(false), fit = run(true);
+const old = await run(false), fit = await run(true);
 const show = (r) => JSON.stringify({ ...r, spots: [...new Set(r.spots)].length ? [...new Set(r.spots)] : undefined });
 console.log("old (?tramfit=old):", show(old));
 console.log("fit              :", show(fit));
@@ -101,9 +113,9 @@ console.log("fit              :", show(fit));
 const ai = process.argv.indexOf("--max");
 if (ai >= 0) {
   const MAX = Object.fromEntries(process.argv[ai + 1].split(",").map((kv) => kv.split("=")).map(([k, v]) => [k, +v]));
-  const fails = Object.entries(MAX).filter(([k, v]) => fit[k] > v).map(([k, v]) => `${k} ${fit[k]} > ${v}`);
+  const fails = [...selfFails, ...Object.entries(MAX).filter(([k, v]) => fit[k] > v).map(([k, v]) => `${k} ${fit[k]} > ${v}`)];
   if (fit.unsnapped > old.unsnapped) fails.push(`unsnapped ${fit.unsnapped} > old ${old.unsnapped}`);
   console.log(fails.length ? `FAIL: ${fails.join("; ")}` : "PASS");
   process.exit(fails.length ? 1 : 0);
-}
+} else if (selfFails.length) process.exit(1);
 export { old, fit };
