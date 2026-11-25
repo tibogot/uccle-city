@@ -15,6 +15,8 @@
 //   3. every viewer/, debug/ and tools/ .js / .mjs file parses as an ES module and its static imports link (esbuild bundles
 //      them all, bare packages external): a missing export or an unclosed comment fails here, not on the browser turn.
 //   4. docs/QUALITY_RULES.md and docs/CENSUS.md are what tools/docs/rulesIndex.mjs makes from docs/rules/, docs/census/
+//   6. no viewer/ debug/ tools/ module calls a name it never declares, imports or has as a global (tools/audit/undefRefs.mjs;
+//      claude/tramfix, rule no-undefined-refs: a moved helper left `finish(t)` in tramline.js, which parsed and linked)
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -140,6 +142,15 @@ ok(nMeta > 0, `${nMeta} rows declare meta checks`);
     } catch (e) { errors = e.errors || [{ text: e.message }]; }
     ok(!errors.length, `${files.length} viewer/ debug/ tools/ modules parse and link (${((Date.now() - t0) / 1000).toFixed(1)} s)${errors.length ? ": " + errors.slice(0, 6).map((x) => `${x.location ? `${x.location.file}:${x.location.line}` : ""} ${x.text}`).join(" / ") : ""}`);
   }
+}
+
+// ------------------------------------------------------------------ 6. no call to a name the module never has
+// (rule no-undefined-refs, claude/tramfix: esbuild links imports but takes an unknown bare name for a global; the
+// refactor that moved tramline.js finish() to tramSched.js finishShape left one call, ReferenceError on every tram tile)
+{
+  const { scan } = await import("./undefRefs.mjs");
+  const { files, found } = scan(ROOT);
+  ok(!found.length, `${files} viewer/ debug/ tools/ modules call no name they never declare, import or have as a global (rule no-undefined-refs)${found.length ? ": " + found.slice(0, 8).map((r) => `${r.file}:${r.line} ${r.name}()`).join(", ") : ""}`);
 }
 
 // ------------------------------------------------------------------ 5. the tile cache's code key covers the worker bundle
