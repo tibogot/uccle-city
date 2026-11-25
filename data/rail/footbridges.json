@@ -1,0 +1,31 @@
+{
+  "_doc": "Station footbridges over the railway (viewer/rail/footbridge.js, rule footbridge-built, gate row footbridge). Local metres (x east, z south), m TAW. Each bridge = straight parts: deck (the span over the tracks: walking surface between two steel plate girders), stair (treads, concrete side walls down to the ground, steel railings), landing (a flat pad). a / b: the part's centre line ends; w: clear width; ya / yb: the walking level at a / b, a number or \"ground\" (the tile's drawn ground there at build time: the part welds onto it). urbis: the UrbIS Land cover 'Bridges' PB polygon it builds (data/rail/rail.json bridges). osm: the OSM ways it draws (their gravel stripe is left off the ground). ?footbridge=old: none built, as before.",
+  "source": "OSM 2025 (footway bridge=yes 36870319 / 209187984, steps 903802530 / 533 / 538 / 541 / 544, footway 36870320), UrbIS Land cover 2026 Bridges PB 751 / 752, DTM 2021 (the streets at the ends, the stair feet), DSM 2021 (the deck ends: 81.1-81.7 m west, 81.0-81.6 m south-east of the east one), Google Street View Jul / Aug 2024 + aerial (look only): the west bridge a straight steel trough (grey galvanised plate girders, ~1.3 m, a handrail on top) with a dark red resin deck at the north street's level, a stair down along the north bank to the north platform, a wide stair down to Avenue Prince de Ligne between rendered wing walls; the east one diagonal, the same girders, its two stair heads under grey mono-pitch canopies, a third stair from the north platform up to Avenue Laterale.",
+  "bridges": [
+    {
+      "id": "752",
+      "name": "Vivier d'Oie station, west footbridge",
+      "urbis": "752",
+      "osm": ["osm:w36870319", "osm:w36870320", "osm:w903802530", "osm:w903802533"],
+      "parts": [
+        { "kind": "deck", "a": [1544.25, 327.2], "b": [1538.9, 352.64], "w": 3.0, "ya": "ground", "yb": 81.45, "why": "OSM 36870319 extended 1.8 m north onto the street (81.3 m); its south end over the bank at the DSM's 81.1-81.7 m" },
+        { "kind": "stair", "a": [1538.75, 353.4], "b": [1537.55, 363.4], "w": 4.2, "ya": 81.45, "yb": "ground", "landings": 1, "why": "the wide stair down to Avenue Prince de Ligne's forecourt (78.2 m), the UrbIS polygon's south strip" },
+        { "kind": "stair", "a": [1540.3, 325.95], "b": [1529.33, 331.19], "w": 1.8, "ya": "ground", "yb": "ground", "landings": 1, "why": "OSM 903802530 (32 steps, handrail): the north street down along the north bank to the north platform's path" },
+        { "kind": "stair", "a": [1541.87, 359.5], "b": [1545.45, 352.32], "w": 1.6, "ya": "ground", "yb": "ground", "landings": 0, "why": "OSM 903802533 (concrete): the south forecourt down to the south platform" }
+      ]
+    },
+    {
+      "id": "751",
+      "name": "Vivier d'Oie station, east footbridge",
+      "urbis": "751",
+      "osm": ["osm:w209187984", "osm:w903802538", "osm:w903802541", "osm:w903802544"],
+      "parts": [
+        { "kind": "deck", "a": [1638.4, 312.8], "b": [1667.4, 341.0], "w": 3.0, "ya": "ground", "yb": 80.8, "piers": true, "why": "OSM 209187984 extended onto Avenue Laterale (83.0 m) and the south-east sidewalk (80.8 m), the UrbIS polygon's span" },
+        { "kind": "landing", "a": [1667.4, 341.0], "b": [1674.2, 342.4], "w": 3.0, "ya": 80.8, "yb": "ground", "why": "the UrbIS polygon's south-east pad onto Avenue Prince de Ligne's sidewalk" },
+        { "kind": "stair", "a": [1638.91, 310.52], "b": [1657.63, 314.78], "w": 2.0, "ya": "ground", "yb": "ground", "landings": 2, "canopy": 9, "why": "OSM 903802538: Avenue Laterale down along the north bank to the north platform, its head under the canopy" },
+        { "kind": "stair", "a": [1674.61, 307.18], "b": [1661.03, 315.29], "w": 1.8, "ya": "ground", "yb": "ground", "landings": 1, "why": "OSM 903802541: Avenue Laterale (east) down to the north platform" },
+        { "kind": "stair", "a": [1658.7, 342.63], "b": [1648.48, 340.39], "w": 2.0, "ya": "ground", "yb": "ground", "landings": 1, "canopy": 6, "why": "OSM 903802544 (handrail): the south-east sidewalk down to the south platform's path, its head under a canopy" }
+      ]
+    }
+  ]
+}
