@@ -875,9 +875,15 @@ function clampN(v) { return v < -1 ? -1 : v > 1 ? 1 : v; }
   // the usual 6, from the same code - 2026-11-21)
   const once = () => { const lines = execFileSync(process.execPath, ["tools/bike/zeroGarbage.mjs", "--json"], { encoding: "utf8" }).trim().split(String.fromCharCode(10)); return JSON.parse(lines[lines.length - 1]); };
   let r = once();
-  if (r.flat.gc > 1 || r.city.gc > 8) { const r2 = once(); if (r2.flat.gc + r2.city.gc < r.flat.gc + r.city.gc) r = r2; }
-  check("zero-garbage step: young collections over 1e6 steps", r.flat.gc <= 1 && r.city.gc <= 8,
-    `flat ground ${r.flat.gc} (${f2(r.flat.us)} us a step), the D6 spot (its ground, buildings, walls, benches) ${r.city.gc} (${f2(r.city.us)} us); before round 4: ~170 / ~370`, "flat 0 (1: the counter's own noise), city <= 8 (contacts in the shared colliders)");
+  // (claude/kid 2026-11-25, forgiving falls + the park: the D6 ride now ROLLS the kerbs instead of stopping at them, so
+  // it meets the face scans and the house walls all the time: 343 collections at first. Found and removed: Math.hypot in
+  // the shared polyBoxContact / circleBoxContact, their closures, bikeHit / itemContact / heightClear called with
+  // doubles, the stair ramps' blendRamp with doubles, settlePhase's helpers past V8's inline budget -> 10-13. What is
+  // left: the face scans' ground calls in this two-ground process (stepClimb 0: 7). Budget 14: one ~1 ms scavenge
+  // about every 10 minutes of riding)
+  if (r.flat.gc > 1 || r.city.gc > 14) { const r2 = once(); if (r2.flat.gc + r2.city.gc < r.flat.gc + r.city.gc) r = r2; }
+  check("zero-garbage step: young collections over 1e6 steps", r.flat.gc <= 1 && r.city.gc <= 14,
+    `flat ground ${r.flat.gc} (${f2(r.flat.us)} us a step), the D6 spot (its ground, buildings, walls, benches) ${r.city.gc} (${f2(r.city.us)} us); before round 4: ~170 / ~370`, "flat 0 (1: the counter's own noise), city <= 14 (the face scans of a ride rolling the kerbs)");
 }
 
 // ---------------------------------------------------------------- 18. FEEL ROUND 4: the camera (CameraRig, no three)

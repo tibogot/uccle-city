@@ -185,13 +185,14 @@ export const BIKE_PARK = {
   wallLean: 1.25,       // rad (72 deg) the bike lies over, wheels on the wall
   wallTime: 1.6,        // s at most
   wallPush: 1.2,        // m/s off the wall at the exit
+  wallLift: 1.2,        // m/s up at least onto the wall (carving up it)
 };
 const PK = BIKE_PARK;
 /** panel ranges of BIKE_PARK: key -> [min, max, step, group] */
 export const BIKE_PARK_RANGES = {
   faceAbrupt: [1.2, 6, 0.1, "park"], transFollow: [0, 1, 0.05, "park"], transSlope: [0.05, 2, 0.01, "park"], vertSlope: [1, 4, 0.05, "park"], vertBack: [0, 1.5, 0.05, "park"], bankLean: [0, 1.5, 0.05, "park"],
   wallMinV: [1, 8, 0.1, "park"], wallAngle: [0.2, 1.2, 0.01, "park"], wallReach: [0.1, 1, 0.01, "park"], wallGrav: [0, 1, 0.01, "park"], wallDecel: [0, 3, 0.05, "park"],
-  wallLean: [0.6, 1.45, 0.01, "park"], wallTime: [0.3, 4, 0.1, "park"], wallPush: [0, 3, 0.05, "park"],
+  wallLean: [0.6, 1.45, 0.01, "park"], wallTime: [0.3, 4, 0.1, "park"], wallPush: [0, 3, 0.05, "park"], wallLift: [0, 3, 0.05, "park"],
 };
 
 /** the bike's box in plan (half width across the bars, half length) for the colliders */
@@ -783,7 +784,8 @@ function contactPhase(s, w, env, B, S) {
     } else if (up < B.pushGrade * 0.5) { s.pushT += dt; if (s.pushT > 0.5) { s.pushing = false; s.pushT = 0; } }
     else s.pushT = 0;
   }
-  const footHold = contactNow && !s.pushing && pedal === 0 && v < B.footSpeed && (bF + bR > 0.1 || up > -0.03);
+  // (the park: never on a steep transition - a bike at a stop on a quarter pipe's wall rolls back, it does not stand)
+  const footHold = contactNow && !s.pushing && pedal === 0 && v < B.footSpeed && (bF + bR > 0.1 || up > -0.03) && s.slope[0] < 0.6 && s.slope[1] < 0.6 && s.slope[0] > -0.6 && s.slope[1] > -0.6;
   s.footDown += ((footHold && v < 0.3 ? 1 : 0) - s.footDown) * (1 - Math.exp(-6 * dt));
   if (s.pushing || footHold) aF = 0;           // the walker / the planted foot carries the slope
 
@@ -999,9 +1001,11 @@ function settlePhase(s, w, env, B, S) {
     if (pen > B.maxComp) {
       const corr = pen - B.maxComp;
       const lever = Math.abs(RF[i]) > 0.15 ? RF[i] : 0;
-      if (lever) { s.y += corr * 0.5; s.pitch = clamp(s.pitch + clamp(corr * 0.5 / lever, -0.08, 0.08), -1.45, 1.45); }
+      // (no helper calls in settlePhase: past V8's inline budget each one boxed its doubles - written out)
+      if (lever) { s.y += corr * 0.5; let dp = corr * 0.5 / lever; dp = dp > 0.08 ? 0.08 : dp < -0.08 ? -0.08 : dp; const p1 = s.pitch + dp; s.pitch = p1 > 1.45 ? 1.45 : p1 < -1.45 ? -1.45 : p1; }
       else s.y += corr;
-      let sl = slopeOf(q, fx, fz), slT = sl;
+      let sl = -(q.nx * fx + q.nz * fz) / (q.ny > 0.2 ? q.ny : 0.2); sl = sl > 4 ? 4 : sl < -4 ? -4 : sl;
+      let slT = sl;
       if (sl >= 0.6 || sl <= -0.6) { JP.x = wx; JP.z = wz; JP.fx = fx; JP.fz = fz; JP.sl = sl; judgeSlopeP(env); slT = JP.r; sl = JP.r > 1 ? 1 : JP.r < -1 ? -1 : JP.r; }
       const vFp = s.vx * fx + s.vz * fz - s.pitchVel * HU[i], vYp = s.vy + s.pitchVel * RF[i];
       if (slT > 1 || slT < -1) {
@@ -1013,7 +1017,7 @@ function settlePhase(s, w, env, B, S) {
       } else {
         const rate = Math.min(4, sl * vFp - vYp);
         if (rate > 0) {
-          if (lever) { s.vy += rate * 0.6; s.pitchVel += clamp(rate * 0.4 / lever, -6, 6); } else s.vy += rate;
+          if (lever) { s.vy += rate * 0.6; const dpv = rate * 0.4 / lever; s.pitchVel += dpv > 6 ? 6 : dpv < -6 ? -6 : dpv; } else s.vy += rate;
         }
       }
       wheelOffsets(s, B);
@@ -1060,7 +1064,10 @@ function settlePhase(s, w, env, B, S) {
     }
     if (!s.crashed && s.contact[0] && !s.contact[1]) {
       let jF = sF; if (!(sF > -0.6 && sF < 0.6)) { JP.x = s.x + fx * B.wheelbase / 2; JP.z = s.z + fz * B.wheelbase / 2; JP.fx = fx; JP.fz = fz; JP.sl = sF; judgeSlopeP(env); jF = JP.r; }
-      if (s.pitch - Math.atan(jF) < -endo) crash(s, "over the bars");
+      // (the park: an endo needs momentum or the front brake - at walking pace a bike tipped onto its front wheel, rolled
+      // into a face or off a kicker's back, is put back down by the kid's foot: rolling into the small kicker's landing
+      // at 1.6 m/s threw him over the bars)
+      if (s.pitch - Math.atan(jF) < -endo) { if (v > 2 || w.bF > 0.3) crash(s, "over the bars"); else { s.pitchVel = Math.max(s.pitchVel, 0.5); } }
     }
   }
 
@@ -1094,30 +1101,45 @@ function attachPhase(s, w, B) {
   // rigid bike on a 70 deg wall: the front's normal force, under the CoM, pitched it nose down and lifted it off the
   // curve - it climbed the wall at 45 deg and flew onto the deck. It lets go where the ground stops matching (the lip, a
   // crest): from there the ordinary air (a vert air off a near-vertical wall)
-    const sF = s.slope[0], sR = s.slope[1], aF0 = sF < 0 ? -sF : sF, aR0 = sR < 0 ? -sR : sR;
-    if ((aF0 > PK.transSlope || aR0 > PK.transSlope) && !s.faceAt[0] && !s.faceAt[1] && s.blocked === w.blocked0 && Q[0].h - s.wheelY[0] > -0.1 && Q[1].h - s.wheelY[1] > -0.1) {
-      const chord = Math.atan2(Q[0].h - Q[1].h, Math.max(0.3, RF[0] - RF[1])), dF = Math.atan(sF) - chord, dR = Math.atan(sR) - chord;
-      const vAlong = (s.vx * fx + s.vz * fz) * Math.cos(chord) + s.vy * Math.sin(chord);
-      // (slow - pedalling up a stair ramp, about to push - the ordinary contacts: the push rule needs them)
-      if (dF < 0.45 && dF > -0.45 && dR < 0.45 && dR > -0.45 && (vAlong > 1.2 || vAlong < -1.2 || (s.park.attached > 0 && aF0 + aR0 > 1.8))) {
-        // the pitch is the chord; the speed along it carried from step to step (gravity along it, the tyres' drive /
-        // brakes / rolling): the springs' forces never reach it (they fought the curve and ate the speed); the CoM held
-        // at the springs' sag over the two contacts
-        // (slewed: at most 0.04 rad a step, and the rate it leaves behind with it - a chord that jumped as a wheel met
-        // something left the bike spinning at 9 rad/s when it let go: a loop-out in the D6 ride)
-        let dp = chord - s.pitch; dp = dp > 0.04 ? 0.04 : dp < -0.04 ? -0.04 : dp;
-        s.pitch += dp; s.pitchVel = dp / dt * 0.5;
-        const ca = Math.cos(chord), sa = Math.sin(chord), vF0 = s.vx * fx + s.vz * fz;
-        if (!(s.park.attached > 0)) { s.park.attV = vF0 * ca + s.vy * sa; s.park.attMax = 0; }
-        else s.park.attV += (-g * sa + w.drive - (s.park.attV > 0 ? 1 : -1) * w.retard) * dt;
-        s.park.attMax = Math.max(s.park.attMax || 0, Math.tan(chord)); s.park.attLast = s.t;
-        s.vx += fx * (s.park.attV * ca - vF0); s.vz += fz * (s.park.attV * ca - vF0); s.vy = s.park.attV * sa;
-        wheelOffsets(s, B);
-        const pen = ((Q[0].h - (s.y + RU[0])) + (Q[1].h - (s.y + RU[1]))) * 0.5;
-        s.y += pen - g / 2 / B.springK;
-        s.park.attached = (s.park.attached || 0) + dt;
-      } else s.park.attached = 0;
-    } else s.park.attached = 0;
+  const sF = s.slope[0], sR = s.slope[1], aF0 = sF < 0 ? -sF : sF, aR0 = sR < 0 ? -sR : sR;
+  const nearF = Q[0].h - s.wheelY[0] > -0.1, nearR = Q[1].h - s.wheelY[1] > -0.1;
+  let chord = 0, mode = 0;
+  if ((aF0 > PK.transSlope || aR0 > PK.transSlope) && !s.faceAt[0] && !s.faceAt[1] && s.blocked === w.blocked0 && nearF && nearR) {
+    chord = Math.atan2(Q[0].h - Q[1].h, Math.max(0.3, RF[0] - RF[1]));
+    const dF = Math.atan(sF) - chord, dR = Math.atan(sR) - chord;
+    const vAlong = (s.vx * fx + s.vz * fz) * Math.cos(chord) + s.vy * Math.sin(chord);
+    // (slow - pedalling up a stair ramp, about to push - the ordinary contacts: the push rule needs them)
+    if (dF < 0.45 && dF > -0.45 && dR < 0.45 && dR > -0.45 && (vAlong > 1.2 || vAlong < -1.2 || (s.park.attached > 0 && aF0 + aR0 > 1.8))) mode = 1;
+  }
+  // REAR-LED: the front has gone over a crest (a kicker's lip, a quarter pipe's coping) while the rear still climbs the
+  // smooth ramp: the bike follows the rear's ramp until the rear leaves it - so it leaves at the lip's angle, not at the
+  // flatter chord (every jump came up short: a 30 deg lip launched at 24 deg, the rear still 0.5 m down the ramp)
+  if (!mode && s.park.attached > 0 && nearR && !s.faceAt[1] && sR > PK.transSlope && (!nearF || s.faceAt[0] || sF < sR - 0.4) && (s.park.attV > 1.2 || sR > 0.9) && s.blocked === w.blocked0) {
+    chord = Math.atan(sR); mode = 2;
+  }
+  if (!mode) { s.park.attached = 0; return; }
+  // the pitch is the chord; the speed along it carried from step to step (gravity along it, the tyres' drive / brakes /
+  // rolling): the springs' forces never reach it (they fought the curve and ate the speed); the CoM held at the springs'
+  // sag over the contacts. (Slewed: at most 0.04 rad a step, and the rate it leaves behind with it - a chord that jumped
+  // as a wheel met something left the bike spinning at 9 rad/s when it let go: a loop-out in the D6 ride)
+  let dp = chord - s.pitch; dp = dp > 0.04 ? 0.04 : dp < -0.04 ? -0.04 : dp;
+  s.pitch += dp; s.pitchVel = dp / dt * 0.5;
+  const ca = Math.cos(chord), sa = Math.sin(chord), vF0 = s.vx * fx + s.vz * fz;
+  if (!(s.park.attached > 0)) { s.park.attV = vF0 * ca + s.vy * sa; s.park.attMax = 0; }
+  else s.park.attV += (-g * sa + w.drive - (s.park.attV > 0 ? 1 : -1) * w.retard) * dt;
+  s.park.attMax = Math.max(s.park.attMax || 0, Math.tan(chord)); s.park.attLast = s.t;
+  s.vx += fx * (s.park.attV * ca - vF0); s.vz += fz * (s.park.attV * ca - vF0); s.vy = s.park.attV * sa;
+  wheelOffsets(s, B);
+  const pen = mode === 1 ? ((Q[0].h - (s.y + RU[0])) + (Q[1].h - (s.y + RU[1]))) * 0.5 : Q[1].h - (s.y + RU[1]);
+  s.y += pen - g / 2 / B.springK;
+  s.park.attached = (s.park.attached || 0) + dt;
+  // a KICK TURN: run out of speed climbing a steep wall (a half-pipe too tall for the speed) - the kid hops the bike
+  // round at the top and rolls back in forward, as a vert air (a stall that stood on the coping, or a roll back down
+  // backwards, is what the springs alone did)
+  if (s.park.attV < 0.45 && s.park.attV > -0.2 && Math.tan(chord) > 0.9 && PK.vertSlope > 0 && s.park.attached > 0.15) {
+    s.vy = Math.max(s.vy, 1.6); s.park.attached = 0; s.air = true; s.airT = 0.13; s.sinceContact = 1;
+    startVert(s, w, B);
+  }
 }
 
 // ------------------------------------------------------------------------------------------------ THE PARK (2026-11-25)
@@ -1174,6 +1196,8 @@ function trySnapWall(s, env, B) {
     // (leaning AWAY from the wall: the wheels on it, the kid out over the ground; left = (cos h, -sin h))
     s.park.wallSide = Math.cos(h) * Wl.nx - Math.sin(h) * Wl.nz >= 0 ? 1 : -1;
     s.preload = 0; s.air = false; s.airT = 0; s.contact[0] = s.contact[1] = false;
+    // (the kid carves up onto the wall: a little lift - met after the apex, the old wall ride sank off it in 0.35 s)
+    s.vy = Math.max(s.vy, PK.wallLift);
     return true;
   }
   return false;
@@ -1203,7 +1227,7 @@ function wallStep(s, input, env, B) {
   // leaving: a hop (released), low on the wall, its end, too slow, too long
   let why = "";
   if (!hop && s.hopHeld) why = "hop";
-  else if (low < g0 + 0.25 && s.vy < 0) why = "low";
+  else if ((low < g0 + 0.55 || s.y < g0 + B.cgHeight + 0.45) && s.vy < 0) why = "low";   // (off with room to bring the bike upright before the wheels land)
   else if (s.park.wallU < 0.2 || s.park.wallU > len - 0.2) why = "end";
   else if (s.park.wallV < 1.5) why = "slow";
   else if (s.park.wallT > PK.wallTime) why = "time";
@@ -1211,7 +1235,7 @@ function wallStep(s, input, env, B) {
   if (why) {
     const up = why === "hop" ? B.popVel + B.popPreload * s.preload * 0.6 : 0;
     s.vx = tx * s.park.wallDir * s.park.wallV + Wl.nx * PK.wallPush; s.vz = tz * s.park.wallDir * s.park.wallV + Wl.nz * PK.wallPush; s.vy += up;
-    s.park.wallIdx = -1; s.park.wallExit = why; s.preload = 0; s.spinArm = false; s.park.unleanT = 0.6;
+    s.park.wallIdx = -1; s.park.wallExit = why; s.preload = 0; s.spinArm = false; s.park.unleanT = 0.6; s.lean *= 0.5;
     s.air = true; s.airT = 0.13; s.airMax = s.y; s.sinceContact = 1; s.safe.t = 0;
     if (why === "hop") { s.hops++; s.hopT = 0; s.popStep = s.steps; }
   }

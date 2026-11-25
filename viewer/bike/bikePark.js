@@ -30,12 +30,12 @@ export const PARK = {
   z0: 116, z1: 232,
   colors: { wood: 0xb08a5c, concrete: 0xa9a59d, dirt: 0x8c6c4a, steel: 0x9aa3ab, coping: 0x8f969c },
   kickers: [
-    { name: "small", xc: -62, z0: 130, h: 0.45, lip: 30, gap: 1.6, land: 0.38 },
-    { name: "medium", xc: -56, z0: 130, h: 0.80, lip: 34, gap: 2.4, land: 0.65 },
-    { name: "big", xc: -50, z0: 130, h: 1.20, lip: 38, gap: 3.4, land: 1.00 },
+    { name: "small", xc: -62, z0: 130, h: 0.45, lip: 30, gap: 1.0, land: 0.38, v: 6.0 },
+    { name: "medium", xc: -56, z0: 130, h: 0.80, lip: 34, gap: 1.8, land: 0.65, v: 7.0 },
+    { name: "big", xc: -50, z0: 130, h: 1.20, lip: 38, gap: 2.7, land: 1.00, v: 8.0 },
   ],
-  doubles: { xc: -37.5, z0: 128, n: 4, h: 0.9, lip: 38, back: 50, gap: 1.4, top: 0.3, down: 30, flat: 2.6 },
-  whoops: { xc: -26.5, z0: 124, z1: 160, lambda: 2.2, amp: 0.16 },
+  doubles: { xc: -37.5, z0: 128, n: 4, h: 0.5, lip: 24, back: 50, gap: 0.8, top: 0.5, down: 20, flat: 2.0, v: 7.0 },
+  whoops: { xc: -26.5, z0: 124, z1: 160, lambda: 2.4, amp: 0.11 },
   pump: { ax: -14, bx: 10, z: 208, R: 6, w: 3.2, amp: 0.30, lambda: 4.8, berm: 1.6 },
   berms: { ax: 34, bx: 60, z: 208, R: 9, w: 4.0, berm: 2.0 },
   qp: { x0: 32, x1: 40, foot: 136, R: 2.4, top: 80 * D, deck: 2.0 },
@@ -53,7 +53,7 @@ const P = PARK;
 for (const k of P.kickers) {
   const lip = k.lip * D; k.R = k.h / (1 - Math.cos(lip)); k.len = k.R * Math.sin(lip); k.lipR = lip;
   k.zl = k.z0 + k.len + k.gap;                                  // the landing's front face
-  k.deck = 0.6; k.downLen = k.land / Math.tan(32 * D); k.z1 = k.zl + k.deck + k.downLen;
+  k.deck = 0.8; k.downLen = Math.max(3.0, k.land / Math.tan(22 * D)); k.z1 = k.zl + k.deck + k.downLen;     // (a long gentle landing)
 }
 { const d = P.doubles, lip = d.lip * D; d.R = d.h / (1 - Math.cos(lip)); d.len = d.R * Math.sin(lip); d.backLen = d.h / Math.tan(d.back * D); d.downLen = d.h / Math.tan(d.down * D);
   d.period = d.len + d.backLen + d.gap + d.backLen + d.top + d.downLen + d.flat; d.z1 = d.z0 + d.n * d.period; }
@@ -227,20 +227,20 @@ export const PARK_WALLRIDES = [{ x0: P.wall.x, z0: P.wall.z0, x1: P.wall.x, z1: 
 /** the park's spots [x, z, heading, speed m/s] (the lab's park menu, keys 0 / N / B) */
 export const PARK_SPOTS = {
   "park overview": [-20, 118, 0, 0],
-  "kicker small": [P.kickers[0].xc, P.kickers[0].z0 - 9, 0, 0],
-  "kicker medium": [P.kickers[1].xc, P.kickers[1].z0 - 12, 0, 0],
-  "kicker big": [P.kickers[2].xc, P.kickers[2].z0 - 14, 0, 0],
-  "dirt doubles": [P.doubles.xc, P.doubles.z0 - 10, 0, 0],
-  "whoops": [P.whoops.xc, P.whoops.z0 - 5, 0, 0],
+  "kicker small": [P.kickers[0].xc, P.kickers[0].z0 - 9, 0, P.kickers[0].v],
+  "kicker medium": [P.kickers[1].xc, P.kickers[1].z0 - 12, 0, P.kickers[1].v],
+  "kicker big": [P.kickers[2].xc, P.kickers[2].z0 - 14, 0, P.kickers[2].v],
+  "dirt doubles": [P.doubles.xc, P.doubles.z0 - 10, 0, P.doubles.v],
+  "whoops": [P.whoops.xc, P.whoops.z0 - 5, 0, 5],
   "pump track": [P.pump.ax + 2, P.pump.z - P.pump.R, Math.PI / 2, 4],
   "berm loop": [P.berms.ax + 2, P.berms.z - P.berms.R, Math.PI / 2, 5],
-  "quarter pipe": [(P.qp.x0 + P.qp.x1) / 2, P.qp.foot - 12, 0, 0],
+  "quarter pipe": [(P.qp.x0 + P.qp.x1) / 2, P.qp.foot - 12, 0, 7.5],
   "mini half-pipe": [(P.mini.x0 + P.mini.x1) / 2, (P.mini.foot1 + P.mini.foot2) / 2, 0, 4.5],
-  "spine": [(P.spine.x0 + P.spine.x1) / 2, P.spine.foot - 10, 0, 0],
-  "funbox": [(P.funbox.x0 + P.funbox.x1) / 2 - 0.5, P.funbox.z0 - 9, 0, 0],
+  "spine": [(P.spine.x0 + P.spine.x1) / 2, P.spine.foot - 10, 0, 6.5],
+  "funbox": [(P.funbox.x0 + P.funbox.x1) / 2 - 0.35, P.funbox.z0 - 9, 0, 5],
   "stairs + handrail": [(P.stairs.x0 + P.stairs.x1) / 2, P.stairs.z0 - 3, 0, 0],
-  "long rail": [P.rail.x - 0.55, P.rail.z0 - 7, 0, 0],
-  "ledge": [P.ledge.x - 0.7, P.ledge.z0 - 7, 0, 0],
-  "wall ride": [P.wall.kick.x - 2.2, P.wall.kick.z - 8, P.wall.kick.yaw, 0],
+  "long rail": [P.rail.x - 0.35, P.rail.z0 - 7, 0, 4],
+  "ledge": [P.ledge.x - 0.45, P.ledge.z0 - 7, 0, 4],
+  "wall ride": [P.wall.kick.x - 9 * Math.sin(P.wall.kick.yaw), P.wall.kick.z - 9 * Math.cos(P.wall.kick.yaw), P.wall.kick.yaw, 7],
   "drop-in tower": [(P.tower.rx0 + P.tower.rx1) / 2, P.tower.z0 + 0.9, 0, 0],
 };
