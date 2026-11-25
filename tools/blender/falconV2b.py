@@ -332,8 +332,11 @@ def lift_tail():
         if eval_co()[TAILV][:, 2].min() > 0.006: return
         turn("tail_1", (1, 0, 0), math.radians(4))
 def p_idle_at(i): return lambda: apply_L(PERCH_L[i])
-# Walk: crouched, the body lower than perched, 12 cm steps (60 % stance), a waddle
-WALK_N, WALK_STRIDE, WALK_DUTY = 10, 0.12, 0.6
+# Walk: crouched, the body lower than perched, 10 cm steps (60 % stance), a waddle. 12 frames at 24 fps: the stance
+# feet planted at 0.10 / (0.6 x 0.5 s) = 0.33 m/s, the gym's walk (gymFlight.js GYM.walk = V2_WALK_MPS: a peregrine
+# walks slowly, ~0.3-0.5 m/s, with a waddle; it hops to cover ground faster). The 12 cm sweep of before was out of the
+# short legs' reach at its ends (the IK fell 7 mm short: the feet slid 1 cm a step). Rule falcon-gym "the v2 round C"
+WALK_N, WALK_STRIDE, WALK_DUTY = 12, 0.10, 0.6
 WALK_PITCH = max(25.0, IDLE_PITCH - 25)
 WALK_HIP = IDLE_HIP.z * 0.82
 def smooth01(x): x = min(1.0, max(0.0, x)); return x * x * (3 - 2 * x)
@@ -343,7 +346,9 @@ def walk_foot(u):
     v = (u - WALK_DUTY) / (1 - WALK_DUTY); return (S_ / 2 - S_ * smooth01(v), 0.02 * math.sin(math.pi * v))
 def p_walk(u):
     def f():
-        apply_L(IDLE); place_body(WALK_PITCH, WALK_HIP + 0.004 * math.cos(4 * math.pi * u), roll=3.0 * math.sin(2 * math.pi * u))
+        # (the waddle's roll 2 deg: at 3 the folded right wing's trailing edge lifted off the tail at the roll's peaks, a
+        # 0.4 cm2 see-through gap between their cut-out feather tips from above and below; rule falcon-gym "the v2 round C")
+        apply_L(IDLE); place_body(WALK_PITCH, WALK_HIP + 0.004 * math.cos(4 * math.pi * u), roll=2.0 * math.sin(2 * math.pi * u))
         lift_tail()
         fx = {S: IDLE_FOOT[S].x for S in "LR"}
         (yL, lL), (yR, lR) = walk_foot(u), walk_foot((u + 0.5) % 1)
@@ -364,7 +369,10 @@ def p_hop(u):
 # (the three long leg bones aimed; the foot and the toes keep their pose relative to the shank: this rig's foot bone is
 # not along the toes, so aiming it turned the toes up)
 STOOP_LEGS = {"UpperLeg*": (0.06, 0.45, -0.89), "LowerLeg*": (0.03, 1, 0.25), "AnkleLeg*": (0.0, 0.85, -0.5)}   # (the feet under the tail's base)
-TALON_LEGS = {"UpperLeg*": (0.15, -0.6, -0.8), "LowerLeg*": (0.1, -0.85, -0.5), "AnkleLeg*": (0.05, -0.6, -0.8)}
+TALON_LEGS = {"UpperLeg*": (0.15, -0.6, -0.8), "LowerLeg*": (0.1, -0.85, -0.5), "AnkleLeg*": (0.05, -0.6, -0.8)}   # (the Flare's)
+# THE STRIKE (Talons, rule falcon-gym "the v2 round C"): the legs thrown FORWARD, under and ahead of the breast, the
+# tarsi reaching out toward the prey (armature space, after the body is pitched up)
+STRIKE_LEGS = {"UpperLeg*": (0.12, -0.85, -0.52), "LowerLeg*": (0.08, -0.99, 0.05), "AnkleLeg*": (0.07, -0.97, -0.18)}
 def legs(P, Ls):
     aims(P); copy_locals(Ls, [f"Foot_{S}" for S in "LR"])
 def aim_beak(d):
@@ -373,10 +381,13 @@ def aim_beak(d):
     M = PB["head"].matrix.copy(); R = (q.to_matrix() @ M.to_3x3()).to_4x4(); R.translation = M.translation; PB["head"].matrix = R; upd()
 def p_glide():
     apply_L(GLIDE_L); [curl(S, 110) for S in "LR"]
+STOOP_PITCH = 15                                      # deg: the hips -> spine line a little nose-up, so beak -> tail tip lies level
 def p_stoop():
-    apply_L(IDLE); place_body(-8, IDLE_HIP.z + 0.25, hipy=0.0)      # the folded idle wings and tail, the body level / nose down
+    apply_L(IDLE); place_body(STOOP_PITCH, IDLE_HIP.z + 0.25, hipy=0.0)   # the folded idle wings and tail, nose down
     aims({"spine_2": (0, -1, 0.35), "spine_3": (0, -1, 0.1)}); aim_beak((0, -1, -0.08))
-    upd(); aim("tail_1", -(PB["spine_1"].head - PB["hips"].head).normalized() + Vector((0, 0, 0.05)))   # the tail on the body's line
+    # (the tail and the folded wings keep the idle's own set, the wing tips on the tail; the body pitched so that whole,
+    # beak to tail tip, lies level: a teardrop. Re-aimed alone onto the hips -> spine line, the tail swung ~25 deg out
+    # from under the wings and showed edge-on as a thin dark spike behind; rule falcon-gym "the v2 round C")
     legs(STOOP_LEGS, IDLE); [curl(S, 110) for S in "LR"]
 def fan_tail(deg):
     """the tail's own feather bones (tail_fan_*) turned outward in the tail's plane (deg at the outer pair)"""
@@ -386,8 +397,41 @@ def fan_tail(deg):
         for S, sg in (("L", 1), ("R", -1)):
             n_ = f"tail_fan_{i}_{S}"
             if n_ in PB: turn(n_, nrm, -sg * math.radians(deg * k))
+def pitch_about_hips(deg):
+    """the whole bird turned nose-up by deg about the hip joints (the root's translation follows: it stays put)"""
+    upd(); Hm = (PB["UpperLeg_L"].head + PB["UpperLeg_R"].head) / 2
+    ROOT_PB.matrix = Matrix.Translation(Hm) @ Matrix.Rotation(-math.radians(deg), 4, "X") @ Matrix.Translation(-Hm) @ ROOT_PB.matrix; upd()
+def splay(S, deg):
+    """the toes spread apart in the sole's plane: each digit's first joint turned away from the middle toe (Toes_)"""
+    upd(); mid = (PB[f"Toes_tip_{S}"].head - PB[f"Toes_{S}"].head).normalized(); n_ = (PB[f"AnkleLeg_{S}"].head - PB[f"Foot_{S}"].head).normalized()
+    for ch in chains(S):
+        b = ch[0]
+        if b.startswith("Toes_"): continue
+        d = (PB[ch[-1]].head - PB[b].head).normalized(); ax = mid.cross(d)
+        if ax.length < 1e-4: continue
+        ax = n_ * (1 if ax.dot(n_) > 0 else -1); turn(b, ax, math.radians(deg))
+STRIKE_PITCH = 55                                     # deg nose-up over the glide: the body rears back as it brakes
 def p_talons():
-    apply_L(GLIDE_L); legs(TALON_LEGS, IDLE); [copy_locals(IDLE, DIGITS[S]) for S in "LR"]; [curl(S, -15) for S in "LR"]
+    """the peregrine's strike: the body reared back, the wings up and back (braking, half raised, the hands open), the
+    tail down and fanned, the legs thrown forward under and ahead of the breast, the toes open and spread wide, the head
+    down looking at the feet"""
+    apply_L(GLIDE_L); pitch_about_hips(STRIKE_PITCH)
+    aims({"wing_1*": (0.70, 0.30, 0.65)})             # the arms raised and back over the back (a V, half raised)
+    aims({"wing_2*": (0.85, 0.05, 0.52)})             # the forearms out (the wrists bent a little)
+    aims({"wing_3*": (0.50, 0.62, 0.60)})             # the hands swept back, still open (primaries spread)
+    for S, sg in (("L", 1), ("R", -1)):              # the raised wing turned on its own line so its underside faces
+        upd(); ln = (PB[f"wing_3_{S}"].head - PB[f"wing_1_{S}"].head).normalized()   # forward, into the air: the brake
+        def out_(): upd(); return sg * (PB[f"wing_feather_2_2_{S}"].head - PB[f"wing_1_{S}"].head).x
+        x0 = out_(); turn(f"wing_1_{S}", ln, math.radians(40))
+        if out_() < x0: turn(f"wing_1_{S}", ln, math.radians(-80))   # (the side that takes the trailing edge outward)
+    turn("tail_1", (1, 0, 0), math.radians(-22))         # the tail down (a brake); its fan: the glide's, fully spread
+    legs(STRIKE_LEGS, IDLE)
+    for S in "LR":
+        copy_locals(IDLE, DIGITS[S]); curl(S, 5); splay(S, 28)
+    aims({"spine_2": (0, -0.75, 0.66), "spine_3": (0, -0.95, 0.30)})
+    upd(); fm = (PB["Toes_tip_L"].head + PB["Toes_tip_R"].head) / 2; aim_beak(fm - PB["head"].head)
+    upd(); bd = (PB["mouth_upper_tip"].head - PB["head"].head).normalized(); fd = (fm - PB["head"].head).normalized()
+    print(f"[v2b] Talons: the beak {math.degrees(bd.angle(fd)):.0f} deg off the feet, the feet {(PB['spine_1'].head.y - (PB['Foot_L'].head.y + PB['Foot_R'].head.y) / 2) * 100:.1f} cm ahead of the chest")
 def p_flare(k=1.0):
     def f():
         apply_L(GLIDE_L); aims({"wing_1*": (0.75, -0.3 * k, 0.6)}); turn("tail_1", (1, 0, 0), math.radians(-25 * k)); fan_tail(25 * k)

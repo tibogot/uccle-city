@@ -1,7 +1,7 @@
 ---
 status: provisional
 added: 2026-11-25
-check: `falcongym` (tools/falconGymTest.mjs: the gym controller headless in the gym's greybox: cruise, chase and stoop speeds, the pull-out, the alley take-off, the passage hop-out, the 15 deg wall graze, the landing flare and the edge launch, the ceiling, the bank into the turn for both controllers and every input path; the lab's files; the v2 model's triangles and clips once built, and its poses, holes, pads, plumage and far LOD: tools/falconV2pose.mjs) + browser row `falcongym` (the lab loads with no console error)
+check: `falcongym` (tools/falconGymTest.mjs: the gym controller headless in the gym's greybox: cruise, chase and stoop speeds, the pull-out, the alley take-off, the passage hop-out, the 15 deg wall graze, the landing flare and the edge launch, the ceiling, the bank into the turn for both controllers and every input path; the lab's files; the v2 model's triangles and clips once built, and its poses, holes, pads, plumage and far LOD, the folded tail's set, the strike and the walk's foot slide: tools/falconV2pose.mjs) + browser row `falcongym` (the lab loads with no console error)
 ---
 **Rule.** The falcon flies at a real peregrine's speeds and takes off like one, and small mistakes never stun it. Measured headless in the Falcon Gym (`labs/falcon-gym.html`, `viewer/falconGym/gymFlight.js`):
 
@@ -79,7 +79,7 @@ The fixes (all in the script):
 
 ### The walk and the hop are crouched
 
-**Rule.** On the ground the falcon is crouched like a peregrine, its legs mostly under the belly feathers. Through the Walk cycle (sampled at 8 times): the hip joints < 12.5 cm up, < 4.5 cm of leg below the belly, and a foot on the ground (its lowest point within 1.2 cm). Through the Hop: the hips < 15 cm up, < 6 cm of leg below the belly. Both are ours (`falconV2.py` `ground_pose`, as the Perch): the body at 30 deg, the legs by IK from foot targets. The Walk is a 10-frame cycle of 12 cm steps (60 % stance, a slight waddle, the feet planted at 0.48 m/s). The Hop is a crouch, a push, the feet tucked up, a landing. The gym plays the v2 Walk at the ground speed's rate (`gymBird.js` `V2_WALK_MPS`, capped at 2.5x).
+**Rule.** On the ground the falcon is crouched like a peregrine, its legs mostly under the belly feathers. Through the Walk cycle (sampled at 8 times): the hip joints < 12.5 cm up, < 4.5 cm of leg below the belly, and a foot on the ground (its lowest point within 1.2 cm). Through the Hop: the hips < 15 cm up, < 6 cm of leg below the belly. Both are ours (`falconV2.py` `ground_pose`, as the Perch): the body at 30 deg, the legs by IK from foot targets. The Walk is a 10-frame cycle of 12 cm steps (60 % stance, a slight waddle, the feet planted at 0.48 m/s; base B round C: 12 frames, 10 cm, 0.33 m/s, below). The Hop is a crouch, a push, the feet tucked up, a landing. The gym plays the v2 Walk at the ground speed's rate (`gymBird.js` `V2_WALK_MPS`, capped at 2.5x).
 
 **Why.** Coordinator's review: "walk shows long legs". The Walk and the Hop were Mesh2Motion's, retargeted. The legs took the clip's own long, near-straight leg directions on the download's legs, and the root was only moved down until a foot touched. So the body rode at 21 cm on bare stick legs (8-11 cm of leg showing). Only the Perch had been checked.
 
@@ -139,6 +139,32 @@ Found on the way:
 - the juvenile per material; the far LOD
 
 The served 25k v2 fails 7 of them: pads 39 mm up, toe tips not measurable, holes 15 cm², slits 3.8 %.
+
+## The v2 round C (V2 ROUND C, 2026-11-25): the folded tail as perched, the strike, the walk planted
+
+### The folded tail lies as perched
+
+**Rule.** In every folded clip (Walk, Hop, Stoop) the closed tail has the Perch's shape and set: its width / length within the Perch's range (+-0.05), the folded wing tips within the Perch's + 1.5 cm of its line, and its tip reaching past them by the Perch's 5.6-6.6 cm (+-2 cm). The Stoop is a teardrop: the idle's folded wings and tail kept as they lie on the body, the body pitched so beak to tail tip is level. In the gym the legs and talon layers (`birdRig.js`) fade out with the v2's Stoop and Talons clips, which set the legs themselves.
+
+**Why.** Coordinator's review of base B (`uccle-falcon-gym/v2b_new_stoop_side.png`): "the closed tail shows as a thin dark spike sticking out behind, like a needle". The cause: `falconV2b.py` `p_stoop` re-aimed `tail_1` alone onto the hips -> spine line. The idle holds its tail ~25 deg off that line, under the folded wings, so the tail swung out from under them (the wing tips 10.4 cm off its line, perched 4.6) and its flat sheet showed edge-on as a needle 9 cm past the wing tips. Not a weight, scale or double-fold fault: the clip's tail had the Perch's length and width. Found on the way: the gym's legs layer (0.5 in flight) also swung the Stoop clip's tucked feet out behind. The needle in the Talons shot was the glide's fanned tail edge-on (the old Talons was the glide). Nothing measured where the tail lies against the wings: only its width.
+
+**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs` `tailSet`). The served base B fails it (the Stoop).
+
+### The Talons is the strike
+
+**Rule.** The Talons clip is the peregrine's strike: the legs thrown forward (both feet >= 4 cm ahead of the chest, `spine_1`, and below it), the toes open and spread wide (the front claws >= 1.3 x the perched apart), the wings raised and back to brake (the tips >= 12 cm over the shoulders and >= 5 cm behind them, the undersides turned forward), the tail down and fanned (>= 0.9 x the glide's), the head looking at the feet (the beak < 35 deg off them). In flight the gym blends it in with the talons (`gymBird.js`: the Talons clip's weight follows the talons layer).
+
+**Why.** Coordinator's review: "the Talons pose is weak: small and hunched". It was the glide with the legs aimed a little forward: the feet 3.5 cm BEHIND the chest, the claws 1.05 x the perched, the wings level, the head looking ahead (113 deg off the feet). In flight the gym never played it (the glide plus a leg layer). Real strikes (slow-motion studies): the toes open and spread, the legs reach out at the prey, the wings up and back as a brake.
+
+**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs`). The served base B fails all four.
+
+### The Walk's feet stay planted at the gym's walk
+
+**Rule.** The gym walks at the speed the v2 Walk plants its feet at (`gymFlight.js` `V2_WALK_MPS` = `GYM.walk` = 0.33 m/s: a peregrine's slow waddle; it hops to cover ground). Played as the gym plays it, the foot slides < 1 cm per planted phase. The Walk: 12 frames at 24 fps, 10 cm stance sweeps, 60 % stance, a 2 deg waddle.
+
+**Why.** Coordinator's review: "the Walk keeps its feet planted only up to 0.48 m/s but the gym walks at 1 m/s". Measured: at 1 m/s (played 2.1x, five steps a second, a scurry) the feet slid 13 mm a step. Not only the speed: the 12 cm sweep was out of the short legs' reach at its ends (the IK fell 7 mm short), so at any rate the stance foot ran slower than the body: 11 mm a step at the clip's own speed. A peregrine walks slowly, so the gym's walk came down to the clip's (10 cm steps, in reach: 1.4 mm). The waddle's 3 deg roll lifted the folded right wing's trailing edge off the tail at its peaks: a 0.4 cm2 see-through gap between their cut-out feather tips from above and below (under the 0.5 limit, sampled once): 2 deg closes it, and the hole check now samples the Walk 6 times through its cycle.
+
+**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs` `walkSlide`, with `GYM` and `V2_WALK_MPS` imported from the gym). The served base B with the old constants: 13 mm.
 
 ## Bank into the turn (2026-11-25)
 

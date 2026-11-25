@@ -14,6 +14,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { decodeKTX2 } from "./ktx2Decode.mjs";
+import { GYM, V2_WALK_MPS } from "../viewer/falconGym/gymFlight.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const req = createRequire(path.join(here, "worker/package.json"));
@@ -221,6 +222,48 @@ export async function alphaSamplers(B) {
   }
   return out;
 }
+/** THE FOLDED TAIL'S SHAPE AND SET (rule falcon-gym "the v2 round C"): its length (the farthest tail vertex from tail_1),
+ *  its width / length, how far the folded wing tips lie from its line and how far its tip reaches past them */
+export function tailSet(B, p) {
+  const a = p.at("tail_1"), X = p.X; let L = 0, tip = a;
+  for (let v = 0; v < B.NV; v++) if (isTail(B.main[v])) { const x = [X[v * 3], X[v * 3 + 1], X[v * 3 + 2]], d = len(sub(x, a)); if (d > L) { L = d; tip = x; } }
+  const u = unit(sub(tip, a)), W = tailTipWidth(B, p);
+  const wing = ["L", "R"].map((s) => { const w = sub(p.at(`wing_tip_${s}`), a), t = dot(w, u); return { off: len(sub(w, u.map((x) => x * t))), past: L - t }; });
+  return { L, W, ratio: W / L, tipOff: Math.max(...wing.map((w) => w.off)), past: Math.min(...wing.map((w) => w.past)), pastMax: Math.max(...wing.map((w) => w.past)) };
+}
+/** per foot: the front toes' claw tips (digit II and IV's end nubs) apart, m */
+function frontClaws(B, p) {
+  const o = {};
+  for (const s of ["l", "r"]) {
+    const tip = (d) => { const n = Object.keys(B.byName).filter((k) => k.startsWith(`b_${s}_Digit${d}_`) && /nub$/.test(k)); return n.length ? p.at(n[0]) : null; };
+    const a = tip("II"), b = tip("IV"); o[s.toUpperCase()] = a && b ? len(sub(a, b)) : 0;
+  }
+  return o;
+}
+/** THE WALK'S FOOT SLIDE at the gym's walk (rule falcon-gym "the v2 round C"): the Walk played as the gym plays it
+ *  (gymBird.js: rate GYM.walk / V2_WALK_MPS, capped 0.4-2.5; the model at the gym's life-size span) while the body moves
+ *  forward at GYM.walk; per foot, the ground travel of its joint through each planted phase (the joint within 3 mm of
+ *  its lowest: the stance joint rides 1-2 mm up and down), m */
+export function walkSlide(B, speed = GYM.walk, planted = V2_WALK_MPS) {
+  const g = B.pose("Glide"), k = GYM.span / len(sub(g.at("wing_tip_L"), g.at("wing_tip_R")));
+  const rate = Math.min(2.5, Math.max(0.4, speed / planted)), D = B.dur("Walk"), dt = 1 / 480, T = 2 * D / rate;
+  const S = []; for (let t = 0; t <= T; t += dt) { const p = B.pose("Walk", (t * rate) % D); S.push({ t, L: p.at("Foot_L"), R: p.at("Foot_R") }); }
+  let worst = 0;
+  for (const s of ["L", "R"]) {
+    const ymin = Math.min(...S.map((q) => q[s][1]));
+    let run = null;
+    const close = () => { if (run && run.n > 3) worst = Math.max(worst, Math.hypot(run.z1 - run.z0, run.x1 - run.x0)); run = null; };
+    for (const q of S) {
+      if (q[s][1] - ymin < 0.003) {
+        const z = k * q[s][2] + speed * q.t, x = k * q[s][0];          // (the nose is +z: the body moves along it)
+        if (!run) run = { z0: z, x0: x, z1: z, x1: x, n: 0 };
+        run.z1 = z; run.x1 = x; run.n++;
+      } else close();
+    }
+    close();
+  }
+  return { slide: worst, rate, speed, planted };
+}
 export const SLIT_MAX = 0.015;
 export const VIEWS = { side: [1, 0.05, 0], back: [0, 0.15, -1], front: [0, 0.1, 1], above: [0.05, 1, -0.1], below: [0.05, -1, 0.1], three: [0.7, 0.4, -0.6] };
 
@@ -282,10 +325,13 @@ export async function v2PoseChecks(file) {
   // (the legs and feet left out: the gaps between the toes and the tarsus are a foot's, not a hole in the body)
   const legs = (n) => /^(UpperLeg|LowerLeg|AnkleLeg|Foot|Toes|b_[lr]_Digit)/.test(n);
   const alpha = await alphaSamplers(B), res = [];
+  // (the Walk through its cycle, 6 times: its waddle opened a gap only at the roll's peaks; rule "the v2 round C")
   for (const c of ["Perch", "Walk", "Hop", "Stoop", "Idle", "Glide"]) {
     if (!B.clips[c]) continue;
-    const X = B.pose(c, c === "Walk" ? B.dur(c) * 0.3 : null).X;
-    for (const [vn, d] of Object.entries(VIEWS)) { const h = holes(B, X, d, alpha, 0.002, null, legs); res.push([c, vn, h.hole, h.sil, h.slit / h.sil]); }
+    for (const u of c === "Walk" ? [0, 1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6] : [null]) {
+      const X = B.pose(c, u == null ? null : B.dur(c) * u).X;
+      for (const [vn, d] of Object.entries(VIEWS)) { const h = holes(B, X, d, alpha, 0.002, null, legs); res.push([u == null ? c : `${c}@${u.toFixed(2)}`, vn, h.hole, h.sil, h.slit / h.sil]); }
+    }
   }
   const worst = res.reduce((a, b) => (b[2] > a[2] ? b : a));
   ok(worst[2] < 0.5, "v2 no see-through holes in the body (Perch / Walk / Hop / Stoop / Idle / Glide, six views, the cut-out alpha honoured; gaps bordered by a leg are the leg's: < 0.5 cm2)", `worst ${worst[0]} ${worst[1]} ${worst[2].toFixed(2)} cm2 of ${worst[3].toFixed(0)} cm2`);
@@ -299,6 +345,32 @@ export async function v2PoseChecks(file) {
   }
   const ws = fold.reduce((a, b) => (b[4] > a[4] ? b : a));
   ok(ws[4] < SLIT_MAX, `v2 no slits between the parts when folded (Perch / Walk / Hop / Stoop / Idle, from above and behind, not by a leg: gaps under 12 mm that a 6 mm closing fills < ${SLIT_MAX * 100} % of the silhouette)`, `worst ${ws[0]} ${ws[1]} ${(ws[4] * 100).toFixed(1)} %`);
+  // THE v2 ROUND C (rule falcon-gym "the v2 round C"): the folded tail as perched in every folded clip (the Stoop's
+  // was swung out from under the wings: a thin dark spike behind), the Talons a real strike, the Walk's feet planted
+  // at the gym's walk
+  {
+    const P = [], F = [];
+    for (let i = 0; i < 8; i++) P.push(tailSet(B, B.pose("Perch", B.dur("Perch") * i / 8)));
+    for (const c of ["Walk", "Hop"]) for (let i = 0; i < 4; i++) F.push([c, tailSet(B, B.pose(c, B.dur(c) * i / 4))]);
+    F.push(["Stoop", tailSet(B, B.pose("Stoop"))]);
+    const rng = (k) => [Math.min(...P.map((x) => x[k])), Math.max(...P.map((x) => x[k]))];
+    const [r0, r1] = rng("ratio"), [, o1] = rng("tipOff"), [p0] = rng("past"), [, p1] = rng("pastMax");
+    const bad = F.filter(([, t]) => t.ratio < r0 - 0.05 || t.ratio > r1 + 0.05 || t.tipOff > o1 + 0.015 || t.past < p0 - 0.02 || t.pastMax > p1 + 0.02);
+    const st = F.find(([c]) => c === "Stoop")[1];
+    ok(!bad.length, "v2 folded tail as perched (Walk / Hop / Stoop: its width / length within the Perch's +-0.05, the folded wing tips within the Perch's + 1.5 cm of its line, its tip past them within the Perch's +-2 cm)",
+      `Perch ratio ${r0.toFixed(2)}-${r1.toFixed(2)}, wing tips <= ${cm(o1)} cm off, tip ${cm(p0)}-${cm(p1)} cm past; Stoop ${st.ratio.toFixed(2)}, ${cm(st.tipOff)} cm off, ${cm(st.past)}-${cm(st.pastMax)} cm past${bad.length ? `; out: ${[...new Set(bad.map(([c]) => c))].join(" ")}` : ""}`);
+    const t = B.pose("Talons"), pr = B.pose("Perch"), ch = t.at("spine_1"), fz = Math.min(t.at("Foot_L")[2], t.at("Foot_R")[2]) - ch[2];
+    ok(fz >= 0.04 && Math.max(t.at("Foot_L")[1], t.at("Foot_R")[1]) < ch[1], "v2 Talons: the legs thrown forward (both feet >= 4 cm ahead of the chest, below it)", `feet ${cm(fz)} cm ahead of the chest`);
+    const ct = frontClaws(B, t), cp = frontClaws(B, pr), spr = Math.min(ct.L / cp.L, ct.R / cp.R);
+    ok(spr >= 1.3, "v2 Talons: the toes open and spread wide (the front claws >= 1.3 x the perched apart)", `${cm(Math.min(ct.L, ct.R))} cm (perched ${cm(Math.min(cp.L, cp.R))}), x${spr.toFixed(2)}`);
+    const wr = ["L", "R"].map((s) => { const w1 = t.at(`wing_1_${s}`), wt = t.at(`wing_tip_${s}`); return { up: wt[1] - w1[1], back: w1[2] - wt[2] }; });
+    ok(wr.every((w) => w.up >= 0.12 && w.back >= 0.05), "v2 Talons: the wings raised and back, braking (the tips >= 12 cm over the shoulders, >= 5 cm behind them)", wr.map((w) => `up ${cm(w.up)} back ${cm(w.back)}`).join(" / "));
+    const wT = tailTipWidth(B, t), wG = M.tail.Glide, hd = t.at("head"), bd = unit(sub(t.at("mouth_upper_tip"), hd)), fm = unit(sub([(t.at("Foot_L")[0] + t.at("Foot_R")[0]) / 2, (t.at("Foot_L")[1] + t.at("Foot_R")[1]) / 2, (t.at("Foot_L")[2] + t.at("Foot_R")[2]) / 2], hd));
+    const look = Math.acos(Math.max(-1, Math.min(1, dot(bd, fm)))) * 180 / Math.PI;
+    ok(wT >= 0.9 * wG && look < 35, "v2 Talons: the tail fanned (>= 0.9 x the glide's) and the head looking at the feet (the beak < 35 deg off them)", `tail ${cm(wT)} cm (glide ${cm(wG)}), beak ${look.toFixed(0)} deg off the feet`);
+    const ws = walkSlide(B);
+    ok(ws.slide < 0.01, `v2 Walk: the feet planted at the gym's walk (GYM.walk ${ws.speed.toFixed(2)} m/s, the clip planted at V2_WALK_MPS ${ws.planted.toFixed(2)}, played x${ws.rate.toFixed(2)}: foot slide per planted phase < 1 cm)`, `${mm(ws.slide)} mm`);
+  }
   // the juvenile plumage: one KTX2 a painted material beside the glb, named in it
   const vars = Object.entries(B.J.asset?.extras?.variants || {}).filter(([k]) => k.startsWith("juvenile"));
   const files = vars.map(([, v]) => path.join(path.dirname(file), v.file)), okFiles = vars.length > 0 && files.every((f) => fs.existsSync(f) && fs.readFileSync(f).subarray(0, 12).toString("latin1").includes("KTX 20"));

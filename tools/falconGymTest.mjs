@@ -156,7 +156,9 @@ const html = fs.existsSync(path.join(ROOT, "labs/falcon-gym.html")) ? fs.readFil
 const js = fs.existsSync(path.join(ROOT, "labs/falcon-gym.js")) ? fs.readFileSync(path.join(ROOT, "labs/falcon-gym.js"), "utf8") : "";
 check(js.includes("panelUI.js") && !/lil-gui/i.test(html + js), "own UI only (viewer/panelUI.js, no lil-gui)");
 // the v2 model (when built): triangles and clips from the glb's JSON
-const v2 = path.join(ROOT, "models/bird/v2/falcon_v2.glb");
+// (FALCON_V2_GLB=<dir>/falcon_v2.glb: gate a candidate build before it replaces the served one, its far LOD beside it)
+const v2 = process.env.FALCON_V2_GLB ? path.resolve(process.env.FALCON_V2_GLB) : path.join(ROOT, "models/bird/v2/falcon_v2.glb");
+if (process.env.FALCON_V2_GLB) out.push(`note the v2 checks run on the candidate ${v2}`);
 if (fs.existsSync(v2)) {
   const b = fs.readFileSync(v2), len = b.readUInt32LE(12), j = JSON.parse(b.subarray(20, 20 + len).toString());
   const tris = (j.meshes || []).reduce((s, m) => s + m.primitives.reduce((q, p) => q + (p.indices != null ? j.accessors[p.indices].count / 3 : 0), 0), 0);
@@ -170,7 +172,7 @@ if (fs.existsSync(v2)) {
   // the V2 POLISH (rule falcon-gym "the v2 model"): the perched pose, the folded wings' cards, the toes, the juvenile
   for (const [ok, what, val] of await v2PoseChecks(v2)) check(ok, what, val);
   // V2 FIX: the far LOD (tools/falconV2far.mjs), and the lab switches to it by the drawn span on screen
-  for (const [ok, what, val] of v2FarChecks(v2, path.join(ROOT, "models/bird/v2/falcon_v2_far.glb"))) check(ok, what, val);
+  for (const [ok, what, val] of v2FarChecks(v2, v2.replace(/\.glb$/, "_far.glb"))) check(ok, what, val);
   const gb = fs.readFileSync(path.join(ROOT, "viewer/falconGym/gymBird.js"), "utf8");
   check(/LOD_FAR_PX\s*=\s*\d+,\s*LOD_NEAR_PX\s*=\s*\d+/.test(gb) && /\.bind\(near\.skeleton/.test(gb) && /updateLod\(camera/.test(js), "v2 far LOD wired: bound to the near skeleton, switched by screen size with hysteresis (gymBird.updateLod, the lab calls it)");
 } else out.push("note models/bird/v2/falcon_v2.glb not built yet (the owner's Sketchfab files): v2 checks skipped");
