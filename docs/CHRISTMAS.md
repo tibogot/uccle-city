@@ -22,8 +22,16 @@ planter) and Rue Xavier De Bue (garlands, car height). Shots and the owner's she
    `treeFootY` (lowest of the rim and centre). Rule xmas-fit-current-city (joins); check `xmastest` "fir foot".
 4. **At night each fir read as LED dots floating in a black void** (crown, baubles, planter invisible). Why: the 654 LEDs
    are emissive only (fixed light count) and lit nothing. Fix (`?firglow=0` = before): the foliage of every level, the
-   baubles and the garlands' greenery take albedo x LED warm x `xmas.look.glow` (0.35) / `.glint` (0.6) x env.uNight.
-   Rule xmas-night-glow; check `xmastest` "LED glow".
+   baubles and the garlands' greenery take albedo x LED warm x `xmas.look.glow` (0.8) / `.glint` (0.08) x env.uNight
+   (tuned in the page: 0.35 / 0.6 left the tree dark and turned the baubles into coloured bulbs; 1.2 read lime at 8 m).
+   The 43 / 48 m switch at night keeps its brightness (crop mean 39.0 / 41.1 of 255). Rule xmas-night-glow; check
+   `xmastest` "LED glow".
+4b. **The market was a block of black huts at night** (same cause: its 16 eave LEDs per chalet lit nothing). Fix: the
+   chalets' FRONT faces (boards, trim, sign; chosen by the normal, glTF +Z) take the same glow (`xmas.look.stall` 0.5).
+   Same switch, rule and row.
+2b. **The first furniture fix put a chalet between the square's main approach and the fir** (places `stjob-street`, the
+   default boot and tour spot: the fir's lower half hidden). Fix: no chalet within 0.5 m of the sightline from there to
+   the fir (build_site.py `FIR_VIEWS`, siteFit.mjs `FIR_VIEWS`); same row.
 5. **The season followed the visitor's clock** (Montreal 6 h late, Tokyo a day early). Fix: xmasDate.js `brusselsDate`
    (Intl, Europe/Brussels). Rule xmas-season-date; check `xmastest` (UTC instants round the Brussels midnights).
 6. **The layer's code was fetched on every boot all year** (main.js imported xmasCity.js statically: the kit, the
@@ -34,6 +42,20 @@ planter) and Rue Xavier De Bue (garlands, car height). Shots and the owner's she
 `?day=` (day of the year: 335-365 or 1-6) decides when given (note: the dev panel's "day of year" slider writes `?day=`,
 so a December visitor who moved it to summer gets no Christmas: intended, it is a simulation). Outside the season the boot
 loads xmasDate.js + xmasWindows.js only (~3 KB, the date switch and the windows' uniform), no Christmas data.
+
+**For the owner to decide (not changed):**
+- **The city is in July when the layer is on.** lighting.js defaults to day 200 (mid-July sun) and the street plane trees
+  are in full leaf: on 1 December the firs and the market stand under green summer crowns in a golden July light. The
+  biggest "reads fake" of the review (`day_stjob_fir_20m.png`, `day_stjob_above60m.png`: from 60 m the fir disappears
+  under the plane trees). Options: with the layer on by date, default `?day=` to the real day (December sun) and bare
+  plane trees (a winter foliage state the stylized trees do not have yet); or leave it.
+- **The chalets' goods are coloured boxes and their eave garland a smooth ribbed tube** up close (`day_chalet_close.png`):
+  a Blender change of `build_chalet` (jars, mugs, bottles, ornaments on the shelves; a needle garland like the swags).
+  Not done here: no Blender while the owner works.
+- **The walker can walk into the fir** (the planter collides for the car only): inside, the 4 cm LED beads read as big
+  flat glowing hexagons. A walker collider on the planter (and ideally the crown at 1.5 m) would keep the camera out.
+- **The middle level (45-150 m) of the fir shows flat frond pads** when zoomed (12 deg FOV at 47 m:
+  `day_fir_43m_zoom.png` vs `day_fir_47m_zoom.png`); at the game's 55 deg it is ~5 px per pad and not seen.
 
 **Seen and fine:** the fir from 20 m day and night (needles, baubles, star), Saint-Pierre's fir at night, the pole
 garlands on the Saint-Job lamps (5.5 m, well over a car), the De Bue garlands with their stars, the December windows,

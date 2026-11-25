@@ -70,9 +70,10 @@ ok(emissive, "LEDs, LED rope and the star glow (emissive only: no light added)")
     return false;
   };
   const glowM = [kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false, pass: "colour" }), kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: true }),
-    kit.slotMaterial("fir_needles", { uvs: true, instanced: true }), kit.slotMaterial("fir_needles", { uvs: false, instanced: true }), kit.slotMaterial("bauble", { instanced: true })];
-  ok(FIR_GLOW && glowM.every((m) => m.userData.ledGlow && m.emissiveNode && uses(m.emissiveNode, env.uNight) && (uses(m.emissiveNode, LK.glow) || uses(m.emissiveNode, LK.glint))),
-    "LED glow: the needle cards (lit passes), the solid fronds (near + far) and the baubles take albedo x LED warm x glow / glint x env.uNight");
+    kit.slotMaterial("fir_needles", { uvs: true, instanced: true }), kit.slotMaterial("fir_needles", { uvs: false, instanced: true }), kit.slotMaterial("bauble", { instanced: true }),
+    kit.slotMaterial("chalet_wood", { instanced: true }), kit.slotMaterial("chalet_trim", { instanced: true }), kit.slotMaterial("sign_board", { instanced: true })];
+  ok(FIR_GLOW && glowM.every((m) => m.userData.ledGlow && m.emissiveNode && uses(m.emissiveNode, env.uNight) && (uses(m.emissiveNode, LK.glow) || uses(m.emissiveNode, LK.glint) || uses(m.emissiveNode, LK.stall))),
+    "LED glow: the needle cards (lit passes), the solid fronds (near + far), the baubles and the chalets' fronts take albedo x LED warm x glow / glint / stall x env.uNight");
   ok(!kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false, pass: "depth" }).emissiveNode, "LED glow: never on the cards' depth twin");
   ok(/export const FIR_GLOW = QS\.get\("firglow"\) !== "0";/.test(fs.readFileSync(new URL("../../viewer/christmas/xmasKit.js", import.meta.url), "utf8")) && /on\("firglow"/.test(fs.readFileSync(new URL("../../viewer/features.js", import.meta.url), "utf8")),
     "LED glow: ?firglow=0 = the shader of before (xmasKit.js FIR_GLOW, features row firglow)");
