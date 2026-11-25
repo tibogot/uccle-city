@@ -1,6 +1,6 @@
 {
  "source": "MakeHuman MPFB 2.0.18 (CC0 assets) by tools/blender/kidMakeHuman.py --game, T-posed onto the UAL rig",
- "height": 1.4897,
+ "height": 1.4824,
  "pelvisScale": 0.81877,
  "joints": {
   "root": [
@@ -270,8 +270,8 @@
   ]
  },
  "tris": [
-  20716,
-  7999,
+  21706,
+  7997,
   2000
  ],
  "slots": [

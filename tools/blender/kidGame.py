@@ -110,12 +110,32 @@ def smooth_weights(o, reps, f=0.5):
                 if w / tot > 1e-3: v[dl][k] = w / tot
     bm.to_mesh(o.data); bm.free()
 
+def cut_above(o, z):
+    from mathutils import kdtree
+    bm = bmesh.new(); bm.from_mesh(o.data); mw = o.matrix_world; mwi = mw.inverted()
+    co = mwi @ Vector((0, 0, z)); no = (mwi.to_3x3() @ Vector((0, 0, 1))).normalized()
+    bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=co, plane_no=no, clear_outer=True)
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    dl = bm.verts.layers.deform.active
+    has = [v for v in bm.verts if len(v[dl]) > 0]
+    kd = kdtree.KDTree(len(has))
+    for k, v in enumerate(has): kd.insert(v.co, k)
+    kd.balance()
+    for v in bm.verts:
+        if len(v[dl]) == 0:
+            acc, tot = {}, 0.0
+            for c, k, d in kd.find_n(v.co, 4):
+                wk = 1.0 / max(d, 1e-4); tot += wk
+                for gi, w in has[k][dl].items(): acc[gi] = acc.get(gi, 0.0) + w * wk
+            for gi, w in acc.items(): v[dl][gi] = w / tot
+    bm.to_mesh(o.data); bm.free()
+
 def delete_group(inner, name):
     g = basemesh.vertex_groups.get(name) or basemesh.vertex_groups.new(name=name)
     g.add(sorted(inner), 1.0, "REPLACE")
     m = basemesh.modifiers.new(name, "MASK"); m.vertex_group = name; m.invert_vertex_group = True
 
-def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True, ratio=1.0):
+def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True, ratio=1.0, shape=None):
     """the body's faces whose vertices are all in region(i) -> a garment: each vertex offset out along its normal by
     off(i, co, normal), smoothed (boundary pinned), then CUT by planes [(geom_ok(centre, normal) or None, point,
     normal)] (bisect, the outer side cleared: clean hems / cuffs / openings, no stair-step edges), the new vertices of
@@ -127,13 +147,34 @@ def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True
     for v in bm.verts: v[src] = v.index
     keep = {f for f in bm.faces if all(region(v.index) for v in f.verts)}
     inner = {v.index for f in keep for v in f.verts if all(lf in keep for lf in v.link_faces)}
+    # (kid A polish: the skin was hidden over the whole uncut region, but the cuts then trimmed the garment: holes in
+    # the skin showed above the socks, at the wrists and inside the shorts. Only skin 1 cm inside every cut is hidden)
+    def inside(v):
+        for cut in cuts:
+            if len(cut) == 4: continue
+            ok, co, no = cut[:3]
+            if (ok is None or ok(v.co, v.normal)) and (v.co - co).dot(no) > -0.01: return False
+        return True
+    bm.verts.ensure_lookup_table()
+    inner = {i for i in inner if inside(bm.verts[i])}
     bmesh.ops.delete(bm, geom=[f for f in bm.faces if f not in keep], context="FACES")
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
     bm.normal_update()
     for v in bm.verts: v.co = v.co + v.normal * off(v[src], v.co, v.normal)
     for _ in range(smooth):
         bmesh.ops.smooth_vert(bm, verts=[v for v in bm.verts if not v.is_boundary], factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+    if shape: shape(bm)
     bm.normal_update()
+    bm.verts.layers.int.remove(src)
+    if ratio < 1:
+        # the budget BEFORE the cuts (kid A polish: decimating after them collapsed the hem / cuff edges into a
+        # ragged saw-tooth) and before the UVs (a collapse across the colour cells' seams smeared bands)
+        tmp = bpy.data.meshes.new(name + "_tmp"); bm.to_mesh(tmp); bm.free()
+        to = bpy.data.objects.new(name + "_tmp", tmp); bpy.context.scene.collection.objects.link(to)
+        for g in basemesh.vertex_groups: to.vertex_groups.new(name=g.name)
+        d = to.modifiers.new("budget", "DECIMATE"); d.ratio = ratio; d.use_symmetry = True; d.symmetry_axis = "X"
+        sel_only(to); bpy.ops.object.modifier_apply(modifier="budget")
+        bm = bmesh.new(); bm.from_mesh(to.data); bpy.data.objects.remove(to); bm.normal_update()
     for cut in cuts:
         ok, co, no = cut[:3]
         geom = [f for f in bm.faces if (ok is None or ok(f.calc_center_median(), f.normal))]
@@ -157,14 +198,10 @@ def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True
                 for gi, w in has[k][dl].items(): acc[gi] = acc.get(gi, 0.0) + w * wk
             for gi, w in acc.items(): v[dl][gi] = w / tot
     for lay in list(bm.loops.layers.uv.values()): bm.loops.layers.uv.remove(lay)
-    bm.verts.layers.int.remove(src)
     me2 = bpy.data.meshes.new(name); bm.to_mesh(me2); bm.free()
     o = bpy.data.objects.new(name, me2); bpy.context.scene.collection.objects.link(o)
     for g in basemesh.vertex_groups: o.vertex_groups.new(name=g.name)
     o.matrix_world = basemesh.matrix_world.copy()
-    if ratio < 1:   # the budget BEFORE the UVs: a collapse across the colour cells' seams smeared bands (flames)
-        d = o.modifiers.new("budget", "DECIMATE"); d.ratio = ratio; d.use_symmetry = True; d.symmetry_axis = "X"
-        sel_only(o); bpy.ops.object.modifier_apply(modifier="budget")
     # UVs (the body's own UV layer dropped: a new layer next to it got a ".001" name and the body's UVs won)
     bm = bmesh.new(); bm.from_mesh(o.data)
     GARM["dl"] = bm.verts.layers.deform.active
@@ -184,7 +221,7 @@ def build_outfit():
     me = full_body()
     dom, inbody = vinfo(me)
     P = lambda i: basemesh.matrix_world @ me.vertices[i].co
-    pel = bone_z("pelvis"); hem = pel - 0.03
+    pel = bone_z("pelvis"); hem = pel - 0.005       # (a 90s windbreaker: the elastic hem at the waist; lower, it folded with the thighs)
     neck0 = bone_z("neck_01"); head0 = bone_z("head"); collar = neck0 + 0.32 * (head0 - neck0)
     chest = bone_z("spine_03") - 0.015
     spine_y = bone_p("spine_02").y
@@ -197,6 +234,9 @@ def build_outfit():
         d = dom[i]
         if not inbody[i] or d is None or d in hands: return False
         if d in torso: return P(i).z >= hem - 0.05
+        # (kid A polish: the hips' sides are moved by the thighs: left out, the hem ended there above the cut line, a
+        # ragged step at both sides)
+        if d in ("thigh_l", "thigh_r"): return P(i).z >= hem - 0.05
         if d in arms: return True
         if d == "neck_01": return P(i).z <= collar + 0.03
         return False
@@ -228,7 +268,22 @@ def build_outfit():
     GEN["jk_torso"] = band_tex(128, 128, [(0, 0.07, "navy"), (0.07, vc - 0.03, "purple"), (vc - 0.03, vc, "white"), (vc, vn, "teal"), (vn, 1.01, "navy")],
                                extra=lambda u, v: "zip" if (u < 0.035 or u > 0.965) and v < vn else None)
     GEN["jk_sleeve"] = band_tex(16, 128, [(0, 0.5, "teal"), (0.5, 0.86, "purple"), (0.86, 1.01, "navy")])
-    jacket, inner_j = garment("kid_jacket", me, jk_region, jk_off, cuts, jk_uv, thick=0.004, smooth=3, ratio=0.45)
+    # the windbreaker HANGS from the chest (kid A polish: it followed his belly and flared at the hem: "full at the
+    # belly in profile"): below the chest no front vertex comes further forward than the chest's front line
+    drape = {}
+    pec = neck0 - 0.11            # (the chest's front line: spine_03 sits low in MPFB's rig, at the belly's top)
+    drape["z"] = pec
+    def jk_shape(bm):
+        ch = [v.co.y for v in bm.verts if abs(v.co.z - pec) < 0.025 and abs(v.co.x) < 0.07]
+        if not ch: return
+        fy = min(ch) + 0.004; drape["y"] = fy
+        bel = [v.co.y for v in bm.verts if v.co.z < pec and abs(v.co.x) < 0.07]
+        print(f"jacket drape: chest front y {fy:.3f}, belly front y {min(bel) if bel else 0:.3f}, chest z {pec:.3f}")
+        for v in bm.verts:
+            if v.co.z < pec and v.co.y < fy:
+                t = min(1.0, (pec - v.co.z) / 0.06)          # (blended in over 6 cm under the chest line)
+                v.co.y = v.co.y + (fy - v.co.y) * t
+    jacket, inner_j = garment("kid_jacket", me, jk_region, jk_off, cuts, jk_uv, thick=0.004, smooth=3, ratio=0.5, shape=jk_shape)
     # ---------------- the socks: knee-high-ish, two stripes under a white top
     knee = min(bone_z("calf_l"), bone_z("calf_r"))
     s_lo, s_hi = 0.065, knee - 0.07
@@ -243,17 +298,19 @@ def build_outfit():
     bz = sum((brows.matrix_world @ v.co).z for v in brows.data.vertices) / len(brows.data.vertices)
     by = min((brows.matrix_world @ v.co).y for v in brows.data.vertices)
     k_rim = 0.055 / 0.17
-    rim_z = lambda y: bz + 0.032 - k_rim * (y - by)
+    rim_z = lambda y: bz + 0.026 - k_rim * (y - by)
     hair = parts[C["hair"]]
     HV = np.array([tuple(hair.matrix_world @ v.co) for v in hair.data.vertices], np.float32)
-    def cp_off(i, co, n):
+    def cp_off(i, co, n):        # (kid A polish: fitted to the HEAD, 1.2 cm over the scalp; the hair is pressed under it)
+        return 0.012
+    def cp_off_old(i, co, n):
         p = np.array(tuple(basemesh.matrix_world @ co), np.float32); nn = np.array(tuple(n), np.float32)
         d = HV - p; along = d @ nn; lat = np.linalg.norm(d - np.outer(along, nn), axis=1)
         m = along[(lat < 0.02) & (along > -0.01)]
         return float(min(0.045, max(0.012, (m.max() if m.size else 0) + 0.005)))
     cp_region = lambda i: inbody[i] and dom[i] == "head" and P(i).z > rim_z(P(i).y) - 0.03
     rim_n = Vector((0, k_rim, 1)).normalized()
-    cp_cuts = [(None, Vector((0, by, bz + 0.032)), -rim_n)]
+    cp_cuts = [(None, Vector((0, by, bz + 0.026)), -rim_n)]
     cp_uv = lambda f, co, i: cell_uv("cap", min(1, max(0, (co.x + 0.11) / 0.22)), 0.5)
     GEN["cap"] = band_tex(64, 8, [(0, 0.40, "cap"), (0.40, 0.60, "white"), (0.60, 1.01, "cap")], axis="u")
     cap, _ = garment("kid_cap", me, cp_region, cp_off, cp_cuts, cp_uv, thick=0.003, smooth=3, hide_inner=False)
@@ -262,6 +319,23 @@ def build_outfit():
     yc = sum(p.y for p in low) / len(low)
     R = sum((p.x ** 2 + (p.y - yc) ** 2) ** 0.5 for p in low) / len(low)
     brims = [make_brim("kid_brim_f", yc, R, rim_z, +1), make_brim("kid_brim_b", yc, R, rim_z, -1)]
+    # the hair under the cap is PRESSED onto the scalp (kid A polish: the cap sat on top of the hair, roomy and
+    # high): every hair vertex above the rim line (+ a 1.5 cm band under it) is pulled back along the scalp's normal to
+    # at most 8 mm off the skin, so the 1.2 cm cap covers it; the fringe below the rim stays as it falls
+    from mathutils import kdtree
+    sk = [i for i in range(len(me.vertices)) if inbody[i] and dom[i] in ("head", "neck_01")]
+    kd = kdtree.KDTree(len(sk))
+    for k, i in enumerate(sk): kd.insert(P(i), k)
+    kd.balance()
+    nrm = [basemesh.matrix_world.to_3x3() @ me.vertices[i].normal for i in sk]
+    hw = hair.matrix_world; hwi = hw.inverted(); pressed = 0
+    for v in hair.data.vertices:
+        p = hw @ v.co
+        if p.z < rim_z(p.y) - 0.015: continue
+        co, k, _ = kd.find(p)
+        n = nrm[k].normalized(); d = (p - co).dot(n)
+        if d > 0.008: v.co = hwi @ (p - n * (d - 0.008)); pressed += 1
+    print(f"hair pressed under the cap: {pressed} vertices")
     # the hair hidden under the cap's crown goes (tris nobody sees); the fringe zone stays (worn backwards it shows)
     bm = bmesh.new(); bm.from_mesh(hair.data)
     gone_h = [v for v in bm.verts if (hair.matrix_world @ v.co).z > rim_z((hair.matrix_world @ v.co).y) + 0.012
@@ -273,7 +347,23 @@ def build_outfit():
     tee = parts[C["shirt"]]
     bm = bmesh.new(); bm.from_mesh(tee.data)
     gone_t = [v for v in bm.verts if not (abs((tee.matrix_world @ v.co).x) < 0.075 and (tee.matrix_world @ v.co).y < spine_y)]
-    bmesh.ops.delete(bm, geom=gone_t, context="VERTS"); bm.to_mesh(tee.data); bm.free()
+    bmesh.ops.delete(bm, geom=gone_t, context="VERTS")
+    if "y" in drape:     # (the tee strip stays 6 mm behind the jacket's hanging front: no poke-through at the zip)
+        tw = tee.matrix_world; twi = tw.inverted()
+        for v in bm.verts:
+            p = tw @ v.co
+            if p.z < drape["z"] and p.y < drape["y"] + 0.006:
+                t = min(1.0, (drape["z"] - p.z) / 0.06); p.y = p.y + (drape["y"] + 0.006 - p.y) * t; v.co = twi @ p
+    bm.to_mesh(tee.data); bm.free()
+    # the shorts end 1.2 cm under the jacket's hem (kid A polish: their dark belt stood out of the hem in a ragged
+    # band at the hips): a clean bisect, the new vertices' weights blended from their neighbours
+    cut_above(parts[SHORTS], hem + 0.012)
+    if "y" in drape:     # (the shorts' waistband under the hanging jacket: the same, so it cannot poke through the front)
+        sh_o = parts[SHORTS]; tw = sh_o.matrix_world; twi = tw.inverted()
+        for v in sh_o.data.vertices:
+            p = tw @ v.co
+            if p.z > hem - 0.02 and p.y < drape["y"] + 0.01:
+                t = min(1.0, (p.z - (hem - 0.02)) / 0.03); p.y = p.y + (drape["y"] + 0.01 - p.y) * t; v.co = twi @ p
     shoes = parts[C["shoes"]]
     bm = bmesh.new(); bm.from_mesh(shoes.data)
     gone2 = [v for v in bm.verts if (shoes.matrix_world @ v.co).z > C.get("shoe_collar", 0.105)]
@@ -286,10 +376,20 @@ def build_outfit():
     # the skin inside the shorts goes too (the pants' own delete group left the crotch: it tore at the hips in the
     # crouch / walk clips, hidden but counted, and wasted tris)
     zc = knee + C.get("shorts_above_knee", 0.035)
-    inner_p = {i for i in range(len(me.vertices)) if inbody[i] and dom[i] in ("pelvis", "thigh_l", "thigh_r") and zc + 0.03 < P(i).z < pel + 0.06}
+    inner_p = {i for i in range(len(me.vertices)) if inbody[i] and dom[i] in ("pelvis", "thigh_l", "thigh_r") and zc + 0.06 < P(i).z < pel + 0.06}
     delete_group(inner_j, "Delete.kid_jacket"); delete_group(inner_s, "Delete.kid_socks"); delete_group(inner_p, "Delete.kid_shorts")
     # cloth weights smoothed (the low-poly shorts' crotch and the jacket's shoulders stretched in strides / reaches)
-    for o, rep in ((parts[SHORTS], 10), (jacket, 3)): smooth_weights(o, rep)
+    # the jacket hangs from the torso: 80 % of any thigh weight moves to the pelvis (kid A polish: with the hip sides in
+    # the jacket, its hem folded with the thigh in every stride: the hip tear row 0.8 -> 1.6 %)
+    gi = {g.name: g.index for g in jacket.vertex_groups}
+    pg = jacket.vertex_groups["pelvis"]
+    for v in jacket.data.vertices:
+        moved = 0.0
+        for e in v.groups:
+            if e.group in (gi.get("thigh_l"), gi.get("thigh_r")):
+                m = e.weight * 0.8; e.weight -= m; moved += m
+        if moved > 0: pg.add([v.index], moved, "ADD")
+    for o, rep in ((parts[SHORTS], 18), (jacket, 3)): smooth_weights(o, rep)
     print(f"outfit: jacket {len(jacket.data.polygons)} f, socks {len(socks.data.polygons)} f, cap {len(cap.data.polygons)} f, tee -{len(gone_t)} v, shoes -{len(gone2)} v")
     return {"kid_jacket": jacket, "kid_socks": socks, "kid_cap": cap, "kid_brim_f": brims[0], "kid_brim_b": brims[1]}
 
