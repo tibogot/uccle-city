@@ -3,7 +3,12 @@
 // pump rollers, a dirt bowl, a sand patch, a 15 cm kerb, a 12 % slope, a 20 % one, roots, a wall, posts, a log, a car.
 // Placeholder rider + bike (viewer/bike/bikeModel.js), a bike chase camera, keyboard + gamepad, our own panel
 // (viewer/panelUI.js) for every constant, a telemetry strip. Sound: the speaker button (off by default). One fixed light set (sun + sky), never changed.
-// URL: ?spot=kicker (start there), ?slow=0.25, ?cam=low
+// URL: ?spot=kicker (start there; a park spot too: ?spot=quarter%20pipe), ?slow=0.25, ?cam=low
+// THE BMX PARK (2026-11-25, viewer/bike/bikePark.js, docs/BIKE.md "The BMX park"): z 116-232 - wooden kickers to landing
+// ramps, a dirt doubles line, whoops, a pump-track loop, a berm loop, a quarter pipe, a mini half-pipe, a spine, a funbox
+// with a rail, a stair set with a handrail, a long rail, a ledge, a wall ride, a drop-in tower. Its ground is ONE merged
+// mesh, its rails / coping one merged tube set; the panel's "Park" folder and keys 0 (the park) / N / B (next / previous
+// spot) put the bike at each feature with its speed.
 // THE KID (claude/kid, docs/KID.md): the real kid (models/characters/kid.glb) walks ON FOOT with the merged third-person
 // controller (viewer/character: the same WASD / arrows, Shift run, Space jump, C crouch) and gets ON / OFF the bike
 // with E (viewer/kid/kidMount.js); riding, his body is driven by the bike (viewer/kid/riderIK.js: hands on the grips,
@@ -16,7 +21,9 @@
 import * as THREE from "three/webgpu";
 import { attribute, positionWorld, floor, mod, mix, float, fract, smoothstep, min, vec3 } from "three/tsl";
 import { Panel } from "../viewer/panelUI.js";
-import { BIKE, BIKE_RANGES, SURFACES, SURF, DT, createBikeState, advanceBike, bikePose, bikeSpeed, getUp, groundQuery } from "../viewer/bike/bikePhysics.js";
+import { BIKE, BIKE_RANGES, BIKE_PARK, BIKE_PARK_RANGES, SURFACES, SURF, DT, createBikeState, advanceBike, bikePose, bikeSpeed, getUp, groundQuery } from "../viewer/bike/bikePhysics.js";
+import { PARK, PARK_SPOTS, PARK_WALLRIDES } from "../viewer/bike/bikePark.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { createBikeEnv } from "../viewer/bike/bikeEnv.js";
 import { FEATURES, testHeight, testSurface, testColliders, SPOTS, BOUNDS, testGroundRamped, testHeightRamped, testEdges } from "../viewer/bike/bikeGround.js";
 import { loadCityDocs, buildCitySpot } from "../viewer/bike/bikeCitySpot.js";
@@ -35,7 +42,7 @@ import { loadBmx } from "../viewer/kid/bmxModel.js";
 
 const qs = new URLSearchParams(location.search);
 const USE_KID = qs.get("kid") !== "0";
-const DEFAULTS = { ...BIKE }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
+const DEFAULTS = { ...BIKE }, PARK_DEFAULTS = { ...BIKE_PARK }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
 const renderer = new THREE.WebGPURenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
@@ -104,7 +111,20 @@ function gridMesh(x0, x1, z0, z1, res, keep = null, H = testHeight, Sf = testSur
 if (W.city) gridMesh(W.bounds.x0, W.bounds.x1, W.bounds.z0, W.bounds.z1, 0.25, null, W.drawH, W.surface);
 else {
 gridMesh(BOUNDS.x0, BOUNDS.x1, BOUNDS.z0, BOUNDS.z1, 1, (x, z) => !FEATURES.some((f) => inside(f, x, z)));
-for (const f of FEATURES) gridMesh(f.x0, f.x1, f.z0, f.z1, f.res);
+for (const f of FEATURES) if (!f.park) gridMesh(f.x0, f.x1, f.z0, f.z1, f.res);
+// the park: every feature's grid in ONE geometry (one draw), coloured by its material (wood / concrete / dirt)
+{
+  const geos = [];
+  for (const f of FEATURES) {
+    if (!f.park) continue;
+    const m = gridMesh(f.x0, f.x1, f.z0, f.z1, f.res);
+    scene.remove(m);
+    if (f.color != null) { const c = new THREE.Color(f.color), a = m.geometry.attributes.color; for (let i = 0; i < a.count; i++) a.setXYZ(i, c.r, c.g, c.b); }
+    geos.push(m.geometry);
+  }
+  const pm = new THREE.Mesh(mergeGeometries(geos), groundMat); pm.receiveShadow = true; pm.castShadow = true; scene.add(pm);
+  for (const g of geos) g.dispose();
+}
 }
 // skirts: a feature's border that stands above the base ground gets a vertical face down to it (the kerb, the slopes)
 if (!W.city) {
@@ -161,10 +181,11 @@ const solidMat = { [KIND.building]: new THREE.MeshStandardNodeMaterial({ color: 
     return P;
   };
   const benchMat = new THREE.MeshStandardNodeMaterial({ color: 0x8a5a33, roughness: 0.8 }), legMat = new THREE.MeshStandardNodeMaterial({ color: 0x3b3f44, roughness: 0.5, metalness: 0.5 });
+  const railMatP = new THREE.MeshStandardNodeMaterial({ color: 0x9aa3ab, roughness: 0.35, metalness: 0.8 }), parkMat = {};
   for (const p of CL.polys) {
     if (p.kind === KIND.island || p.kind === KIND.hedge && W.city) continue;
     const r = p.rings[0], cx = r.reduce((a, q) => a + q[0], 0) / r.length, cz = r.reduce((a, q) => a + q[1], 0) / r.length, gy = W.drawH(cx, cz);
-    if (p.what === "bench back") continue;          // (drawn with its bench)
+    if (p.what === "bench back" || p.noDraw) continue;          // (drawn with its bench; the park's rails / tower body: drawn elsewhere)
     if (p.what === "bench") {
       const b = p.bench, d = BENCH[b.piece] || BENCH.bench_street, c = Math.cos(b.yaw), sn = Math.sin(b.yaw), y = b.y || 0;
       const box = (u0, u1, v0, v1, y0, y1, mat) => push(mat, prism([[u0, v0], [u1, v0], [u1, v1], [u0, v1]].map(([u, v]) => [b.x + u * c + v * sn, b.z - u * sn + v * c]), y0, y1));
@@ -174,7 +195,7 @@ const solidMat = { [KIND.building]: new THREE.MeshStandardNodeMaterial({ color: 
       continue;
     }
     const y0 = p.drawBase ?? (p.base > -100 ? p.base : gy - 0.5), y1 = p.drawTop ?? p.top ?? (p.kind === KIND.car ? 1.45 : 2.5);
-    for (const ring of p.rings.slice(0, 1)) push(solidMat[p.kind] || solidMat[KIND.building], prism(ring, y0, y1));
+    for (const ring of p.rings.slice(0, 1)) push(p.rail ? railMatP : p.drawColor != null ? (parkMat[p.drawColor] ||= new THREE.MeshStandardNodeMaterial({ color: p.drawColor, roughness: 0.85 })) : solidMat[p.kind] || solidMat[KIND.building], prism(ring, y0, y1));
   }
   for (const [mat, P] of acc) {
     const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.computeVertexNormals();
@@ -182,17 +203,24 @@ const solidMat = { [KIND.building]: new THREE.MeshStandardNodeMaterial({ color: 
   }
   // the lab's handrail (an edge with no collider piece of its own: a steel tube + posts down to the steps)
   if (!W.city) {
-    const railMat = new THREE.MeshStandardNodeMaterial({ color: 0x9aa3ab, roughness: 0.35, metalness: 0.8 }), E = W.edges;
+    // (the park round: ONE merged geometry for every rail, its posts and the park's coping - was a mesh a segment)
+    const railMat = new THREE.MeshStandardNodeMaterial({ color: 0x9aa3ab, roughness: 0.35, metalness: 0.8 }), E = W.edges, parts = [];
+    const tube = (a, b, r, sides) => { const g = new THREE.CylinderGeometry(r, r, a.distanceTo(b), sides, 1, false); g.deleteAttribute("uv");
+      const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+      g.applyQuaternion(q); g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2); parts.push(g); };
     for (let k = 0; k < E.n; k++) {
       if (E.lineType[E.segLine[k]] !== EDGE.rail) continue;
       const o = k * 6, a = new THREE.Vector3(E.seg[o], E.seg[o + 1], E.seg[o + 2]), b = new THREE.Vector3(E.seg[o + 3], E.seg[o + 4], E.seg[o + 5]);
-      const L = a.distanceTo(b), m = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, L, 10), railMat);
-      m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); m.castShadow = true; scene.add(m);
-      for (const t of [0.05, 0.5, 0.95]) {
-        const q = a.clone().lerp(b, t), gy = testHeight(q.x, q.z), ph = q.y - gy;
-        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, ph, 8), railMat); post.position.set(q.x, gy + ph / 2, q.z); post.castShadow = true; scene.add(post);
-      }
+      tube(a, b, 0.022, 10);
+      const L = a.distanceTo(b), np = Math.max(2, Math.ceil(L / 2.5) + 1);
+      for (let j = 0; j < np; j++) { const q = a.clone().lerp(b, 0.04 + 0.92 * j / (np - 1)), gy = testHeight(q.x, q.z); if (q.y - gy > 0.05) tube(new THREE.Vector3(q.x, gy, q.z), q, 0.02, 8); }
     }
+    // the coping: a steel pipe along the top of the quarter pipe, the mini's two walls and the spine's peak
+    const Qp = PARK.qp, Mi = PARK.mini, Sp = PARK.spine;
+    for (const [x0, x1, z, y] of [[Qp.x0, Qp.x1, Qp.foot + Qp.smax, Qp.h], [Mi.x0, Mi.x1, Mi.foot1 - Mi.smax, Mi.h], [Mi.x0, Mi.x1, Mi.foot2 + Mi.smax, Mi.h], [Sp.x0, Sp.x1, Sp.peak, Sp.h]])
+      tube(new THREE.Vector3(x0, y + 0.01, z), new THREE.Vector3(x1, y + 0.01, z), 0.03, 10);
+    const rm = new THREE.Mesh(mergeGeometries(parts), railMat); rm.castShadow = true; scene.add(rm);
+    for (const g of parts) g.dispose();
   }
 }
 // the EDGE LAYER drawn (panel "Edges": kerb grey, ledge / wall orange, bench brown, rail blue, stairs green; grindable
@@ -215,21 +243,22 @@ const edgeLines = (() => {
   for (const c of CL.circles) { const m = new THREE.Mesh(new THREE.CylinderGeometry(c.r, c.r, 1.1, 12), pm); m.position.set(c.x, 0.55, c.z); m.castShadow = true; scene.add(m); } }
 
 // ---------------------------------------------------------------- the bike
-const env = createBikeEnv({ sets: () => [COL], ground: W.ground, edges: W.edges });
+const env = createBikeEnv({ sets: () => [COL], ground: W.ground, edges: W.edges, wallrides: W.city ? null : PARK_WALLRIDES });
 const model = createBikeModel(BIKE, { rider: !USE_KID });
 scene.add(model.root, model.fallen);
 const groundAt = (x, z) => W.height(x, z);
 const chase = new BikeCamera(camera, BIKE_CAMERA);
 if (qs.get("cam")) BIKE_CAMERA.mode = qs.get("cam");
 let s;
-const P = { pause: false, slow: +(qs.get("slow") || 1), spot: qs.get("spot") || (W.city ? (W.spots.stairs ? "stairs" : "centre") : "start"), info: "", card: true, edges: true };
+const P = { pause: false, slow: +(qs.get("slow") || 1), spot: qs.get("spot") || (W.city ? (W.spots.stairs ? "stairs" : "centre") : "start"), info: "", card: true, edges: true, park: "park overview" };
 // FEEL ROUND 3: the bike's sound (viewer/bike/bikeAudio.js), OFF by default: the speaker button (top centre, the city's
 // one sound switch: viewer/audio/soundGate.js) makes the context and bakes the textures in the background; off suspends it
 const snd = new BikeSound().followGate(() => s);
 soundGate.mountButton();
 function place(name) {
-  const [x, z, h] = W.spots[name] || Object.values(W.spots)[0];
+  const [x, z, h, v = 0] = W.spots[name] || (!W.city && PARK_SPOTS[name]) || Object.values(W.spots)[0];
   s = createBikeState(x, z, h, W.height(x, z));
+  if (v) { s.vx = Math.sin(h) * v; s.vz = Math.cos(h) * v; }       // (a park spot: the feature's speed)
   chase.reset(); P.spot = name;
   if (K.on) { mount.state = "riding"; mount.t = 0; mount.park.mode = "standing"; K.tp.on = false; K.tp.body.root.visible = true; camBlend.t = 1; }
 }
@@ -271,8 +300,15 @@ const keys = new BikeKeys({ onKey: (code) => {
   else if (code === "KeyG") { if (s.crashed) getUp(s, env); }
   else if (code === "Slash" || code === "F1") { P.card = !P.card; card.classList.toggle("hidden", !P.card); }
   else if (/^Digit[1-9]$/.test(code)) { const n = Object.keys(W.spots)[+code.slice(5) - 1]; if (n) { place(n); banner(n); } }
+  else if (!W.city && (code === "Digit0" || code === "KeyN" || code === "KeyB")) {
+    // the park: 0 = its overview, N / B = the next / previous feature
+    const names = Object.keys(PARK_SPOTS), i = names.indexOf(P.spot);
+    const n = code === "Digit0" ? names[0] : names[((i < 0 ? (code === "KeyN" ? -1 : 0) : i) + (code === "KeyN" ? 1 : -1) + names.length) % names.length];
+    place(n); P.park = n; banner(`park: ${n}`);
+  }
 } });
 
+window.__keys = keys;
 // ---------------------------------------------------------------- the controls card (rule 14: shown once + ?)
 const card = document.getElementById("card");
 card.textContent = [
@@ -286,6 +322,8 @@ card.textContent = [
   "             manual, nose dive, air pitch",
   "F            trick in the air (let go before landing!)",
   "R reset  G get up  V camera  P pause  1-9 spots",
+  "0 the BMX park   N / B next / previous park spot",
+  "             (the panel's Park folder: every feature)",
   "E            get on / off the bike (walk up to it;",
   "             off: stopped = it stands, rolling = it falls)",
   "",
@@ -337,11 +375,17 @@ fr.add(P, "slow", 0.05, 1, 0.05).name("time scale");
 fr.add(P, "spot", Object.keys(W.spots)).name("start spot").onChange((v) => place(v));
 fr.add(P, "edges").name("show the edge layer").onChange((v) => { edgeLines.visible = v; });
 fr.buttons([["reset bike (R)", () => place(P.spot)], ["get up (G)", () => s.crashed && getUp(s, env)],
-  ["camera (V)", () => banner(`camera: ${chase.next()}`)], ["constants to defaults", () => { Object.assign(BIKE, DEFAULTS); SURFACES.forEach((x, i) => Object.assign(x, SURF_DEFAULTS[i])); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }],
+  ["camera (V)", () => banner(`camera: ${chase.next()}`)], ["constants to defaults", () => { Object.assign(BIKE, DEFAULTS); Object.assign(BIKE_PARK, PARK_DEFAULTS); SURFACES.forEach((x, i) => Object.assign(x, SURF_DEFAULTS[i])); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }],
   ["copy constants (JSON)", () => navigator.clipboard?.writeText(JSON.stringify({ BIKE: changed(BIKE, DEFAULTS), SURFACES: SURFACES.map((x, i) => changed(x, SURF_DEFAULTS[i])) }, null, 1))]], 2);
 fr.add(P, "info").name("state").listen();
 function changed(o, d) { const r = {}; for (const k in o) if (o[k] !== d[k]) r[k] = o[k]; return r; }
+if (!W.city) {
+  const fp = ui.addFolder("Park", { id: "bike-park-spots", open: true });
+  fp.add(P, "park", Object.keys(PARK_SPOTS)).name("go to (0 / N / B)").onChange((v) => { place(v); banner(`park: ${v}`); });
+  fp.buttons(Object.keys(PARK_SPOTS).map((n) => [n, () => { P.park = n; place(n); banner(`park: ${n}`); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }, `ride the ${n} (with its speed)`]), 2);
+}
 const groups = {};
+for (const [k, [a, b, st, grp]] of Object.entries(BIKE_PARK_RANGES)) (groups[grp] ||= ui.addFolder(`Bike: ${grp}`, { id: `bike-${grp}`, open: false })).add(BIKE_PARK, k, a, b, st).name(k);
 for (const [k, [a, b, st, grp]] of Object.entries(BIKE_RANGES)) {
   (groups[grp] ||= ui.addFolder(`Bike: ${grp}`, { id: `bike-${grp}`, open: false })).add(BIKE, k, a, b, st).name(k);
 }
@@ -376,7 +420,7 @@ const graph = $("graph"), g2 = graph.getContext("2d");
 const HIST = 300, hist = { v: new Float32Array(HIST), lean: new Float32Array(HIST), slip: new Float32Array(HIST) };
 let hi = 0;
 
-window.__bike = { get state() { return s; }, BIKE, SURFACES, env, chase, place, P, K, mount, RIDE, MOUNT };
+window.__bike = { get state() { return s; }, BIKE, BIKE_PARK, SURFACES, env, chase, place, P, K, mount, RIDE, MOUNT, PARK, PARK_SPOTS, keys: null };
 
 // ---------------------------------------------------------------- loop
 const pose = {};
@@ -483,8 +527,8 @@ function writeTele() {
   $("ts").textContent = s.slip.toFixed(2); $("ta").textContent = (s.slipAngle * 57.3).toFixed(0);
   const flags = [s.skid && "SKID", s.wheelspin && "wheelspin", s.frontLock && "FRONT LOCK", s.washT > 0.05 && "washing"].filter(Boolean);
   $("tf").innerHTML = flags.length ? `<span class="warn">${flags.join(" ")}</span>` : `<span class="k">grip ok</span>`;
-  const st = s.crashed ? `<span class="warn">CRASH: ${s.crashCause}</span>` : s.grindSeg >= 0 ? `<span class="hot">${s.grindV < BIKE.grindMinSpeed ? "stall" : "grind"} ${EDGE_NAMES[s.grindType]} ${s.grindDist.toFixed(1)} m · balance ${(s.grindBal * 100).toFixed(0)}</span>` : s.air ? `<span class="hot">air ${s.airT.toFixed(2)} s</span>` : s.manual > 0 ? `<span class="hot">manual ${s.manual.toFixed(1)} s</span>`
-    : s.pushing ? "pushing" : s.footDown > 0.5 ? "foot down" : s.preload > 0 ? `preload ${(s.preload * 100).toFixed(0)} %` : `<span class="ok">riding</span>`;
+  const st = s.crashed ? `<span class="warn">CRASH: ${s.crashCause}</span>` : s.grindSeg >= 0 ? `<span class="hot">${s.grindV < BIKE.grindMinSpeed ? "stall" : "grind"} ${EDGE_NAMES[s.grindType]} ${s.grindDist.toFixed(1)} m · balance ${(s.grindBal * 100).toFixed(0)}</span>` : s.air ? `<span class="hot">${s.park.vertT >= 0 ? "vert " : ""}air ${s.airT.toFixed(2)} s</span>` : s.manual > 0 ? `<span class="hot">manual ${s.manual.toFixed(1)} s</span>`
+    : s.park.wallIdx >= 0 ? `<span class="hot">wall ride ${s.park.wallT.toFixed(2)} s</span>` : s.pushing ? "pushing" : s.footDown > 0.5 ? "foot down" : s.preload > 0 ? `preload ${(s.preload * 100).toFixed(0)} %` : `<span class="ok">riding</span>`;
   $("tst").innerHTML = st + ` <span class="k">hops ${s.hops} grinds ${s.grinds}${s.grindExit ? ` (off: ${s.grindExit})` : ""} crashes ${s.crashes}</span>`;
   const L = s.lastLanding;
   $("tland").textContent = L ? `last landing: ${L.band}${L.band === "clean" ? "" : ` (${L.why})`} (${L.wheel} first, ${(L.rel * 57.3).toFixed(0)}°, ${L.vn.toFixed(1)} m/s, ${L.air.toFixed(2)} s air)` : "";

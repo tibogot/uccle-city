@@ -115,7 +115,7 @@ export function addParkFeatures(feature, SURF) {
       else if ((s -= d.top) < d.downLen) h = d.h * (1 - sstep(0, 1, s / d.downLen) * 0.5 - 0.5 * s / d.downLen);
       void lip;
       return h * e;
-    }, 0.05, { park: true, color: C.dirt });
+    }, 0.08, { park: true, color: C.dirt });
   }
   // ---- whoops
   {
@@ -128,9 +128,9 @@ export function addParkFeatures(feature, SURF) {
   // ---- the pump-track loop (dirt) and the berm loop (concrete)
   {
     const T = P.pump, m = T.R + T.w / 2 + 2.2;
-    feature("park pump track", T.ax - m, T.bx + m, T.z - m, T.z + m, SURF.dirt, (x, z) => stadium(T, x, z, true), 0.15, { park: true, color: C.dirt });
+    feature("park pump track", T.ax - m, T.bx + m, T.z - m, T.z + m, SURF.dirt, (x, z) => stadium(T, x, z, true), 0.2, { park: true, color: C.dirt });
     const B = P.berms, mb = B.R + B.w / 2 + 2.2;
-    feature("park berm loop", B.ax - mb, B.bx + mb, B.z - mb, B.z + mb, SURF.asphalt, (x, z) => stadium(B, x, z, false), 0.15, { park: true, color: C.concrete });
+    feature("park berm loop", B.ax - mb, B.bx + mb, B.z - mb, B.z + mb, SURF.asphalt, (x, z) => stadium(B, x, z, false), 0.25, { park: true, color: C.concrete });
   }
   // ---- the skatepark (concrete)
   const Q = P.qp;
