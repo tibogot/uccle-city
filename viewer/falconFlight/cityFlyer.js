@@ -130,8 +130,13 @@ export class CityFlyer {
     this.background();
     // (the puff's material compiled now, all its cards at scale 0: no compile hitch at the first catch)
     if (this.puff) this.puff.mesh.visible = true;
+    // (round 3 part B: the held bird's material too, shown in the falcon's parked warm-up draw; one pipeline for every
+    // species: heldPrey.js shapes share their attributes)
+    const held = this.bird.held?.mesh;
+    if (held) held.visible = true;
     await this.warm(this.puff ? [this.bird.root, this.hints.group, this.fcam.streaks, this.puff.mesh] : [this.bird.root, this.hints.group, this.fcam.streaks]);
     if (this.puff && !this.puff.alive) this.puff.mesh.visible = false;
+    if (held && this.bird.prey !== held) held.visible = false;
   }
 
   /** the shaders of `roots` before they show: the page's precompile (scene pass target + MRT), then the bird drawn once
@@ -431,7 +436,7 @@ export class CityFlyer {
     const aim = inp.mouseAim && inp.mouse.locked && g.mode === "fly" ? (this._aim ??= new THREE.Vector3()).set(-Math.sin(inp.aim.yaw) * Math.cos(inp.aim.pitch), Math.sin(inp.aim.pitch), -Math.cos(inp.aim.yaw) * Math.cos(inp.aim.pitch)) : null;
     this.fovCity ??= this.camera.fov;
     this.fcam.update(dt, { pos: g.pos, va: f.va, V: g.mode === "fly" ? f.V : Math.max(f.V, 0.1), phi: f.phi, heading: f.heading, gamma: f.gamma, span: g.span, stun: f.stun, liftRate: f.lift, fold: f.fold, n: f.n },
-      { aim, steady: !!g.assist && f.assisted, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z), col: (this._colFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true)), sight: (this._sightFn ??= (x, z) => w.column(x, z, this.game.f.pos.y).floor), sightWhole: (this._sightWFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true).floor) });
+      { aim, sun: this.opts.lighting?.sunDir ?? null, steady: !!g.assist && f.assisted, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z), col: (this._colFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true)), sight: (this._sightFn ??= (x, z) => w.column(x, z, this.game.f.pos.y).floor), sightWhole: (this._sightWFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true).floor) });
     this.audio?.update(dt, { V: g.mode === "fly" ? f.V : 0, phi: f.phi, fold: f.fold, lift: f.lift, downstroke: this.bird.downstroke, flapLevel: f.flapLevel }, this.camera);
     const t6 = performance.now();
     c.game = t3 - t2; c.hints = t5 - t4; c.camera = t6 - t5;
@@ -515,7 +520,9 @@ ${g.assist ? `<span class="k">assist </span> ${ASSIST_NAMES[g.assist.mode] ?? g.
 <span class="k">mouse / A D steer · W S down / up · Space climb · Shift stoop
 E land · F talons · Q brake · V camera · click: mouse aim · Esc out</span>` : `<span class="k">W/S A/D fly · Space flap · Shift stoop · C half · Q flare
 F talons · E land · V camera · click: mouse aim · Esc out</span>`}`;
-    this.msg.innerHTML = g.messages.filter((m) => g.t - m.t < 4).map((m) => m.s).join("<br>");
+    // (falcon fun round 3 part B) one message at a time (falconGame.js funHud): the newest line, none under a banner
+    const msg = g.fun ? g.funHud().line : g.messages.filter((m) => g.t - m.t < 4).map((m) => m.s).join("<br>");
+    if (msg !== this._msgS) { this._msgS = msg; this.msg.innerHTML = msg; }
     const [aimEl, tgtEl, perchEl] = this.rings;
     if (this._aim && inp.mouseAim && inp.mouse.locked && g.mode === "fly") this.ring(aimEl, this.camera.position.clone().addScaledVector(this._aim, 50), true); else aimEl.style.display = "none";
     if (win && g.mode === "fly" && g.pigeons) { const p = g.pigeons.pos(win.i, {}); this.ring(tgtEl, new THREE.Vector3(p.x, p.y, p.z), true); tgtEl.className = `fring tgt${win.ok ? " ok" : ""}${win.near ? " near" : ""}`; } else tgtEl.style.display = "none";

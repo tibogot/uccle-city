@@ -14,6 +14,7 @@ const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const _g1 = new THREE.Vector3(), _g2 = new THREE.Vector3();
 const LIFTS = [1.5, 3, 5, 8], SIDES = [1, -1];
+const SUN_TIE = 0.15, SUN_INTO = [0, 0];     // (round 3 part B) the strike camera's side against the sun
 const _c = new THREE.Vector3(), _q = new THREE.Vector3(), _e = new THREE.Vector3(), _u = new THREE.Vector3(), _w = new THREE.Vector3(), _t = new THREE.Vector3(), _Y = new THREE.Vector3(0, 1, 0);
 
 export class FalconCamera {
@@ -58,6 +59,15 @@ export class FalconCamera {
     else out.set(b.pos.x - fx * 1.3 * sp, b.pos.y + 0.8 * sp, b.pos.z - fz * 1.3 * sp);
     lk.set(b.pos.x + fx * 0.1 * sp, b.pos.y - 0.22 * sp, b.pos.z + fz * 0.1 * sp);
     return out;
+  }
+  /** (round 3 part B) how much a camera at P looking at lk looks INTO the sun (sun: the unit vector toward it): the
+   *  horizontal view against the sun's azimuth, weighted by how low the sun is (+1 straight into a low sun, -1 the sun
+   *  straight behind, 0 overhead / none) */
+  sunInto(sun, P, lk) {
+    if (!sun) return 0;
+    const sh = Math.hypot(sun.x, sun.z), vx = lk.x - P.x, vz = lk.z - P.z, vl = Math.hypot(vx, vz);
+    if (sh < 1e-3 || vl < 1e-3) return 0;
+    return ((vx * sun.x + vz * sun.z) / (vl * sh)) * Math.min(1, sh / 0.5);
   }
   /** (round 3) a spot in free air with a clear line to the bird */
   freeSpot(b, o, P) {
@@ -254,14 +264,21 @@ export class FalconCamera {
     // the one nearer to where the camera is), else over and behind it
     if (sw > 0 && this.mode !== "head") {
       if (!this.strikeSide) {
-        let best = 0, bd = Infinity;
+        // (round 3 part B) both sides in free air: the one with the SUN BEHIND the camera (the lit side of the falcon and
+        // the pigeon; round 3 took the side nearer the camera, and on the sun side it looked into the light: a backlit
+        // silhouette, screenshot b2). Within SUN_TIE of each other (the sun high, or straight ahead): the nearer side.
+        let best = 0, bd = Infinity, bi = Infinity, bs = 0;
         for (const sd of SIDES) {
           this.strikeSpot(b, sd, _q, _w);
           if (!this.freeSpot(b, o, _q)) continue;
-          const d = _q.distanceToSquared(cam.position);
+          const d = _q.distanceToSquared(cam.position), into = this.sunInto(o.sun, _q, _w);
           if (d < bd) { bd = d; best = sd; }
+          if (into < bi) { bi = into; bs = sd; }
+          SUN_INTO[sd > 0 ? 1 : 0] = into;
         }
+        if (best && bs && bs !== best && Math.abs(SUN_INTO[1] - SUN_INTO[0]) > 2 * SUN_TIE) best = bs;
         this.strikeSide = best || 2;                                   // (2: over and behind)
+        this.strikeInto = best ? SUN_INTO[best > 0 ? 1 : 0] : 0;
       }
       this.strikeSpot(b, this.strikeSide === 2 ? 0 : this.strikeSide, _q, _w);
       const fl = o.col ? o.col(_q.x, _q.z).floor + 0.8 : -Infinity;

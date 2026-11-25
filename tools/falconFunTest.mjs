@@ -68,7 +68,7 @@ function buildRoosts() {
   for (let k = 0; k < 160; k++) out.push({ x: -50 + Math.random() * 100, y: 0.01, z: -140 + Math.random() * 60, yaw: k * 3.1, kind: "ground" });
   return out;
 }
-const world = { floor: roofAt, ground: () => 0, roosts: [] };
+const world = { floor: roofAt, ground: () => 0, roosts: [] }, WORLD0 = world;
 
 function fakeBird() { return { prey: null, downstroke: false, setSpan() {}, pose() {}, carry() { this.prey ??= {}; }, drop() { const p = this.prey; this.prey = null; return p; } }; }
 function fakeInput() {
@@ -80,8 +80,9 @@ function fakeInput() {
 }
 
 /** one game from the launch: T s of the simple player. Returns the catches, times, the easy attempts, the crashes */
-function play(sd, T = 120, high = false) {
+function play(sd, T = 120, high = false, opt = {}) {
   seed = sd;
+  const world = opt.world || WORLD0;
   world.roosts = buildRoosts();
   const P = new Pigeons({ world, roosts: world.roosts, home: { x: 0, z: -110 }, count: 150, scale: 1.4, ground: 0.4 });
   P.flockHomes = [{ x: 0, z: -110, r: 45, h: 28, w: 0.12 }, { x: 25, z: -140, r: 38, h: 40, w: -0.14 }];
@@ -90,9 +91,9 @@ function play(sd, T = 120, high = false) {
   // crashes in an auto-dive (or within 1.5 s after it): the dive's pull-out / the swoop; others (a low climb-out into a
   // wall: the flight assist's own business, unchanged by this branch) counted apart
   let crashes = 0, other = 0, contacts = 0, diveEnd = -9;
-  const say = g.say.bind(g); g.say = (m) => { if (/^hit /.test(m)) { if (g.fun?.diving || real - diveEnd < 1.5) crashes++; else other++; } if (/touched down/.test(m)) contacts++; if (TRACE) console.log(`  [${real.toFixed(1)}] ${m}`); say(m); };
+  const say = g.say.bind(g); g.say = (m) => { if (/^hit /.test(m)) { if (g.fun?.diving || real - diveEnd < 1.5) crashes++; else other++; } if (/touched down/.test(m)) contacts++; if (/^(CAUGHT|MISSED|DODGED)/.test(m)) HU.dupLines++; if (TRACE) console.log(`  [${real.toFixed(1)}] ${m}`); say(m); };
   const start = { x: 0, y: 30, z: -4.5 };
-  const starter = g.fun && !high ? placeStarter(P, start, { x: 0, z: -1 }) : null;
+  const starter = g.fun && !high ? placeStarter(P, start, { x: 0, z: -1 }, { clear: opt.clear }) : null;
   if (starter && g.fun) g.fun.starter = { i: starter.i, flock: P };
   if (TRACE) console.log("starter", JSON.stringify(starter));
   // (the game's tiercel: falconGameDef.js, an adult's stamina)
@@ -120,6 +121,11 @@ function play(sd, T = 120, high = false) {
   // (round 3) the smooth chase: in a steady auto-dive (the weight in, no avoid / guard, not within 1 s of a catch), the
   // heading's rate change (rad/s per s) and the chase camera's turn-rate change; the 99th percentile and the max
   const J = { w: [], c: [] }; let om0 = NaN, h0 = NaN, cd0 = null, comg0 = NaN, lastCatchReal = -9;
+  // (round 3 part B) ONE MESSAGE AT A TIME: what the HUD shows each frame (falconGame.js funHud: the banner, a line, the
+  // hint); every miss said and the catch after it on the same bird (game s between); the first "Got it!" (real s after
+  // the first catch); lines that repeat a banner (CAUGHT at .. / MISSED: ..). Round 3's HUD replayed alongside: its miss
+  // rule (a pass within 12 m, then 6 m away) and its lines (every line of the last 4 s of game time, stacked)
+  const HU = { frames: 0, multi: 0, missCatch: [], gotit: -1, firstReal: -1, dupLines: 0, missesSeen: 0, behind: 0, oldBoth: 0, oldPass: Infinity, oldMiss: [], lastMissT: new Map() };
   for (; real < T; real += dt, k++) {
     // ---- the simple player
     I.turn = 0; I.vert = 0; I.climb = 0; I.stoop = 0; I.half = 0; I.brake = 0; I.aim = null; inp.talons = false;
@@ -157,8 +163,19 @@ function play(sd, T = 120, high = false) {
       if (g.timeScale < 0.5) SK.acc += dt;
       if (g.timeScale >= 1) { g.timeScale = 1; SK.age = -1; SK.slow.push(SK.acc); SK.acc = 0; }
     }
+    const missesB = g.fun?.misses ?? 0;
     g.update(dt, null);
     if (g.fun?.diving) diveEnd = real;
+    if (g.fun) {
+      const H = g.funHud(); HU.frames++;
+      if ((H.banner ? 1 : 0) + (H.line ? 1 : 0) + (H.hint ? 1 : 0) > 1 || /<br>/.test(H.line)) HU.multi++;
+      if (H.hint === "gotit" && HU.gotit < 0) HU.gotit = real - HU.firstReal;
+      if (g.fun.misses > missesB) { const M = g.fun.lastMiss; HU.missesSeen++; HU.lastMissT.set(M.i, g.t); if (M.angle > Math.PI / 2 && M.closing < 0) HU.behind++; }
+      // (round 3's miss rule on the same window: its line stays 4 s of game time)
+      const W = g.window;
+      if (W && g.fun.diving) { HU.oldPass = Math.min(HU.oldPass, W.d); if (HU.oldPass < 12 && W.d > HU.oldPass + 6) { HU.oldMiss.push({ t: g.t, i: W.i }); HU.oldPass = Infinity; } }
+      if (!W || g.target !== HU.oldTgt) { HU.oldPass = Infinity; HU.oldTgt = g.target; }
+    }
     if (g.mode === "fly") {
       Object.assign(cb, { V: f.V, phi: f.phi, heading: f.heading, gamma: f.gamma, span: g.span, stun: f.stun, liftRate: f.lift, fold: f.fold, n: f.n });
       co.aim = null; co.steady = !!g.assist;
@@ -194,7 +211,15 @@ function play(sd, T = 120, high = false) {
     }
     if (g.score.catches > lastCatches) {
       lastCatches = g.score.catches;
-      if (first < 0) { first = real; firstTame = !!g.fun?.firstWasTame; }
+      if (first < 0) { first = real; firstTame = !!g.fun?.firstWasTame; HU.firstReal = real; }
+      if (g.fun) {
+        const ci = g.fun.lastCaughtI;
+        if (HU.lastMissT.has(ci)) HU.missCatch.push(g.t - HU.lastMissT.get(ci));
+        HU.lastMissT.clear();
+        // (round 3's HUD: a MISSED line said within 4 s of game time before the catch shows with the CAUGHT banner)
+        if (HU.oldMiss.some((m) => g.t - m.t < 4)) HU.oldBoth++;
+        HU.oldMiss.length = 0;
+      }
       if (g.fun) { SK.age = 0; SK.acc = 0; g.timeScale = strikeScale(0); fc.strike(); SK.n++; lastCatchReal = real; }
       if (cur && !cur.done) { cur.caught = true; cur.done = true; }
     }
@@ -210,7 +235,7 @@ function play(sd, T = 120, high = false) {
   const pct = (a, q) => { if (!a.length) return 0; const b = [...a].sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(q * b.length))]; };
   const strike = { n: SK.n, slow: SK.slow, dMax: SK.dMax, scr: SK.scr, step: SK.step, held: SK.held, inside: SK.inside };
   const jerk = { w99: pct(J.w, 0.99), wMax: pct(J.w, 1), c99: pct(J.c, 0.99), cMax: pct(J.c, 1), n: J.w.length };
-  return { strike, jerk, misses: g.fun?.misses ?? 0, camOut, firstTame, first, catches: g.score.catches, points: g.score.points, crashes, other, contacts, maxKmh: Math.round(maxV * 3.6), easyCaught: easy.filter((a) => a.caught).length, easyTried: easy.length, attempts: attempts.length, escapes: P.escapes, runs: g.fun?.run.done ?? 0, starter: !!starter };
+  return { hud: HU, starterInfo: starter, strike, jerk, misses: g.fun?.misses ?? 0, camOut, firstTame, first, catches: g.score.catches, points: g.score.points, crashes, other, contacts, maxKmh: Math.round(maxV * 3.6), easyCaught: easy.filter((a) => a.caught).length, easyTried: easy.length, attempts: attempts.length, escapes: P.escapes, runs: g.fun?.run.done ?? 0, starter: !!starter };
 }
 
 /** a straight stoop from h m over flat ground (or the town), Shift held 25 s, the fun arcade (or not) */
@@ -309,7 +334,9 @@ async function feathers() {
  *  struck 3.7 m off (the blend in the slow motion), then 7 s of banks, dives, flaps, a landing flare, a perch and the
  *  take-off: the pigeon's belly to the talons' grip point (m), how far it rises over the grip (into the falcon), body
  *  vertices of the falcon (not its legs) inside the pigeon's box, the pigeon's largest step in the blend */
-async function grip() {
+let RIG = null;
+async function rig() {
+  if (RIG) return RIG;
   const { register } = await import("node:module");
   // (the viewer's import map takes meshoptimizer from the CDN; its simplifier only builds the far LOD: stubbed here)
   register("data:text/javascript," + encodeURIComponent(`export async function resolve(s, c, n) { if (s === "meshoptimizer/simplifier") return { url: "data:text/javascript," + encodeURIComponent("export const MeshoptSimplifier = { ready: Promise.resolve(), simplify: (i) => [i, 0] };"), shortCircuit: true }; return n(s, c); }`));
@@ -319,11 +346,15 @@ async function grip() {
   const { FalconBird } = await import("../viewer/falconFlight/falconBird.js");
   const A = await loadFalconAssets();
   console.error = warn;
-  const prey = A.nest.scene.getObjectByName("prey_carry");
+  return (RIG = { A, FalconBird, prey: A.nest.scene.getObjectByName("prey_carry") });
+}
+/** (round 3 part B) look: the held bird as its flock draws it (heldPrey.js { shape, scale, tint }); null: prey_carry */
+async function grip(look = null) {
+  const { A, FalconBird, prey } = await rig();
   const b = new FalconBird(A, 2.0);
   const pos = new THREE.Vector3(0, 40, 0), fl = { gamma: -0.1, alpha: 0.1, phi: 0, heading: 0, fold: 0.2, flapLevel: 1, brake: 0, V: 25 };   // (the carry's first state: no jump in the root at the strike)
   b.pose(1 / 60, pos, fl, { mode: "fly", talons: 1 });
-  b.carry(prey, null, { x: 2, y: 38.5, z: -3 });
+  b.carry(prey, null, { x: 2, y: 38.5, z: -3 }, look);
   const mesh = b.mesh, P = mesh.geometry.attributes.position, SI = mesh.geometry.attributes.skinIndex, SW = mesh.geometry.attributes.skinWeight;
   const legs = new Set(mesh.skeleton.bones.map((o, i) => (/Leg|Foot|Toe/.test(o.name) ? i : -1)).filter((i) => i >= 0));
   const body = [];
@@ -358,6 +389,100 @@ async function grip() {
     if (k % 12 === 0 && b.hold.perch < 0.02) pen();
   }
   return { errMax, topMax, inside, samples, step, held, span: b.span };
+}
+
+// ------------------------------------------------------------------------------------------------ round 3 part B
+/** THE HELD BIRD IS THE CAUGHT BIRD: a square flock (a pigeon, a jackdaw, a racer: their own tints) and sky slots (a
+ *  gull, a jackdaw, a starling, a sky pigeon) through the PreyMux; for each, the carry at a catch (falconGame.js
+ *  funCatch: P.heldLook -> carry) holds that species' shape, its flock's tint and draw size (the held bird's length
+ *  0.85-1.35 x the flock bird's). old: round 3's carry (no look: the nest's prey_carry for every catch) */
+async function heldSpecies(old) {
+  const { A, FalconBird, prey } = await rig();
+  const { PreyMux } = await import("../viewer/falconGame/hunt.js");
+  const { GpuPrey } = await import("../viewer/falconGame/gpuPrey.js");
+  const { SLOTS, TOTAL } = await import("../viewer/birds/skyFlocks.js");
+  const { heldShapes } = await import("../viewer/falconFlight/heldPrey.js");
+  const { pigeonGeometry } = await import("../viewer/falconFlight/pigeons.js");
+  const { SPECIES } = await import("../viewer/birds/birdMesh.js");
+  seed = 31;
+  const R = buildRoosts();
+  const P = new Pigeons({ world: { ...world, roosts: R }, roosts: R, home: { x: 0, z: -110 }, count: 150, scale: 1.4, jackdaws: 0.12, ground: 0.4 });
+  const F = new Float32Array(TOTAL * 12), rows = SLOTS.map(() => [{ x: 0, y: 0, z: 0, w: 0 }, { w: 1 }, { w: 1 }, { y: 8 }]);
+  SLOTS.forEach((s, k) => { for (let j = 0; j < 8; j++) { const o = (s.start + j) * 12; F[o] = 50 * k; F[o + 1] = 120; F[o + 2] = j * 5; F[o + 4] = 10; F[o + 11] = 1; } });
+  const gpu = new GpuPrey({ sky: { slotOn: () => true, row: (k, r) => rows[k][r], kill() {} } });
+  gpu.copy(F); gpu.cleared = false;
+  const mux = new PreyMux(gpu); mux.sync([P], { fun: {}, target: -1 });
+  const G = heldShapes(), pg = pigeonGeometry(); pg.computeBoundingBox();
+  const lenOf = (bb) => bb.max.z - bb.min.z, flockLen = { square: lenOf(pg.boundingBox) };
+  for (const s of SPECIES) flockLen[s.name] = s.len * (0.9 + s.tail);   // (the near bird, skyFlocks.js: beak tip +0.52 x len .. the tail's tip -(0.38 + tail) x len)
+  const cases = [];
+  const jd = P.jackdaw.indexOf(1), rc = P.kind.indexOf(2), nm = P.kind.findIndex((k, i) => k === 1 && !P.jackdaw[i]);
+  for (const i of [nm, jd, rc]) cases.push({ i: mux.index(P, i), want: "square", tint: [...P.mesh.geometry.attributes.iTint.array.slice(i * 3, i * 3 + 3)], scale: P.scale, label: P.jackdaw[i] ? "square jackdaw" : P.kind[i] === 2 ? "square racer" : "square pigeon" });
+  for (const key of ["gulls", "jackdaws", "starlings", "pigeons"]) {
+    const s = SLOTS.find((q) => q.key === key);
+    cases.push({ i: 512 + s.start + 2, want: SPECIES[s.species].name, tint: [1, 1, 1], scale: null, label: `sky ${key}` });
+  }
+  const out = [];
+  for (const c of cases) {
+    const b = new FalconBird(A, 2.0);
+    b.pose(1 / 60, new THREE.Vector3(0, 40, 0), { gamma: 0, alpha: 0, phi: 0, heading: 0, fold: 0.2, flapLevel: 0, brake: 0, V: 20 }, { mode: "fly", talons: 1 });
+    const look = old ? null : mux.heldLook(c.i, {});
+    b.carry(prey, null, { x: 1, y: 39, z: -2 }, look);
+    const p = b.prey, got = Object.entries(G).find(([, g]) => g === p.geometry)?.[0] ?? (p.geometry === prey.geometry ? "prey_carry" : "?");
+    const tint = b.held && p === b.held.mesh ? [b.held.tint.value.r, b.held.tint.value.g, b.held.tint.value.b] : null;
+    const tintOK = !!tint && tint.every((v, k) => Math.abs(v - c.tint[k]) < 1e-4);
+    if (!p.geometry.boundingBox) p.geometry.computeBoundingBox();
+    const scale = b.hold?.s ?? 0, len = lenOf(p.geometry.boundingBox) * scale, fl = flockLen[c.want] * (c.scale ?? look?.scale ?? 1);
+    const sizeOK = len / fl > 0.85 && len / fl < 1.35 && (c.scale == null ? scale >= 0.92 && scale <= 1.08 : Math.abs(scale - c.scale) < 1e-6);
+    out.push({ label: c.label, want: c.want, got, ok: got === c.want && tintOK && sizeOK, tintOK, sizeOK, ratio: len / fl });
+  }
+  return out;
+}
+
+/** THE TUTORIAL PIGEON IN OPEN AIR: the test Place with street trees along row A (in front of it and behind it, crowns
+ *  12 m across, tops ~15 m over the 12 m ridges) round the spot round 3 picked; the world's column has the crowns as
+ *  cityStream.js does (the solid core, the brush, the treeList grid), so the avoid sees them */
+const TREES = [];
+for (const z of [-40, -66]) for (let x = -20; x <= 20; x += 10) TREES.push({ x, z, cy: 10, Rh: 6, Rv: 5.5 });
+const treeWorld = {
+  floor: roofAt, ground: () => 0, roosts: [],
+  // (cityStream.js treeList's layout: one grid cell over the test Place; T: cx, cz, cy, Rh, Rv, trunk x, z, r)
+  treeList: [{ x0: -200, z0: -300, cell: 500, nx: 1, nz: 1, start: [0, TREES.length], idx: TREES.map((_, k) => k), T: TREES.flatMap((t) => [t.x, t.z, t.cy, t.Rh, t.Rv, t.x, t.z, 0.3]) }],
+  _o: { floor: 0, ceil: Infinity, brush: 0, tree: null, ceilTree: null, open: false },
+  column(x, z, y) {
+    const o = this._o; o.ceil = Infinity; o.brush = 0; o.tree = null; o.ceilTree = null;
+    let h = roofAt(x, z);
+    for (let k = 0; k < TREES.length; k++) {
+      const t = TREES[k], dx = x - t.x, dz = z - t.z, d2 = dx * dx + dz * dz;
+      if (d2 < 0.09 && t.cy > h) { h = t.cy; o.tree = k; }
+      if (d2 >= t.Rh * t.Rh) continue;
+      const dy = (y - t.cy) / t.Rv, q2 = d2 / (t.Rh * t.Rh) + dy * dy;
+      if (q2 < 1 && 1 - Math.sqrt(q2) > o.brush) o.brush = 1 - Math.sqrt(q2);
+      const a = t.Rh * 0.6, s2 = d2 / (a * a);
+      if (s2 >= 1) continue;
+      const hv = t.Rv * 0.85 * Math.sqrt(1 - s2), lo = t.cy - hv, hi = t.cy + hv;
+      if (y >= lo) { if (hi > h) { h = hi; o.tree = k; } } else if (lo < o.ceil) { o.ceil = lo; o.ceilTree = k; }
+    }
+    o.floor = h;
+    return o;
+  },
+};
+
+/** THE STRIKE CAMERA AGAINST THE SUN: a falcon flying -z at 50 m over open ground, a low sun (25 deg) to its right or its
+ *  left; the strike camera's side and how much it looks into the sun (falconCamera.js sunInto: +1 straight into it).
+ *  useSun = false: round 3's pick (the side nearer the chase camera, the sun not counted) */
+function strikeSun(sunX, useSun) {
+  const cam = new THREE.PerspectiveCamera(58, 16 / 9, 0.05, 8000), fc = new FalconCamera(cam, new THREE.Scene());
+  Object.assign(fc.params, CAM_FUN);
+  const b = { pos: new THREE.Vector3(0, 50, 0), va: { x: 0, y: 0, z: -20 }, V: 20, phi: 0, heading: 0, gamma: 0, span: 2, stun: 0, liftRate: 0, fold: 0, n: 1 };
+  const sun = new THREE.Vector3(sunX, Math.tan(25 / 57.3), 0).normalize();
+  const o = { aim: null, steady: true, look: { yaw: 0, pitch: 0 }, zoom: 1, perched: false, perchYaw: 0, floor: () => 0, col: () => ({ floor: 0, ceil: Infinity }), sight: () => 0, sun: useSun ? sun : null };
+  for (let k = 0; k < 30; k++) { b.pos.z -= 20 / 60; fc.update(1 / 60, b, o); }
+  fc.strike();
+  for (let k = 0; k < 30; k++) { b.pos.z -= 20 / 60; fc.update(1 / 60, b, o); }
+  const side = fc.strikeSide, P = new THREE.Vector3(), L = new THREE.Vector3();
+  fc.strikeSpot(b, side === 2 ? 0 : side, P, L);
+  return { side, into: fc.sunInto(sun, P, L) };
 }
 
 // ------------------------------------------------------------------------------------------------ run
@@ -410,7 +535,31 @@ if (!OLD) {
   check("round 3: a miss is said (DODGED! / MISSED)", S.some((r) => r.misses > 0), `misses ${S.map((r) => r.misses).join(", ")}`);
   const FP = await feathers();
   check("round 3: the feather puff: a fixed pool, static buffer, feathers at 0.5 s, all gone and hidden by 2.2 s, reused", FP.pool && FP.staticUse && FP.a05 >= FP.n * 0.8 && FP.end === 0 && FP.hidden && FP.again === FP.n, `${FP.a05} / ${FP.n} at 0.5 s, ${FP.end} at 2.2 s, hidden ${FP.hidden}, again ${FP.again}, pool ${FP.pool}, static ${FP.staticUse}`);
-  const GR = await grip();
+  // (round 3 part B: every held shape at its largest drawn size: the square pigeon x1.4, each sky species x1.08; round
+  // 3's prey_carry kept as the reference row)
+  const { SHAPES } = await import("../viewer/falconFlight/heldPrey.js");
+  const GRs = [["prey_carry (round 3)", null], ...SHAPES.map((s) => [s, { shape: s, scale: s === "square" ? 1.4 : 1.08, tint: [1, 1, 1] }])];
+  const GRr = [];
+  for (const [n, L] of GRs) GRr.push([n, await grip(L)]);
+  check("round 3B: every held bird IN the talons (each species at its drawn size, the real rig, a 7 s carry): belly to the grip <= 4 cm, no falcon body vertex inside it, the blend with no step > 0.35 m a frame", GRr.every(([, GR]) => GR.held > 200 && GR.errMax <= 0.04 && GR.inside === 0 && GR.samples > 20 && GR.step <= 0.35), GRr.slice(1).map(([n, GR]) => `${n}: ${(GR.errMax * 100).toFixed(1)} cm, inside ${GR.inside}, step ${GR.step.toFixed(2)} m, top ${(GR.topMax * 100).toFixed(1)} cm`).join("; "));
+  // ---- round 3 part B (the coordinator's review of the round 3 screenshots, 2026-11-25)
+  const HUs = S.map((r) => r.hud), mc = HUs.flatMap((h) => h.missCatch);
+  check("round 3B: one message at a time (the banner, a line or the hint: never two; no line repeating a banner)", HUs.every((h) => h.frames > 1000 && h.multi === 0 && h.dupLines === 0), HUs.map((h) => `${h.multi} / ${h.dupLines}`).join(", ") + " (frames with two / CAUGHT-MISSED lines)");
+  check("round 3B: never MISSED and CAUGHT for one pass: a miss only after the falcon went by the bird (behind it, the gap opening), the same bird caught >= 1 s of game time after its miss (it came round)", HUs.every((h) => h.behind === h.missesSeen) && mc.every((x) => x >= FUN.miss.hold + 0.5), `misses ${HUs.map((h) => h.missesSeen).join(", ")} (behind ${HUs.map((h) => h.behind).join(", ")}); the same bird caught after its miss ${mc.length ? `${Math.min(...mc).toFixed(1)}-${Math.max(...mc).toFixed(1)} s later` : "never"}`);
+  const oldBoth = HUs.reduce((a, h) => a + h.oldBoth, 0);
+  check("round 3B self-test: round 3's HUD showed a MISSED line under the CAUGHT banner (its miss rule, its 4 s of lines)", oldBoth > 0, `${oldBoth} catches with a MISSED line still up (${HUs.map((h) => h.oldBoth).join(", ")})`);
+  check("round 3B: the first catch's \"Got it!\" hint only after its banner faded", HUs.every((h) => h.gotit >= FUN.banner && h.gotit < FUN.banner + 0.5), HUs.map((h) => `${h.gotit.toFixed(2)} s`).join(", ") + ` (the banner ${FUN.banner} s)`);
+  const HS = await heldSpecies(false), HO = await heldSpecies(true);
+  check("round 3B: the held bird is the caught bird (its species' shape, its flock's tint, its drawn size)", HS.every((c) => c.ok), HS.map((c) => `${c.label}: ${c.got}${c.ok ? "" : ` (want ${c.want}, tint ${c.tintOK}, size ${c.sizeOK})`} x${c.ratio.toFixed(2)}`).join("; "));
+  check("round 3B self-test: round 3's carry held the nest's grey prey_carry for every catch", HO.every((c) => c.got === "prey_carry" && !c.ok), HO.map((c) => `${c.label}: ${c.got}`).join("; "));
+  const TS = [], TN = [];
+  for (let s = 0; s < 3; s++) { TS.push(play(2000 + s * 7919, 30, false, { world: treeWorld })); TN.push(play(2000 + s * 7919, 30, false, { world: treeWorld, clear: false })); }
+  check(`round 3B: the tutorial pigeon in open air (no tree crown within ${FUN.starterClear} m, nothing on the line from the launch: the world's tree data) and caught first within 8 s`, TS.every((r) => r.starterInfo?.clear && r.starterInfo.gap >= FUN.starterClear && r.first >= 0 && r.first <= 8 && r.firstTame), TS.map((r) => `crowns ${r.starterInfo?.gap >= FUN.starterClear ? ">= " : ""}${r.starterInfo?.gap?.toFixed(1)} m off at (${r.starterInfo?.x.toFixed(0)}, ${r.starterInfo?.z.toFixed(0)}), first ${f1(r.first)}`).join("; "));
+  check("round 3B self-test: round 3's pick (by distance alone) sits among the crowns", TN.every((r) => r.starterInfo && r.starterInfo.gap < FUN.starterClear), TN.map((r) => `crowns ${r.starterInfo?.gap?.toFixed(1)} m off, first ${f1(r.first)}`).join("; "));
+  const SR = strikeSun(1, true), SL = strikeSun(-1, true), SO = [strikeSun(1, false), strikeSun(-1, false)];
+  check("round 3B: the strike camera has the sun behind it (a low sun to the right / left: the camera on that side, looking away from it)", SR.side === 1 && SL.side === -1 && SR.into < -0.5 && SL.into < -0.5, `sun right: side ${SR.side}, into ${SR.into.toFixed(2)}; sun left: side ${SL.side}, into ${SL.into.toFixed(2)}`);
+  check("round 3B self-test: round 3's pick (the nearer side) looks into a low sun on one side", SO.some((r) => r.into > 0.5), SO.map((r) => `side ${r.side}, into ${r.into.toFixed(2)}`).join("; "));
+  const GR = GRr[0][1];
   check("round 3: the pigeon held IN the talons (the real rig, a 7 s carry): belly to the grip <= 4 cm, no falcon body vertex inside it, the strike's blend with no step > 0.35 m a frame", GR.held > 200 && GR.errMax <= 0.04 && GR.inside === 0 && GR.samples > 20 && GR.step <= 0.35, `grip error max ${(GR.errMax * 100).toFixed(1)} cm over ${GR.held} frames, body vertices inside ${GR.inside} (${GR.samples} poses), blend step ${GR.step.toFixed(2)} m, its top ${(GR.topMax * 100).toFixed(1)} cm over the grip`);
   // the self-test: the old game fails the catch check
   const me = fileURLToPath(import.meta.url);

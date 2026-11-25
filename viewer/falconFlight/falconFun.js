@@ -47,7 +47,13 @@ export const FUN = {
   strike: { punch: 0.08, slow: 0.22, hold: 0.38, ease: 0.35, camIn: 0.22, camHold: 0.65, camOut: 1.15, grip: 0.1, feathers: 22 },
   near: { d: 60, cone: 1.15 },     // (round 3) nothing in the lock cone: a bird crossing within 60 m, 1.15 rad of the view
   smooth: { tau: 0.16, rate: 2.6 },  // (round 3) the auto-dive's aim eased (s) and rate-limited (rad/s): no jerk on a switch
-  miss: { pass: 12, away: 6 },      // (round 3) a pass within 12 m of the locked bird, then 6 m farther without a catch: "MISSED"
+  miss: { pass: 12, away: 6, hold: 0.5, avoid: 0.3 },  // (round 3) a pass within 12 m of the locked bird, then 6 m farther without a catch: "MISSED"
+  // (round 3 part B) ... and only once the falcon has gone BY it (the bird behind it, the gap opening), not held off it by
+  // the avoid (avoiding > 0.3 at the closest point: circling a bird in the trees is no pass), said after `hold` s of game
+  // time with no catch (a catch in between cancels it: never a MISSED and a CAUGHT for one pass)
+  banner: 1.8,             // (round 3 part B) real s the CAUGHT / MISSED banner shows (hunt.js CSS fgban): nothing else meanwhile
+  gotIt: 5,                // (round 3 part B) real s the "Got it! Follow the arrow" hint shows AFTER the first catch's banner
+  starterClear: 10,        // (round 3 part B) m of clear air round the tame first pigeon: no tree crown within it (placeStarter)
   cool: 2.5,               // s after a catch before the next lock (the prey taken, the next bird picked)
   giveUp: 6,               // s held without getting closer: the lock lets that bird go (8 s skipped)
   slow: { tti: 0.3, scale: 0.35, max: 0.45 },   // the slow motion before contact: under 0.3 s to go, x0.35, at most 0.45 s a target
@@ -74,6 +80,8 @@ export class FunState {
     this.w = 0;                  // the auto-dive's weight (0..1, eased)
     this.psiS = NaN; this.gS = 0; // (round 3) the eased aim (heading, path angle)
     this.passD = Infinity; this.misses = 0; this.lastMiss = null;   // (round 3) the pass on the locked bird, the misses
+    this.passAvoid = 0; this.missPend = null; this.missCancel = 0;   // (round 3 part B) the avoid at the closest point, a miss waiting FUN.miss.hold
+    this.realT = 0; this.banner = null;  // (round 3 part B) real s; the banner showing { kind: caught | missed | dodged, t (real), gt (game) }
     this.strikes = 0;            // (round 3) catches presented (hunt.js / falconCamera.js read it)
     this.diving = false;         // the strike button held with a lock
     this.held = false;
@@ -237,23 +245,74 @@ export function strikeScale(t) {
 
 function fmt(s) { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 
+/** (round 3 part B) the gap (m) from (x, z) to the nearest tree crown whose height range meets [y - 2, y + 15] (its
+ *  edge: the horizontal distance less its radius), at most R; the world's crowns (cityStream.js treeList: the drawn
+ *  street trees' ellipsoids, an 8 m bucket grid); R with no trees */
+export function crownGap(world, x, y, z, R) {
+  let g = R;
+  const L = world?.treeList;
+  if (!L) return g;
+  for (const td of L) {
+    const m = R + 12, i0 = Math.max(0, Math.floor((x - m - td.x0) / td.cell)), i1 = Math.min(td.nx - 1, Math.floor((x + m - td.x0) / td.cell));
+    const j0 = Math.max(0, Math.floor((z - m - td.z0) / td.cell)), j1 = Math.min(td.nz - 1, Math.floor((z + m - td.z0) / td.cell));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const q = j * td.nx + i, T = td.T;
+      for (let k = td.start[q], e = td.start[q + 1]; k < e; k++) {
+        const b = td.idx[k] * 8, cy = T[b + 2], Rv = T[b + 4];
+        if (cy + Rv < y - 2 || cy - Rv > y + 15) continue;
+        const d = Math.hypot(T[b] - x, T[b + 1] - z) - T[b + 3];
+        if (d < g) g = d;
+      }
+    }
+  }
+  return g;
+}
+/** (round 3 part B) the open air round a roost: the crowns' gap (crownGap, up to `R`), and whether a wall / roof rises
+ *  more than 3 m over it within 6 m (8 directions) or a crown stands on the line from the launch (6 points) */
+export function starterAir(world, q, start, R = FUN.starterClear) {
+  const gap = crownGap(world, q.x, q.y, q.z, R);
+  let wall = 0, line = 0;
+  const fl = (x, z, y) => (world.column ? world.column(x, z, y).floor : world.floor ? world.floor(x, z) : -Infinity);
+  for (let a = 0; a < 8; a++) { const x = q.x + 6 * Math.cos(a * Math.PI / 4), z = q.z + 6 * Math.sin(a * Math.PI / 4); if (fl(x, z, q.y + 20) > q.y + 3) wall++; }
+  for (let s = 0.25; s < 0.95; s += 0.12) {
+    const x = start.x + (q.x - start.x) * s, y = start.y + (q.y + 2 - start.y) * s, z = start.z + (q.z - start.z) * s;
+    if (crownGap(world, x, y, z, 3) < 3 || fl(x, z, y) > y - 1) line++;
+  }
+  return { gap, wall, line, clear: gap >= R && !wall && !line };
+}
+
 /**
  * THE FIRST CATCH (near-free): a tame pigeon on a roof / ridge right below the launch: 30-90 m ahead along `out`, 6-35 m
  * under the start, the nearest to 55 m ahead and 18 m down. F: the Pigeons; start {x, y, z}; out {x, z} (horizontal).
  * Moves one perched bird there (an easy one, tame: it stays until the falcon is 8 m off). Returns { i, r } or null.
+ * (round 3 part B) in OPEN AIR: no tree crown within FUN.starterClear m, no wall rising over it, nothing on the line from
+ * the launch (starterAir, the world's own tree / building data). Round 3 took the best spot by distance alone: in the city
+ * it sat among the street trees' crowns, the avoid kept the falcon 8-20 m off it for ~12 s. With no clear spot in the
+ * 30-90 m band the band widens to 130 m, then the clearest one wins. opts.clear = false: round 3's pick (the self-test).
  */
-export function placeStarter(F, start, out) {
+export function placeStarter(F, start, out, opts = {}) {
   if (!F?.roosts?.length || !F.kind) return null;
-  const ol = Math.hypot(out.x, out.z) || 1, ox = out.x / ol, oz = out.z / ol;
+  const ol = Math.hypot(out.x, out.z) || 1, ox = out.x / ol, oz = out.z / ol, W = F.world, useAir = opts.clear !== false && !FUN_OLD;
   let best = -1, bs = Infinity;
-  for (let k = 0; k < F.roosts.length; k++) {
-    const q = F.roosts[k], dx = q.x - start.x, dz = q.z - start.z, h = Math.hypot(dx, dz), drop = start.y - q.y;
-    if (h < 30 || h > 90 || drop < 6 || drop > 35) continue;
-    if ((dx * ox + dz * oz) / h < 0.8) continue;
-    // (straight ahead: the launch's view centre, where the lock looks)
-    const side = Math.abs(dx * oz - dz * ox);
-    const s = Math.abs(h - 50) + Math.abs(drop - 18) * 1.5 + side * 2 + (q.kind === "ground" ? 8 : 0);
-    if (s < bs) { bs = s; best = k; }
+  for (let pass = 0; pass < (useAir ? 3 : 1); pass++) {
+    const hMax = pass ? 130 : 90, last = pass === 2;
+    for (let k = 0; k < F.roosts.length; k++) {
+      const q = F.roosts[k], dx = q.x - start.x, dz = q.z - start.z, h = Math.hypot(dx, dz), drop = start.y - q.y;
+      if (h < 30 || h > hMax || drop < 6 || drop > 35) continue;
+      if ((dx * ox + dz * oz) / h < 0.8) continue;
+      // (straight ahead: the launch's view centre, where the lock looks)
+      const side = Math.abs(dx * oz - dz * ox);
+      let s = Math.abs(h - 50) + Math.abs(drop - 18) * 1.5 + side * 2 + (q.kind === "ground" ? 8 : 0);
+      if (useAir) {
+        if (q.kind === "tree") continue;
+        const A = starterAir(W, q, start);
+        // (the third pass: none clear, the clearest: the crowns' gap counts, a wall or the line a lot)
+        if (!A.clear && !last) continue;
+        if (last) s += (FUN.starterClear - A.gap) * 20 + A.wall * 40 + A.line * 40;
+      }
+      if (s < bs) { bs = s; best = k; }
+    }
+    if (best >= 0) break;
   }
   if (best < 0) return null;
   // the bird: a perched easy one (not a racer, not a jackdaw), the farthest from there (no flock flushing round it)
@@ -269,7 +328,8 @@ export function placeStarter(F, start, out) {
   if (owner >= 0 && owner !== bi) F.vanish(owner);
   F.perch(bi, best);
   F.tame[bi] = 1; F.timer[bi] = 600; F.esc[bi] = 0;
-  return { i: bi, r: best, x: q.x, y: q.y, z: q.z };
+  const A = W ? starterAir(W, q, start) : null;
+  return { i: bi, r: best, x: q.x, y: q.y, z: q.z, gap: A ? A.gap : null, clear: A ? A.clear : null };
 }
 
 /** the wind's loudness for the falcon's sound (falconAudio.js): the gain levels, a pure function so node can check the

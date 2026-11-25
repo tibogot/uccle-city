@@ -127,3 +127,66 @@ The bot is a perfect aimer. A first-time player will catch fewer, but the first 
 | first catch | 2.4 s, the tame pigeon, every seed | same |
 
 Left for later (round 3 part B and the parked list): the first, tame pigeon sits among street-tree crowns. In the browser the avoid kept the falcon 8-20 m from it for ~12 s before the catch (the bot's test Place has no trees). The controls, the take-off and the speed / height are the next job.
+
+## Round 3 part B (2026-11-25): the bird you caught, one message at a time, the first pigeon in open air, the sun behind the strike camera
+
+The coordinator's review of the round 3 screenshots (c_pigeon_held_grip_closeup, b2_strike_feather_puff) found four faults. Each has its cause, its rule and its check in the `falconfun` row. Each check comes with a self-test that shows the round 3 behaviour failing it.
+
+**1. The held bird is the caught bird.**
+- **Why.** `falconBird.js` carry() cloned the nest's `prey_carry` mesh (falcons.js) for every catch. It is a plain dark-grey blob that does not read as a pigeon, and a caught gull or jackdaw got the same blob.
+- **Rule.** The bird in the talons is the bird that was caught: the same species, plumage and size as its flock draws it.
+  - `heldPrey.js` bakes the shapes once on the CPU. A square flock's bird uses pigeons.js `pigeonGeometry`. A sky bird uses birdMesh.js `nearBirdGeometry`, laid out by its species row the way skyFlocks.js does it.
+  - Every shape is posed limp: the right wing folded with its tip at the tail's tip, the left wing hanging a little open, the head forward and drooping, the feet tucked away.
+  - The colour is the bird's own. A square bird keeps its iTint (its morph, a jackdaw's black-grey, a racer's pale blue). A sky bird gets its species' palette.
+  - The size is the flock's draw scale: x1.4 for the square flocks. A sky bird gets 0.92-1.08, from three's TSL pcg hash on its index, exactly as skyFlocks.js birdFrame sizes it.
+  - `Pigeons.heldLook`, `GpuPrey.heldLook` and `PreyMux.heldLook` say how bird i is drawn. falconGame.js funCatch reads that look before take() and hands it to carry().
+  - It is one pooled mesh, a child of the falcon. A catch swaps its geometry and sets one tint uniform. Every shape has the same attributes (position + color), so there is one pipeline, warmed with the falcon in cityFlyer.js warm().
+  - The vertices never move (no DynamicDrawUsage, no MOVER), and the mesh adds no light.
+  - A new catch while the falcon is already carrying a bird puts the new bird in the talons.
+- **Check.**
+  - Through the mux, each case holds its own species' shape with its flock's tint and size (0.98-1.06 x the flock bird's length). The cases are a square pigeon, a square jackdaw, a square racer, and a sky gull, jackdaw, starling and pigeon.
+  - Every held shape stays in the grip on the real rig over a 7 s carry. This is tested at its largest size (square x1.4, sky x1.08): belly to the grip <= 4 cm (1.3-3.3 cm measured) and 0 falcon body vertices inside it.
+  - Self-test: round 3's carry gives prey_carry for every case.
+
+**2. One message at a time.**
+- **Why.** The message box showed every line said in the last 4 s of GAME time, stacked. The catch's slow motion (x0.22) stretched those 4 s. The node runs show the sequence. The falcon overshoots a bird at 6 m (just past the 5.5 m grab) and "MISSED: it slipped past" is said. The falcon comes round and catches the same bird 1.5-4.5 s later. The MISSED line was still on screen under the new "CAUGHT!" banner, so the miss belonged to the previous pass. On top of that, the catch said its own "CAUGHT at 73 km/h" line, which repeats the banner, and the "Got it!" hint was keyed on 6 s of game time from the catch, so it showed together with the banner.
+  - The pass rule had a second cause. A "pass" was any dip under 12 m followed by 6 m away. In the browser, the avoid held the falcon 8-20 m off the tame pigeon in the trees, and that counted as passes while the falcon circled.
+- **Rule.** `falconGame.js funHud()` decides what the HUD shows. It is one of three things, never two: the banner, a line, or the hint.
+  - The banner comes first. It shows CAUGHT! / MISSED / DODGED! for FUN.banner = 1.8 real s, matching the CSS animation.
+  - Next comes the newest line said since that banner. Lines said before a banner are dropped.
+  - Last comes the hint. "Got it!" appears only after the first catch's banner has faded, for FUN.gotIt = 5 s.
+  - No line repeats a banner: catches and misses are said by the banner only.
+  - A miss is declared only once the falcon has gone BY the bird. The bird must be behind it (> 90 deg off the path) with the gap opening, and the falcon must not have been held off by the avoid at the closest point (avoiding < 0.3).
+  - The miss then waits FUN.miss.hold = 0.5 s of game time. A catch in that time cancels it.
+- **Check.**
+  - 6 seeds x 2 min: 0 frames with two of banner / line / hint, and 0 CAUGHT / MISSED lines.
+  - Every miss came with the bird behind the falcon and the gap opening.
+  - The same bird was caught 1.5-4.5 s (game) after its miss, never sooner than 1 s.
+  - "Got it!" first shows 1.82 s after the catch.
+  - Self-test: round 3's rule and lines would have shown a MISSED line under the CAUGHT banner at 8 catches.
+
+**3. The tutorial pigeon is in open air.**
+- **Why.** placeStarter picked the roost by distance and drop from the launch alone. In the city that spot sat among street-tree crowns, and the avoid kept the falcon 8-20 m off it for ~12 s.
+- **Rule.** The starter's roost uses the world's own tree and building data (`starterAir`):
+  - No tree crown within FUN.starterClear = 10 m. `crownGap` measures this with cityStream.js treeList: the drawn street trees' crown ellipsoids whose height range meets the bird's.
+  - No wall or roof rising more than 3 m over it within 6 m.
+  - Nothing (a crown or a solid) on the line from the launch.
+  - Tree-top roosts are never used.
+  - If no clear spot exists in the 30-90 m band, the band widens to 130 m. If there is still none, the clearest spot wins.
+- **Check.** The test Place gets street trees along row A, round the spot round 3 picked. The world's column has the crowns as cityStream.js has them, so the avoid sees them. The starter lands >= 10 m from every crown, and the first catch takes 3.5 s.
+  - Self-test: round 3's pick sits 6.5 m from the crowns.
+  - The bot still caught round 3's pick in 2.5 s: the test's avoid does not reproduce the browser's 12 s. The check is the clearance, measured on the data.
+- **Browser** (?game=falcon, the real city: 18k crowns loaded): the starter is on a flat roof with crowns >= 10 m off and no wall over it. Shift held at the hand-over: caught after 4.8 s, the lock on it all the way, the avoid only briefly. Round 3 took ~12 s.
+
+**4. The strike camera has the sun behind it.**
+- **Why.** The strike camera's side was the free side nearer the chase camera, so on the sun side it looked into the light and showed a backlit silhouette (b2).
+- **Rule.** When both sides are in free air, the camera takes the side where it looks away from the sun.
+  - `falconCamera.js` sunInto measures this: the view's horizontal direction against the sun's azimuth, weighted by how low the sun is. cityFlyer passes `lighting.sunDir`.
+  - If the two sides are within 0.3 of each other (the sun high, or straight ahead), the nearer side wins as before.
+- **Check.** A low sun (25 deg) to the right or to the left puts the camera on that side, looking away from the sun (into -0.97).
+  - Self-test: round 3's pick looks straight into it on one side (+0.97).
+
+Screenshots (C:\Users\tibog\Downloads\uccle-falcon3\):
+- partB_held_pigeon_closeup.jpg: the square pigeon in its plumage, seen from below, in the talons.
+- partB_catch_banner.jpg: the CAUGHT! banner alone on screen. The radio card at the right is the mission kit's, not this HUD.
+- partB_tutorial_pigeon_spot.jpg: the open flat roof where the tutorial pigeon sat.

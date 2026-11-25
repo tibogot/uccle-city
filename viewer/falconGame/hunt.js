@@ -185,6 +185,8 @@ export class PreyMux {
   pos(i, out) { return i < G ? this.flocks[(i / NP) | 0].pos(i % NP, out) : this.gpu.pos(i - G, out); }
   vel(i, out) { return i < G ? this.flocks[(i / NP) | 0].vel(i % NP, out) : this.gpu.vel(i - G, out); }
   kind(i) { return i < G ? (this.at(i)?.jackdaw?.[i % NP] ? "jackdaw" : "feral pigeon") : this.gpu.kind(i - G); }
+  /** (round 3 part B) how prey i is drawn (its flock's heldLook): the held bird is that bird */
+  heldLook(i, out = {}) { return i < G ? this.at(i).heldLook(i % NP, out) : this.gpu.heldLook(i - G, out); }
   take(i) {
     const kind = this.kind(i), slot = i < G ? "pigeons" : this.gpu.slotKey(i - G), F = this.at(i);
     const r = i < G ? F.take(i % NP) : this.gpu.take(i - G);
@@ -461,8 +463,11 @@ export class FalconHunt {
       const combo = F.combo >= 2 && g.t - F.lastCatchT < 30 ? `COMBO ${F.combo} · ${Math.ceil(30 - (g.t - F.lastCatchT))} s` : "";
       this.set("goalC", E.goalC, combo);
       const touch = this.touchy();
-      const hint = F.starter && flyingNow && !g.score.catches ? (touch ? "A pigeon on the roof below: hold STRIKE (or DIVE) to dive onto it" : "A pigeon on the roof below: hold <kbd>Shift</kbd> (or <kbd>F</kbd>) to dive onto it")
-        : g.score.catches === 1 && g.t - (F.lastCatchT ?? 0) < 6 ? (touch ? "Got it! The arrow shows the next pigeons" : "Got it! Follow the arrow · tap <kbd>Space</kbd> to sprint") : "";
+      // (round 3 part B) one message at a time (falconGame.js funHud): no hint under a banner or a line; "Got it!" after
+      // the first catch's banner has faded (round 3 showed it with the banner, keyed on 6 s of game time)
+      const HK = g.funHud().hint;
+      const hint = HK === "starter" && flyingNow ? (touch ? "A pigeon on the roof below: hold STRIKE (or DIVE) to dive onto it" : "A pigeon on the roof below: hold <kbd>Shift</kbd> (or <kbd>F</kbd>) to dive onto it")
+        : HK === "gotit" && !fl.intro ? (touch ? "Got it! The arrow shows the next pigeons" : "Got it! Follow the arrow · tap <kbd>Space</kbd> to sprint") : "";
       this.set("hint", E.hint, hint, "innerHTML");
       this.cls("hint", E.hint, "on", !!hint);
     } else this.cls("hint", E.hint, "on", false);

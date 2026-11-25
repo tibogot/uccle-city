@@ -12,6 +12,7 @@ import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { loadFalconAssets } from "../falcons.js";
 import { BirdRig } from "../birdRig.js";
 import { FUN, FUN_OLD } from "./falconFun.js";
+import { HeldPrey } from "./heldPrey.js";
 
 const MODEL_SPAN = 6.44;   // peregrine.glb wingspan in model units (viewer/falcons.js)
 /** (falcon fun round 3) the grip: the toes curled (rad) round the held pigeon, sunk this share of its depth into its
@@ -79,6 +80,9 @@ export class FalconBird {
     this.flapPhase = 0; this.lastFlapPhase = 0; this.downstroke = false;
     this.setSpan(span);
     this.prey = null;
+    // (round 3 part B) the caught bird itself in the talons (heldPrey.js): one pooled mesh, hidden until a catch
+    this.held = FUN_OLD ? null : new HeldPrey();
+    if (this.held) this.root.add(this.held.mesh);
   }
 
   setSpan(span) { this.span = span; this.model.scale.setScalar(span / MODEL_SPAN); }
@@ -87,16 +91,29 @@ export class FalconBird {
    *  (falcon fun round 3, the owner: "the prey should look really inside the hands of the falcon") from = the pigeon's
    *  world position when it was struck: it is blended from there into the GRIP over FUN.strike.grip s, then held by the
    *  feet every frame (holdPrey: the toe bones, belly against the closed toes, head forward). ?falconfun=old: the fixed
-   *  offset under the body as before. */
-  carry(preyMesh, material, from = null) {
-    if (this.prey || !preyMesh) return;
-    const p = preyMesh.clone(); if (material) p.material = material;
+   *  offset under the body as before.
+   *  (round 3 part B) look = { shape, scale, tint } (the caught bird as its flock draws it: PreyMux / Pigeons heldLook):
+   *  the pooled held bird of that species, plumage and size (heldPrey.js) instead of the nest's grey prey_carry; a new
+   *  catch with a bird already held (the fun game hunts on with prey): the talons take the new one (it shows) */
+  carry(preyMesh, material, from = null, look = null) {
+    const own = !!(look && this.held && this.toes);
+    if (this.prey && !(own && this.prey === this.held.mesh)) return;
+    this.prey = null;
     const k = this.span / 1.10;
-    p.position.set(0, -0.13 * k, 0.04 * k); p.rotation.set(0.15, Math.PI, 0); p.scale.setScalar(0.95 * k);
-    this.root.add(p); this.prey = p;
+    let p;
+    if (own) p = this.held.show(look);
+    else {
+      if (!preyMesh) return;
+      p = preyMesh.clone(); if (material) p.material = material;
+      this.root.add(p);
+    }
+    p.position.set(0, -0.13 * k, 0.04 * k); p.rotation.set(0.15, Math.PI, 0); p.scale.setScalar(own ? look.scale : 0.95 * k);
+    this.prey = p;
     if (FUN_OLD || !this.toes) return;
     if (!p.geometry.boundingBox) p.geometry.computeBoundingBox();
-    const bb = p.geometry.boundingBox, H = (this.hold ??= { belly: new THREE.Vector3(), depth: 0, len: 0, k: 1, from: new THREE.Vector3(), has: false, perch: 0, err: 0, top: 0 });
+    const bb = p.geometry.boundingBox, H = (this.hold ??= { belly: new THREE.Vector3(), depth: 0, len: 0, k: 1, from: new THREE.Vector3(), has: false, perch: 0, err: 0, top: 0, s: 1, own: false });
+    // (the held bird's own size: its flock's draw scale; prey_carry: 0.95 x the falcon's scale, as before)
+    H.s = own ? look.scale : 0.95 * k; H.own = own;
     // the contact: the middle of the belly (the mesh's lowest face, between its breast and its vent)
     H.belly.set((bb.min.x + bb.max.x) / 2, bb.min.y, (bb.min.z + bb.max.z) * 0.5);
     H.depth = bb.max.y - bb.min.y; H.len = bb.max.z - bb.min.z;
@@ -113,7 +130,7 @@ export class FalconBird {
     }
     p.matrixAutoUpdate = true;
   }
-  drop() { if (!this.prey) return null; const p = this.prey; this.prey = null; p.removeFromParent(); return p; }
+  drop() { if (!this.prey) return null; const p = this.prey; this.prey = null; if (this.held && p === this.held.mesh) this.held.hide(); else p.removeFromParent(); return p; }
 
   /** (round 3) the grip point, root-local: between the two feet, 35 % of the way from the toes' roots to their tips
    *  (where the closed toes meet the pigeon); out (Vector3) */
@@ -128,7 +145,7 @@ export class FalconBird {
    *  depth into the plumage: no gap), head forward, body along the falcon's; the strike's blend from where it flew;
    *  perched: laid on the ledge under the feet (the falcon stands on it, mantling) */
   holdPrey(dt, mode) {
-    const p = this.prey, H = this.hold, k = this.span / 1.10, s = 0.95 * k;
+    const p = this.prey, H = this.hold, s = H.s;
     this.root.updateMatrixWorld(true);
     this.gripPoint(_g);
     H.perch = ease(H.perch, mode === "perch" ? 1 : 0, 6, dt);

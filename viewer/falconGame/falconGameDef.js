@@ -85,7 +85,8 @@ function onCatch(t, kmh, g) {
   const pts = g?.fun && g.lastCatch?.pts != null ? g.lastCatch.pts : Math.round(10 + kmh / 6);
   rec.score += pts; kit.save.touch();
   const fl = S.flyer();
-  if (fl.bird.prey && t && t.kind !== "feral pigeon" && t.kind !== "jackdaw") fl.bird.prey.scale.multiplyScalar(t.kind === "starling" ? 0.55 : 0.75);
+  // (round 3 part B: the held bird has its own species' size, heldPrey.js; this only for the nest's prey_carry)
+  if (fl.bird.prey && !fl.bird.hold?.own && t && t.kind !== "feral pigeon" && t.kind !== "jackdaw") fl.bird.prey.scale.multiplyScalar(t.kind === "starling" ? 0.55 : 0.75);
   if (kit.current?.mode === "free" && (S.freeCatches = (S.freeCatches || 0) + 1) === 1)
     kit.radio("The falcon", g?.fun ? `A ${t?.kind ?? "catch"} at ${kmh} km/h! Hunt on (the arrow shows the next pigeons): bringing prey to the eyrie's ledge is a bonus.` : `A ${t?.kind ?? "catch"} at ${kmh} km/h! Bring it to the eyrie: land on the ledge.`, { icon: "falcon" });
 }
@@ -201,7 +202,7 @@ export const FALCON_GAME = {
       if (fl.game.fun && fl.pigeons && S.out) {
         const st = placeStarter(fl.pigeons, S.eyrie, S.out);
         fl.game.fun.starter = st ? { i: st.i, flock: fl.pigeons } : null;
-        host.log(st ? `falcon fun: the first pigeon on a roof ${Math.hypot(st.x - S.eyrie.x, st.z - S.eyrie.z).toFixed(0)} m out, ${(S.eyrie.y - st.y).toFixed(0)} m under the eyrie` : "falcon fun: no roof under the launch for the first pigeon");
+        host.log(st ? `falcon fun: the first pigeon on a roof ${Math.hypot(st.x - S.eyrie.x, st.z - S.eyrie.z).toFixed(0)} m out, ${(S.eyrie.y - st.y).toFixed(0)} m under the eyrie, crowns ${st.gap == null ? "-" : st.gap.toFixed(1)} m off${st.clear === false ? " (no clear spot: the clearest)" : ""}` : "falcon fun: no roof under the launch for the first pigeon");
       }
       S.prev = { P: fl.game.f.P };
       // the tiercel: a fit adult (the flight lab's numbers are a juvenile's): wingbeats last ~22 s, rest back in ~20 s

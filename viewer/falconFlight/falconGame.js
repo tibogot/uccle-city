@@ -70,6 +70,23 @@ export class FalconGame {
   }
 
   say(s) { this.messages.push({ t: this.t, s }); if (this.messages.length > 6) this.messages.shift(); }
+  /** (falcon fun round 3 part B) ONE MESSAGE AT A TIME: what the HUD shows now, { banner: caught | missed | dodged | "",
+   *  line: the newest said line (< 4 s) | "", hint: starter | gotit | "" }, at most one of the three. The banner first
+   *  (FUN.banner real s), then a line said since it, then the hint ("Got it!" only after the first catch's banner faded).
+   *  Round 3 stacked every line of the last 4 s of GAME time (the catch's slow motion stretched them) under the banner and
+   *  the hint: "CAUGHT!" + "MISSED: it slipped past" + "CAUGHT at 73 km/h" + "Got it!" at once. One shared object. */
+  funHud() {
+    const F = this.fun, H = (this._hud ??= { banner: "", line: "", hint: "" });
+    H.banner = ""; H.line = ""; H.hint = "";
+    if (!F) return H;
+    const B = F.banner;
+    if (B && F.realT - B.t < FUN.banner) { H.banner = B.kind; return H; }
+    const m = this.messages[this.messages.length - 1];
+    if (m && this.t - m.t < 4 && !(B && m.t < B.gt)) { H.line = m.s; return H; }
+    H.hint = F.starter && this.mode === "fly" && !this.score.catches ? "starter"
+      : this.score.catches === 1 && B?.kind === "caught" && F.realT - B.t < FUN.banner + FUN.gotIt ? "gotit" : "";
+    return H;
+  }
 
   /** free flight from a point (heading rad, speed m/s, path angle rad) */
   start(x, y, z, heading, speed = 14, gamma = 0) {
@@ -172,7 +189,7 @@ export class FalconGame {
     // the hit-stop after a catch (the game-feel pause), slow motion option
     let dt = dtReal * this.timeScale;
     if (this.hitStop > 0) { this.hitStop -= dtReal; dt *= 0.15; }
-    if (this.fun) dt *= this.fun.slowK;                       // (falcon fun) the slow motion just before contact
+    if (this.fun) { dt *= this.fun.slowK; this.fun.realT += dtReal; }   // (falcon fun) the slow motion just before contact
     this.t += dt;
     const f = this.f, inp = this.input;
     const C = inp.update(dt, f);
@@ -309,6 +326,13 @@ export class FalconGame {
     const f = this.f, P = this.pigeons, F = this.fun;
     if (!P) return;
     this.talonsOut = F.diving || !!this.window?.near;
+    // (round 3 part B) a miss waiting FUN.miss.hold s: said (the banner) only if no catch came meanwhile
+    const MP = F.missPend;
+    if (MP && this.t - MP.t >= FUN.miss.hold) {
+      F.missPend = null; F.misses++; this.score.misses++;
+      F.lastMiss = { t: this.t, dodged: MP.dodged, d: MP.d, i: MP.i, closing: MP.closing, angle: MP.angle };
+      F.banner = { kind: MP.dodged ? "dodged" : "missed", t: F.realT, gt: this.t };
+    }
     const vd = F.viewDir(cam && cam.getWorldDirection ? cam.getWorldDirection(this._cam) : null, f, inp.intent.aim);
     let i = this.target;
     if (i >= 0 && P.state[i] === 3) i = -1;
@@ -374,12 +398,16 @@ export class FalconGame {
       const mx = dx - rvx * tca, my = (dy - rvy * tca) * kv, mz = dz - rvz * tca, dmin = Math.hypot(mx, my, mz);
       if (dmin < reach) { this.funCatch(i, angle, W.kind); F.slowK = 1; return; }
       // (round 3) a MISS reads: a pass within FUN.miss.pass m, then away without the catch: "DODGED!" / "MISSED"
-      if (F.diving && d < F.passD) F.passD = d;
+      // (round 3 part B) a PASS is over only when the falcon went BY the bird: it is behind the falcon (> 90 deg off the
+      // path) and the gap opens, and the falcon was not held off it by the avoid at the closest point (browser: the avoid
+      // kept the falcon 8-20 m off the tame pigeon in the trees, d dipped under 12 m and out again: "MISSED" while it
+      // circled, then "CAUGHT"); the miss waits FUN.miss.hold s and a catch cancels it; the banner says it (no line)
+      if (F.diving && d < F.passD) { F.passD = d; F.passAvoid = this.assist?.avoiding ?? 0; }
       if (F.passD < FUN.miss.pass && d > F.passD + FUN.miss.away) {
-        F.misses++; this.score.misses++;
-        const dodged = !!(Fl && (Fl.dodgeCD?.[li] > 0 || Fl.tele[li] > 0));
-        F.lastMiss = { t: this.t, dodged, d: F.passD };
-        this.say(dodged ? "DODGED! it jinked away: hold on, it tires after two escapes" : "MISSED: it slipped past, come round again");
+        if (closing < 0 && angle > Math.PI / 2 && F.passAvoid < FUN.miss.avoid && !F.missPend) {
+          const dodged = !!(Fl && (Fl.dodgeCD?.[li] > 0 || Fl.tele[li] > 0));
+          F.missPend = { t: this.t, dodged, d: F.passD, i, closing, angle };
+        }
         F.passD = Infinity;
       }
       // (the homing: funHome(), before the flight step)
@@ -442,9 +470,12 @@ export class FalconGame {
     P.pos(i, this._v); P.vel(i, this._w);
     const C0 = (this._catchP ??= { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, n: 0 });
     C0.x = this._v.x; C0.y = this._v.y; C0.z = this._v.z; C0.vx = this._w.x; C0.vy = this._w.y; C0.vz = this._w.z; C0.n++;
+    // (round 3 part B) how the caught bird is drawn (its species, plumage, size): the held bird is that one (heldPrey.js)
+    const look = P.heldLook ? P.heldLook(i, (this._look ??= {})) : null;
+    C0.look = look;
     P.take(i);
     F.cool = FUN.cool;
-    this.bird.carry(this.fam?.preyMesh, this.fam?.nestMat, C0);
+    this.bird.carry(this.fam?.preyMesh, this.fam?.nestMat, C0, look);
     if (!f.extraMass) f.extraMass = FUN.carryMass;
     f.stamina = Math.min(1, f.stamina + FUN.catchStamina);    // (a catch gives breath back: the hunt goes on)
     const v = f.V;
@@ -454,11 +485,14 @@ export class FalconGame {
     const sc = this.score;
     sc.catches++; sc.bestStrike = Math.max(sc.bestStrike, Math.round(v)); sc.lastStrike = Math.round(v); sc.points += pts; sc.carriedSince = this.t;
     F.last.pts = pts;
-    this.say(`CAUGHT at ${Math.round(v * 3.6)} km/h: +${pts}${F.last.labels.length ? ` (${F.last.labels.join(", ")})` : ""}`);
+    // (round 3 part B) the banner says it (hunt.js caught: CAUGHT!, the kind, km/h, the points, the bonus labels): no
+    // duplicate line under it; a miss still waiting is cancelled (never MISSED and CAUGHT for one pass)
+    if (F.missPend) { F.missPend = null; F.missCancel++; }
+    F.banner = { kind: "caught", t: F.realT, gt: this.t };
     if (run) this.say(run);
     // (round 3: a short punch; the slow motion and the strike camera follow in real time, hunt.js caught())
     this.hitStop = FUN.strike.punch; this.audio?.strike(true); this.audio?.rustle?.();
-    this.target = -1; this.window = null; F.lock = -1; F.passD = Infinity; F.strikes++;
+    this.target = -1; this.window = null; F.lock = -1; F.passD = Infinity; F.strikes++; F.lastCaughtI = i;
     this.lastCatch = { t: this.t, V: v, x: f.pos.x, y: f.pos.y, z: f.pos.z, pts, labels: F.last.labels, prey: C0 };
     if (starter) { F.starter = null; F.hint = ""; F.firstWasTame = true; this.lockTarget = false; }
   }

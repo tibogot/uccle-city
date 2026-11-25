@@ -205,6 +205,15 @@ export class Pigeons {
   vanish(i) { if (this.fun) { this.esc[i] = 0; this.tame[i] = 0; this.tele[i] = 0; } if (this.roost[i] >= 0 && this.owner[this.roost[i]] === i) this.owner[this.roost[i]] = -1; this.roost[i] = -1; this.state[i] = GONE; this.timer[i] = rand(25, 45); }
 
   /** the falcon took bird i: it is gone (a new one comes back to a roost later) */
+  /** (falcon fun round 3 part B) how bird i is drawn, for the held bird (heldPrey.js): the shape, the draw scale, its
+   *  own tint (the morph, a jackdaw's black-grey, a racer's pale blue); out: a reused object */
+  heldLook(i, out = {}) {
+    const T = this.mesh.geometry.attributes.iTint.array;
+    out.shape = "square"; out.scale = this.scale; out.tint = out.tint || [1, 1, 1];
+    out.tint[0] = T[i * 3]; out.tint[1] = T[i * 3 + 1]; out.tint[2] = T[i * 3 + 2];
+    out.kind = this.jackdaw[i] ? "jackdaw" : "feral pigeon";
+    return out;
+  }
   take(i) { const x = this.p[i * 3], y = this.p[i * 3 + 1], z = this.p[i * 3 + 2]; this.vanish(i); return { x, y, z }; }
 
   freeRoost(x, z, R, kind = null) {
