@@ -7,12 +7,12 @@
 // `bikefall`) asserts on them.
 import { DT, BIKE, createBikeState, stepBike, bikeSpeed } from "../../viewer/bike/bikePhysics.js";
 import { createBikeEnv } from "../../viewer/bike/bikeEnv.js";
-import { testGroundRamped, testColliders, testEdges, KERB, SAND, PUMP, ROOTS, KICKER, TABLE, BOWL, SLOPE, STEEP, COBBLES, BUMPS, DROPS } from "../../viewer/bike/bikeGround.js";
+import { testGroundRamped, testColliders, testEdges, PARK_WALLRIDES, KERB, SAND, PUMP, ROOTS, KICKER, TABLE, BOWL, SLOPE, STEEP, COBBLES, BUMPS, DROPS } from "../../viewer/bike/bikeGround.js";
 import { buildColliders, KIND } from "../../viewer/drive/colliders.js";
 
 const CL = testColliders(KIND);
 const COL = buildColliders(CL.polys, CL.circles, CL.bounds);
-export const labEnv = () => createBikeEnv({ sets: () => [COL], ground: testGroundRamped, edges: testEdges });
+export const labEnv = () => createBikeEnv({ sets: () => [COL], ground: testGroundRamped, edges: testEdges, wallrides: PARK_WALLRIDES });
 
 /** a seeded random (mulberry32) */
 export function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }

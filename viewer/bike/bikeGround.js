@@ -19,6 +19,8 @@
 import { SURF, groundQuery } from "./bikePhysics.js";
 import { benchEdges, gardenEdges, stairEdges, handrailEdges, buildEdgeLayer, withStairRamps, BENCH, benchPieces } from "./bikeEdges.js";
 import { gardenPieces } from "../gardens/gardenClear.js";
+import { addParkFeatures, PARK_ASPHALT, parkColliders, PARK_GARDENS, PARK_FEATURES, parkRailEdges, PARK_SPOTS, PARK_WALLRIDES } from "./bikePark.js";
+import { EDGE } from "./bikeEdges.js";
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -40,7 +42,7 @@ export const WALL = { x0: -10, x1: 10, z0: -22, z1: -21.4, top: 2.5 };
 export const LOG = { x0: -4, x1: -1, z0: -14.15, z1: -13.85, top: 0.25 };
 export const CAR = { x: 7, z: -12, w: 1.8, l: 4.3, top: 1.45 };
 export const POSTS = Array.from({ length: 8 }, (_, k) => ({ x: -18 + (k % 2) * 2.4, z: -6 - k * 3.2, r: 0.1 }));
-export const BOUNDS = { x0: -80, x1: 150, z0: -40, z1: 110 };
+export const BOUNDS = { x0: -80, x1: 150, z0: -40, z1: 236 };
 // the street (feel round 2)
 export const STREET = { x0: 100, x1: 140, z0: 30, z1: 95 };
 export const STAIRS = { x0: 128, x1: 132, z0: 70, n: 8, rise: 0.15, run: 0.3, land: 7.6, ramp: 9.6 };
@@ -48,7 +50,7 @@ STAIRS.z1 = STAIRS.z0 + STAIRS.n * STAIRS.run; STAIRS.h = STAIRS.n * STAIRS.rise
 STAIRS.zl = STAIRS.z1 + STAIRS.land; STAIRS.zr = STAIRS.zl + STAIRS.ramp;
 
 const F = [];
-const feature = (name, x0, x1, z0, z1, surf, h, res = 0.2) => { const f = { name, x0, x1, z0, z1, surf, h, res }; F.push(f); return f; };
+const feature = (name, x0, x1, z0, z1, surf, h, res = 0.2, opt = null) => { const f = { name, x0, x1, z0, z1, surf, h, res, ...(opt || {}) }; F.push(f); return f; };
 
 feature("kicker", -2, 2, 18, 24, SURF.asphalt, (x, z) => {
   const s = z - KICKER.z0;
@@ -117,12 +119,14 @@ feature("drops", DROPS.x0, DROPS.x1, DROPS.z0, DROPS.z0 + DROPS.len, SURF.asphal
   for (const [z0, run, h] of DROPS.steps) if (s >= z0 && s < z0 + run) return Math.min(h, (s - z0) * 0.1);
   return 0;
 }, 0.05);
+// THE BMX PARK (2026-11-25, viewer/bike/bikePark.js): z 116-232
+addParkFeatures(feature, SURF);
 const slopeH = (s, G, run, flat) => G * (sm(s) - sm(s - run) - sm(s - run - flat) + sm(s - 2 * run - flat));
 feature("slope", SLOPE.x0 - 2, SLOPE.x0 + 92, SLOPE.z0, SLOPE.z1, SURF.asphalt, (x) => slopeH(x - SLOPE.x0, SLOPE.grade, 40, 10), 0.5);
 feature("steep", STEEP.x0 - 2, STEEP.x0 + 48, STEEP.z0, STEEP.z1, SURF.asphalt, (x) => slopeH(x - STEEP.x0, STEEP.grade, 20, 6), 0.5);
 
 /** asphalt areas outside the features (the rest is grass) */
-const ASPHALT = [[-60, 140, -40, 10], [-3, 3, 10, 100], [10, 20, 10, 60], [24, 28, 10, 50], [40, 78, 32, 76], [STREET.x0, STREET.x1, STREET.z0, STREET.z1]];
+const ASPHALT = [[-60, 140, -40, 10], [-3, 3, 10, 100], [10, 20, 10, 60], [24, 28, 10, 50], [40, 78, 32, 76], [STREET.x0, STREET.x1, STREET.z0, STREET.z1], ...PARK_ASPHALT];
 const inR = (x, z, a, b, c, d) => x >= a && x < b && z >= c && z < d;
 
 export const FEATURES = F;
@@ -162,7 +166,9 @@ export const LAB_FEATURES = { lines: [{ id: "lab:steps", kind: "steps", line: [[
 /** the edge layer of the lab (the city's extractors), and the stair ramp over the real steps */
 export function testEdgeLines() {
   const stairs = stairEdges(LAB_FEATURES, testHeight);
-  return [...benchEdges(LAB_FURNITURE), ...gardenEdges(LAB_GARDENS), ...stairs, ...handrailEdges(stairs, { side: -1 })];
+  const pStairs = stairEdges(PARK_FEATURES, testHeight);
+  return [...benchEdges(LAB_FURNITURE), ...gardenEdges(LAB_GARDENS), ...stairs, ...handrailEdges(stairs, { side: -1 }),
+    ...gardenEdges(PARK_GARDENS), ...pStairs, ...handrailEdges(pStairs, { side: 1 }), ...parkRailEdges(EDGE)];
 }
 export const testEdges = buildEdgeLayer(testEdgeLines(), BOUNDS);
 export const testHeightRamped = withStairRamps(testHeight, testEdges);
@@ -198,6 +204,9 @@ export function testColliders(KIND) {
   }
   for (const p of gardenPieces(LAB_GARDENS)) polys.push({ rings: p.rings, kind: KIND.furniture, base: p.base, top: p.top });
   for (const x of [STAIRS.x0 - 0.3, STAIRS.x1]) polys.push(box(x, x + 0.3, STAIRS.z0, STAIRS.zr, KIND.wall, STAIRS.h + 1.0));
+  // the park (bikePark.js): the wall ride's wall, the tower's railings and body, the rails' low pieces, the ledge
+  polys.push(...parkColliders(KIND, testHeight));
+  for (const p of gardenPieces(PARK_GARDENS)) polys.push({ rings: p.rings, kind: KIND.furniture, base: p.base, top: p.top, park: true });
   const circles = POSTS.map((p) => ({ x: p.x, z: p.z, r: p.r, kind: KIND.post }));
   return { polys, circles, bounds: BOUNDS };
 }
@@ -207,3 +216,5 @@ export const SPOTS = {
   start: [0, 0, 0], kicker: [0, 8, 0], table: [0, 32, 0], pump: [-15, 2, 0], roots: [-25, 0, 0], bowl: [-36, 55, 0],
   kerb: [15, 12, 0], sand: [26, 30, 0], bench: [109.45, 38, 0], ledge: [117.6, 32, 0], stairs: [130, 79, Math.PI], slope: [30, 0, Math.PI / 2], steep: [30, 25, Math.PI / 2], wall: [0, -10, Math.PI], log: [-2.5, -6, Math.PI],
 };
+/** the park's spots (bikePark.js PARK_SPOTS: [x, z, heading, speed]) - the lab's park menu (0 / N / B) */
+export { PARK_SPOTS, PARK_WALLRIDES };

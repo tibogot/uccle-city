@@ -16,7 +16,7 @@ import { BIKE_BODY, bikeHit } from "./bikePhysics.js";
  */
 /** sqrt(a^2 + b^2): not Math.hypot, which V8 does not inline: it boxes its result, an allocation a call (feel round 3) */
 const hyp = (a, b) => Math.sqrt(a * a + b * b);
-export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit = bikeHit, edges = null }) {
+export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit = bikeHit, edges = null, wallrides = null }) {
   const near = [];
   const contact = { nx: 0, nz: 0, depth: 0, kind: 0 };
   const body = { hx: dims.hx, hz: dims.hz, cos: 1, sin: 0 };
@@ -26,6 +26,7 @@ export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit
     ground,
     groundP: ground.P || null,   // (the object form of the ground query: groundQuery's g.P - no doubles across calls)
     edges,             // the edge layer (bikeEdges.js: grinds, stalls; feel round 2) or null
+    wallrides,         // wall-ride walls (the lab's park: bikePark.js PARK_WALLRIDES) or null
     near,
     tested: 0,
     prepare(s, reach = 3 + Math.sqrt(s.vx * s.vx + s.vz * s.vz) / 120) {
