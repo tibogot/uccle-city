@@ -11,29 +11,40 @@
 //    apart while hidden, shown within 50 m (a mesh a frame), hidden beyond 70 m, dropped after 20 s hidden (rule
 //    interior-stream-paced). Unlit: the light is Cycles' per-corner bake (_LSKY by day, _LNIGHT by night, blended by the
 //    city's night factor); the lamps' lenses are emissive. No light is ever added (rule fixed-light-count);
+//  - ROUND 2 (claude/underpass1 round 2; ?underpass=old = round 1's models (models/underpass/r1/) and shaders, for A/B):
+//    the AO map as a BC4 KTX2 with its mips baked (viewer/aoTexture.js, rule ao-ktx2: no GPU mip generation at upload),
+//    one meshopt worker pool for both loads, the signs read un-mirrored (rule sign-uv-reads-right), the kiosks weathered
+//    (grime under the fascia, damp at the plinth, chipped frames, tags on the frosted panes), the frosted panes glow from
+//    the inside lamps at night and from the daylight inside (no light added), the mural over the corridor's tiled dado;
 //  - THE WALKER: its Heightfield gets the json's voids (viewer/character/world.js) once the kiosks' colliders are in: off in
 //    the wells, off under the corridor's soffit + 0.45 m (a body on the ground over it is still carried).
 import * as THREE from "three/webgpu";
-import { attribute, uv, texture, vec2, vec3, float, floor, fract, mix, smoothstep, clamp, abs, max, min, step, uniform, select, Fn, positionWorld, fwidth } from "three/tsl";
+import { attribute, uv, texture, vec2, vec3, float, floor, fract, mix, smoothstep, clamp, abs, max, min, step, uniform, select, Fn, positionWorld, positionLocal, fwidth } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { setLodFades, warmBridge } from "../rail/bridgeModel.js";
 import { SMOOTH, settleRamp } from "../lodFade.js";
 import { decodeAO } from "../aoDecode.js";
+import { withAOKtx2 } from "../aoTexture.js";
 import { liteShown } from "../liteShown.js";
 import { env } from "../lighting.js";
 import { hash2D, noise2D, filteredPulse } from "../tslkit.js";
 import { UNDERPASS_ROOT, underpassVoids } from "./underpass.js";
 import { Heightfield } from "../character/world.js";
 
-const BASE = new URL("../../models/underpass/", import.meta.url);
+/** ?underpass=old: round 1 (its models are kept in models/underpass/r1/, its shaders behind R2 below) */
+export const UP_OLD = new URLSearchParams(location.search).get("underpass") === "old";
+const R2 = !UP_OLD;
+const BASE = new URL(UP_OLD ? "../../models/underpass/r1/" : "../../models/underpass/", import.meta.url);
 /** LOD switch distances (m, camera to the kiosks' box) and the bands' half widths (share of the distance) */
 export const UP_LODS = [{ until: 60 }, { until: 220 }, { until: Infinity }];
 const BANDS = [0.15, 0.12];
 const STREAM = { fetch: 80, show: 50, hide: 70, unloadS: 20 };
 
 /** live look: the bakes' gains, the eye adaptation inside, a debug view (0 final, 1 light, 2 albedo) */
-export const upLook = { dayGain: uniform(1.6), nightGain: uniform(1.4), adapt: uniform(1), adaptInside: 1.8, view: uniform(0), dayOverride: uniform(-1) };
+export const upLook = { dayGain: uniform(1.6), nightGain: uniform(R2 ? 1.15 : 1.4), adapt: uniform(1), adaptInside: 1.8, view: uniform(0), dayOverride: uniform(-1),
+  // round 2: the kiosks' local frame (eaves / base heights, model y = m TAW - oy; the two kiosks split by w), the panes' glow
+  kiosk: null, paneNight: uniform(0.9), paneDay: uniform(0.35) };
 
 const lin = (hex) => { const c = new THREE.Color(hex); return vec3(c.r, c.g, c.b); };
 // the face code: COLOR_0.r = code / 16 + 1/32, the same at a face's three corners: floor(r * 16) is exact (rule no-coplanar:
@@ -48,6 +59,16 @@ function surfaceMaterial(slot, aoTex, codes) {
   const p = uv(), C = codes[slot] || {};
   const fw = max(fwidth(p.x), fwidth(p.y)).max(0.0005);
   const n1 = noise2D(p.mul(0.9)), grit = hash2D(floor(p.mul(60)));
+  // round 2: where on its kiosk a point is (m under the eaves, m over the base), from the model frame (positionLocal = (u, h - oy, w))
+  const K = upLook.kiosk, east = K ? positionLocal.z.greaterThan(K.split) : null;
+  const under = K ? select(east, K.eE, K.eW).sub(positionLocal.y) : float(9), over = K ? positionLocal.y.sub(select(east, K.bE, K.bW)) : float(9);
+  const along = positionLocal.x.add(positionLocal.z);
+  // grime streaks run down from the fascia's drip edge (narrow, irregular), splash + damp at the foot
+  const streaks = smoothstep(0.55, 0.85, noise2D(vec2(along.mul(7.0), 1.7))).mul(smoothstep(1.6, 0.05, under)).mul(0.22)
+    .add(smoothstep(0.62, 0.9, noise2D(vec2(along.mul(23.0), 4.1))).mul(smoothstep(0.9, 0.0, under)).mul(0.12));
+  const foot = smoothstep(0.55, 0.0, over.add(noise2D(vec2(along.mul(3.0), 9.2)).mul(0.25))).mul(0.28);
+  const weather = (c) => (R2 && K ? c.mul(float(1).sub(streaks).sub(foot)).add(lin(0x4a4436).mul(foot.mul(0.25))) : c);
+  const nightGlow = nightK();
   if (slot === "brick_painted_white") {
     // [Street View 2024] rendered piers white-grey, the lower wall a painted mural (OUR OWN pattern: a white tile grid
     // crossed by pastel pipes, big leaves at the ends), a dark plinth, the mouth's end pier red
@@ -63,26 +84,64 @@ function surfaceMaterial(slot, aoTex, codes) {
     col = mix(col, mural, isC(C.lower ?? 1));
     col = mix(col, lin(0x4b4d4e).mul(mix(0.9, 1.05, grit)), isC(C.plinth ?? 2));
     col = mix(col, lin(0xa83a2c), isC(C.end ?? 4));
+    if (R2) col = mix(weather(col), col, isC(C.inner ?? 3));
     m.colorNode = col; m.roughnessNode = float(0.88);
+    // (the throat's inner faces, lit by the stair's lamps at night: an emissive share of their albedo, no light)
+    if (R2) m.emissiveNode = col.mul(isC(C.inner ?? 3)).mul(nightGlow).mul(0.45);
     void tx; void ty;
   } else if (slot === "paint_fascia") {
-    m.colorNode = mix(mix(lin(0xe3e2dd), lin(0xd3d1ca), n1.mul(0.5)), lin(0x5a5b5c).mul(mix(0.9, 1.1, n1)), isC(C.roof ?? 1));
+    let fc = mix(mix(lin(0xe3e2dd), lin(0xd3d1ca), n1.mul(0.5)), lin(0x5a5b5c).mul(mix(0.9, 1.1, n1)), isC(C.roof ?? 1));
+    // round 2: the fascia's lower lip greys where the water drips off it; the soffit inside lit at night
+    if (R2) fc = fc.mul(float(1).sub(smoothstep(0.6, 0.9, noise2D(vec2(along.mul(5.0), 2.3))).mul(0.12)));
+    m.colorNode = fc;
     m.roughnessNode = float(0.75);
+    if (R2) m.emissiveNode = fc.mul(isC(C.soffit ?? 2)).mul(nightGlow).mul(0.35);
   } else if (slot === "painted_metal_grey") {
     let col = lin(0x2d5a9a).mul(mix(0.9, 1.05, n1));                     // [Street View] blue frames
+    let rough = float(0.5);
+    if (R2) {
+      // round 2: chipped paint on the frames (the grey primer + a little rust under it), mostly low and at the corners
+      const chip = smoothstep(0.68, 0.74, noise2D(positionLocal.xz.add(positionLocal.y).mul(9.0)).add(smoothstep(1.2, 0.0, over).mul(0.12)));
+      col = mix(col, mix(lin(0x8a8d8c), lin(0x6b4a33), hash2D(floor(positionLocal.xy.mul(40)))), chip.mul(0.85));
+      rough = mix(float(0.45), float(0.8), chip);
+    }
     col = mix(col, lin(0x5b3d2b).mul(mix(0.85, 1.05, grit)), isC(C.bollard ?? 1));   // brown bollards
     col = mix(col, lin(0x8b8f93), isC(C.rail ?? 2));
-    m.colorNode = col; m.roughnessNode = float(0.5); m.metalnessNode = float(0.25);
+    if (R2) {
+      col = mix(col, lin(0x3a3c3e).mul(mix(0.9, 1.08, n1)), isC(C.pipe ?? 8));     // the downpipe
+      col = mix(col, lin(0x1f4c9c).mul(mix(0.96, 1.03, n1)), isC(C.sign_blue ?? 9)); // the underpass sign's blue panel
+      col = mix(col, lin(0xeeeeea), isC(C.sign ?? 6));                              // its white pictogram + border
+      col = mix(col, lin(0xa8322a).mul(mix(0.9, 1.05, grit)), isC(C.band ?? 10));   // the bollards' red band
+      col = weather(col);
+    }
+    m.colorNode = col; m.roughnessNode = rough; m.metalnessNode = float(0.25);
   } else if (slot === "glass_frosted") {
     // wired frosted glass: a pale green-grey, the 12.5 mm wire grid (box-filtered: no sub-pixel wire), a little grime low
     const g = max(filteredPulse(p.x.div(0.0125), float(0), float(0.08), fw.div(0.0125)), filteredPulse(p.y.div(0.0125), float(0), float(0.08), fw.div(0.0125)));
-    m.colorNode = mix(mix(lin(0xa9b6b1), lin(0x8f9b97), n1), lin(0x6e7471), g.mul(0.35));
-    m.roughnessNode = float(0.3); m.metalnessNode = float(0.0);
+    if (!R2) {
+      m.colorNode = mix(mix(lin(0xa9b6b1), lin(0x8f9b97), n1), lin(0x6e7471), g.mul(0.35));
+      m.roughnessNode = float(0.3); m.metalnessNode = float(0.0);
+    } else {
+      // round 2: frosted wired glass reads LIGHT from the street (it scatters the daylight inside the kiosk), a grime film
+      // low on each pane, spray tags on some panes (our own scribbles: contour lines of a noise, one colour a pane)
+      let gc = mix(mix(lin(0xc4cdc8), lin(0xb1bbb6), n1), lin(0x6e7471), g.mul(0.3));
+      gc = gc.mul(float(1).sub(smoothstep(0.5, 0.0, over.sub(1.05)).mul(0.18)));
+      const pane = floor(along.div(0.55)), ph = hash2D(vec2(pane, 3.3));
+      const scrib = smoothstep(0.035, 0.0, abs(noise2D(positionLocal.xy.add(positionLocal.zy).mul(vec2(2.2, 3.4)).add(pane)).sub(0.5)))
+        .mul(step(0.62, ph)).mul(smoothstep(0.2, 0.5, over.sub(1.05))).mul(smoothstep(0.1, 0.4, under));
+      const tagCol = select(ph.greaterThan(0.86), lin(0x161616), select(ph.greaterThan(0.74), lin(0xd94a8c), lin(0xf0f0ea)));
+      gc = mix(gc, tagCol, scrib.mul(0.9));
+      m.colorNode = gc; m.roughnessNode = mix(float(0.55), float(0.8), scrib); m.metalnessNode = float(0.0);
+      // the glow: the lamps behind the panes at night, the daylight scattered through them by day (emissive, no light)
+      m.emissiveNode = lin(0xe9eee6).mul(float(1).sub(scrib)).mul(nightGlow.mul(upLook.paneNight).add(float(1).sub(nightGlow).mul(upLook.paneDay)));
+    }
   } else {   // concrete: the landing slab, its yellow nosing, the throat's steps and its dark card
     let col = mix(lin(0x8e8b84), lin(0x9d9992), n1).mul(mix(0.93, 1.05, grit));
     col = mix(col, lin(0xd9b21e), isC(C.nosing ?? 1));
     col = mix(col, lin(0x17191b), isC(C.throat ?? 2));
     m.colorNode = col; m.roughnessNode = float(0.9);
+    // round 2: the throat's steps lit by the stair lamps at night (the landing too, a little)
+    if (R2) m.emissiveNode = col.mul(isC(C.tread ?? 3).add(isC(C.riser ?? 4)).mul(0.5).add(isC(C.slab ?? 0).mul(0.15)).add(isC(C.nosing ?? 1).mul(0.3))).mul(nightGlow);
   }
   const ao = texture(aoTex, uv(1)).r;
   m.aoNode = mix(float(1), ao, 0.95);
@@ -124,10 +183,19 @@ function insideMaterial(slot, mural, codes) {
     // (texture v = 1 - atlas y / 10: the image's top row is atlas y = 10; the PNG fallback is loaded with flipY false.
     // The direction signs (atlas x 37..40) are mapped mirrored by underpass.py: mirrored back here)
     const muralC = texture(mural, vec2(sx, float(1).sub(sy.div(10)))).rgb;
-    const lx = select(p.x.greaterThan(37.0), float(77.0).sub(p.x), p.x);
+    // (round 1 mirrored the signs here: the GLB's sign UVs already read left to right (tools/audit/underpassCheck.mjs
+    // sign check), so round 1 showed them mirrored; round 2 samples them as mapped: rule sign-uv-reads-right)
+    const lx = R2 ? p.x : select(p.x.greaterThan(37.0), float(77.0).sub(p.x), p.x);
     const letters = texture(mural, vec2(lx.sub(30).div(10), float(1).sub(p.y.add(7.5).div(10)))).rgb;
     const top = mix(lin(0x5bb2c2), lin(0x3d8fb0), smoothstep(2.5, 6.0, p.y)).mul(mix(0.94, 1.04, n1));
     let col = select(p.y.greaterThan(2.5), top, muralC);
+    if (R2) {
+      // round 2: the corridor's glazed dado (15 cm tiles to 1.2 m, our estimate from the photos' kind of finish) shows
+      // through the paint as fine joints and a slight sheen change; grime gathers on the bottom 25 cm
+      const tj = max(filteredPulse(p.x.div(0.15), float(0), float(0.06), fw.div(0.15)), filteredPulse(p.y.div(0.15), float(0), float(0.06), fw.div(0.15)));
+      col = col.mul(float(1).sub(tj.mul(0.22).mul(step(p.y, 1.2)).mul(isC(C.mural ?? 0))));
+      col = col.mul(float(1).sub(smoothstep(0.32, 0.12, p.y.add(n1.mul(0.08))).mul(0.25).mul(isC(C.mural ?? 0))));
+    }
     col = mix(col, lin(0x3a3d40), step(p.y, 0.12));
     col = mix(col, letters, isC(C.letters ?? 1));
     col = mix(col, lin(0x2f6f94).mul(mix(0.94, 1.04, n1)), isC(C.paint ?? 2));
@@ -144,10 +212,23 @@ function insideMaterial(slot, mural, codes) {
   } else alb = lin(0xfff8ec);
   const light = bakedLight();
   let col = alb.mul(light);
+  // round 2: the frosted panes seen from inside glow with the daylight outside (round 1: black, the bake has no light
+  // through them); at night only the bake (the lamps on them) and a faint street glow
+  if (R2 && slot === "glass_frosted") col = col.add(lin(0xdfe6ea).mul(float(1).sub(nightK()).mul(1.3).add(nightK().mul(0.04))).mul(upLook.adapt.mul(0.6)));
   if (slot === "lamp_glow") col = lin(0xfff6e6).mul(mix(2.2, 3.4, nightK()));
   m.colorNode = select(upLook.view.equal(1), light, select(upLook.view.equal(2), alb, col));
   m.name = `underpass inside ${slot}`; m.userData.slot = slot;
   return m;
+}
+
+/** the two kiosks in the model frame: eaves / base heights (model y = m TAW - oy) and the w between them (round 2) */
+function kioskFrame(notes) {
+  const F = notes.frame, oy = F.oy ?? 40;
+  const w = (k) => { const r = notes.kiosks[k].ring, x = r.reduce((s, p) => s + p[0], 0) / r.length, z = r.reduce((s, p) => s + p[1], 0) / r.length; return (x - F.origin_city[0]) * F.w[0] + (z - F.origin_city[1]) * F.w[1]; };
+  const wE = w("east"), wW = w("west"), flip = wE < wW;
+  const e = (k) => notes.kiosks[k].eaves - oy, b = (k) => (notes.kiosks[k].base ?? notes.kiosks[k].top) - oy;
+  // (positionLocal.z > split = the east kiosk; flipped if the east one has the smaller w)
+  return { split: float((wE + wW) / 2), eE: float(flip ? e("west") : e("east")), eW: float(flip ? e("east") : e("west")), bE: float(flip ? b("west") : b("east")), bW: float(flip ? b("east") : b("west")) };
 }
 
 async function loadMural(renderer) {
@@ -164,14 +245,20 @@ async function loadMural(renderer) {
 }
 
 async function aoTexture() {
-  const { w, h, r } = await decodeAO(new URL("calevoet_ao.png", BASE).href);
+  const png = new URL("calevoet_ao.png", BASE).href;
+  return R2 ? withAOKtx2(png, aoPng) : aoPng(png);
+}
+async function aoPng(url) {
+  const { w, h, r } = await decodeAO(url);
   const t = new THREE.DataTexture(r, w, h, THREE.RedFormat, THREE.UnsignedByteType);
   t.flipY = false; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
   t.colorSpace = THREE.NoColorSpace; t.needsUpdate = true;
   return t;
 }
 
-const loader = () => { MeshoptDecoder.useWorkers?.(2); return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder); };
+// (round 2: the decoder's workers made once; round 1 called useWorkers on every load, which ends the pool and starts a new one)
+let meshoptReady = false;
+const loader = () => { if (!meshoptReady || UP_OLD) { MeshoptDecoder.useWorkers?.(2); meshoptReady = true; } return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder); };
 
 export async function addUnderpass({ scene, updaters, hide, world, manifest, log = () => {}, compiler, renderer, getThird }) {
   const notes = await fetch(new URL("calevoet.json", BASE)).then((r) => r.json()).catch(() => null);
@@ -181,6 +268,7 @@ export async function addUnderpass({ scene, updaters, hide, world, manifest, log
   (async () => {
     const [gltf, aoTex] = await Promise.all([loader().loadAsync(new URL("calevoet.glb", BASE).href), aoTexture()]);
     const mats = {};
+    if (R2) upLook.kiosk = kioskFrame(notes);
     const matFor = (slot) => (mats[slot] ??= surfaceMaterial(slot, aoTex, notes.codes));
     const root = new THREE.Group(); root.name = UNDERPASS_ROOT;
     const pl = notes.placement;
@@ -286,7 +374,8 @@ function streamInside({ scene, notes, compiler, renderer, log, root, throat, sta
       cell.visible = false; scene.add(cell); cell.updateMatrixWorld(true);
       // ONE material at a time, 4 frames apart, while hidden (rule interior-stream-paced)
       let comp = compiler(); while (!comp) { await new Promise((r) => setTimeout(r, 250)); comp = compiler(); }
-      for (const o of meshes) { await comp([o]); for (let k = 0; k < 4; k++) await frame(); }
+      st.marks = [];
+      for (const o of meshes) { const c0 = performance.now(); await comp([o]); st.marks.push([o.userData.slot, Math.round(c0 - st.t.start), Math.round(performance.now() - c0)]); for (let k = 0; k < 4; k++) await frame(); }
       st.t.compiled = performance.now();
       st.cell = cell; st.mats = mats;
       st.stats = { triangles: Math.round(tris), draws, fetchMs: Math.round(st.t.loaded - st.t.start), compileMs: Math.round(st.t.compiled - st.t.loaded) };

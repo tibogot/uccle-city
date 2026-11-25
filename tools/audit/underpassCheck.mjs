@@ -15,6 +15,15 @@
 //                 voids + LOD0 and the collision mesh as a TriBVH) walks east street -> down -> the corridor -> up -> west
 //                 street and back: reaches each end, never > 5 cm inside the model, never above the corridor's soffit
 //                 while under it; and a walker crossing ON the ground over the corridor stays on the ground
+//   5. ROUND 2    (claude/underpass1 round 2) PANES: no frosted pane has its two faces on one plane (the inside face
+//                 >= 5 mm inside the outside one, in each set drawn together: LOD0 + throat, LOD0 + inside; rule
+//                 pane-faces-apart) and the heroshell ceiling of the kiosks is 0 m2 at every level; SIGNS: every lettered
+//                 face (the beams, the direction signs) reads left to right and upright and is not stretched (UV0 x grows to
+//                 the viewer's right, v down as glTF stores it, the same scale both ways within 2 %), and the shader samples
+//                 it as mapped (no mirror: rule sign-uv-reads-right); STREAM: the AO map ships as a BC4 KTX2 listed with
+//                 its PNG's hash and the mural KTX2 has its mips (rule ao-ktx2), the meshopt pool is made once; KIOSKS: the
+//                 Street View details are in LOD0 (the downpipe, the bollards' red band, the underpass sign); A/B: round 1's
+//                 files in models/underpass/r1/ for ?underpass=old
 //   node tools/audit/underpassCheck.mjs [--quiet]
 import { readFileSync, statSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -201,6 +210,77 @@ const uMid = (lv.corridor_uw[0][0] + lv.corridor_uw[0][1]) / 2;
     worst = Math.max(worst, Math.abs(ctl.pos[1] - hm.surface(ctl.pos[0], ctl.pos[2])));
   }
   check(worst < 0.2, "a walker on the ground over the corridor stays on the ground (the void stops under it)", `worst ${worst.toFixed(3)} m off the ground`);
+}
+
+// ---- 5. round 2
+{
+  const { createHash } = await import("node:crypto");
+  const { existsSync } = await import("node:fs");
+  const codeOf = (p, v) => Math.floor(p.ao[v] * 16 + 1e-4);
+  const tris = (parts) => parts.flatMap((p) => { const out = []; for (let t = 0; t < p.index.length; t += 3) out.push({ p, a: p.index[t], b: p.index[t + 1], c: p.index[t + 2] }); return out; });
+  const nrm = ({ p, a, b, c }) => { const P = p.positions, ax = P[a * 3], ay = P[a * 3 + 1], az = P[a * 3 + 2]; const e1 = [P[b * 3] - ax, P[b * 3 + 1] - ay, P[b * 3 + 2] - az], e2 = [P[c * 3] - ax, P[c * 3 + 1] - ay, P[c * 3 + 2] - az];
+    const n = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]], l = Math.hypot(...n) || 1; return { n: n.map((x) => x / l), d: (n[0] * ax + n[1] * ay + n[2] * az) / l, area: l / 2 }; };
+  // PANES: opposite-facing glass triangles closer than 5 mm whose footprints overlap (> 1 cm2)
+  const glass = (parts, nodes) => tris(parts.filter((p) => p.slot === "glass_frosted" && nodes.includes(p.node)));
+  const span = (t, ax) => { const P = t.p.positions; const v = [t.a, t.b, t.c].map((i) => P[i * 3 + ax]); return [Math.min(...v), Math.max(...v)]; };
+  const facing = (A, B) => {
+    let n = 0;
+    const NA = A.map((t) => ({ t, ...nrm(t) })), NB = B.map((t) => ({ t, ...nrm(t) }));
+    for (const a of NA) for (const b of NB) {
+      if (a.n[0] * b.n[0] + a.n[1] * b.n[1] + a.n[2] * b.n[2] > -0.99) continue;
+      if (Math.abs(a.d + b.d) > 0.005) continue;
+      // overlap of the two triangles' boxes in the plane (the axes other than the normal's main one)
+      const main = a.n.map(Math.abs).indexOf(Math.max(...a.n.map(Math.abs))), axes = [0, 1, 2].filter((k) => k !== main);
+      let ov = 1; for (const k of axes) { const [a0, a1] = span(a.t, k), [b0, b1] = span(b.t, k); ov *= Math.max(0, Math.min(a1, b1) - Math.max(a0, b0)); }
+      if (ov > 1e-4) n++;
+    }
+    return n;
+  };
+  const surfOuter = glass(surf.parts, ["Underpass_lod0"]);
+  const throatIn = glass(surf.parts, ["Underpass_throat"]), insideIn = glass(ins.parts, ["Inside"]);
+  const tieT = facing(surfOuter, throatIn), tieI = facing(surfOuter, insideIn);
+  check(tieT === 0 && tieI === 0, "panes: no frosted pane's inside face on its outside face's plane (>= 5 mm apart; LOD0 + throat, LOD0 + inside)", `coplanar opposite pairs: throat ${tieT}, inside ${tieI}`);
+  const ceil = J("tools/audit/heroShell.ceil.json").underpass || {};
+  check([0, 1, 2].every((k) => ceil[`L${k}`] === 0), "heroshell: the kiosks' open-shell ceiling is 0 m2 at every level", JSON.stringify(ceil));
+  // SIGNS: the lettered faces (wall_mural code letters) in the inside
+  const L_ = notes.codes.wall_mural.letters;
+  const lettered = tris(ins.parts.filter((p) => p.slot === "wall_mural")).filter((t) => codeOf(t.p, t.a) === L_);
+  let bad = 0, n = 0; const why = [];
+  for (const t of lettered) {
+    const { n: nv } = nrm(t), P = t.p.positions, U = t.p.uv0;
+    if (Math.abs(nv[1]) > 0.5) continue;                       // (the beams' undersides: no lettering on them)
+    const rx = nv[2], rz = -nv[0];                             // the viewer's right = cross(-n, up)
+    const pr = (v) => [P[v * 3] * rx + P[v * 3 + 2] * rz, P[v * 3 + 1]];
+    const [A, B, Cc] = [t.a, t.b, t.c].map(pr), det = (B[0] - A[0]) * (Cc[1] - A[1]) - (Cc[0] - A[0]) * (B[1] - A[1]);
+    if (Math.abs(det) < 1e-8) continue;
+    const g = (f) => { const fa = f(t.a), fb = f(t.b), fc = f(t.c); return [((fb - fa) * (Cc[1] - A[1]) - (fc - fa) * (B[1] - A[1])) / det, ((fc - fa) * (B[0] - A[0]) - (fb - fa) * (Cc[0] - A[0])) / det]; };
+    const gx = g((v) => U[v * 2]), gy = g((v) => U[v * 2 + 1]);
+    n++;
+    const ok = gx[0] > 0 && gy[1] < 0 && Math.abs(gx[1]) < 0.02 * Math.abs(gx[0]) && Math.abs(gy[0]) < 0.02 * Math.abs(gy[1]) && Math.abs(Math.abs(gx[0]) / Math.abs(gy[1]) - 1) < 0.02;
+    if (!ok) { bad++; if (why.length < 4) why.push(`x ${U[t.a * 2].toFixed(1)}: du/dright ${gx[0].toFixed(3)}, dv/dup ${gy[1].toFixed(3)}`); }
+  }
+  const src = readFileSync(new URL("viewer/underground/underpassCity.js", ROOT), "utf8");
+  const noMirror = /const lx = R2 \? p\.x :/.test(src);
+  check(n > 0 && bad === 0 && noMirror, "signs: every lettered face reads left to right, upright, unstretched (UV0 scale equal both ways within 2 %), sampled as mapped (no mirror in the round-2 shader)",
+    `${n} faces, ${bad} bad${why.length ? ": " + why.join("; ") : ""}${noMirror ? "" : "; the shader still mirrors"}`);
+  // STREAM: the AO as a BC4 KTX2 (its mips baked, rule ao-ktx2) listed with the PNG's hash; the mural KTX2's mips; one meshopt pool
+  const aoPng = new URL("models/underpass/calevoet_ao.png", ROOT), aoK = new URL("models/underpass/calevoet_ao.ktx2", ROOT);
+  const list = readFileSync(new URL("viewer/aoKtx2List.js", ROOT), "utf8");
+  const hash = createHash("sha1").update(readFileSync(aoPng)).digest("hex").slice(0, 10);
+  const lv = (f) => { const b = readFileSync(f); return b.readUInt32LE(40); };
+  const aoOk = existsSync(aoK) && list.includes(`"models/underpass/calevoet_ao.png": "${hash}"`) && lv(aoK) > 1 && /withAOKtx2\(png, aoPng\)/.test(src);
+  const muralLv = lv(new URL("models/underpass/mural.ktx2", ROOT));
+  const onePool = /if \(!meshoptReady \|\| UP_OLD\)/.test(src);
+  check(aoOk && muralLv > 1 && onePool, "stream: the AO map a BC4 KTX2 with baked mips, listed with its PNG's hash (no GPU mip generation at upload); the mural KTX2 has mips; one meshopt worker pool",
+    `AO ktx2 ${existsSync(aoK) ? lv(aoK) + " levels" : "missing"}, listed ${list.includes(hash)}, mural ${muralLv} levels, one pool ${onePool}`);
+  // KIOSKS: the Street View details in LOD0
+  const MGc = notes.codes.painted_metal_grey;
+  const lod0mg = tris(surf.parts.filter((p) => p.node === "Underpass_lod0" && p.slot === "painted_metal_grey"));
+  const has = (k) => lod0mg.filter((t) => codeOf(t.p, t.a) === MGc[k]).length;
+  const det = { pipe: has("pipe"), band: has("band"), sign_blue: has("sign_blue"), sign: has("sign") };
+  check(det.pipe > 0 && det.band > 0 && det.sign_blue > 0 && det.sign > 0, "kiosks: the downpipes, the bollards' red bands and the underpass signs are in LOD0", JSON.stringify(det));
+  const r1 = ["calevoet.glb", "calevoet_in.glb", "calevoet_ao.png", "mural.ktx2", "calevoet.json"].filter((f) => !existsSync(new URL(`models/underpass/r1/${f}`, ROOT)));
+  check(r1.length === 0 && /export const UP_OLD = /.test(src), "A/B: round 1's files kept in models/underpass/r1/ for ?underpass=old", r1.join(", "));
 }
 
 if (!QUIET || fails.length) console.log(rows.join("\n"));

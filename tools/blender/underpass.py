@@ -71,6 +71,10 @@ ROOF_T = 0.25        # [E] kiosk roof slab
 FASCIA = 0.22        # [E Street View 2024, west kiosk] a thin white fascia (top 0.04 over the roof)
 OVER = 0.40          # [E Street View] the flat roof overhangs ~0.4 m all round
 BEAM = 0.25          # [E] the lettered downstand beams over the stair mouths in the corridor (depth under the soffit)
+# round 2 (rule pane-faces-apart): a pane's inside face stands 12 mm inside its outside face. Round 1 drew both faces of
+# the frosted bays on the wall's mid plane, facing away from each other: a ray from the street then met two faces at the
+# same distance and the tie went to the throat's inside face, seen from behind (heroshell: 9.9 m2 "open" at L0)
+GLASS_GAP = 0.012
 GUT = 0.12           # [E] the bike gutters' width (both sides of each flight; the kid game rides them)
 EK = rect_of(SITE["kiosks"]["east"]["ring_uw"]); WK = rect_of(SITE["kiosks"]["west"]["ring_uw"])
 # the corridor (u along, w across): its east end wall = the east kiosk's inner east face, its west end = the west kiosk's
@@ -280,7 +284,7 @@ IN_SLOTS = ["concrete_step", "floor_tile_grey", "wall_mural", "ceiling_paint", "
 CODES = {
     "brick_painted_white": {"upper": 0, "lower": 1, "plinth": 2, "inner": 3, "end": 4},
     "paint_fascia": {"fascia": 0, "roof": 1, "soffit": 2},
-    "painted_metal_grey": {"frame": 0, "bollard": 1, "rail": 2, "gutter": 3, "housing": 4, "conduit": 5, "sign": 6, "grate": 7},
+    "painted_metal_grey": {"frame": 0, "bollard": 1, "rail": 2, "gutter": 3, "housing": 4, "conduit": 5, "sign": 6, "grate": 7, "pipe": 8, "sign_blue": 9, "band": 10},
     "glass_frosted": {"panel": 0, "inside": 1},
     "concrete": {"slab": 0, "nosing": 1, "throat": 2, "tread": 3, "riser": 4},
     "concrete_step": {"tread": 0, "nosing": 1, "riser": 2, "landing": 3, "string": 4},
@@ -389,6 +393,39 @@ def build_kiosk(mb, k, lod):
         for du in (-0.5, 0.5):
             mb.cyl(um + du * (iu1 - iu0) / 2.84, wm + mouth * 0.45, ground(um + du * (iu1 - iu0) / 2.84, wm + mouth * 0.45) - 0.2, ground(um + du * (iu1 - iu0) / 2.84, wm + mouth * 0.45) + 1.0, 0.06, MG, C(MG, "bollard"), segs=16 if lod == 0 else 6, rings=6 if lod == 0 else 1)
     k["bollards"] = [(um + du * (iu1 - iu0) / 2.84, wm + mouth * 0.45) for du in (-0.5, 0.5)]
+    if lod == 0:
+        # round 2 [Street View 2024, west kiosk]: the bollards' red band, the dark downpipe at the closed end, the
+        # pedestrian-underpass sign over the mouth (a generic blue information panel with our own white pictogram: a figure
+        # going down a stair; no operator's logo)
+        for (bu, bw) in k["bollards"]:
+            g0 = ground(bu, bw)
+            mb.cyl(bu, bw, g0 + 0.74, g0 + 0.86, 0.064, MG, C(MG, "band"), segs=16, cap_top=False)
+        pu = u1 - 0.16; pw = wclosed - mouth * 0.038     # (touching the wall: no slit behind it)
+        mb.cyl(pu, pw, sk + 0.1, fb + 0.02, 0.042, MG, C(MG, "pipe"), segs=16, cap_top=False, rings=max(1, int((fb - sk) / 0.14) + 1))   # (short rings: no streak)
+        mb.box(pu - 0.06, pu + 0.06, min(pw, wclosed), max(pw, wclosed), fb - 0.10, fb - 0.04, MG, C(MG, "pipe"))   # its wall clip
+        rwm = rw1 if mouth > 0 else rw0
+        sw_, st_ = 0.46, 0.015
+        sh1 = ft - 0.02; sh0 = sh1 - 0.48
+        wa_, wb_ = rwm, rwm + mouth * st_
+        mb.box(um - sw_ / 2, um + sw_ / 2, min(wa_, wb_), max(wa_, wb_), sh0, sh1, MG, C(MG, "sign_blue"))
+        wf = wb_ + mouth * 0.005
+        lay = [0]
+        def pict(poly):     # sign-local (x across, y up from the panel's foot), metres; each piece 1.2 mm over the last (no coplanar overlap)
+            lay[0] += 1
+            mb.face([P(um + x, wf + mouth * 0.0012 * lay[0], sh0 + y) for x, y in poly], MG, C(MG, "sign"), want=N(0, mouth, 0))
+        # the white border
+        for (x0, x1, y0, y1) in ((-0.21, 0.21, 0.02, 0.035), (-0.21, 0.21, 0.445, 0.46), (-0.21, -0.195, 0.035, 0.445), (0.195, 0.21, 0.035, 0.445)):
+            pict([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])
+        # the stair (three steps down to the right) and the figure on it
+        for i in range(3):
+            x0, y1 = -0.15 + i * 0.1, 0.24 - i * 0.065
+            pict([(x0, 0.07), (x0 + 0.1, 0.07), (x0 + 0.1, y1), (x0, y1)])
+        hx, hy, hr = -0.02, 0.385, 0.032
+        pict([(hx + hr * math.cos(a), hy + hr * math.sin(a)) for a in np.linspace(0, 2 * math.pi, 12, endpoint=False)])
+        pict([(-0.045, 0.345), (0.005, 0.345), (0.03, 0.255), (-0.02, 0.255)])                    # body, leaning forward
+        pict([(-0.02, 0.255), (0.012, 0.255), (-0.03, 0.18), (-0.058, 0.19)])                    # back leg on the upper step
+        pict([(0.004, 0.262), (0.03, 0.255), (0.07, 0.19), (0.045, 0.175)])                      # front leg reaching down
+        pict([(-0.03, 0.335), (-0.012, 0.325), (0.04, 0.29), (0.032, 0.276)])                    # arm
 
 def kiosk_lod(lod):
     mb = MB(SURF_SLOTS)
@@ -592,7 +629,7 @@ def build_inside():
                     mural_wall(mb, a, b, (nu, 0), hb=hb, ht=ht, holes=holes, vref=hb)
                     # the frosted panels' inside faces in the bays (the inside's own: they glow by day, the bake's sky)
                     for (sa_, sb_, z0_, z1_) in holes:
-                        um_ = (uw + (k["u0"] if side == 0 else k["u1"])) / 2
+                        um_ = (uw + (k["u0"] if side == 0 else k["u1"])) / 2 + nu * GLASS_GAP   # (round 2: never coplanar with the outer pane)
                         pa_ = a[1] + (b[1] - a[1]) * sa_ / L; pb_ = a[1] + (b[1] - a[1]) * sb_ / L
                         mb.grid(P(um_, pa_, z0_), P(um_, pb_, z0_) - P(um_, pa_, z0_), P(um_, pa_, z1_) - P(um_, pa_, z0_), max(1, int(abs(pb_ - pa_) / 0.5)), 2,
                                 "glass_frosted", C("glass_frosted", "inside"), want=N(nu, 0, 0))
@@ -758,7 +795,7 @@ for name, k in KIOSKS.items():
         bays = [(k["w0"] + s0 - min(wfar, wm), k["w0"] + s1 - min(wfar, wm)) for s0, s1 in kiosk_bays(k, 0)]
         wall_face(th, (uw, min(wfar, wm)), (uw, max(wfar, wm)), hcard, so, (nu, 0), "brick_painted_white", C("brick_painted_white", "inner"),
                   [(a_, b_, k["base"] + 1.05, so - 0.16) for a_, b_ in bays])
-        um_ = (uw + (k["u0"] if nu > 0 else k["u1"])) / 2
+        um_ = (uw + (k["u0"] if nu > 0 else k["u1"])) / 2 + nu * GLASS_GAP     # (round 2: never coplanar with the outer pane)
         for s0, s1 in kiosk_bays(k, 0):
             th.face([P(um_, k["w0"] + s0, k["base"] + 1.05), P(um_, k["w0"] + s1, k["base"] + 1.05), P(um_, k["w0"] + s1, so - 0.16), P(um_, k["w0"] + s0, so - 0.16)],
                     "glass_frosted", C("glass_frosted", "inside"), want=N(nu, 0, 0))
@@ -809,6 +846,66 @@ def site_ground():
     return [g, nb]
 
 # ================================================================================================ the mural (OUR OWN design)
+PAINT = "--flat-mural" not in ARGS     # round 2: the painted-wall pass over the rendered mural (--flat-mural: round 1's flat shapes)
+
+def paint_wear(path):
+    """round 2, the mural as PAINT ON A WALL (our own rules, no photo): the rendered vector scene gets dark contour lines
+    (a muralist's outline), long horizontal brush streaks, spray grain, the render's grain showing through, paint chips
+    (more near the floor), grime and rising damp at the foot, water streaks from the soffit, a faded, slightly
+    desaturated paint; row 3 (the lettering band, the enamel signs) gets a faint grain only. numpy only, seeded."""
+    img = bpy.data.images.load(path); W, H = img.size
+    a = np.empty(W * H * 4, np.float32); img.pixels.foreach_get(a); a = a.reshape(H, W, 4)[:, :, :3].copy()   # (row 0 = the bottom: atlas y = row / H * 10)
+    rng = np.random.default_rng(1950)
+    y = (np.arange(H, dtype=np.float32) + 0.5) / H * 10.0
+    mural_rows = (y < 7.5).astype(np.float32)
+    hh = np.where(y < 7.5, y % 2.5, 9.0)[:, None]                    # height over the corridor floor within a strip (m)
+    def vnoise(gx, gy, seed):
+        g = np.random.default_rng(seed).random((gy + 1, gx + 1)).astype(np.float32)
+        xs = np.linspace(0, gx, W, dtype=np.float32); ys = np.linspace(0, gy, H, dtype=np.float32)
+        x0 = np.floor(xs).astype(int).clip(0, gx - 1); y0 = np.floor(ys).astype(int).clip(0, gy - 1)
+        fx = (xs - x0)[None, :]; fy = (ys - y0)[:, None]
+        fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy)
+        g00 = g[y0][:, x0]; g10 = g[y0][:, x0 + 1]; g01 = g[y0 + 1][:, x0]; g11 = g[y0 + 1][:, x0 + 1]
+        return g00 * (1 - fx) * (1 - fy) + g10 * fx * (1 - fy) + g01 * (1 - fx) * fy + g11 * fx * fy
+    def box(im, r):
+        c = np.cumsum(np.cumsum(np.pad(im, ((r + 1, r), (r + 1, r), (0, 0)), mode="edge"), 0), 1)
+        k = 2 * r + 1
+        return (c[k:, k:] - c[:-k, k:] - c[k:, :-k] + c[:-k, :-k]) / (k * k)
+    M = mural_rows[:, None]
+    # 1. contours: a colour edge, widened to ~1.5 cm, painted in a deep blue-black
+    gx = np.abs(np.diff(a, axis=1, append=a[:, -1:])).sum(2); gy = np.abs(np.diff(a, axis=0, append=a[-1:])).sum(2)
+    e = np.clip((gx + gy - 0.12) / 0.25, 0, 1)
+    e = np.maximum.reduce([e, np.roll(e, 1, 0), np.roll(e, -1, 0), np.roll(e, 1, 1), np.roll(e, -1, 1)])
+    e = box(e[:, :, None], 1)[:, :, 0] * M
+    ink = np.array([0.03, 0.07, 0.12], np.float32)
+    a = a * (1 - 0.48 * e[:, :, None]) + ink * (0.48 * e[:, :, None])
+    a = box(a, 1)                                                    # (soft paint edges, no vector crispness)
+    # 2. brush streaks (long in x), spray grain, the render's grain under the paint
+    streak = vnoise(36, 260, 11) * 0.6 + vnoise(90, 700, 12) * 0.4      # (slow along x: horizontal brush strokes)
+    grain = rng.random((H, W), dtype=np.float32)
+    render = vnoise(700, 700, 13)
+    shade = M * ((streak - 0.5) * 0.07 + (grain - 0.5) * 0.035 + (render - 0.5) * 0.05) + (1 - M) * (grain - 0.5) * 0.02
+    a *= (1 + shade)[:, :, None]
+    # 3. faded, slightly desaturated paint
+    g_ = (a @ np.array([0.3, 0.59, 0.11], np.float32))[:, :, None]
+    a = a * (1 - 0.1 * M[:, :, None]) + (g_ * 0.1 + 0.015) * M[:, :, None]
+    # 4. chips: the grey render under the paint, more near the floor (kicks, bags, bikes)
+    chipn = vnoise(900, 900, 14) * 0.7 + vnoise(2000, 2000, 15) * 0.3
+    pchip = np.where(hh < 0.6, 0.035 + 0.05 * (0.6 - hh) / 0.6, 0.006)
+    chip = np.clip((chipn - (1 - pchip)) / 0.02, 0, 1) * M
+    rend = np.array([0.66, 0.64, 0.6], np.float32) * (0.9 + 0.15 * render[:, :, None])
+    a = a * (1 - chip[:, :, None]) + rend * chip[:, :, None]
+    # 5. grime + rising damp at the foot (a ragged tide line), water streaks from the top of each strip
+    tide = 0.18 + 0.16 * vnoise(60, 4, 16)
+    damp = np.clip((tide - hh) / 0.12, 0, 1) * M
+    # (sparse: only where a low-frequency mask lets them run, narrow, fading downwards: never a regular curtain)
+    wet = np.clip((vnoise(520, 3, 17) - 0.78) / 0.12, 0, 1) * np.clip((vnoise(14, 2, 18) - 0.55) / 0.25, 0, 1) * np.clip((hh - 1.2) / 1.1, 0, 1) * M
+    a *= (1 - 0.28 * damp - 0.1 * wet)[:, :, None]
+    a = np.clip(a, 0, 1)
+    out = np.ones((H, W, 4), np.float32); out[:, :, :3] = a
+    img.pixels.foreach_set(out.ravel()); img.filepath_raw = path; img.file_format = "PNG"; img.save()
+    bpy.data.images.remove(img)
+
 def make_mural(path, px=2048):
     """an invented underwater mural, three 10 m x 2.5 m strips (rows 0-2) + row 3: the lettering band 'CALEVOET ·
     KALEVOET' (x 0..7 m) and an invented arrow sign (x 7..10 m). Rendered orthographically (Cycles, emission only) from
@@ -987,6 +1084,34 @@ def make_mural(path, px=2048):
         for k_ in range(5):
             x_ = jx - 0.2 + 0.1 * k_
             stroke([(x_ + 0.03 * math.sin(q * 9 + k_), jy - q * 0.55) for q in np.linspace(0, 1, 10)], 0.012, 0.061, jel2)
+    # ---- round 2: more of our own scene (a diver, an octopus on the rocks, a manta gliding)
+    suit, tank, fin, mask = emis("suit", srgb("1b2a3a")), emis("tank", srgb("f2c230")), emis("fin", srgb("2bb3a6")), emis("mask", srgb("bfe8f2"))
+    dx_, dy_ = 2.6, 1.55
+    disc(dx_, dy_, 0.42, 0.13, 0.07, suit, rot=0.12)                                   # body
+    poly2d([(dx_ - 0.1, dy_ + 0.12), (dx_ + 0.25, dy_ + 0.16), (dx_ + 0.25, dy_ + 0.26), (dx_ - 0.1, dy_ + 0.22)], 0.071, tank)
+    disc(dx_ + 0.48, dy_ + 0.06, 0.1, 0.09, 0.072, suit)                                # head
+    disc(dx_ + 0.53, dy_ + 0.07, 0.05, 0.035, 0.073, mask)
+    for (ox, oy, a) in ((-0.5, 0.05, 0.25), (-0.52, -0.06, -0.15)):
+        stroke([(dx_ - 0.3, dy_ + oy * 0.5), (dx_ + ox, dy_ + oy), (dx_ + ox - 0.12, dy_ + oy + a * 0.3)], lambda q: 0.05 + 0.08 * q, 0.069, fin)
+    stroke([(dx_ + 0.2, dy_ - 0.05), (dx_ + 0.42, dy_ - 0.14), (dx_ + 0.58, dy_ - 0.1)], 0.045, 0.074, suit)          # arm
+    for i in range(9):
+        r_ = 0.018 + 0.006 * i; ring2d(dx_ + 0.6 + 0.04 * math.sin(i), dy_ + 0.2 + 0.11 * i, r_, r_ * 1.3, 0.075, emis(f"db{i}", srgb("e6f7fa")), n=14)
+    oc, oc2 = emis("oct", srgb("d9573b")), emis("oct2", srgb("f2a08a"))
+    ox_, oy_ = 1.7, 5.0 + 0.55
+    for i in range(8):
+        a0 = math.pi * (1.05 + 0.9 * i / 7); L_ = rnd.uniform(0.45, 0.7); cur = rnd.choice((-1, 1)) * rnd.uniform(1.5, 3.0)
+        pts = [(ox_ + math.cos(a0 + cur * t_ * t_ * 0.6) * L_ * t_, oy_ - 0.08 + math.sin(a0 + cur * t_ * t_ * 0.6) * L_ * t_ * 0.8) for t_ in np.linspace(0, 1, 18)]
+        stroke(pts, lambda q: 0.07 * (1 - q) + 0.01, 0.08 + i * 1e-4, oc)
+        for t_ in (0.35, 0.55, 0.75):
+            x_, y_ = pts[int(t_ * 17)]; disc(x_, y_, 0.012, 0.012, 0.081 + i * 1e-4, oc2, n=8)
+    disc(ox_, oy_ + 0.08, 0.2, 0.25, 0.082, oc)
+    disc(ox_ - 0.07, oy_ + 0.02, 0.035, 0.035, 0.083, eye_w, n=10); disc(ox_ + 0.07, oy_ + 0.02, 0.035, 0.035, 0.083, eye_w, n=10)
+    disc(ox_ - 0.065, oy_ + 0.02, 0.016, 0.02, 0.084, eye_b, n=8); disc(ox_ + 0.075, oy_ + 0.02, 0.016, 0.02, 0.084, eye_b, n=8)
+    mt, mt2 = emis("manta", srgb("2d3e52")), emis("manta2", srgb("9fb7c6"))
+    mx_, my_ = 7.6, 2.5 + 1.75
+    poly2d([(mx_ - 0.85, my_ + 0.05), (mx_ - 0.2, my_ + 0.3), (mx_ + 0.35, my_ + 0.12), (mx_ + 0.5, my_), (mx_ + 0.35, my_ - 0.1), (mx_ - 0.2, my_ - 0.22)], 0.07, mt)
+    poly2d([(mx_ - 0.4, my_ - 0.02), (mx_ + 0.2, my_ + 0.06), (mx_ + 0.3, my_ - 0.04), (mx_ - 0.1, my_ - 0.14)], 0.071, mt2)
+    stroke([(mx_ - 0.8, my_ + 0.03), (mx_ - 1.3, my_ - 0.05), (mx_ - 1.6, my_ + 0.02)], lambda q: 0.03 * (1 - q) + 0.005, 0.069, mt)
     # ---- bubbles
     bub = emis("bub", srgb("d9f3f7"))
     for row in range(3):
@@ -1016,6 +1141,7 @@ def make_mural(path, px=2048):
     text("Rue Engeland · Dieweg", 8.35, 8.4, 0.11, 0.02, sb)
     sc.render.filepath = path; sc.render.image_settings.file_format = "PNG"; sc.render.image_settings.color_mode = "RGB"
     bpy.ops.render.render(write_still=True, scene=sc.name)
+    if PAINT: paint_wear(path)
     TIMES["mural_s"] = round(time.time() - t0, 1)
     print("mural", path, TIMES["mural_s"], "s")
 
@@ -1253,7 +1379,7 @@ notes = {
                   "hides_solids": [E["solid"], Wk["solid"]], "hides_bu_ids": [x for x in (E["bu"], Wk["bu"]) if x]},
     "frame": FR,
     "levels": {"floor": FLOOR, "soffit": SOFFIT, "slab_top": SOFFIT + SLAB, "corridor_uw": [[CU0, CU1], [CW0, CW1]], "corridor_clear_w": round(CW1 - CW0, 3)},
-    "kiosks": {n: {"rect_uw": [k["u0"], k["u1"], k["w0"], k["w1"]], "ring": ring_city(k["u0"], k["u1"], k["w0"], k["w1"]), "eaves": k["eaves"], "top": k["top"], "skirt": round(k["skirt"], 3),
+    "kiosks": {n: {"rect_uw": [k["u0"], k["u1"], k["w0"], k["w1"]], "ring": ring_city(k["u0"], k["u1"], k["w0"], k["w1"]), "eaves": k["eaves"], "base": k["base"], "top": k["top"], "skirt": round(k["skirt"], 3),
                    "solid": k["solid"], "bu": k["bu"], "bollards": [city(*b) for b in k["bollards"]]} for n, k in KIOSKS.items()},
     "wells": wells, "voids": voids, "stairs": stairs,
     "bike_gutters": {"note": "KID GAME (docs/KIDGAME.md): the bike rides these steel gutters down / up the stairs (owner 2026-11-24); a clean inclined plane each, 12 cm wide, against the walls; no bike code yet",

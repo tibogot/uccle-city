@@ -1,6 +1,6 @@
 # Mesh audit (before pack): calevoet.lod1
 
-288 triangles, 252 welded vertices, 200 open edges, 75,936 rays, 130 ms.
+288 triangles, 252 welded vertices, 200 open edges, 75,936 rays, 190 ms.
 
 **0 blocking**, 34 warnings. Clean (no blocking item).
 

@@ -1,6 +1,6 @@
 # Mesh audit (packed): inside.inside
 
-21,125 triangles, 11,461 welded vertices, 2,195 open edges, 139,928 rays, 2078 ms.
+21,125 triangles, 11,461 welded vertices, 2,195 open edges, 139,928 rays, 1887 ms.
 
 **0 blocking**, 1195 warnings. Clean (no blocking item).
 

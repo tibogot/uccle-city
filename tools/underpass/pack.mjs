@@ -3,7 +3,8 @@
 //      (--force-audit to pack anyway); LOD groups = what is drawn together (lod0 + the throat; lod1; lod2; the inside);
 //   2. tools/hero_pack.mjs --nolod on both (the LODs are scripted): COLOR_0 -> uint8, _LSKY / _LNIGHT -> RGBM uint8,
 //      meshopt on every buffer view;
-//   3. the mural atlas -> KTX2 (UASTC + Zstandard, mipmaps: the KTX-Software CLI), the PNG kept as the fallback;
+//   3. the mural atlas -> KTX2 (UASTC + RDO lambda 1 + Zstandard, mipmaps: the KTX-Software CLI; round 2: the painted
+//      mural's grain made plain UASTC 4.3 MB, RDO brings it to 2.7 MB), the PNG kept as the fallback;
 //   4. the packed files audited again (report only).
 //   node tools/underpass/pack.mjs [--force-audit] [--no-audit]
 import { spawnSync } from "node:child_process";
@@ -35,7 +36,7 @@ run(process.execPath, ["tools/hero_pack.mjs", `${D}/calevoet.raw.glb`, `${D}/cal
 run(process.execPath, ["tools/hero_pack.mjs", `${D}/calevoet_in.raw.glb`, `${D}/calevoet_in.glb`, "--nolod", "--name", "Inside"]);
 const KTX = process.env.KTX_EXE || "C:/Program Files/KTX-Software/bin/ktx.exe";
 if (fs.existsSync(KTX)) {
-  run(KTX, ["create", "--format", "R8G8B8A8_SRGB", "--assign-tf", "srgb", "--encode", "uastc", "--uastc-quality", "2", "--zstd", "18", "--generate-mipmap", `${D}/mural.png`, `${D}/mural.ktx2`]);
+  run(KTX, ["create", "--format", "R8G8B8A8_SRGB", "--assign-tf", "srgb", "--encode", "uastc", "--uastc-quality", "2", "--uastc-rdo", "--uastc-rdo-l", "1.0", "--zstd", "18", "--generate-mipmap", `${D}/mural.png`, `${D}/mural.ktx2`]);
 } else console.warn("[underpass pack] no KTX-Software CLI: the mural ships as PNG only");
 if (!ARGV.includes("--no-audit")) {
   await auditGroups(`${D}/calevoet.glb`, SURF, true);

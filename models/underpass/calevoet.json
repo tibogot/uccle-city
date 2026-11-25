@@ -77,6 +77,7 @@
     ]
    ],
    "eaves": 55.42,
+   "base": 52.55,
    "top": 52.939,
    "skirt": 52.212,
    "solid": "https://databrussels.be/id/buildingsolid/525169",
@@ -118,6 +119,7 @@
     ]
    ],
    "eaves": 53.94,
+   "base": 51.01,
    "top": 51.265,
    "skirt": 50.707,
    "solid": "https://databrussels.be/id/buildingsolid/519275",
@@ -624,7 +626,10 @@
    "housing": 4,
    "conduit": 5,
    "sign": 6,
-   "grate": 7
+   "grate": 7,
+   "pipe": 8,
+   "sign_blue": 9,
+   "band": 10
   },
   "glass_frosted": {
    "panel": 0,
@@ -662,7 +667,7 @@
   }
  },
  "tris": {
-  "lod0": 6376,
+  "lod0": 8152,
   "lod1": 288,
   "lod2": 88,
   "throat": 260,
@@ -670,12 +675,12 @@
   "collision": 46
  },
  "times": {
-  "build_s": 0.5,
-  "mural_s": 2.7,
-  "ao_bake_s": 3.3,
-  "inside_bake_sky_s": 0.9,
-  "inside_bake_night_s": 0.8,
-  "inside_bake_s": 2.1
+  "build_s": 0.8,
+  "mural_s": 17.6,
+  "ao_bake_s": 6.9,
+  "inside_bake_sky_s": 2.8,
+  "inside_bake_night_s": 2.2,
+  "inside_bake_s": 5.5
  },
  "samples": 256,
  "device": "GPU",
