@@ -244,3 +244,82 @@ Night was checked in Blender (a blue night with a sodium lamp) and with the lab'
 - Blender renders: `A_v2_day_{front,q34,side,back,face}.png` and `A_v2_night_{q34,face}.png`.
 - Lab: `lab_face_A_v2.png`, `lab_walk_day.png`, `lab_walk_night.png`, `lab_ride_seated_side.png`,
   `lab_ride_standing_sprint.png`, `lab_ride_crouch_air.png`, `lab_pose_sheet_1.png`, `lab_pose_sheet_crouch.png`.
+
+## Phase 3: the polish round (2026-11-26, branch claude/kid)
+Kid A is now the bike lab's default. `?kid=old` brings back the scripted kid; `?kid=0` gives the placeholder rider.
+
+### Clips from the real UAL packs
+The packs are back on disk, so `node tools/characters/ualBuild.mjs --kid --src kidA` builds him the same way the old kid
+is built.
+- It reads kidA_src.glb and kidA_rig.json and keeps his UVs.
+- The stair clips are re-synthesised on his own legs. Base hips: StairsUp -8.8 cm, StairsDown -12.0 cm.
+- Every speed, contact and step is measured on his legs: walk 0.798, jog 4.386, sprint 6.755 m/s. These replace the
+  1.0685 scaling of the old kid's values.
+- `tools/characters/kidABuild.mjs` (building from kid.glb) is now only a fallback for when the packs are missing.
+
+Note: the committed kid.glb is not byte-reproducible by `ualBuild.mjs --kid`, even before this round (the bytes differ
+from offset 1477073 on). The old kid's kid.glb was left as committed.
+
+### The BMX and his knees
+**Why the knees rode high.** The bike is a true 20" BMX: wheel R 0.254, wheelbase 0.95, BB 0.29, 175 mm cranks, saddle
+top 0.74 m. The problem was his longer hips-to-shoulders torso. From the low saddle his shoulders could not reach the
+bars even at the spine's full bend, so the IK slid his body 7 cm forward off the saddle. That closed his knees to 41 deg
+at the top of the stroke and 115 deg at the bottom. The old kid does the same: a 10 cm slide, knees at 39 deg.
+
+**The fix** is `RIDE_KIDA` in viewer/kid/riderIK.js:
+- The **seat post is 5 cm up** (`seatPost`). `bmxModel.setSeatPost` slides the saddle and the Seat empty along the
+  71 deg seat tube and adds a chrome post piece. The node tests move the Seat empty the same way.
+- The **pelvis is pitched 0.6 rad forward**: he leans from the hips.
+- **Ankling** (`RIDE.ankling`; 0 for the old kid): the heel drops by 3 cm over the top of the stroke and lifts at the
+  bottom.
+- The hip fit now turns the hip offsets by the pelvis pitch and roll that are applied just after it.
+
+**Result:** his knee runs 56 deg at the top to 130 at the bottom, he stays on the saddle (no slide), and his elbows
+bend to at most 94 deg.
+
+**The geometric limit.** The stroke takes 2 x 175 mm out of a 0.705 m leg whose reach is capped at 96.5 %. That closes
+the knee to about 55-60 deg at best. Reaching 70-80 deg would need junior cranks of about 140 mm, which is a change to
+the BMX asset (another agent's) and was not made.
+
+**Check:** a new kidTest row, "rider (bmx): seated pedalling: knee at the top, elbows bent, on the saddle". Kid A must
+reach 50-85 deg with no slide. The old kid must reach 35-85 deg (it rides at 39). All suites pass:
+
+| suite | checks |
+|---|---|
+| kid | 33/33 |
+| kida | 35/35 |
+| bike | 96 |
+| bikepark | 17 |
+| bikefall | 22 |
+
+### Look leftovers fixed (why -> rule -> check)
+- **The hem was ragged.** Two causes. The garments were decimated *after* their cuts, so the collapse chewed the hem and
+  cuff edges. And the hip sides are moved by the thigh bones, so the jacket region left them out and ended above the cut
+  line in a step. Fixes:
+  - decimate before cutting;
+  - the jacket region takes the thigh-moved hip sides;
+  - the hem sits at the waist (a 90s elastic hem; lower down it folded with the thighs: hips 1.6 %);
+  - 80 % of the jacket's thigh weights move to the pelvis;
+  - the shorts end 1.2 cm under the hem (their dark belt stood out below it).
+
+  Check: the kida tear rows (hips 0.86 %).
+- **The jacket was full at the belly.** It followed his belly. It now hangs from the chest's front line (`jk_shape`). The
+  tee strip and the shorts' waistband are kept 6-10 mm behind it, so nothing pokes through.
+- **The cap was roomy and sat high.** It had been lifted over the hair by up to 4.5 cm. It now sits 1.2 cm over the
+  scalp, with the rim 6 mm lower. The hair under it is pressed to at most 8 mm off the scalp (1801 vertices); the fringe
+  still falls below the rim.
+- **There were skin holes above the socks, at the wrists and inside the shorts.** The skin was hidden over the whole
+  uncut garment region. Now only the skin 1 cm inside every cut is hidden (rule hide-skin-under-garments, refined).
+
+### Renders in the game pose
+`tools/blender/kidARender.py` renders the GAME model (kidA.glb, any clip; Idle by default) with the atlas, the AO and the
+chosen brim, by day and at night. The bind-pose renders showed the UAL T-pose posture (arched back), not what the game
+shows.
+
+LOD0 has 21,706 tris, LOD1 7,997, LOD2 2,000.
+
+Renders: `C:\Users\tibog\Downloads\uccle-kidchar\v3\`.
+- `A_v3_compare.png`: before (v2, Idle) vs after.
+- `A_v3_{day,night}_*.png`: after.
+- `A_v2idle_*.png`: before.
+- Lab shots: `lab_*`.
