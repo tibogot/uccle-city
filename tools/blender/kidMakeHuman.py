@@ -54,7 +54,16 @@ CANDS = {
                     "mouth/mouth-angles-up": 0.3}, "hair_trim": 0.015, "fringe_v": 0.03, "scalp": True, "hair_ratio": 0.6,
         "shirt": "elvs_crude_t-shirt_male", "shirt_tint": (0.18, 0.52, 0.55), "shorts_tint": (0.33, 0.35, 0.27), "shoes": "shoes05"},
 }
+# A v2 (the owner's pick, 2026-11-25: "A is cool but we will still have to fine tune it"): a relaxed smile, fuller
+# cheeks, the 90s outfit (kidGame.py: windbreaker, high socks, cap; white tee, knee shorts, chunky white sneakers)
+CANDS["a2"] = dict(CANDS["a"], label="A v2", targets=dict(CANDS["a"]["targets"], **{
+    "mouth/mouth-angles-up": 0.5, "cheek/l-cheek-volume-incr|cheek/r-cheek-volume-incr": 0.45,
+    "cheek/l-cheek-bones-decr|cheek/r-cheek-bones-decr": 0.15, "mouth/mouth-laugh-lines-in": 0.15,
+    "eyes/l-eye-bag-decr|eyes/r-eye-bag-decr": 0.3}),
+    shirt_tint=(0.93, 0.93, 0.90), shorts_tint=(0.58, 0.52, 0.38), shoes_tint=(0.95, 0.95, 0.93), hair_tint=(0.38, 0.26, 0.16),
+    shorts_above_knee=0.01)
 C = CANDS[CAND]
+GAME = "--game" in argv
 SHORTS = "cortu_cargo_pants"     # cut to knee-length 90s shorts (cut_shorts below); cortu_jeans_shorts are hot pants on a kid
 AGE_11 = 0.1875          # MakeHuman's age macro: 0 = 1 year, 0.1875 = 11 years, 0.5 = 25 years, 1 = 90 years
 MAX_TEX = 1024
@@ -134,7 +143,8 @@ for sub, nm, atype in [("eyes", "low-poly", "Eyes"), ("eyebrows", C["brows"], "E
 
 # 90s shorts: the cargo pants cut just above the knee; the body's delete group (the skin hidden under the pants) shrunk
 # to the same line (minus an overlap) so the shins come back
-def cut_shorts(pants, above_knee=0.035, overlap=0.03):
+def cut_shorts(pants, above_knee=None, overlap=0.03):
+    above_knee = C.get("shorts_above_knee", 0.035) if above_knee is None else above_knee
     import bmesh
     knee = min((rig.matrix_world @ rig.pose.bones[f"calf_{s}"].head).z for s in "lr")
     zc = knee + above_knee
@@ -445,6 +455,9 @@ def look(cam, target):
 
 if PROBE:
     print("PROBE done"); sys.exit(0)
+if GAME:
+    exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "kidGame.py"), encoding="utf-8").read())
+    sys.exit(0)
 info = export()
 if RENDERS: renders(RENDERS)
 print("DONE", json.dumps({k: info[k] for k in ("cand", "height", "headRatio", "tris")}))
