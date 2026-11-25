@@ -20,10 +20,11 @@
 // Cost: nothing while no falcon game runs (no updater). In the game: per frame the indicator (1 style write) and the
 // assist (a few flops); the mux copies 3.7 KB of states; gauges at 4 Hz, diffed DOM writes; no allocation per frame.
 import { PIGEON } from "../falconFlight/pigeons.js";
+import { FUN, strikeScale } from "../falconFlight/falconFun.js";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
-const NP = 256;
+const NP = 256, NS = 2, G = NS * NP;      // (NS = cityFlyer.js PIGEON_FLOCKS: the square flocks drawn at once)
 
 const CSS = `
 .fg .fg-tgt.lock { border-radius: 50%; border: 2px solid rgba(255,255,255,.75); box-shadow: 0 0 14px rgba(255,255,255,.35), inset 0 0 10px rgba(255,255,255,.18); }
@@ -42,6 +43,10 @@ const CSS = `
 .fg .fg-goal.on { display: block; } .fg .fg-goal em { font-style: normal; color: #ffcc33; margin-left: 10px; }
 .fg .fg-hint { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); padding: 8px 16px; display: none; font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; }
 .fg .fg-hint.on { display: block; } .fg .fg-hint kbd { font: 800 12px/1 ui-monospace, monospace; padding: 2px 6px; border-radius: 4px; background: #ffcc33; color: #1a1406; }
+.fg .fg-banner.fun { top: auto; bottom: 20%; }   /* (round 3: under the strike camera's falcon, not over it) */
+.fg .fg-banner.miss { border-color: rgba(255,150,60,.6); } .fg .fg-banner.miss h2 { color: #ffb347; font-size: 28px; } .fg .fg-banner.miss p { color: #ffd9a8; }
+.fg .fg-tgt.lock::after { content: ""; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: rgba(255,255,255,.9); box-shadow: 0 0 6px rgba(0,0,0,.6); }
+.fg .fg-tgt.lock.ok::after { background: #8ef0a6; }
 .fg .fg-banner small { display: block; margin-top: 4px; font-size: 13px; font-weight: 800; letter-spacing: .06em; color: #8ef0a6; }
 @media (max-width: 640px) { .fg .fg-goal { top: 6px; font-size: 11.5px; } .fg .fg-hint { font-size: 13px; bottom: 150px; white-space: normal; width: calc(100vw - 32px); text-align: center; } }
 body.fg-on .fhud, body.fg-on .fring.tgt { display: none !important; }
@@ -104,34 +109,60 @@ body.fg-on .fg { display: block; } body.photo .fg { visibility: hidden; }
 @media (max-width: 640px) { .fg .fg-hunger { top: auto; bottom: 140px; } .fg .fg-gauge b { font-size: 26px; } }
 `;
 
-/** one prey interface over the square's pigeons (CPU) and the sky flocks (GPU read-back) */
+/** one prey interface over the square's pigeons (CPU) and the sky flocks (GPU read-back).
+ *  (falcon fun round 3) EVERY drawn square flock is prey: cityFlyer draws the NS nearest to the camera; the old mux held
+ *  only the one nearest the falcon, so the other drawn flock's pigeons flew past untargetable (the owner: "I cross some
+ *  birds in the sky and those were not targetable"). Indices: slot s's pigeons s x NP .. s x NP + 255 (a flock keeps
+ *  its slot while it is drawn), the sky birds from G = NS x NP. ?falconfun=old: one slot, the flock nearest the falcon. */
 export class PreyMux {
   constructor(gpu) {
     this.gpu = gpu; this.flock = null;
-    this.state = new Uint8Array(NP + (gpu ? gpu.state.length : 0)).fill(PIGEON.GONE);
+    this.flocks = new Array(NS).fill(null);
+    this.state = new Uint8Array(G + (gpu ? gpu.state.length : 0)).fill(PIGEON.GONE);
     this.lastTaken = null;
     this.allowPerched = true;
+    this._one = [null];
   }
-  sync(flock, game) {
-    if (flock !== this.flock) { this.flock = flock; if (game) { game.target = -1; game.window = null; } }
-    const S = this.state, F = flock, fun = !!game?.fun;
+  /** list: the drawn square flocks, the nearest to the falcon first (fun: all of them; old: the first), or one flock */
+  sync(list, game) {
+    const fun = !!game?.fun, Fs = this.flocks, one = this._one;
+    if (!Array.isArray(list)) { one[0] = list; one.length = list ? 1 : 0; list = one; }
+    else if (!fun && list.length > 1) { one.length = 1; one[0] = list[0]; list = one; }
+    for (let s = 0; s < NS; s++) if (Fs[s] && !list.includes(Fs[s])) {
+      Fs[s] = null;
+      if (game && game.target >= s * NP && game.target < (s + 1) * NP) { game.target = -1; game.window = null; }
+    }
+    for (let k = 0; k < list.length; k++) if (!Fs.includes(list[k])) { const s = Fs.indexOf(null); if (s >= 0) Fs[s] = list[k]; }
+    this.flock = list.length ? list[0] : null;
+    const S = this.state;
     // (a perched bird reads as gone: the strike drops a target that lands; see target(). Falcon fun: perched birds are
     // prey too, the easy ones feeding on the setts and the roofs)
-    if (F) for (let i = 0; i < NP; i++) S[i] = i < F.max && (fun || F.state[i] !== PIGEON.PERCH) ? F.state[i] : PIGEON.GONE;
-    else S.fill(PIGEON.GONE, 0, NP);
-    if (this.gpu) S.set(this.gpu.state, NP);
+    for (let s = 0; s < NS; s++) {
+      const F = Fs[s], o = s * NP;
+      if (F) for (let i = 0; i < NP; i++) S[o + i] = i < F.max && (fun || F.state[i] !== PIGEON.PERCH) ? F.state[i] : PIGEON.GONE;
+      else S.fill(PIGEON.GONE, o, o + NP);
+    }
+    if (this.gpu) S.set(this.gpu.state, G);
   }
+  /** the square flock of prey index i (null: a sky bird), its own index there, the mux index of a flock's bird */
+  at(i) { return i >= 0 && i < G ? this.flocks[(i / NP) | 0] : null; }
+  local(i) { return i < G ? i % NP : i - G; }
+  index(F, j) { const s = this.flocks.indexOf(F); return s < 0 || j < 0 ? -1 : s * NP + j; }
   target(fx, fy, fz, dx, dy, dz, maxD = 160, cone = 0.5, byAngle = false) {
     let a = -1, sa = Infinity;
     if (this.off) return -1;                     // (prey in the talons: no new hunt)
-    const F = this.flock;
-    // (falcon fun, the lock-on: the square's bird nearest the view centre, perched or flying; the sky flocks if none)
+    // (falcon fun, the lock-on: the bird nearest the view centre over EVERY drawn flock and the sky flocks, one score;
+    // round 2 took the nearest flock's bird whenever it had one, a sky bird only when it had none)
     if (byAngle) {
-      const k = F ? F.target(fx, fy, fz, dx, dy, dz, maxD, cone, true) : -1;
-      if (k >= 0 && k < NP) return k;
-      const b = this.gpu ? this.gpu.target(fx, fy, fz, dx, dy, dz, maxD, cone) : -1;
-      return b >= 0 ? NP + b : -1;
+      for (let s = 0; s < NS; s++) {
+        const F = this.flocks[s]; if (!F) continue;
+        const k = F.target(fx, fy, fz, dx, dy, dz, maxD, cone, true);
+        if (k >= 0 && k < NP && F.bestScore < sa) { sa = F.bestScore; a = s * NP + k; }
+      }
+      const b = this.gpu ? this.gpu.target(fx, fy, fz, dx, dy, dz, maxD, cone, true) : -1;
+      return b >= 0 && this.gpu.bestScore < sa ? G + b : a;
     }
+    const F = this.flock, s0 = F ? this.flocks.indexOf(F) * NP : 0;
     if (F) {
       // flying birds only: a peregrine takes its prey in the air (a perched pigeon flushes as the falcon comes: then
       // it is a target); a stoop at a bird on a ridge or the setts ends in the roof
@@ -144,21 +175,21 @@ export class PreyMux {
         const c = (ex * ux + ey * uy + ez * uz) / d;
         if (c < cc) continue;
         const sc = d * (2 - c);
-        if (sc < sa) { sa = sc; a = i; }
+        if (sc < sa) { sa = sc; a = s0 + i; }
       }
     }
     const b = this.gpu ? this.gpu.target(fx, fy, fz, dx, dy, dz, maxD, cone) : -1;
-    if (b >= 0 && this.gpu.bestScore < sa) return NP + b;
+    if (b >= 0 && this.gpu.bestScore < sa) return G + b;
     return a;
   }
-  pos(i, out) { return i < NP ? this.flock.pos(i, out) : this.gpu.pos(i - NP, out); }
-  vel(i, out) { return i < NP ? this.flock.vel(i, out) : this.gpu.vel(i - NP, out); }
-  kind(i) { return i < NP ? (this.flock?.jackdaw?.[i] ? "jackdaw" : "feral pigeon") : this.gpu.kind(i - NP); }
+  pos(i, out) { return i < G ? this.flocks[(i / NP) | 0].pos(i % NP, out) : this.gpu.pos(i - G, out); }
+  vel(i, out) { return i < G ? this.flocks[(i / NP) | 0].vel(i % NP, out) : this.gpu.vel(i - G, out); }
+  kind(i) { return i < G ? (this.at(i)?.jackdaw?.[i % NP] ? "jackdaw" : "feral pigeon") : this.gpu.kind(i - G); }
   take(i) {
-    const kind = this.kind(i), slot = i < NP ? "pigeons" : this.gpu.slotKey(i - NP);
-    const r = i < NP ? this.flock.take(i) : this.gpu.take(i - NP);
+    const kind = this.kind(i), slot = i < G ? "pigeons" : this.gpu.slotKey(i - G), F = this.at(i);
+    const r = i < G ? F.take(i % NP) : this.gpu.take(i - G);
     this.state[i] = PIGEON.GONE;
-    this.lastTaken = { kind, slot, t: performance.now(), square: i < NP ? this.flock.square?.name : null };
+    this.lastTaken = { kind, slot, t: performance.now(), square: F ? F.square?.name : null };
     this.onTake?.(this.lastTaken);
     return r;
   }
@@ -170,7 +201,7 @@ export class FalconHunt {
     this.mux = new PreyMux(gpu);
     this.gpu = gpu;
     this.assist = 1;                       // 0 off .. 1 the default strength
-    this.slowT = 0;
+    this.slowT = 0; this.strikeAge = -1;
     this.hunger = null;                    // [3] 0..1 when a mission feeds the eyases
     this._v = { x: 0, y: 0, z: 0 }; this._w = { x: 0, y: 0, z: 0 }; this._p = { x: 0, y: 0, z: 0 };
     this.last = { catches: 0, delivered: 0 };
@@ -213,6 +244,18 @@ export class FalconHunt {
     }
     return best;
   }
+  /** (falcon fun round 3) every drawn square flock, the nearest to the falcon first (one reused array, no sort alloc) */
+  drawnFlocks(f) {
+    const L = (this._fl ??= []);
+    L.length = 0;
+    for (const P of this.flyer.flocks) {
+      if (!P.mesh.visible) continue;
+      P.falconD = Math.hypot(f.pos.x - P.square.x, f.pos.z - P.square.z);
+      let k = L.length; L.push(P);
+      while (k > 0 && L[k - 1].falconD > P.falconD) { L[k] = L[k - 1]; L[k - 1] = P; k--; }
+    }
+    return L;
+  }
 
   /** per frame (the game's updater), real dt */
   frame(dt) {
@@ -223,14 +266,20 @@ export class FalconHunt {
     if (g.pigeons !== this.mux) { g.pigeons = this.mux; g.target = -1; }
     this.gpu?.update(performance.now(), f.pos.x, f.pos.y, f.pos.z);
     this.mux.off = !!fl.bird.prey && !g.fun;
-    this.mux.sync(this.nearestFlock(f), g);
+    this.mux.sync(g.fun ? this.drawnFlocks(f) : this.nearestFlock(f), g);
     if (this.mux.off && g.target >= 0) { g.target = -1; g.window = null; }
     // the catch / the delivery (falconGame.js counts them)
     const sc = g.score;
     if (sc.catches > this.last.catches) { this.last.catches = sc.catches; this.caught(g); }
+    if (g.fun && g.fun.misses > (this.last.misses ?? 0)) { this.last.misses = g.fun.misses; this.missed(g); }
     if (sc.delivered > this.last.delivered) { this.last.delivered = sc.delivered; this.onDeliver?.(this.mux.carried, g); this.mux.carried = null; }
     // the slow motion after the hit-stop: time eased back to 1
-    if (this.slowT > 0) {
+    if (this.strikeAge >= 0) {
+      // (round 3, falcon fun) the catch's slow motion: FUN.strike.slow held, then eased back (real time)
+      this.strikeAge += dt;
+      g.timeScale = strikeScale(this.strikeAge);
+      if (g.timeScale >= 1) { g.timeScale = 1; this.strikeAge = -1; }
+    } else if (this.slowT > 0) {
       this.slowT = Math.max(0, this.slowT - dt);
       if (g.hitStop <= 0) g.timeScale = 1 - 0.7 * smooth(this.slowT, 0, 0.9);
       if (this.slowT === 0) g.timeScale = 1;
@@ -279,7 +328,8 @@ export class FalconHunt {
     if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) { if (this.cache.get("tgt.on") !== false) { this.cache.set("tgt.on", false); E.tgt.classList.remove("on"); } return; }
     if (this.cache.get("tgt.on") !== true) { this.cache.set("tgt.on", true); E.tgt.classList.add("on"); }
     // the ticks close in with the time to intercept (2 s -> 0)
-    const size = 22 + 50 * smooth(w.tti, 0, 2.5);
+    // (round 3, falcon fun: never under 34 px, a dot at its centre: the lock is always obvious)
+    const size = (g.fun ? 34 : 22) + 50 * smooth(w.tti, 0, 2.5);
     const x = (v.x * 0.5 + 0.5) * innerWidth - size / 2, y = (-v.y * 0.5 + 0.5) * innerHeight - size / 2;
     E.tgt.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
     const sz = size.toFixed(0);
@@ -349,10 +399,36 @@ export class FalconHunt {
     const L = g.fun?.last;
     E.bannerP.textContent = `${t?.kind ?? "prey"} · ${kmh} km/h${L ? ` · +${L.pts}` : ""}`;
     E.bannerS.textContent = L?.labels?.length ? L.labels.join(" · ") : "";
+    E.banner.querySelector("h2").textContent = g.fun ? "CAUGHT!" : "CAUGHT";
+    this.cls("ban", E.banner, "fun", !!g.fun);
+    this.cls("ban", E.banner, "miss", false);
     E.banner.classList.add("on");
-    g.hitStop = Math.max(g.hitStop, 0.3); g.timeScale = 0.3; this.slowT = 1.1;
-    const fc = this.flyer.fcam; if (fc) fc.fov += 9;
+    const fc = this.flyer.fcam;
+    if (g.fun) {
+      // (round 3) THE CLEAR CATCH: the punch (falconGame.js), then the slow motion held ~0.5 s, the strike camera beside
+      // the falcon (the talons, the pigeon), the feather puff where the pigeon was hit
+      g.timeScale = FUN.strike.slow; this.strikeAge = 0; this.slowT = 0;
+      fc?.strike();
+      // (the feathers burst at the talons, a little toward where the pigeon was, carried a little along the falcon's
+      // path: the falcon flies on through them)
+      const L = g.lastCatch, P = L?.prey;
+      if (P && this.flyer.puff) this.flyer.puff.burst(L.x + (P.x - L.x) * 0.15, L.y + (P.y - L.y) * 0.15 - 0.3, L.z + (P.z - L.z) * 0.15, f.vel.x * 0.6, f.vel.y * 0.6, f.vel.z * 0.6, FUN.strike.feathers, 1.4);
+    } else {
+      g.hitStop = Math.max(g.hitStop, 0.3); g.timeScale = 0.3; this.slowT = 1.1;
+      if (fc) fc.fov += 9;
+    }
     this.onCatch?.(t, kmh, g);
+  }
+  /** (round 3) a miss reads: the banner in orange, "DODGED!" or "MISSED" */
+  missed(g) {
+    const E = this.e, M = g.fun.lastMiss;
+    E.banner.classList.remove("on"); void E.banner.offsetWidth;
+    E.banner.querySelector("h2").textContent = M?.dodged ? "DODGED!" : "MISSED";
+    this.cls("ban", E.banner, "fun", true);
+    E.bannerP.textContent = M?.dodged ? "it jinked away · it tires after two escapes" : "it slipped past · come round again";
+    E.bannerS.textContent = "";
+    this.cls("ban", E.banner, "miss", true);
+    E.banner.classList.add("on");
   }
 
   /** the 4 Hz gauges */

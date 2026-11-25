@@ -3,13 +3,17 @@
 // airspeed (58 -> 82 deg at 90 m/s), a shake that starts above ~45 m/s and in rough air, a roll that follows a third
 // of the bank; air streaks round the camera in the stoop and a speed vignette (a CSS overlay, no extra pass).
 // Head cam: from the falcon's head along its path, rolling with the full bank.
+// (falcon fun round 3) THE STRIKE CAMERA: strike() at a catch: for ~1 s of real time the camera swings in beside the
+// falcon (the side in free air with a clear line to it), the talons and the pigeon in frame, zoomed in a little, the
+// roll levelled; weights eased in and out (a function of the time since the strike: no snap). params.strike (falconFun.js
+// FUN.strike); nothing when it is not set (?falconfun=old).
 import * as THREE from "three/webgpu";
 import { attribute, vec3, uniform } from "three/tsl";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const _g1 = new THREE.Vector3(), _g2 = new THREE.Vector3();
-const LIFTS = [1.5, 3, 5, 8];
+const LIFTS = [1.5, 3, 5, 8], SIDES = [1, -1];
 const _c = new THREE.Vector3(), _q = new THREE.Vector3(), _e = new THREE.Vector3(), _u = new THREE.Vector3(), _w = new THREE.Vector3(), _t = new THREE.Vector3(), _Y = new THREE.Vector3(0, 1, 0);
 
 export class FalconCamera {
@@ -21,6 +25,7 @@ export class FalconCamera {
     this.roll = 0; this.shakeT = 0; this.fov = 58; this.inited = false;
     this.fix = new THREE.Vector3();                   // the clearance offset on the eased chase position (keepClear)
     this.ceil = Infinity;
+    this.strikeT = -1; this.strikeSide = 0; this.strikeW = 0;   // (round 3) the strike camera
     // (fovV / streakV / vigV: the airspeeds (m/s) over which the FOV widens, the streaks and the vignette come in; the
     // falcon fun sets falconFun.js CAM_FUN: earlier, so a 150 km/h stoop feels fast)
     this.params = { fov0: 58, fov1: 82, dist: 1.0, shake: 1, streaks: true, vignette: true, fovV: [18, 90], streakV: [32, 85], vigV: [35, 95] };
@@ -41,6 +46,24 @@ export class FalconCamera {
     const v = document.createElement("div");
     v.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0;background:radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(10,14,22,.55) 100%)";
     document.body.append(v); this.vignette = v;
+  }
+
+  /** (round 3) a catch: the strike camera for the next ~1.1 s (real time) */
+  strike() { if (this.params.strike && this.mode !== "head") { this.strikeT = 0; this.strikeSide = 0; } }
+  /** (round 3) the strike camera's spot for a side (+1 right, -1 left, 0 over and behind): out, and its look point lk */
+  strikeSpot(b, side, out, lk) {
+    const h = b.heading, sp = b.span, fx = -Math.sin(h), fz = -Math.cos(h), rx = Math.cos(h), rz = -Math.sin(h);
+    // (beside and a little ahead, at the talons' height: the feet, the pigeon coming into them and the feathers below)
+    if (side) out.set(b.pos.x + rx * side * 1.5 * sp + fx * 0.5 * sp, b.pos.y + 0.1 * sp, b.pos.z + rz * side * 1.5 * sp + fz * 0.5 * sp);
+    else out.set(b.pos.x - fx * 1.3 * sp, b.pos.y + 0.8 * sp, b.pos.z - fz * 1.3 * sp);
+    lk.set(b.pos.x + fx * 0.1 * sp, b.pos.y - 0.22 * sp, b.pos.z + fz * 0.1 * sp);
+    return out;
+  }
+  /** (round 3) a spot in free air with a clear line to the bird */
+  freeSpot(b, o, P) {
+    const c = o.col ? o.col(P.x, P.z) : null;
+    if (c && !(P.y > c.floor + 0.5 && P.y < c.ceil - 0.3)) return false;
+    return this.sight(b, o, b.span, P) >= 1;
   }
 
   /** the camera's floor (+0.8 m) at two points, and this.ceil (-0.6 m, Infinity: none) */
@@ -124,6 +147,15 @@ export class FalconCamera {
    */
   update(dt, b, o = {}) {
     const P = this.params, cam = this.camera, V = b.V;
+    // (round 3) the strike camera's weight: in over camIn, held to camHold, out by camOut (real seconds)
+    let sw = 0;
+    if (this.strikeT >= 0) {
+      const S = P.strike;
+      this.strikeT += dt;
+      if (!S || o.perched || this.mode === "head" || this.strikeT > S.camOut) this.strikeT = -1;
+      else sw = smooth(this.strikeT, 0, S.camIn) * (1 - smooth(this.strikeT, S.camHold, S.camOut));
+    }
+    this.strikeW = sw;
     // the direction to look along: the path (or the mouse aim), smoothed; perched: the way the bird faces
     if (o.perched) _e.set(-Math.sin(o.perchYaw), -0.25, -Math.cos(o.perchYaw)).normalize();
     else if (o.aim) _e.copy(o.aim);
@@ -200,7 +232,8 @@ export class FalconCamera {
     const fovT = P.fov0 + (P.fov1 - P.fov0) * smooth(V, P.fovV[0], P.fovV[1]) + (this.mode === "head" ? 8 : 0);
     this.fov += (fovT - this.fov) * (1 - Math.exp(-3 * dt));
     if (still && Math.abs(fovT - this.fov) < 0.01) this.fov = fovT;
-    if (Math.abs(cam.fov - this.fov) > 0.01) { cam.fov = this.fov; cam.updateProjectionMatrix(); }
+    const fovS = this.fov - (P.strike?.zoom ?? 0) * sw;                // (round 3: the strike camera zooms in a little)
+    if (Math.abs(cam.fov - fovS) > 0.01) { cam.fov = fovS; cam.updateProjectionMatrix(); }
     // shake: speed + rough air + a hit
     this.shakeT += dt;
     // (falconfix) no shake on a perch: the rough-air and stun terms read the flight's state, frozen while perched (a crash
@@ -216,6 +249,25 @@ export class FalconCamera {
       _c.subVectors(cam.position, B);
       const d = _c.length();
       if (d < minD) cam.position.copy(B).addScaledVector(d > 1e-3 ? _c.divideScalar(d) : _c.copy(this.dir).negate(), minD);
+    }
+    // (round 3) THE STRIKE CAMERA: beside the falcon, eased in and out (sw); the side picked once (free air, a clear line,
+    // the one nearer to where the camera is), else over and behind it
+    if (sw > 0 && this.mode !== "head") {
+      if (!this.strikeSide) {
+        let best = 0, bd = Infinity;
+        for (const sd of SIDES) {
+          this.strikeSpot(b, sd, _q, _w);
+          if (!this.freeSpot(b, o, _q)) continue;
+          const d = _q.distanceToSquared(cam.position);
+          if (d < bd) { bd = d; best = sd; }
+        }
+        this.strikeSide = best || 2;                                   // (2: over and behind)
+      }
+      this.strikeSpot(b, this.strikeSide === 2 ? 0 : this.strikeSide, _q, _w);
+      const fl = o.col ? o.col(_q.x, _q.z).floor + 0.8 : -Infinity;
+      if (_q.y < fl) _q.y = fl;
+      cam.position.lerp(_q, sw);
+      this.look.lerp(_w, sw);
     }
     // (falcon fun) THE FRAME GUARD: the bird stays within 60 % of the half field of view from the view's centre: past it,
     // the look turns toward the bird by the excess (a function of where things are now: smooth, no state, no snap)
@@ -236,7 +288,7 @@ export class FalconCamera {
     cam.up.copy(_u);
     cam.lookAt(this.look);
     // roll (positive phi = right wing down: the horizon tilts the other way) + shake
-    cam.rotateZ(-this.roll + sx * 0.5);
+    cam.rotateZ(-this.roll * (1 - sw) + sx * 0.5);
     cam.rotateX(sy); cam.rotateY(sx);
     // streaks: segments in a 50 m box round the camera, along the air velocity; only fast
     const so = P.streaks ? smooth(V, P.streakV[0], P.streakV[1]) : 0;

@@ -17,6 +17,10 @@
 //   GOALS       an arrow to the nearest pigeons, combos (a catch within 30 s of the last), a run "catch 5 in 2:00";
 //               delivering to the eyrie is a bonus, hunting goes on with prey in the talons
 //   FIRST CATCH a tame pigeon on a roof right below the eyrie's launch, with the hint "hold Shift to dive onto it"
+// ROUND 3 (2026-11-25, rule round 3): every drawn flock and sky flock is prey (hunt.js PreyMux slots, gpuPrey.js
+// PREY_KEYS), a near zone for a bird crossing close by, THE CLEAR CATCH (FUN.strike: the slow motion, falconCamera.js
+// strike(), featherPuff.js, the pigeon held at the talons: falconBird.js holdPrey), a smooth chase (the aim eased here,
+// falconGame.js funHome), a miss said (DODGED! / MISSED).
 // Pure JS (no three), no allocation per frame. Tested headless: tools/falconFunTest.mjs (gate row falconfun).
 
 export const FUN_OLD = typeof location !== "undefined" && /[?&]falconfun=old(&|$)/.test(location.search);
@@ -36,6 +40,14 @@ export const FUN = {
   homeD: 14, home: 2.4,    // the homing: within 14 m of the locked bird, the path turned onto it at up to 2.4 rad/s
   tiredUp: 0.12,           // stamina under which the auto-dive does not climb at a bird
   catchStamina: 0.25,      // stamina back with each catch
+  // (round 3) THE CLEAR CATCH (real seconds; falconCamera.js strike(), hunt.js caught(), featherPuff.js):
+  //   punch  a 0.08 s freeze at contact; slow  x0.22 held to 0.38 s, eased back to x1 by 0.73 s (~0.5 s under x0.5)
+  //   cam    the camera beside the falcon (the talons and the pigeon in frame) in 0.22 s, held to 0.65 s, back by 1.15 s
+  //   grip   the pigeon blended from where it flew into the talons over 0.1 s of game time (falconBird.js carry)
+  strike: { punch: 0.08, slow: 0.22, hold: 0.38, ease: 0.35, camIn: 0.22, camHold: 0.65, camOut: 1.15, grip: 0.1, feathers: 22 },
+  near: { d: 60, cone: 1.15 },     // (round 3) nothing in the lock cone: a bird crossing within 60 m, 1.15 rad of the view
+  smooth: { tau: 0.16, rate: 2.6 },  // (round 3) the auto-dive's aim eased (s) and rate-limited (rad/s): no jerk on a switch
+  miss: { pass: 12, away: 6 },      // (round 3) a pass within 12 m of the locked bird, then 6 m farther without a catch: "MISSED"
   cool: 2.5,               // s after a catch before the next lock (the prey taken, the next bird picked)
   giveUp: 6,               // s held without getting closer: the lock lets that bird go (8 s skipped)
   slow: { tti: 0.3, scale: 0.35, max: 0.45 },   // the slow motion before contact: under 0.3 s to go, x0.35, at most 0.45 s a target
@@ -47,17 +59,22 @@ export const FUN = {
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
-/** the square flock behind a prey index: the PreyMux (hunt.js: indices < 256 its .flock) or a Pigeons */
+/** the square flock behind a prey index: the PreyMux (hunt.js: P.at(i), every drawn flock) or a Pigeons */
 export function flockOf(P, i) {
-  if (!P) return null;
+  if (!P || i < 0) return null;
   if (P.p && P.kind) return i < P.max ? P : null;
-  if (P.flock && i < 256) return P.flock.kind ? P.flock : null;
+  if (P.at) { const F = P.at(i); return F && F.kind ? F : null; }
   return null;
 }
+/** the bird's own index in flockOf(P, i) */
+export function localOf(P, i) { return P && P.at ? P.local(i) : i; }
 
 export class FunState {
   constructor() {
     this.w = 0;                  // the auto-dive's weight (0..1, eased)
+    this.psiS = NaN; this.gS = 0; // (round 3) the eased aim (heading, path angle)
+    this.passD = Infinity; this.misses = 0; this.lastMiss = null;   // (round 3) the pass on the locked bird, the misses
+    this.strikes = 0;            // (round 3) catches presented (hunt.js / falconCamera.js read it)
     this.diving = false;         // the strike button held with a lock
     this.held = false;
     this.lock = -1;              // the locked prey index (= game.target)
@@ -122,14 +139,19 @@ export class FunState {
   arrowTick(dt, P, f) {
     if ((this.arrowT -= dt) > 0) return;
     this.arrowT = 0.25;
-    const A = this.arrow, F = P ? (P.p && P.kind ? P : P.flock?.kind ? P.flock : null) : null;
+    const A = this.arrow, Fs = P ? (P.p && P.kind ? null : P.flocks) : null;
     A.on = false;
-    if (!F) return;
+    if (!P) return;
     let bd = Infinity;
-    for (let i = 0; i < F.max; i++) {
-      if (F.state[i] === 3 || i === F.skipI) continue;
-      const o = i * 3, d = Math.hypot(F.p[o] - f.pos.x, F.p[o + 1] - f.pos.y, F.p[o + 2] - f.pos.z);
-      if (d < bd) { bd = d; A.x = F.p[o]; A.y = F.p[o + 1]; A.z = F.p[o + 2]; }
+    // (round 3: the nearest bird of EVERY drawn flock)
+    for (let s = 0, n = Fs ? Fs.length : 1; s < n; s++) {
+      const F = Fs ? Fs[s] : P;
+      if (!F || !F.kind) continue;
+      for (let i = 0; i < F.max; i++) {
+        if (F.state[i] === 3 || i === F.skipI) continue;
+        const o = i * 3, d = Math.hypot(F.p[o] - f.pos.x, F.p[o + 1] - f.pos.y, F.p[o + 2] - f.pos.z);
+        if (d < bd) { bd = d; A.x = F.p[o]; A.y = F.p[o + 1]; A.z = F.p[o + 2]; }
+      }
     }
     if (bd < Infinity) { A.on = true; A.d = bd; }
   }
@@ -167,9 +189,15 @@ export class FunState {
     if (low) ly = Math.max(ly + 2.0, floorY + 2.5);           // (over it: the 5.5 m reach takes it from 2-3 m up)
     const dx = lx - f.pos.x, dy = ly - f.pos.y, dz = lz - f.pos.z, hd = Math.hypot(dx, dz);
     const psiT = Math.atan2(-dx, -dz), gT = Math.atan2(dy, Math.max(hd, 0.5));
+    // (round 3) the AIM EASED and rate-limited: a lock switch, the lead point swinging as the time to go changes or the
+    // bird jinks, are followed smoothly (round 2 handed every jump of the aim to the assist's turn rate at once: a jerk
+    // in the bank, the heading and the chase camera). The safety terms below (over the solids, the climb-out) are not eased.
+    const SM = FUN.smooth, ke = 1 - Math.exp(-dt / SM.tau), mx = SM.rate * dt;
+    if (!(this.psiS === this.psiS)) { this.psiS = psiT; this.gS = gT; }
+    else { this.psiS = wrap(this.psiS + clamp(wrap(psiT - this.psiS) * ke, -mx, mx)); this.gS += clamp((gT - this.gS) * ke, -mx, mx); }
     const w = this.w;
-    ov.psi = f.heading + w * wrap(psiT - f.heading) + (I0.turn || 0) * FUN.nudge * (1 - 0.5 * w);
-    let gW = gT;
+    ov.psi = f.heading + w * wrap(this.psiS - f.heading) + (I0.turn || 0) * FUN.nudge * (1 - 0.5 * w);
+    let gW = this.gS;
     // the bird behind or well to the side: turn first, then dive (a descending turn over the roofs ended in them)
     const vh = Math.hypot(f.vel.x, f.vel.z) || 1, ch = (f.vel.x * dx + f.vel.z * dz) / (vh * Math.max(hd, 0.5));
     if (ch < 0.5 && hd > 8) gW = Math.max(gW, -0.05);
@@ -194,7 +222,17 @@ export class FunState {
     f.chaseA = gT > -0.35 && f.gamma < 0.12 && d < 90 ? clamp((us + 9 - f.V) * 1.2, 0, FUN.chaseA) : 0;
     return { d, closing, tti };
   }
-  release(dt, f) { this.w *= Math.exp(-dt / 0.15); this.diving = false; if (f) f.chaseA = 0; }
+  release(dt, f) { this.w *= Math.exp(-dt / 0.15); this.diving = false; if (f) f.chaseA = 0; if (this.w < 0.05) this.psiS = NaN; }
+}
+
+/** (round 3) the catch's time scale t real seconds after it (hunt.js caught: g.timeScale): FUN.strike.slow held to
+ *  .hold, eased back to 1 over .ease */
+export function strikeScale(t) {
+  const S = FUN.strike;
+  if (t < 0) return 1;
+  if (t < S.hold) return S.slow;
+  const k = clamp((t - S.hold) / S.ease, 0, 1);
+  return S.slow + (1 - S.slow) * k * k * (3 - 2 * k);
 }
 
 function fmt(s) { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
@@ -241,4 +279,4 @@ export function windLevels(V, fold, fun = !FUN_OLD) {
   return { wind: 0.16 * clamp((V / ref) ** 1.6, 0.02, 2.2), hiss: 0.25 * sm(V, h0, h1), tuck: sm(fold, 0.6, 1) * sm(V, fun ? 26 : 35, fun ? 65 : 80) };
 }
 /** the camera's speed feel (falconCamera.js params): fov from fov0 to fov1 over fovV, streaks over streakV, the vignette over vigV */
-export const CAM_FUN = { fov1: 88, fovV: [14, 70], streakV: [22, 60], vigV: [28, 75], fun: true };
+export const CAM_FUN = { fov1: 88, fovV: [14, 70], streakV: [22, 60], vigV: [28, 75], fun: true, strike: { ...FUN.strike, zoom: 6 } };

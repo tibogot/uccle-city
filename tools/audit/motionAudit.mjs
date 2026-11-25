@@ -28,6 +28,7 @@ const MOVER = {
   "tram2Model.js": "trams, the default model (InstancePrev)",
   "rail/trainModel.js": "SNCB trains (InstancePrev)",
   "falconFlight/pigeons.js": "pigeons (InstancePrev)",
+  "falconFlight/featherPuff.js": "the falcon catch's feather puff (InstancePrev, translation; falcon fun round 3)",
   "props/cityProps.js": "knocked-over street props: the proxies (InstancePrev; the layers' materials hooked at start)",
   "birds/skyFlocks.js": "sky flocks (p - v dt in the shader)",
   "foliage/hedges.js": "hedge wind (windPrev)", "foliage/ivy.js": "ivy wind", "foliage/plants.js": "plant wind",

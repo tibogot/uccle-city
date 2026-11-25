@@ -11,8 +11,18 @@ import { texture, uv } from "three/tsl";
 import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { loadFalconAssets } from "../falcons.js";
 import { BirdRig } from "../birdRig.js";
+import { FUN, FUN_OLD } from "./falconFun.js";
 
 const MODEL_SPAN = 6.44;   // peregrine.glb wingspan in model units (viewer/falcons.js)
+/** (falcon fun round 3) the grip: the toes curled (rad) round the held pigeon, sunk this share of its depth into its
+ *  plumage (the closed toes, no gap), blended in from where it was struck over FUN.strike.grip s of game time */
+const GRIP = { curl: 0.85, sink: 0.12, blend: FUN.strike.grip, talons: 0.45, from: 1.6 };
+/** held: rolled belly-up against the feet, head forward (prey_carry's head is its -z end, the narrow round one; its
+ *  +z end the flat tail fan: the root's forward is -z too, so no turn; the old carry's half turn held it tail first), a
+ *  little nose-down; laid (perched): belly-down on the ledge, head forward */
+const Q_HOLD = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.1, 0, Math.PI, "YXZ"));
+const Q_LAID = new THREE.Quaternion();
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _g = new THREE.Vector3(), _o = new THREE.Vector3(), _t = new THREE.Vector3();
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
 
 /** viewer/falcons.js applyBodyScale (private there; the Perch clip was baked on it): the body 1.3x, wings back to span */
@@ -59,8 +69,13 @@ export class FalconBird {
     this.rig.addLayer("talonL", "UpperLeg_L", "Toes_tip_L", [0, -0.4, -1]);      // talons: legs forward and down
     this.rig.addLayer("talonR", "UpperLeg_R", "Toes_tip_R", [0, -0.4, -1]);
     this.rig.addLayer("headDown", "head", "mouth_upper_tip", [0, -1, 0]);
+    // (round 3) the grip: the toes closed (their tips down and back, round the pigeon under the feet)
+    this.rig.addLayer("gripL", "Toes_L", "Toes_tip_L", [0, -1, 0.5]);
+    this.rig.addLayer("gripR", "Toes_R", "Toes_tip_R", [0, -1, 0.5]);
+    const Bn = (n) => this.root.getObjectByName(n);
+    this.toes = Bn("Toes_L") && Bn("Toes_R") && Bn("Toes_tip_L") && Bn("Toes_tip_R") ? { l: Bn("Toes_L"), r: Bn("Toes_R"), lt: Bn("Toes_tip_L"), rt: Bn("Toes_tip_R") } : null;
     this.lay = { fold: 0, tuck: 0, flare: 0, talons: 0, bank: 0, legs: 0.4, head: 0 };
-    this.extra = { spreadL: 0, spreadR: 0, handL: 0, handR: 0, wristL: 0, wristR: 0, raiseL: 0, raiseR: 0, talonL: 0, talonR: 0, headDown: 0 };
+    this.extra = { spreadL: 0, spreadR: 0, handL: 0, handR: 0, wristL: 0, wristR: 0, raiseL: 0, raiseR: 0, talonL: 0, talonR: 0, headDown: 0, gripL: 0, gripR: 0 };
     this.flapPhase = 0; this.lastFlapPhase = 0; this.downstroke = false;
     this.setSpan(span);
     this.prey = null;
@@ -68,15 +83,95 @@ export class FalconBird {
 
   setSpan(span) { this.span = span; this.model.scale.setScalar(span / MODEL_SPAN); }
 
-  /** a pigeon in the talons (the nest's prey_carry mesh of viewer/falcons.js, as the family carries it) */
-  carry(preyMesh, material) {
+  /** a pigeon in the talons (the nest's prey_carry mesh of viewer/falcons.js, as the family carries it).
+   *  (falcon fun round 3, the owner: "the prey should look really inside the hands of the falcon") from = the pigeon's
+   *  world position when it was struck: it is blended from there into the GRIP over FUN.strike.grip s, then held by the
+   *  feet every frame (holdPrey: the toe bones, belly against the closed toes, head forward). ?falconfun=old: the fixed
+   *  offset under the body as before. */
+  carry(preyMesh, material, from = null) {
     if (this.prey || !preyMesh) return;
     const p = preyMesh.clone(); if (material) p.material = material;
     const k = this.span / 1.10;
     p.position.set(0, -0.13 * k, 0.04 * k); p.rotation.set(0.15, Math.PI, 0); p.scale.setScalar(0.95 * k);
     this.root.add(p); this.prey = p;
+    if (FUN_OLD || !this.toes) return;
+    if (!p.geometry.boundingBox) p.geometry.computeBoundingBox();
+    const bb = p.geometry.boundingBox, H = (this.hold ??= { belly: new THREE.Vector3(), depth: 0, len: 0, k: 1, from: new THREE.Vector3(), has: false, perch: 0, err: 0, top: 0 });
+    // the contact: the middle of the belly (the mesh's lowest face, between its breast and its vent)
+    H.belly.set((bb.min.x + bb.max.x) / 2, bb.min.y, (bb.min.z + bb.max.z) * 0.5);
+    H.depth = bb.max.y - bb.min.y; H.len = bb.max.z - bb.min.z;
+    H.has = !!from; H.k = from ? 0 : 1;
+    // (struck: it starts where it flew, the blend carries it in from there: no first frame at the old offset)
+    // (kept in the falcon's frame: the pigeon is carried along as the talons close on it, not left behind in the air)
+    // (at most GRIP.from x the scale from the talons: the 5.5 m automatic grab would slide it in over metres, a magnet;
+    // browser check: a jackdaw caught 5 m off crossed half the screen into the feet)
+    if (from) {
+      this.root.updateMatrixWorld(true); H.from.set(from.x, from.y, from.z); this.root.worldToLocal(H.from);
+      this.gripPoint(_g); _c.subVectors(H.from, _g); const L = _c.length(), mx = GRIP.from * k;
+      if (L > mx) H.from.copy(_g).addScaledVector(_c, mx / L);
+      p.position.copy(H.from);
+    }
+    p.matrixAutoUpdate = true;
   }
   drop() { if (!this.prey) return null; const p = this.prey; this.prey = null; p.removeFromParent(); return p; }
+
+  /** (round 3) the grip point, root-local: between the two feet, 35 % of the way from the toes' roots to their tips
+   *  (where the closed toes meet the pigeon); out (Vector3) */
+  gripPoint(out, world = false) {
+    const T = this.toes;
+    T.l.getWorldPosition(_a); T.lt.getWorldPosition(_b); _a.lerp(_b, 0.35);
+    T.r.getWorldPosition(_b); T.rt.getWorldPosition(_c); _b.lerp(_c, 0.35);
+    out.copy(_a).add(_b).multiplyScalar(0.5);
+    return world ? out : this.root.worldToLocal(out);
+  }
+  /** (round 3) the pigeon held at the talons, after the pose: belly up against the closed toes (sunk GRIP.sink of its
+   *  depth into the plumage: no gap), head forward, body along the falcon's; the strike's blend from where it flew;
+   *  perched: laid on the ledge under the feet (the falcon stands on it, mantling) */
+  holdPrey(dt, mode) {
+    const p = this.prey, H = this.hold, k = this.span / 1.10, s = 0.95 * k;
+    this.root.updateMatrixWorld(true);
+    this.gripPoint(_g);
+    H.perch = ease(H.perch, mode === "perch" ? 1 : 0, 6, dt);
+    // held: the belly up (rolled over), the head forward (-z), a little nose-down along the falcon's body
+    p.quaternion.copy(Q_HOLD).slerp(Q_LAID, H.perch);
+    p.scale.setScalar(s);
+    _o.copy(H.belly).multiplyScalar(s).applyQuaternion(p.quaternion);
+    _t.copy(_g).sub(_o);
+    _t.y += GRIP.sink * H.depth * s * (1 - H.perch);
+    // perched: laid belly-down on the surface the feet stand on (the root's height), just ahead of the feet, the toes on it
+    if (H.perch > 0) {
+      _c.copy(H.belly).multiplyScalar(s).applyQuaternion(Q_LAID);
+      _o.set(_g.x - _c.x, -_c.y, _g.z - H.len * s * 0.3 - _c.z);
+      _t.lerp(_o, H.perch);
+    }
+    if (H.k < 1 && H.has) {
+      H.k = Math.min(1, H.k + dt / GRIP.blend);
+      _c.copy(H.from);
+      // (from where the pigeon was, in the falcon's frame: its centre, the mesh's middle, to the held spot)
+      _o.set(0, (H.depth / 2) * s, 0).applyQuaternion(p.quaternion);
+      const e = H.k * H.k * (3 - 2 * H.k);
+      p.position.copy(_c).sub(_o).lerp(_t, e);
+    } else { H.k = 1; p.position.copy(_t); }
+    p.updateMatrix();
+  }
+  /** (round 3, the falconfun row) the held pigeon's belly to the talons' grip point (m, world) and how far its highest
+   *  corner rises over the grip (m, the falcon's frame: > 0 = into the falcon's body) */
+  gripCheck() {
+    const p = this.prey, H = this.hold;
+    if (!p || !H) return null;
+    this.root.updateMatrixWorld(true);
+    this.gripPoint(_g, true);
+    _o.copy(H.belly).applyMatrix4(p.matrixWorld);
+    const err = _o.distanceTo(_g);
+    const bb = p.geometry.boundingBox;
+    this.gripPoint(_g);
+    let top = -Infinity;
+    for (let i = 0; i < 8; i++) {
+      _c.set(i & 1 ? bb.max.x : bb.min.x, i & 2 ? bb.max.y : bb.min.y, i & 4 ? bb.max.z : bb.min.z).applyMatrix4(p.matrix);
+      top = Math.max(top, _c.y - _g.y);
+    }
+    return { err, top, k: H.k, scale: this.span };
+  }
 
   /**
    * f: the flight state { heading, gamma, alpha, phi, fold, flapLevel, brake, V }; mode: "fly" | "perch" | "land";
@@ -113,8 +208,12 @@ export class FalconBird {
     E.raiseL = E.raiseR = 0.35 * L.flare;
     E.talonL = E.talonR = 1.1 * Math.max(L.talons, L.flare * 0.8);
     E.headDown = L.head;
+    // (round 3) the toes close round the held pigeon as it reaches them
+    const H = this.prey && this.hold && !FUN_OLD ? this.hold : null;
+    E.gripL = E.gripR = H ? GRIP.curl * H.k * H.k * (1 - 0.4 * H.perch) : 0;
     this.rig.restore();
     this.mixer.update(dt);
     this.rig.apply({ fold: L.fold, bank: L.bank, legs: L.legs, brake: L.flare, extra: E });
+    if (H && this.toes) this.holdPrey(dt, mode);
   }
 }

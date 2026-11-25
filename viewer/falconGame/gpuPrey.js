@@ -10,12 +10,18 @@
 import { ReadbackBuffer } from "three/webgpu";
 import { SLOTS, TOTAL } from "../birds/skyFlocks.js";
 
-const KIND = { murmuration: "starling", starlings: "starling", parakeets: "ring-necked parakeet", jackdaws: "jackdaw", jackdaws2: "jackdaw" };
+// (falcon fun round 3: EVERY sky bird the falcon meets is prey: the gulls high over the city and the sky pigeons
+// (cityBirds.js birds2, a party left over from before the flight came on flies off for up to 40 s) were drawn and
+// never targetable: "I cross some birds in the sky and those were not targetable, that's nonsense")
+const KIND = { murmuration: "starling", starlings: "starling", parakeets: "ring-necked parakeet", jackdaws: "jackdaw", jackdaws2: "jackdaw", gulls: "gull", pigeons: "feral pigeon" };
 const FLY = 1, GONE = 3;
+const FUN_OLD = typeof location !== "undefined" && /[?&]falconfun=old(&|$)/.test(location.search);
+/** the prey slots: ?falconfun=old as before (no gulls, no sky pigeons) */
+export const PREY_KEYS = Object.keys(KIND).filter((k) => !FUN_OLD || (k !== "gulls" && k !== "pigeons"));
 
 export class GpuPrey {
   /** birds: viewer/birds/cityBirds.js (its .sky); keys: the slots that are prey */
-  constructor(birds, keys = Object.keys(KIND)) {
+  constructor(birds, keys = PREY_KEYS) {
     this.birds = birds;
     this.slots = keys.map((k) => SLOTS.findIndex((s) => s.key === k)).filter((k) => k >= 0);
     this.p = new Float32Array(TOTAL * 3); this.v = new Float32Array(TOTAL * 3);
@@ -89,7 +95,7 @@ export class GpuPrey {
   vel(i, out) { const o = i * 3; out.x = this.v[o]; out.y = this.v[o + 1]; out.z = this.v[o + 2]; return out; }
 
   /** the best bird ahead of the falcon (pigeons.js target): returns [index, score] through this.best */
-  target(fx, fy, fz, dx, dy, dz, maxD = 160, cone = 0.5) {
+  target(fx, fy, fz, dx, dy, dz, maxD = 160, cone = 0.5, byAngle = false) {
     let best = -1, bs = Infinity, cd = Infinity;
     if (this.cleared) { this.bestScore = Infinity; return -1; }
     const L = Math.hypot(dx, dy, dz) || 1; dx /= L; dy /= L; dz /= L;
@@ -101,7 +107,8 @@ export class GpuPrey {
       if (d > maxD || d < 0.01) continue;
       const c = (ex * dx + ey * dy + ez * dz) / d;
       if (c < cc) continue;
-      const score = d * (2 - c);
+      // (byAngle: the falcon fun lock-on, the score of pigeons.js target: nearest the view centre, a bird well above last)
+      const score = byAngle ? (1 - c) * 400 + d * 0.25 + Math.max(0, ey - 6) * 4 : d * (2 - c);
       if (score < bs) { bs = score; best = i; }
     }
     this.closeD = cd;

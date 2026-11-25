@@ -27,6 +27,7 @@ import { FalconCamera } from "./falconCamera.js";
 import { FalconAudio } from "./falconAudio.js";
 import { FalconGame } from "./falconGame.js";
 import { FUN_OLD, CAM_FUN } from "./falconFun.js";
+import { FeatherPuff } from "./featherPuff.js";
 import { G } from "./flightModel.js";
 import { STREET } from "../treesStylized.js";
 import { wx } from "../weather/weatherState.js";
@@ -121,11 +122,16 @@ export class CityFlyer {
     this.game = new FalconGame({ world: w, air: this.air, bird: this.bird, pigeons: null, fam: null, audio: null, input: this.input });
     this.game.size.readable = this.size;
     this.game.reset = () => { this.input.script = null; this.start(PLACE.x + 120, PLACE.z + 80, Math.atan2(120, 80), w.ground(PLACE.x, PLACE.z) + 60); };
+    // (falcon fun round 3) the catch's feather puff: a fixed pool, one draw only while feathers fly (hunt.js caught())
+    this.puff = FUN_OLD ? null : new FeatherPuff(this.scene);
     this.buildHud();
     this.log(`falcon flight: the new flight (viewer/falconFlight/, ?falcon=old: the old one), bird + air + camera in ${(performance.now() - t0).toFixed(0)} ms`);
     // the church, the roosts, the pigeons, the landmarks' proxies: in the background
     this.background();
-    await this.warm([this.bird.root, this.hints.group, this.fcam.streaks]);
+    // (the puff's material compiled now, all its cards at scale 0: no compile hitch at the first catch)
+    if (this.puff) this.puff.mesh.visible = true;
+    await this.warm(this.puff ? [this.bird.root, this.hints.group, this.fcam.streaks, this.puff.mesh] : [this.bird.root, this.hints.group, this.fcam.streaks]);
+    if (this.puff && !this.puff.alive) this.puff.mesh.visible = false;
   }
 
   /** the shaders of `roots` before they show: the page's precompile (scene pass target + MRT), then the bird drawn once
@@ -417,6 +423,7 @@ export class CityFlyer {
     this.ambient(this.camera.position, dt);
     const t4 = performance.now();
     this.hints.update(dt * g.timeScale * (g.fun?.slowK ?? 1), g.t, f.pos);
+    this.puff?.update(dt * g.timeScale * (g.fun?.slowK ?? 1) * (g.hitStop > 0 ? 0.15 : 1), this.camera.position);
     const t5 = performance.now();
     // the camera (the chase / head camera of the lab; V: chase / head, wheel: distance)
     if (this.input.take("camera")) this.fcam.mode = this.fcam.mode === "chase" ? "head" : "chase";

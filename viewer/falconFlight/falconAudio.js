@@ -117,6 +117,14 @@ export class FalconAudio {
       o.frequency.setValueAtTime(2600, t + 0.25 + i * 0.13); o.frequency.exponentialRampToValueAtTime(1900, t + 0.33 + i * 0.13);
     }
   }
+  /** (falcon fun round 3) the catch's feathers: a smack (a short bright clap) and a rustle of plumage (band-passed noise,
+   *  ~0.3 s); nothing without an AudioContext (sound stays off until the player turns it on) */
+  rustle() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.burst(t, { f: 1800, q: 0.9, dur: 0.05, gain: 0.45, type: "bandpass" });
+    this.burst(t + 0.03, { f: 3400, q: 0.6, dur: 0.32, gain: 0.22, type: "bandpass" });
+  }
   thud(hard) { if (this.ctx) this.burst(this.ctx.currentTime, { f: hard ? 120 : 260, q: 0.6, dur: hard ? 0.25 : 0.1, gain: hard ? 0.8 : 0.25, type: "lowpass" }); }
   /** brushing through a crown's leaves: a short high rustle */
   leaves() { if (this.ctx) this.burst(this.ctx.currentTime, { f: 3200, q: 0.5, dur: 0.35, gain: 0.3, type: "bandpass" }); }
