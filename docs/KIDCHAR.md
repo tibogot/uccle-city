@@ -126,3 +126,121 @@ script now does both. To check a GLB, import it in Blender and render it (as was
   skeleton. Watch the arm length: MPFB's real arms are longer than the round-5 kid's shortened arms (RIDE.reachArm).
 - Also for phase 2: LODs (the body decimated to about 5k / 1.6k like the kid), one material per LOD or a texture atlas
   (today about 8 draws per candidate), the game skin material, and colliders / heights in `CHARACTERS`.
+
+## Phase 2: A v2, the game build (2026-11-26)
+The owner picked A ("A is cool but we will still have to fine tune it better"). To swap him in, open
+`debug/bikeLab.html?kid=a`. The default stays the old kid until the owner OKs. Other URL flags: `&cap=back`, `&night=1`,
+`&poses=1`, and `&cands=1`, which shows A v1, A v2, B, C and the old kid side by side.
+
+### Build (repeatable)
+```
+blender -b --factory-startup -P tools/blender/kidMakeHuman.py -- --cand a2 --game [--renders DIR] [--cap fwd|back]
+python -E tools/kid/kidAtlas.py                 # kidA_atlas.png -> kidA_atlas.ktx2 (UASTC + zstd, coverage-preserving hair mips)
+node tools/characters/kidABuild.mjs             # kidA_src.glb + kid.glb's 33 clips -> kidA.glb + kidA.json
+node --import ./tools/heap/register.mjs tools/kid/kidTest.mjs --model kidA     # gate row `kida` (34 checks)
+```
+
+`tools/blender/kidGame.py` runs with `--game`. It starts from candidate A's human with the v2 face targets
+(`CANDS["a2"]`): mouth corners up 0.5, fuller cheeks 0.45, softer cheek bones, light laugh lines and less eye bag. That
+gives a relaxed half smile, and he still reads as clearly about 11. Then it does four things:
+
+- **The 90s outfit, built from his own body.** Each garment is the body's faces of a region (chosen by dominant bone),
+  offset out, smoothed, cut by planes for clean hems, cuffs and the zip, solidified, and given the body's weights. The
+  skin under it is hidden. No logos; our own colours.
+  - A colour-block **windbreaker**: teal, a white stripe, purple, and a navy hem, collar and cuffs. The zip is open and
+    shows the white tee.
+  - **High white socks** with a red and a navy stripe.
+  - A **cap**: red, white centre panel, navy brim. It is lifted over the hair, so the hair stays under it; only the
+    hidden crown hair is removed.
+  - **Knee shorts**: the CC0 cargo pants cut at the knee.
+  - **Chunky white sneakers**: shoes05 recoloured, 8 % wider and 6 % taller, with its own sock cut off.
+- **Cap forward or backwards.** Both brims are in the mesh, each in its own slot, and the material hides one. Switch with
+  `kid.setCap("fwd" | "back")`, the lab's Kid folder or `&cap=back`. It is a uniform write, no rebuild.
+- **The UAL T-pose.** This is the retarget planned in phase 1, done at the rig instead of on the clips.
+  - Each of the export copy's 53 MPFB bones is turned, in hierarchy order, to point along its UAL twin. The UAL rest
+    comes from models/kid/ual_rest.json, dumped from kid.glb by `tools/kid/ualRestDump.mjs`.
+  - Each bone also gets the same twist: the palm across index -> pinky, the feet forward, the hips and shoulders
+    across. The worst direction error is 0.00 deg.
+  - The head goes back to its own face-forward orientation.
+  - The meshes are baked in that pose and the pose becomes the rest. `head` is renamed `Head` and `Root` becomes `root`.
+  - The UAL clips' local rotations then mean the same on him as on the old kid. The test finds his rest orientations
+    equal to the UAL's within 0.05 deg.
+- **One atlas and three LODs.**
+  - The atlas is 2048 x 1280: skin 1024; hair, tee, shorts and sneakers 512; eyes, brows and lashes 256; plus
+    generated colour cells for the jacket, sleeves, socks and cap.
+  - One mesh per LOD, with a material per **slot**. The 13 slots are skin, shorts, tee, brows, lashes, eyes, shoes,
+    hair, brim_b, brim_f, cap, jacket and socks.
+  - Per-vertex AO is baked in Cycles (OPTIX).
+  - LOD0 has **20,716** tris, LOD1 **7,999**, LOD2 **2,000**. The decimation is a uniform, symmetric collapse, and the
+    garments are decimated before their UVs are written.
+
+`tools/characters/kidABuild.mjs` is the planned `ualBuild.mjs --mpfb` mode, built differently. **The raw UAL packs are
+not on this disk** (data/raw/characters is gone from the main checkout), so it starts from kid.glb, which carries the
+same 33 clips on the UAL rig. It:
+- moves the UAL joints to his joints (error 0.000 mm);
+- scales the pelvis translation by 1.0348 (his k is 0.81877, the old kid's 0.79126);
+- writes his inverse bind matrices;
+- merges each LOD into one primitive with `_SLOT`, UVs and AO;
+- writes kidA.json: kid.json's metadata with the distances (speeds, step positions) scaled by his leg ratio 1.0685, plus
+  his own rest heights.
+
+Limit: the stair clips are still the ones synthesised on the old kid's legs, only scaled. Re-run ualBuild's stair
+synthesis when the packs are back. Sizes: kidA.glb 2.96 MB (uncompressed, like kid.glb) and kidA_atlas.ktx2 1.45 MB.
+
+**Viewer.**
+- `CHARACTERS.kidA` lives in viewer/character/characterModel.js. loadCharacter now passes the renderer through, which the
+  KTX2 loader needs.
+- `kidAtlasMaterial` (viewer/kid/kidModel.js) takes its colour from the atlas, with a lighter warm AO tint and a rim
+  (the painted look). Only the skin slot gets a little warm glow; its roughness is 0.62, so there is no plastic shine.
+  Roughness is set per slot: eyes 0.28 (for a catchlight), cloth 0.9. It is alpha-tested and double sided for the hair
+  cards. One draw per LOD.
+- His gaits are the old kid's scaled by 1.07.
+
+**Riding** uses `RIDE_KIDA` (viewer/kid/riderIK.js). His torso is longer from the hips to the shoulders, so at the full
+spine bend his shoulders were still 8 cm short of the grips and the body slid off the saddle. His hips now sit 4.5 cm
+further forward. 6 cm damped the landing wobble below the test's 5 cm. His arms reach 73-82 % of their length, with the
+elbows bent.
+
+### Checks
+Gate row `kida` runs tools/kid/kidTest.mjs --model kidA and passes 34/34. The old kid's row is unchanged at 32/32.
+- **Budgets:** one primitive per LOD (one draw), at most 22k / 8.5k / 2.2k tris, and LOD ratios of at least 30 % and
+  20 % (no popping).
+- **Data:** every slot has a roughness, and the atlas exists.
+- **Rig:** the skeleton, rest orientations and clips match the UAL rig; the bind pose error is 0.000 mm.
+- **Deformation:** CPU skinning over 15 clips. Tears per joint: knee 0.45 %, elbow 0.24 %, shoulder 0.39 %, hip 0.82 %
+  (each must be at most 1 %). The worst edge stretches x3.8.
+- **Rider:** on the placeholder bike and the BMX, 1320 poses each. The mount state machine and the keys also pass.
+
+`KID_DEBUG=1` prints the torn edges by `region:slot`, with an example edge. That is how the hip tear below was found.
+
+### Root causes found on the way (why -> rule -> check)
+- **The hips tore 3.2 % (edges stretched x22).** The skin inside the shorts was never hidden, because the CC0 pants'
+  delete group leaves the crotch, and the low-poly shorts' crotch weights jumped. Rule **hide-skin-under-garments**:
+  every garment hides the skin it covers, and cloth weights are relaxed. Check: the per-joint tear row (`kida`).
+- **Half the jacket was missing.** A bisect meant to open the zip was set to clear its outer side, so it cut away a whole
+  side. Now the zip line is only split and the gap strip deleted.
+- **The garments showed the skin texture.** A new UV layer added next to the body's got a `.001` name, and the body's UVs
+  won. The body's layer is now dropped first.
+- **Saw-tooth colour blocks and "flames" on the sleeves.** First, colours were set per face. Then the sleeve test counted
+  the 'body' and 'Left' vertex groups as bones. Rule **garment-colour-in-cells**: colour bands live in small generated
+  atlas cells along the garment's own coordinate, and faces are classified by bone weights only.
+- **The head looked up after the T-pose.** The neck's correction rotated it; it is now restored to face forward.
+- **The face went muddy under the cap in the lab.** The old kid's AO tint is too strong on a textured face; A uses a
+  lighter one.
+
+### Look notes (critical)
+In the renders and the lab line-up he reads as an 11-year-old in a 90s outfit. He is not uncanny at game distance, and
+the half smile is subtle. Not perfect yet:
+- the jacket hem is slightly ragged at the solidify rim;
+- the jacket front is a bit full at the belly in profile;
+- the cap crown is roomy, because it sits over the hair;
+- the short hair shows only at the sides and nape under the cap (worn backwards, the fringe shows);
+- the BMX is small for his real-length legs, so his knees ride high when seated (as in real BMX riding).
+
+Night was checked in Blender (a blue night with a sodium lamp) and with the lab's night test light.
+
+### Renders and screenshots (outside git: C:\Users\tibog\Downloads\uccle-kidchar\v2\)
+- `A_v2_compare.png`: A before vs after, day and night, plus the lab.
+- Blender renders: `A_v2_day_{front,q34,side,back,face}.png` and `A_v2_night_{q34,face}.png`.
+- Lab: `lab_face_A_v2.png`, `lab_walk_day.png`, `lab_walk_night.png`, `lab_ride_seated_side.png`,
+  `lab_ride_standing_sprint.png`, `lab_ride_crouch_air.png`, `lab_pose_sheet_1.png`, `lab_pose_sheet_crouch.png`.
