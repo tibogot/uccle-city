@@ -221,3 +221,41 @@ camera beside a parked car at 1.7 m; `closeCar()`, `hideUI()` for screenshots). 
 - Contact-shadow quads under far cars (slop's trick) for the cars beyond the shadow box.
 - More fascia variety per type (today the hatch family shares one face; SUV and vans have their own).
 - An atlas for printed lamp graphics, if wanted (section 3).
+
+## 10. CARS LOOK round 1 (claude/cars1, 2026-11-24; rule car-look)
+Owner's bar: Neverness to Everness's cars (stylised, glossy, reflecting the street). `?carlook=old` = everything before.
+- **Paint** (viewer/drive/carPacks.js): one shared clear-coat material: dielectric base (metal 0, rough 0.6), coat 1 /
+  0.035; gloss black trim (kind 10) with the coat; alloy rims (kind 11, metal 0.75); panel gaps (kind 12: paint colour
+  x 0.05, no coat). `?carssr=1` = SSR on the paint (rejected: still-camera flicker +8 %).
+- **Reflection probe** (viewer/carProbe.js, main.js hook): far tiles (ortho terrain + far-look buildings) + the sky round
+  the camera, 64 px cube, one face every 3 frames, two cubes cross-faded, PMREM per completed cube; reflections only
+  (diffuse stays on the sky env). CPU ~0.15-0.28 ms a frame averaged (`__carProbe.stats`). `?carprobe=0` = new paint, sky only.
+- **LOD0 detail** (tools/blender/cars2.py): tyres with a rim-protector rib, sidewall ridges, tread blocks + two V grooves;
+  rims with a polished lip, machined faces, twin 5-spoke, five nuts + centre disc; two projector lenses in each head
+  lamp; five grille slats; darker panel gaps. LOD1 / LOD2 unchanged (gate `carlook`).
+- Budgets (tris, LOD0 / LOD1 / LOD2, before -> after): hatch_s 10578 -> 14910, hatch_c 11046 -> 16994, estate 11692 ->
+  16440, saloon 10894 -> 15642, suv 12562 -> 18510, van_c 9716 -> 13632, van_p 9444 -> 13360, taxi 11334 -> 15666,
+  police 15006 -> 20954; LOD1 and LOD2 identical. Draws unchanged (+2-8 probe draws every 3rd frame, at 64 px).
+- Check: `node tools/audit/carLookGate.mjs`; browser `debug/carLook.js` (`go(dist)`, `strip({kind})`, `probe()`).
+- Next (round 2): new shapes one at a time at this quality, the boxy 4x4 first (tall, square, spare wheel on the back).
+
+## 11. CARS LOOK round 2 (claude/cars1, 2026-11-24)
+- **Probe decision**: OFF by default (`?carprobe=1` on). Fixes tried first: no first-frame burst (the probe fades in over
+  the sky after its first cube), each tile's pipelines + textures warmed before it enters, at most 3 tiles held, a spike
+  log (`__carProbe.stats.spikes`). Police drive, YELLOW, alternated: `?carprobe=0` GPU avg / p95 5.88 / 8.45, 5.08 / 7.60,
+  6.06 / 8.32 ms; probe 7.39 / 10.55, 7.10 / 9.57, 7.18 / 10.16 ms (+1.2 / +1.8). In one page the probe's updates alone
+  were p95 +2.5-3 ms; tile entries still 5-12 ms frames. Needs a much lighter proxy (a decimated building shell per tile,
+  made in the worker) before it can come back.
+- **Body shapes** (cars2.py tables, all 8 + taxi / police): flared arches (28 / 44 mm, SUV 40 / 52) with a WAIST drawing
+  the doors in between them (new `waist`), higher shoulder, more tumblehome, rounder sections (upper / lower exponents
+  3.2 / 2.8 -> 2.7 / 2.5; vans 3.0 / 2.7), softer nose / tail roundings, an arched roof (crown 30 -> 45 mm, roundness 4 ->
+  3), a narrower tapered glasshouse on a 50 mm shoulder ledge, a rising belt to the rear, a taller lamp + grille band and
+  a bigger lower intake. Sizes within 1 cm, LOD1 / LOD2 at or under r0 (gate `carlook`). Sheet:
+  uccle-cars1-ab/r2/shapes_before_after.jpg.
+- **Boxy 4x4** (`x4`, generic Defender / G / Land Cruiser class): 4.52 x 1.84 x 1.88, WB 2.74, wheels 0.375, boxy section
+  (4.2 / 3.6), upright screen, flat bonnet, black cladding, rails, the spare wheel on the tailgate (all LODs). LODs
+  17,200 / 2,180 / 340. 1.84 m wide (1.86 made it a "wide" body for the traffic: parkClamped 737 > 660). Mix: PARKED
+  6 % (TYPE_MIX re-weighted for a wealthy commune); NOT in the traffic yet (trafMix.js X4_TRAFFIC = 0, traffic.js and
+  missionAudit weight 0): at 8 % (5 %) of the traffic's cars trafmix seed 7 formed 19 (8) junction wait-for loops
+  (ceiling 3) + two new stuck places at D6 / D7, and one radar spot got no speeder in 150 s; at 0 all pass. A traffic
+  job raises X4_TRAFFIC once those junctions hold. SIZES, WHEELS, MASS set. `?carlook=old` keeps the r0 mix (no 4x4).

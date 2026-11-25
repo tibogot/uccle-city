@@ -20,7 +20,7 @@
 // Clock: Brussels local time now, or ?clock=HH:MM; ?timescale=N runs it N times faster. The day type
 // (weekday / Saturday / Sunday) comes from the date; the timetable is that of the feed's sample day.
 import { railBox } from "./drive/movers.js";
-import { densifyShapes, finishShape, shapeAt, shapeAtInto, createTramSched } from "./tramSched.js";
+import { densifyShapes, createTrackSnap, shapeAt, shapeAtInto, createTramSched } from "./tramSched.js";
 import * as THREE from "three/webgpu";
 import { attribute, mix, float, vec3, color, uniform } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -90,9 +90,9 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   const shapes = densifyShapes(doc);
   const snapped = new Set();
   // the tracks of every loaded tile in ONE 4 m grid of segments (global line ids), so a shape is snapped across tile
-  // seams in one pass, with its track continuity carried over the seam (no kink where two tiles meet)
-  const grid = new Map(), gk = (i, j) => i * 100003 + j, boxes = [];
-  let lineCount = 0;
+  // seams in one pass, with its track continuity carried over the seam (no kink where two tiles meet): viewer/tramSched.js
+  // createTrackSnap, the code the tramsnap gate row runs (?tramalloc=old: the loop before claude/allocrate2)
+  const snapper = createTrackSnap(shapes, { alloc: TRAM_ALLOC, slice: () => slice() });
   /** Snap the shape points inside every loaded tile onto the tram tracks (within 3 m). Re-snaps the whole line
    *  (~30-45 ms when a tile with tracks streams in): done in slices of <= 3 ms between frames, one tile at a time;
    *  each shape's points are swapped in whole, so the trams never read a half-snapped line. */
@@ -109,96 +109,13 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
     sliceT = performance.now();
   };
-  // (claude/allocrate2, ?tramalloc=old: the loop below) the same snap by index reads: no destructuring of the grid's
-  // segment tuples or of the shape's points, the previous snapped point in two numbers (21 KB a frame flying)
-  const snapShapeFlat = async (s, snap, loaded) => {
-    let prevLine = -1, hasPrev = false, ppx = 0, ppz = 0;
-    const o = s.orig;
-    for (let i = 0; i < o.length; i++) {
-      if ((i & 255) === 0) await slice();
-      const x = o[i][0], z = o[i][1];
-      if (!loaded(x, z)) { prevLine = -1; hasPrev = false; continue; }
-      const a0 = o[Math.max(0, i - 1)], a1 = o[Math.min(o.length - 1, i + 1)];
-      const sx = a1[0] - a0[0], sz = a1[1] - a0[1], sl = Math.hypot(sx, sz) || 1;
-      let best = Infinity, bx = x, bz = z, bl = -1;
-      const cell = grid.get(gk(Math.floor(x / 4), Math.floor(z / 4)));
-      if (cell) for (let c = 0; c < cell.length; c++) {
-        const sg = cell[c], ax = sg[0], az = sg[1], cx = sg[2], cz = sg[3], li = sg[4];
-        const dx = cx - ax, dz = cz - az, L2 = dx * dx + dz * dz || 1e-9;
-        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), px = ax + dx * t, pz = az + dz * t;
-        const d2 = (px - x) ** 2 + (pz - z) ** 2;
-        if (d2 > 9) continue;
-        const back = (dx * sx + dz * sz) / (Math.sqrt(L2) * sl) < 0 ? 1 : 0;
-        const cont = li === prevLine || (hasPrev && (px - ppx) ** 2 + (pz - ppz) ** 2 < 2.25 && Math.abs(Math.hypot(px - ppx, pz - ppz) - Math.hypot(x - o[Math.max(0, i - 1)][0], z - o[Math.max(0, i - 1)][1])) < 0.5);
-        const cost = d2 + (prevLine >= 0 && !cont ? 100 : 0) + back;
-        if (cost < best) { best = cost; bx = px; bz = pz; bl = li; }
-      }
-      snap[i] = [bx, bz];
-      prevLine = bl; hasPrev = true; ppx = bx; ppz = bz;
-    }
-  };
   const snapTileNow = async (feats, b) => {
     sliceT = performance.now();
     for (const l of feats.lines || []) if (l.kind === "platform") for (let k = 1; k < l.line.length; k++) platSegs.push([...l.line[k - 1], ...l.line[k]]);
     const tracks = (feats.lines || []).filter((l) => l.kind === "tram").map((l) => l.line);
-    boxes.push(b);
-    tracks.forEach((l) => { const li = lineCount++; for (let k = 1; k < l.length; k++) {
-      const [ax, az] = l[k - 1], [cx, cz] = l[k];
-      for (let i = Math.floor((Math.min(ax, cx) - 3) / 4); i <= Math.floor((Math.max(ax, cx) + 3) / 4); i++)
-        for (let j = Math.floor((Math.min(az, cz) - 3) / 4); j <= Math.floor((Math.max(az, cz) + 3) / 4); j++) {
-          const key = gk(i, j);
-          if (!grid.has(key)) grid.set(key, []);
-          grid.get(key).push([ax, az, cx, cz, li]);
-        }
-    } });
+    snapper.addTracks(tracks, b);
     if (!tracks.length) return;
-    const loaded = (x, z) => boxes.some((q) => x >= q.x0 && x <= q.x1 && z >= q.z0 && z <= q.z1);
-    // A GTFS shape runs between the two tracks of a street (~0.6-1.5 m off), so "nearest segment" flips from one
-    // track to the other and the tram wiggles across the street. Stay on the track of the previous point until it
-    // leaves its 3 m reach (a junction), and prefer a track running the shape's way.
-    for (const s of Object.values(shapes)) {
-      let prevLine = -1, prevPt = null;
-      const snap = s.snap.slice();
-      if (TRAM_ALLOC) { await snapShapeFlat(s, snap, loaded); s.snapNext = snap; continue; }
-      for (let i = 0; i < s.orig.length; i++) {
-        if ((i & 255) === 0) await slice();
-        const [x, z] = s.orig[i];
-        if (!loaded(x, z)) { prevLine = -1; prevPt = null; continue; }
-        const o = s.orig, a0 = o[Math.max(0, i - 1)], a1 = o[Math.min(o.length - 1, i + 1)];
-        const sx = a1[0] - a0[0], sz = a1[1] - a0[1], sl = Math.hypot(sx, sz) || 1;
-        let best = Infinity, bx = x, bz = z, bl = -1;
-        for (const [ax, az, cx, cz, li] of grid.get(gk(Math.floor(x / 4), Math.floor(z / 4))) || []) {
-          const dx = cx - ax, dz = cz - az, L2 = dx * dx + dz * dz || 1e-9;
-          const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), px = ax + dx * t, pz = az + dz * t;
-          const d2 = (px - x) ** 2 + (pz - z) ** 2;
-          if (d2 > 9) continue;
-          const back = (dx * sx + dz * sz) / (Math.sqrt(L2) * sl) < 0 ? 1 : 0;
-          // same line, or the next tile's piece of it (its point is within 1.5 m of the previous snapped point)
-          const cont = li === prevLine || (prevPt && (px - prevPt[0]) ** 2 + (pz - prevPt[1]) ** 2 < 2.25 && Math.abs(Math.hypot(px - prevPt[0], pz - prevPt[1]) - Math.hypot(x - o[Math.max(0, i - 1)][0], z - o[Math.max(0, i - 1)][1])) < 0.5);
-          const cost = d2 + (prevLine >= 0 && !cont ? 100 : 0) + back;     // switch only when the track left the 3 m reach
-          if (cost < best) { best = cost; bx = px; bz = pz; bl = li; }
-        }
-        snap[i] = [bx, bz];
-        prevLine = bl; prevPt = [bx, bz];
-      }
-      s.snapNext = snap;
-    }
-    // two passes of a [1 2 1]/4 filter along the snapped points: no kink where two tiles' tracks meet (on a 25 m
-    // curve it moves the line by under 1 cm)
-    for (const s of Object.values(shapes)) {
-      await slice();
-      let p = s.snapNext;
-      for (let pass = 0; pass < 2; pass++) {
-        const q = p.map((v) => v.slice());
-        for (let i = 1; i + 1 < p.length; i++) { q[i][0] = (p[i - 1][0] + 2 * p[i][0] + p[i + 1][0]) / 4; q[i][1] = (p[i - 1][1] + 2 * p[i][1] + p[i + 1][1]) / 4; }
-        p = q;
-      }
-      // swapped in together (pts, its arc length and tangents), in one task
-      const t = { pts: p };
-      finish(t);
-      s.snap = s.snapNext; delete s.snapNext;
-      s.pts = t.pts; s.cum = t.cum; s.tan = t.tan;
-    }
+    await snapper.snapAll();
   };
   const at = shapeAt, atInto = shapeAtInto;                         // (viewer/tramSched.js)
 

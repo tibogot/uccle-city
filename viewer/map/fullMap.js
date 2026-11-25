@@ -10,7 +10,8 @@ const MIN_ZOOM = 0.05, MAX_ZOOM = 5;
 const isTyping = (e) => { const t = e.target; return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable); };
 
 export class FullMap {
-  /** opts: { getPlayer() -> { x, z, heading }, onTeleport({ x, z, yaw, name }), lang, onLang(l), onToggle(open) } */
+  /** opts: { getPlayer() -> { x, z, heading }, onTeleport({ x, z, yaw, name }), onEnter(id), lang, onLang(l), onToggle(open) }
+   *  (claude/villamark) onEnter: a search result you can walk into (an 'enter' landmark) puts you in third person at its door */
   constructor(client, opts) {
     injectMapCSS();
     Object.assign(this, { client, opts, lang: opts.lang || 'fr', open: false });
@@ -254,7 +255,7 @@ export class FullMap {
     for (const it of res.results) {
       const d = document.createElement('div');
       d.innerHTML = `<i></i><b></b><small></small>`;
-      d.children[0].textContent = it.type === 'area' && it.kind !== 'park' ? it.kind : it.type === 'landmark' ? (it.kind === 'hero' ? 'landmark' : it.kind) : kinds[it.type];
+      d.children[0].textContent = it.enter ? 'go inside' : it.type === 'area' && it.kind !== 'park' ? it.kind : it.type === 'landmark' ? (it.kind === 'hero' ? 'landmark' : it.kind) : kinds[it.type];
       d.children[1].textContent = it.label;
       d.children[2].textContent = it.sub !== it.label ? it.sub : '';
       d.onclick = () => this.pick(it);
@@ -266,6 +267,7 @@ export class FullMap {
   pick(it) {
     this.results.innerHTML = '';
     this.input.value = it.label;
+    if (it.enter && this.opts.onEnter) { this.pin = { x: it.x, z: it.z, name: it.label }; this.toggle(false); this.opts.onEnter(it.enter); return; }
     const { w, h } = this.centre();
     if (it.type === 'street') {
       this.hl = it.key;

@@ -708,8 +708,60 @@ function fitBase(b, faces, doorFace, door, ground, wallFoot, blocked = () => fal
   return { base: y, how };
 }
 var FEET = { SINK: 0.3, MAX_GAP: 2.5 };
-function sinkFeet(bDoc, P, I2, ground, blocked = () => false) {
-  let moved = 0, buildings = 0, maxDrop = 0;
+function falseFeetOf(b, P, I2) {
+  const key = (v) => `${Math.round(P[v * 3] * 100)}|${Math.round(P[v * 3 + 2] * 100)}`;
+  const vkey = (v) => `${key(v)}|${Math.round(P[v * 3 + 1] * 100)}`;
+  const ek = (va, vb) => {
+    const a = vkey(va), c = vkey(vb);
+    return a < c ? a + "#" + c : c + "#" + a;
+  };
+  const f = b.walls.first, n = b.walls.count;
+  const below = /* @__PURE__ */ new Set();
+  for (let t = f; t < f + n; t++) for (let e = 0; e < 3; e++) {
+    const va = I2[t * 3 + e], vb = I2[t * 3 + (e + 1) % 3], vc = I2[t * 3 + (e + 2) % 3];
+    const ex = P[vb * 3] - P[va * 3], ez = P[vb * 3 + 2] - P[va * 3 + 2], L2 = ex * ex + ez * ez || 1e-9;
+    const u = ((P[vc * 3] - P[va * 3]) * ex + (P[vc * 3 + 2] - P[va * 3 + 2]) * ez) / L2;
+    if (P[vc * 3 + 1] < P[va * 3 + 1] + (P[vb * 3 + 1] - P[va * 3 + 1]) * u - 0.05) below.add(ek(va, vb));
+  }
+  const tris = [];
+  for (let t = f; t < f + n; t++) {
+    const w = [I2[t * 3], I2[t * 3 + 1], I2[t * 3 + 2]].map((q) => [P[q * 3], P[q * 3 + 1], P[q * 3 + 2]]);
+    const nx = (w[1][1] - w[0][1]) * (w[2][2] - w[0][2]) - (w[1][2] - w[0][2]) * (w[2][1] - w[0][1]);
+    const ny = (w[1][2] - w[0][2]) * (w[2][0] - w[0][0]) - (w[1][0] - w[0][0]) * (w[2][2] - w[0][2]);
+    const nz = (w[1][0] - w[0][0]) * (w[2][1] - w[0][1]) - (w[1][1] - w[0][1]) * (w[2][0] - w[0][0]);
+    const L2 = Math.hypot(nx, ny, nz);
+    if (L2 < 1e-9) continue;
+    const ax = Math.abs(nx), ay = Math.abs(ny), az = Math.abs(nz);
+    const [i, j] = ax >= ay && ax >= az ? [1, 2] : ay >= az ? [0, 2] : [0, 1];
+    const d = (w[1][j] - w[2][j]) * (w[0][i] - w[2][i]) + (w[2][i] - w[1][i]) * (w[0][j] - w[2][j]);
+    if (Math.abs(d) < 1e-12) continue;
+    tris.push({ w, n: [nx / L2, ny / L2, nz / L2], i, j, d, x0: Math.min(w[0][0], w[1][0], w[2][0]), x1: Math.max(w[0][0], w[1][0], w[2][0]), z0: Math.min(w[0][2], w[1][2], w[2][2]), z1: Math.max(w[0][2], w[1][2], w[2][2]) });
+  }
+  const pin = /* @__PURE__ */ new Map();
+  const pinned = (v) => {
+    const k = vkey(v);
+    let r = pin.get(k);
+    if (r !== void 0) return r;
+    r = false;
+    const p = [P[v * 3], P[v * 3 + 1] - 0.05, P[v * 3 + 2]];
+    for (const q of tris) {
+      if (p[0] < q.x0 - 0.05 || p[0] > q.x1 + 0.05 || p[2] < q.z0 - 0.05 || p[2] > q.z1 + 0.05) continue;
+      const w = q.w;
+      if (Math.abs((p[0] - w[0][0]) * q.n[0] + (p[1] - w[0][1]) * q.n[1] + (p[2] - w[0][2]) * q.n[2]) > 0.05) continue;
+      const { i, j, d } = q;
+      const l1 = ((w[1][j] - w[2][j]) * (p[i] - w[2][i]) + (w[2][i] - w[1][i]) * (p[j] - w[2][j])) / d, l2 = ((w[2][j] - w[0][j]) * (p[i] - w[2][i]) + (w[0][i] - w[2][i]) * (p[j] - w[2][j])) / d;
+      if (l1 >= -1e-3 && l2 >= -1e-3 && 1 - l1 - l2 >= -1e-3) {
+        r = true;
+        break;
+      }
+    }
+    pin.set(k, r);
+    return r;
+  };
+  return (va, vb) => below.has(ek(va, vb)) || pinned(va) || pinned(vb);
+}
+function sinkFeet(bDoc, P, I2, ground, blocked = () => false, { lowerOnly = true } = {}) {
+  let moved = 0, buildings = 0, maxDrop = 0, falseFeet = 0;
   const key = (v) => `${Math.round(P[v * 3] * 100)}|${Math.round(P[v * 3 + 2] * 100)}`;
   for (const b of bDoc.buildings) {
     if (b.attrs?._landmark || !b.walls?.count) continue;
@@ -718,6 +770,7 @@ function sinkFeet(bDoc, P, I2, ground, blocked = () => false) {
       const v = I2[t * 3 + k], q = key(v), y = P[v * 3 + 1];
       if (!(low.get(q) <= y)) low.set(q, y);
     }
+    let isFalse = null;
     let cx = 0, cz = 0, n = 0;
     for (const [x, z] of b.footprint[0]) {
       cx += x;
@@ -727,6 +780,7 @@ function sinkFeet(bDoc, P, I2, ground, blocked = () => false) {
     cx /= n;
     cz /= n;
     const want = /* @__PURE__ */ new Map();
+    const frozen = /* @__PURE__ */ new Set();
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) for (let e = 0; e < 3; e++) {
       const va = I2[t * 3 + e], vb = I2[t * 3 + (e + 1) % 3];
       const ya = P[va * 3 + 1], yb = P[vb * 3 + 1];
@@ -748,12 +802,18 @@ function sinkFeet(bDoc, P, I2, ground, blocked = () => false) {
         g = Math.min(g, y);
         sh = Math.max(sh, ya + (yb - ya) * Math.min(u / L2, 1) - (y - FEET.SINK));
       }
+      if (lowerOnly && (isFalse ??= falseFeetOf(b, P, I2))(va, vb)) {
+        falseFeet++;
+        for (const v of [va, vb]) frozen.add(key(v) + "|" + Math.round(P[v * 3 + 1] * 100));
+        continue;
+      }
       if (!(sh > 0) || sh > FEET.MAX_GAP + FEET.SINK || Math.min(ya, yb) - g >= FEET.MAX_GAP) continue;
       for (const v of [va, vb]) {
         const q = key(v) + "|" + Math.round(P[v * 3 + 1] * 100);
         want.set(q, Math.min(want.get(q) ?? Infinity, P[v * 3 + 1] - sh));
       }
     }
+    for (const q of frozen) want.delete(q);
     if (!want.size) continue;
     buildings++;
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) for (let k = 0; k < 3; k++) {
@@ -765,7 +825,7 @@ function sinkFeet(bDoc, P, I2, ground, blocked = () => false) {
       }
     }
   }
-  return { moved, buildings, maxDrop };
+  return { moved, buildings, maxDrop, falseFeet };
 }
 function footprintIndex(bDoc) {
   const B = 10, cells = /* @__PURE__ */ new Map();
@@ -812,7 +872,7 @@ var STEP = 0.25;
 var MIN_EDGE = 0.25;
 var SHORT = 1;
 var SHORT_HOLE = 0.3;
-function repairWalls(tris, ring2, base, { fix = true, party = null, roofs = null } = {}) {
+function repairWalls(tris, ring2, base, { fix = true, party = null, roofs = null, empty = true } = {}) {
   const used = /* @__PURE__ */ new Set(), flip = /* @__PURE__ */ new Set(), out = [], edges = [], pend = [];
   const n = ring2.length - (ring2.length > 1 && ring2[0][0] === ring2[ring2.length - 1][0] && ring2[0][1] === ring2[ring2.length - 1][1] ? 1 : 0);
   let area24 = 0;
@@ -842,8 +902,9 @@ function repairWalls(tris, ring2, base, { fix = true, party = null, roofs = null
       if (!ok || u1 < 0.05 || u0 > L2 - 0.05) return;
       on.push({ k, q: t.p.map((q) => [(q[0] - ax) * tx + (q[2] - az) * tz, q[1]]), over: u0 < -PLANE || u1 > L2 + PLANE, d: dSum / 3, n: t.n });
     });
-    if (!on.length) continue;
+    if (!on.length && !(empty && roofs)) continue;
     const topAt = (u) => {
+      if (!on.length) return roofY(ax + tx * Math.min(L2 - 0.05, Math.max(0.05, u)) - onx * 0.05, az + tz * Math.min(L2 - 0.05, Math.max(0.05, u)) - onz * 0.05, roofs);
       let hi = -Infinity;
       for (const { q } of on) for (let e2 = 0; e2 < 3; e2++) {
         const A = q[e2], B = q[(e2 + 1) % 3];
@@ -2012,7 +2073,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         const o = triOf(P, I2, t);
         if (o) roofTris.push(o);
       }
-      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0, roofs: roofTris });
+      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0, roofs: roofTris, empty: opts.wallEmpty !== false });
       const n = r.edges.filter((e) => e.rebuilt).length;
       if (n) {
         all = r.tris;
@@ -22564,7 +22625,7 @@ async function buildTileData(entry, base) {
   const fitGround0 = entry.groundFit !== false ? await step("ground fit", () => drawnGround(hm, road.parts)) : null;
   const sinkWalls = () => fitGround0 && bBuf ? step("wall feet", () => {
     const dv = new DataView(bBuf), V2 = dv.getUint32(0, true), T3 = dv.getUint32(4, true);
-    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V2 * 3), new Uint32Array(bBuf, 8 + V2 * 12, T3 * 3), fitGround0, footprintIndex(bDoc));
+    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V2 * 3), new Uint32Array(bBuf, 8 + V2 * 12, T3 * 3), fitGround0, footprintIndex(bDoc), { lowerOnly: entry.feetFix !== false });
   }) : null;
   const feetEarly = entry.colFeet === false ? null : await sinkWalls();
   const feetLate = () => sinkWalls();
@@ -22614,7 +22675,7 @@ async function buildTileData(entry, base) {
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   const roofKit = entry.roofs !== false ? roofCollector() : null;
   const feet = entry.colFeet === false ? await feetLate() : feetEarly;
-  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
+  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, wallEmpty: entry.wallEmpty !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));
@@ -23209,4 +23270,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "373c37f95c4caf27";
+self.__TILE_CODE_HASH = "e8c3751ea39fe2ea";

@@ -13,7 +13,7 @@ const PLANE = 0.2, MIN_COVER = 0.85, MIN_HOLE = 1.0, STEP = 0.25, MIN_EDGE = 0.2
 /** tris: [{ p: [[x, y, z] x3], n, area }] (the building's wall triangles); ring: [[x, z], ...] its outer footprint;
  *  base: the building's base height; roofs: its roof triangles (optional: the recess test sees its soffits).
  *  Returns { tris (the repaired list), edges: [{ a, b, cover, hole, rebuilt }] } */
-export function repairWalls(tris, ring, base, { fix = true, party = null, roofs = null } = {}) {
+export function repairWalls(tris, ring, base, { fix = true, party = null, roofs = null, empty = true } = {}) {
   const used = new Set(), flip = new Set(), out = [], edges = [], pend = [];
   const n = ring.length - (ring.length > 1 && ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1] ? 1 : 0);
   // (holes 2026-11-17) the ring's winding: the rebuilt quads must face OUT of the footprint. The wall material is
@@ -43,9 +43,15 @@ export function repairWalls(tris, ring, base, { fix = true, party = null, roofs 
       if (!ok || u1 < 0.05 || u0 > L - 0.05) return;
       on.push({ k, q: t.p.map((q) => [(q[0] - ax) * tx + (q[2] - az) * tz, q[1]]), over: u0 < -PLANE || u1 > L + PLANE, d: dSum / 3, n: t.n });
     });
-    if (!on.length) continue;
-    // the edge's top line: the highest wall point over each u (from the triangles' edges)
+    // (claude/walls2, rule walls-closed-from-street, docs/MISSING_WALLS_CENSUS.md E2) an EMPTY edge (no UrbIS triangle on it
+    // at all: Rue de Verrewinkel's 95C / 95D blocks, F7 723572 / 723573, both long sides absent in the source) used to be
+    // skipped here: the street saw into the solid. Now it is judged like a partial one, its top line the building's own
+    // roof just inside it; a party stretch, a recess (the rays in meet a front face or nothing: a carport, a canopy) and a
+    // wall-less solid (facadeGeom.js calls this only with walls) stay open. empty false (= ?wallempty=old): skipped.
+    if (!on.length && !(empty && roofs)) continue;
+    // the edge's top line: the highest wall point over each u (from the triangles' edges); an empty edge: its roof
     const topAt = (u) => {
+      if (!on.length) return roofY(ax + tx * Math.min(L - 0.05, Math.max(0.05, u)) - onx * 0.05, az + tz * Math.min(L - 0.05, Math.max(0.05, u)) - onz * 0.05, roofs);
       let hi = -Infinity;
       for (const { q } of on) for (let e = 0; e < 3; e++) {
         const A = q[e], B = q[(e + 1) % 3];

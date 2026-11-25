@@ -574,7 +574,7 @@ export async function buildTileData(entry, base) {
   // the walls' feet down to the drawn ground where they stood over it (JOINS; viewer/groundFit.js sinkFeet): the façades
   // and (now) the drive colliders are built from these walls (the roof grids above read the solids)
   const sinkWalls = () => (fitGround0 && bBuf ? step("wall feet", () => { const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
-    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround0, footprintIndex(bDoc)); }) : null);
+    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround0, footprintIndex(bDoc), { lowerOnly: entry.feetFix !== false }); }) : null);   // (claude/walls2, rule walls-closed-from-street: feet only on the wall's lower boundary; entry.feetFix === false = ?feet=old)
   const feetEarly = entry.colFeet === false ? null : await sinkWalls();
   const feetLate = () => sinkWalls();
   // (claude/deckrail, rule 17) the drive raster once, here: the decks' parapets / railings are left off every edge where
@@ -615,7 +615,7 @@ export async function buildTileData(entry, base) {
   // entry.roofs !== false: the roof kit (viewer/roofs/roofPlace.js, docs/assets/ROOFS.md; ?roofs=old = the roofs before)
   const roofKit = entry.roofs !== false ? roofCollector() : null;
   const feet = entry.colFeet === false ? await feetLate() : feetEarly;   // (the walls' feet: sunk before the drive colliders, above)
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, wallEmpty: entry.wallEmpty !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);

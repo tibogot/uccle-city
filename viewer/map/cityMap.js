@@ -8,7 +8,7 @@ import { Minimap } from './minimap.js';
 import { FullMap } from './fullMap.js';
 import { injectMapCSS } from './mapCSS.js';
 
-export async function startCityMap({ getPlayer, teleport, getTrams, log = console.log, lang } = {}) {
+export async function startCityMap({ getPlayer, teleport, getTrams, log = console.log, lang, enter } = {}) {
   injectMapCSS();
   const qlang = new URLSearchParams(location.search).get('maplang');
   lang = lang || (qlang === 'nl' ? 'nl' : 'fr');
@@ -32,6 +32,7 @@ export async function startCityMap({ getPlayer, teleport, getTrams, log = consol
     getTrams: () => (tramsOn ? mini.interpTrams() : null),
     onLang: (l) => mini.setLang(l),
     onToggle: (open) => { mini.paused = open; },
+    onEnter: enter ? (id) => { Promise.resolve(enter(id)).catch((e) => log(`map: go inside ${id}: ${e.message}`)); } : null,   // (villamark: a place you can walk into, from the search)
     onTeleport: async (t) => {
       if (busy || !teleport) return;
       busy = true;
