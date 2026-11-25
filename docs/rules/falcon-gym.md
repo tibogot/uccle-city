@@ -75,6 +75,14 @@ The fixes (all in the script):
 
 **Check.** Gate row `falcongym` (`tools/falconV2pose.mjs` `tailTipWidth`): the feather bones exist, the folded width, and the glide / flare spread. The first build fails 3 of these (folded 25.6 cm everywhere).
 
+### The walk and the hop are crouched
+
+**Rule.** On the ground the falcon is crouched like a peregrine, its legs mostly under the belly feathers. Through the Walk cycle (sampled at 8 times): the hip joints < 12.5 cm up, < 4.5 cm of leg below the belly, and a foot on the ground (its lowest point within 1.2 cm). Through the Hop: the hips < 15 cm up, < 6 cm of leg below the belly. Both are ours (`falconV2.py` `ground_pose`, as the Perch): the body at 30 deg, the legs by IK from foot targets. The Walk is a 10-frame cycle of 12 cm steps (60 % stance, a slight waddle, the feet planted at 0.48 m/s). The Hop is a crouch, a push, the feet tucked up, a landing. The gym plays the v2 Walk at the ground speed's rate (`gymBird.js` `V2_WALK_MPS`, capped at 2.5x).
+
+**Why.** Coordinator's review: "walk shows long legs". The Walk and the Hop were Mesh2Motion's, retargeted. The legs took the clip's own long, near-straight leg directions on the download's legs, and the root was only moved down until a foot touched. So the body rode at 21 cm on bare stick legs (8-11 cm of leg showing). Only the Perch had been checked.
+
+**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs`, poses sampled through the clip). The first build fails both.
+
 ## Bank into the turn (2026-11-25)
 
 **Rule.** One bank convention everywhere: `phi > 0` = the RIGHT wing down, a right turn (`flightModel.js`'s). Every controller writes it that way. The bird reads it through `birdRoll` / `rigBank` (`gymFlight.js`, used by `gymBird.js`), and the camera reads it as `falconCamera.js` does. A right turn (D, the right arrow, or the mouse moved right) drops the right wingtip below the left in world space. The heading turns clockwise seen from above, and the chase camera rolls the same way. A left turn is the mirror. The lab's input mapping is `fillGymControls`, one function shared by the lab and the test.

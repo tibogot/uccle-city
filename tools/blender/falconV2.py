@@ -754,71 +754,122 @@ PERCH_NECK = float(arg("--perch-neck", "55"))                    # deg: the neck
 def body_angle():
     upd(); P_ = arm.pose.bones; d = P_["spine_1"].head - P_["hips"].head
     return math.degrees(math.atan2(d.z, -d.y))
-def p_perch(base, look=0.0):
+def ground_pose(base, pitch, hip, hipy=PERCH_HIPY, neck=PERCH_NECK, look=0.0, feet=None, roll=0.0, cache=None, tailk=1.0):
+    """a falcon on the ground (Perch, Walk, Hop: V2 POLISH + V2 FIX): the body turned nose-up to `pitch` (deg) and
+    moved (the root's translation) so the hip joints sit `hip` m above the ground, `hipy` behind the feet's line, rolled
+    by `roll` (deg, a waddle) about its own line; the wings folded with their tips on the tail; the tail lifted off
+    the ground; the legs by IK from the feet up. feet: side -> (y, lift, tarsus_back, toes, claws): the foot's joint
+    `y` m along the body (- forward) with its lowest point `lift` m over the ground. cache: a dict that keeps the
+    searches (the wing tips, the lifts) from the first call, so a cycle's frames do not pop between search steps"""
+    feet = feet or {}
     def f():
-        apply_base(base); tail_fold(TAILFOLD["Perch"])
-        # the body upright: the whole bird turned nose-up (the root) to PERCH_PITCH, then moved (the root's
-        # translation: the one translation track) so the hip joints sit PERCH_HIP above the feet, over them
+        apply_base(base); tail_fold(tailk)
         a0 = body_angle(); pb = arm.pose.bones["root"]; M = pb.matrix.copy()
-        pb.matrix = Matrix.Rotation(-math.radians(math.degrees(PERCH_PITCH) - a0), 4, "X") @ M; upd()
+        pb.matrix = Matrix.Rotation(-math.radians(pitch - a0), 4, "X") @ M; upd()
         Hm = (arm.pose.bones["UpperLeg_L"].head + arm.pose.bones["UpperLeg_R"].head) / 2
-        M = pb.matrix.copy(); pb.matrix = Matrix.Translation(Vector((0, PERCH_HIPY, PERCH_HIP)) - Hm) @ M; upd()
+        M = pb.matrix.copy(); pb.matrix = Matrix.Translation(Vector((0, hipy, hip)) - Hm) @ M; upd()
+        if roll:
+            Hm = (arm.pose.bones["UpperLeg_L"].head + arm.pose.bones["UpperLeg_R"].head) / 2
+            ax_ = (arm.pose.bones["spine_1"].head - arm.pose.bones["hips"].head).normalized()
+            pb.matrix = Matrix.Translation(Hm) @ Matrix.Rotation(math.radians(roll), 4, ax_) @ Matrix.Translation(-Hm) @ pb.matrix; upd()
         # the wings pressed onto the back and flanks (the Mesh2Motion fold leaves them off this mesh's body)
         fold_wings()
-        # the neck on up the body's line, the head level (a perched falcon's alert look)
+        # the neck on up the body's line, the head level (an alert look)
         nk = lambda a: (0, -math.cos(math.radians(a)), math.sin(math.radians(a)))
-        aims({"spine_2": nk(PERCH_NECK), "spine_3": nk(PERCH_NECK + 25), "head": (math.sin(look), -math.cos(look), -0.12)})
-        # the tail on along the body, lifted at its base where it would reach the ground (a falcon standing on a flat
-        # roof: the tail just off it)
-        for i in range(14):
-            if eval_co()[TAILV][:, 2].min() > 0.006: break
-            turn("tail_1", (1, 0, 0), math.radians(4))
+        aims({"spine_2": nk(neck), "spine_3": nk(neck + 25), "head": (math.sin(look), -math.cos(look), -0.12)})
+        C_ = cache if cache is not None else {}
+        # the tail on along the body, lifted at its base where it would reach the ground (the tail just off it)
+        if "tail" not in C_:
+            n_ = 0
+            for i in range(14):
+                if eval_co()[TAILV][:, 2].min() > 0.006: break
+                turn("tail_1", (1, 0, 0), math.radians(4)); n_ += 1
+            C_["tail"] = n_
+        else:
+            for i in range(C_["tail"]): turn("tail_1", (1, 0, 0), math.radians(4))
         # the folded wings' tips onto the tail (a perched falcon's primaries lie on it, crossing): the hand turned
         # up / in (a small search) to bring the tip vertices nearest the tail's line, never below the ground
         upd(); base_q = {s: arm.pose.bones[f"wing_3_{s}"].rotation_quaternion.copy() for s in "LR"}
-        best = None
-        for up_ in range(-10, 36, 5):
-            for in_ in range(0, 26, 5):
-                for s, sg in (("L", 1), ("R", -1)):
-                    arm.pose.bones[f"wing_3_{s}"].rotation_quaternion = base_q[s]
-                    turn(f"wing_3_{s}", (1, 0, 0), math.radians(up_))
-                    upd(); fb_ = (arm.pose.bones["spine_1"].head - arm.pose.bones["hips"].head).normalized()
-                    turn(f"wing_3_{s}", fb_, sg * math.radians(in_))
-                X_ = eval_co(); upd()
-                ta, tb = arm.pose.bones["tail_1"].head, arm.pose.bones["tail_tip"].head
-                d_ = max(seg_dist(Vector(X_[TIPV[s]]), ta, tb) for s in "LR")
-                if X_[HANDV][:, 2].min() < 0.012: d_ += 1.0
-                if best is None or d_ < best[0]: best = (d_, up_, in_)
-        for s, sg in (("L", 1), ("R", -1)):
-            arm.pose.bones[f"wing_3_{s}"].rotation_quaternion = base_q[s]
-            turn(f"wing_3_{s}", (1, 0, 0), math.radians(best[1]))
-            upd(); fb_ = (arm.pose.bones["spine_1"].head - arm.pose.bones["hips"].head).normalized()
-            turn(f"wing_3_{s}", fb_, sg * math.radians(best[2]))
+        def hand(up_, in_):
+            for s, sg in (("L", 1), ("R", -1)):
+                arm.pose.bones[f"wing_3_{s}"].rotation_quaternion = base_q[s]
+                turn(f"wing_3_{s}", (1, 0, 0), math.radians(up_))
+                upd(); fb_ = (arm.pose.bones["spine_1"].head - arm.pose.bones["hips"].head).normalized()
+                turn(f"wing_3_{s}", fb_, sg * math.radians(in_))
+        if "hand" not in C_:
+            best = None
+            for up_ in range(-10, 36, 5):
+                for in_ in range(0, 26, 5):
+                    hand(up_, in_)
+                    X_ = eval_co(); upd()
+                    ta, tb = arm.pose.bones["tail_1"].head, arm.pose.bones["tail_tip"].head
+                    d_ = max(seg_dist(Vector(X_[TIPV[s]]), ta, tb) for s in "LR")
+                    if X_[HANDV][:, 2].min() < 0.012: d_ += 1.0
+                    if best is None or d_ < best[0]: best = (d_, up_, in_)
+            C_["hand"] = best
+        hand(C_["hand"][1], C_["hand"][2])
         # the folded wing's sheets likewise (on a steep body the hand's and the secondaries' tips reach the ground)
-        for i in range(12):
-            X_ = eval_co(); lowh, lows = X_[HANDV][:, 2].min() < 0.012, X_[SECV][:, 2].min() < 0.012
-            if not (lowh or lows): break
+        def lift_sheets(lowh, lows):
             for s in "LR":
                 if lowh: turn(f"wing_3_{s}", (1, 0, 0), math.radians(2))
                 if lows:
                     for b in ("wing_feather_1_1", "wing_feather_2_1"): turn(f"{b}_{s}", (1, 0, 0), math.radians(3))
-
-        # the legs: the feet under the body by IK, the foot and toes flat, the claws curled down (gripping); three times, the
-        # later ones with the posed mesh's lowest foot point put on the ground
+        if "sheets" not in C_:
+            st = []
+            for i in range(12):
+                X_ = eval_co(); lowh, lows = X_[HANDV][:, 2].min() < 0.012, X_[SECV][:, 2].min() < 0.012
+                if not (lowh or lows): break
+                lift_sheets(lowh, lows); st.append((lowh, lows))
+            C_["sheets"] = st
+        else:
+            for lowh, lows in C_["sheets"]: lift_sheets(lowh, lows)
+        # the legs: the feet by IK, the foot and toes flat (or curled in a step), the claws curled down; three times,
+        # the later ones with the posed mesh's lowest foot point put at its lift over the ground
         P_ = arm.pose.bones
+        T_z = {}
         for it in range(3):
             upd()
             for s, sg in (("L", 1), ("R", -1)):
-                H = P_[f"UpperLeg_{s}"].head
-                zf = 0.025 if it == 0 else T_z[s]
-                T = Vector((sg * PERCH_FOOTX, 0.0, zf))
-                leg_stand(s, T); aim(f"Foot_{s}", (sg * 0.14, -1, -0.03)); curl(s, -8, 6)
-            upd(); X = eval_co(); feet = X[FEETV]
-            T_z = {}
+                y_, lift_, tb_, toes_, claws_ = feet.get(s, (0.0, 0.0, 0.25, -8, 6))
+                zf = 0.025 + lift_ if it == 0 else T_z[s]
+                leg_stand(s, Vector((sg * PERCH_FOOTX, y_, zf)), tb_)
+                aim(f"Foot_{s}", (sg * 0.14, -1, -0.03 - 6.0 * lift_)); curl(s, toes_, claws_)
+            upd(); X = eval_co(); feet_ = X[FEETV]
             for s, sg in (("L", 1), ("R", -1)):
-                m_ = feet[(feet[:, 0] * sg) > 0]
-                T_z[s] = (P_[f"Foot_{s}"].head.z) - (m_[:, 2].min() if len(m_) else 0.0)
+                m_ = feet_[(feet_[:, 0] * sg) > 0]
+                T_z[s] = (P_[f"Foot_{s}"].head.z) - (m_[:, 2].min() if len(m_) else 0.0) + feet.get(s, (0.0, 0.0))[1]
     return f
+def p_perch(base, look=0.0): return ground_pose(base, math.degrees(PERCH_PITCH), PERCH_HIP, look=look, tailk=TAILFOLD["Perch"])
+# THE WALK AND THE HOP (V2 FIX, rule falcon-gym "the v2 fixes"): ours, crouched, the legs by IK from the feet as the
+# Perch. The retargeted Mesh2Motion Walk / Hop kept its long straight leg directions on the download's legs: the body
+# rode high on bare stick legs. A peregrine on a roof walks crouched, the belly low, the tarsi mostly under the belly
+# feathers, short steps with a slight waddle; a hop is a crouch, a push and the feet tucked up under the body.
+WALK_N, WALK_STRIDE, WALK_DUTY = 10, 0.12, 0.6       # frames a cycle (24 fps), the foot's sweep (m), stance share
+WALK_PITCH, WALK_HIP = 30.0, 0.10                    # deg, m (the Perch: 45 deg, 0.13 m)
+def smooth01(x): x = min(1.0, max(0.0, x)); return x * x * (3 - 2 * x)
+def walk_foot(u):
+    """the foot along a cycle u (0..1): (y, lift, tarsus_back, toes, claws). Stance: back from -S/2 to +S/2 (planted:
+    the body moves S / duty a cycle); swing: forward with a 2 cm lift, the tarsus swung back, the toes curled"""
+    S_ = WALK_STRIDE
+    if u < WALK_DUTY: return (-S_ / 2 + S_ * u / WALK_DUTY, 0.0, 0.25, -8, 6)
+    v = (u - WALK_DUTY) / (1 - WALK_DUTY); sn = math.sin(math.pi * v)
+    return (S_ / 2 - S_ * smooth01(v), 0.02 * sn, 0.25 + 0.5 * sn, -8 + 30 * sn, 6 + 25 * sn)
+def p_walk(u, cache):
+    return ground_pose(FOLDED, WALK_PITCH, WALK_HIP + 0.004 * math.cos(4 * math.pi * u), neck=PERCH_NECK - 5,
+                       feet={"L": walk_foot(u), "R": walk_foot((u + 0.5) % 1)}, roll=3.0 * math.sin(2 * math.pi * u), cache=cache, tailk=TAILFOLD["Walk"])
+HOP_N = 20
+def hop_at(u):
+    """the hop along u (0..1): crouch, push (the feet still down), the feet tucked up in the air, the landing"""
+    if u < 0.3: hip, lift, pitch = 0.10 - 0.02 * smooth01(u / 0.3), 0.0, WALK_PITCH + 5
+    elif u < 0.45: k = smooth01((u - 0.3) / 0.15); hip, lift, pitch = 0.08 + 0.06 * k, 0.0, WALK_PITCH + 5 - 10 * k
+    elif u < 0.8: k = math.sin(math.pi * (u - 0.45) / 0.35); hip, lift, pitch = 0.14, 0.035 * k, WALK_PITCH - 5
+    else: k = smooth01((u - 0.8) / 0.2); hip, lift, pitch = 0.14 - 0.04 * k, 0.0, WALK_PITCH - 5 + 10 * k
+    t_ = lift / 0.035
+    ft = (-0.01 * t_, lift, 0.25 + 0.6 * t_, -8 + 30 * t_, 6 + 25 * t_)
+    return pitch, hip, ft
+def p_hop(u, cache):
+    pitch, hip, ft = hop_at(u)
+    return ground_pose(FOLDED, pitch, hip, neck=PERCH_NECK - 5, feet={"L": ft, "R": ft}, cache=cache, tailk=TAILFOLD["Hop"])
 key_clip("Stoop", [p_stoop, p_stoop], [0, 12])
 key_clip("Talons", [p_talons, p_talons], [0, 12])
 key_clip("Flare", [p_flare(), p_flare((0.7, -0.4, 0.62)), p_flare()], [0, 6, 12])
@@ -840,8 +891,12 @@ def ground_clip(name, per_frame=True):
         M = pb.matrix.copy(); pb.matrix = Matrix.Translation((0, 0, dz)) @ M; upd(); pb.keyframe_insert("location", frame=f)
         if per_frame: dz = None
     set_action(arm, None)
-for n_ in ("Walk", "Idle"): ground_clip(n_)
-ground_clip("Hop", per_frame=False)
+ground_clip("Idle")
+for name_, N_, pf in (("Walk", WALK_N, p_walk), ("Hop", HOP_N, p_hop)):
+    if name_ in actions: bpy.data.actions.remove(actions.pop(name_))
+    cache_ = {}
+    key_clip(name_, [pf(i / N_, cache_) for i in range(N_ + 1)], list(range(N_ + 1)), loc=True)
+print(f"[falconV2] Walk ({WALK_N} frames, stride {WALK_STRIDE} m: {WALK_STRIDE / (WALK_DUTY * WALK_N / 24):.2f} m/s planted) and Hop ({HOP_N} frames): ours, crouched, by IK")
 # the tail's fold keyed on every clip's frames (the feather bones are leaves: nothing else moves)
 for name_, act_ in actions.items():
     if not TAILFAN: break

@@ -60,6 +60,12 @@ SHOT = {
     "talons": ("Talons", 1, (1, -0.45, 0.2), 0.25),
     "flare": ("Flare", 1, (0.8, -0.6, 0.3), 0.25),
     "walk": ("Walk", 5, (0.9, -0.5, 0.3), 0.0),
+    "walk_side": ("Walk", 2, (1, -0.05, 0.12), 0.0),
+    "walk_back": ("Walk", 2, (0.3, 1, 0.35), 0.0),
+    "hop": ("Hop", 12, (1, -0.1, 0.15), 0.0),
+    "hop_crouch": ("Hop", 7, (1, -0.1, 0.15), 0.0),
+    "perch_wrist": ("Perch", 1, (1, -0.35, 0.05), 0.0),
+    "stoop_side": ("Stoop", 1, (1, 0.0, 0.1), 0.25),
 }
 os.makedirs(OUT, exist_ok=True)
 acts = {a.name: a for a in bpy.data.actions}

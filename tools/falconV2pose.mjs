@@ -68,22 +68,34 @@ export function loadV2(file) {
   J.nodes.forEach((n, i) => (n.children || []).forEach((c) => { parent[c] = i; }));
   const byName = Object.fromEntries(J.nodes.map((n, i) => [n.name, i]));
   const clips = Object.fromEntries((J.animations || []).map((a) => [a.name, a]));
-  /** the node world matrices with `clip` at its first key (null: the rest) */
-  function world(clip) {
+  /** the node world matrices with `clip` at time t (s; null: its first key), linear keys (nlerp); clip null: the rest */
+  function world(clip, t = null, extra = null) {
     const T = J.nodes.map((n) => ({ t: n.translation || [0, 0, 0], r: n.rotation || [0, 0, 0, 1], s: n.scale || [1, 1, 1] }));
     if (clip) for (const ch of clips[clip].channels) {
       const sm = clips[clip].samplers[ch.sampler], out = acc(sm.output), p = ch.target.path;
-      if (p === "rotation") T[ch.target.node].r = [...out.subarray(0, 4)];
-      else if (p === "translation") T[ch.target.node].t = [...out.subarray(0, 3)];
+      if (p !== "rotation" && p !== "translation") continue;
+      const n = p === "rotation" ? 4 : 3, inp = t == null ? null : acc(sm.input);
+      let v = [...out.subarray(0, n)];
+      if (inp && inp.length > 1) {
+        let k = 0; while (k < inp.length - 2 && inp[k + 1] <= t) k++;
+        const u = Math.max(0, Math.min(1, (t - inp[k]) / Math.max(inp[k + 1] - inp[k], 1e-9)));
+        const a = out.subarray(k * n, k * n + n), b = out.subarray((k + 1) * n, (k + 1) * n + n);
+        const sg = n === 4 && a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3] < 0 ? -1 : 1;
+        v = [...a].map((x, i) => x + (sg * b[i] - x) * u);
+        if (n === 4) { const l = Math.hypot(...v); v = v.map((x) => x / l); }
+      }
+      if (p === "rotation") T[ch.target.node].r = v; else T[ch.target.node].t = v;
     }
+    // (experiments: extra = { nodeName: [x, y, z, w] } post-multiplied onto the node's rotation, a local turn)
+    if (extra) for (const [n, q] of Object.entries(extra)) { const r = T[byName[n]].r, [x, y, z, w] = r, [a, b, c, d] = q; T[byName[n]].r = [w * a + x * d + y * c - z * b, w * b - x * c + y * d + z * a, w * c + x * b - y * a + z * d, w * d - x * a - y * b - z * c]; }
     const W = new Array(J.nodes.length);
     const get = (i) => W[i] ??= parent[i] < 0 ? trs(T[i].t, T[i].r, T[i].s) : mul(get(parent[i]), trs(T[i].t, T[i].r, T[i].s));
     J.nodes.forEach((_, i) => get(i));
     return W;
   }
   /** the posed vertices (Float64Array xyz) and the joints' world positions by name */
-  function pose(clip) {
-    const W = world(clip), S = joints.map((j, k) => mul(W[j], IBM.subarray(k * 16, k * 16 + 16)));
+  function pose(clip, t = null, extra = null) {
+    const W = world(clip, t, extra), S = joints.map((j, k) => mul(W[j], IBM.subarray(k * 16, k * 16 + 16)));
     const X = new Float64Array(NV * 3);
     for (let v = 0; v < NV; v++) {
       let x = 0, y = 0, z = 0;
@@ -99,7 +111,7 @@ export function loadV2(file) {
   // per vertex: its main joint's name and weight
   const main = new Array(NV), mainW = new Float64Array(NV);
   for (let v = 0; v < NV; v++) { let b = 0; for (let c = 1; c < 4; c++) if (WT[v * 4 + c] > WT[v * 4 + b]) b = c; main[v] = J.nodes[joints[JN[v * 4 + b]]].name; mainW[v] = WT[v * 4 + b]; }
-  return { J, NV, IDX, P, main, mainW, clips, pose, byName };
+  return { J, NV, IDX, P, main, mainW, clips, pose, byName, acc };
 }
 
 /** the tail's feather cards: small loose parts (<= 80 vertices) mainly on a tail bone */
@@ -179,6 +191,24 @@ export function v2PoseChecks(file) {
   const folded = ["Perch", "Walk", "Hop", "Stoop", "Talons"].filter((c) => tw[c] != null), wmax = Math.max(...folded.map((c) => tw[c]));
   ok(wmax < 0.10, "v2 tail closed when folded (Perch / Walk / Hop / Stoop / Talons: < 10 cm across its tip half)", folded.map((c) => `${c} ${(tw[c] * 100).toFixed(1)}`).join(", ") + " cm");
   ok(tw.Glide > wmax + 0.03 && tw.Flare >= 0.25 && tw.Flare > tw.Glide, "v2 tail fans in flight (Glide wider than folded, Flare >= 25 cm, the widest)", `Glide ${(tw.Glide * 100).toFixed(1)}, Flare ${(tw.Flare * 100).toFixed(1)} cm`);
+  // V2 FIX: the Walk and the Hop crouched like a peregrine's (the legs mostly under the belly feathers), the feet on
+  // the ground, sampled through the cycle: the hips low, the bare leg below the belly short, the stance foot down
+  const dur = (c) => Math.max(...B.clips[c].samplers.map((sm) => { const a = B.J.accessors[sm.input]; return a.max?.[0] ?? 0; }));
+  for (const [c, hipMax, legMax] of [["Walk", 0.125, 0.045], ["Hop", 0.15, 0.06]]) {
+    if (!B.clips[c]) { ok(false, `v2 ${c}: clip`, "missing"); continue; }
+    let hip = 0, leg = -Infinity, gmin = Infinity, gmax = -Infinity; const D = dur(c);
+    for (let i = 0; i < 8; i++) {
+      const p = B.pose(c, (D * i) / 8), Xc = p.X;
+      hip = Math.max(hip, (p.at("UpperLeg_L")[1] + p.at("UpperLeg_R")[1]) / 2);
+      let bl = Infinity, fm = Infinity;
+      for (let v = 0; v < NV; v++) { const y = Xc[v * 3 + 1]; if (/^(hips|spine_[01])$/.test(main[v])) bl = Math.min(bl, y); if (/^(Foot|Toes)/.test(main[v])) fm = Math.min(fm, y); }
+      // the bare leg below the belly: from the belly's lowest point down to the lower foot joint
+      leg = Math.max(leg, bl - Math.min(p.at("Foot_L")[1], p.at("Foot_R")[1]));
+      gmin = Math.min(gmin, fm); gmax = Math.max(gmax, fm);
+    }
+    ok(hip < hipMax && leg < legMax, `v2 ${c}: crouched, the legs mostly hidden (hip joints < ${hipMax * 100} cm up, < ${legMax * 100} cm of leg below the belly, through the cycle)`, `hips <= ${(hip * 100).toFixed(1)} cm, leg below the belly <= ${(leg * 100).toFixed(1)} cm`);
+    if (c === "Walk") ok(gmin > -0.012 && gmax < 0.012, "v2 Walk: a foot on the ground through the cycle (the lowest foot point within 1.2 cm of it)", `${(gmin * 100).toFixed(1)} .. ${(gmax * 100).toFixed(1)} cm`);
+  }
   // the juvenile plumage (the player): its KTX2 beside the glb, named in it, the base colour's size
   const v = B.J.asset?.extras?.variants?.juvenile, f = v && path.join(path.dirname(file), v.file);
   const okFile = f && fs.existsSync(f) && fs.readFileSync(f).subarray(0, 12).toString("latin1").includes("KTX 20");

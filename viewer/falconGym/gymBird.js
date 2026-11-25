@@ -19,6 +19,7 @@ import { BirdRig } from "../birdRig.js";
 import { birdRoll, rigBank } from "./gymFlight.js";
 
 const _I = new THREE.Quaternion();
+const V2_WALK_MPS = 0.12 / (0.6 * 10 / 24);          // v2's Walk: the speed its stance feet stay planted at (0.48 m/s)
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
 const M2M = new URL("../../models/bird/v2/m2m/", import.meta.url);
 const V2 = new URL("../../models/bird/v2/falcon_v2.glb", import.meta.url);
@@ -171,7 +172,9 @@ export class GymBird {
     for (const k in this.w) { this.w[k] = ease(this.w[k], T[k], rate, wdt); sum += this.w[k]; }   // (wdt: the orbit view eases even while paused)
     for (const k in this.w) this.actions[k].setEffectiveWeight(this.w[k] / Math.max(sum, 1e-4));
     this.actions.flap.timeScale = 0.9 + 1.0 * f.flapLevel + (mode === "land" || mode === "launch" ? 0.7 : 0);
-    if (this.actions.walk) this.actions.walk.timeScale = mode === "hop" ? 1.8 : Math.max(0.4, Math.abs(f.walkV ?? 1) * 1.1);
+    // (v2's Walk plants its feet at V2_WALK_MPS (tools/blender/falconV2.py WALK_*: 0.12 m stance sweep, 60 % stance,
+    // 10 frames): played at the ground speed's rate, capped, so a fast walk does not turn into a blur of steps)
+    if (this.actions.walk) this.actions.walk.timeScale = mode === "hop" ? 1.8 : this.which === "v2" ? Math.min(2.5, Math.max(0.4, Math.abs(f.walkV ?? 1) / V2_WALK_MPS)) : Math.max(0.4, Math.abs(f.walkV ?? 1) * 1.1);
     const ph = this.actions.flap.time / this.flapDur;
     this.downstroke = this.w.flap > 0.3 && ph < this.lastFlapPhase;
     this.lastFlapPhase = ph;
