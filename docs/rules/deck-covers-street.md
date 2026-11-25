@@ -1,0 +1,8 @@
+---
+status: provisional
+added: 2026-11-25
+check: `deckjoins` H (tools/audit/deckJoins.mjs: within 6 m of every plan deck's ring, no measured street drawn more than 0.6 m over the terrain under it, < 3 m2; --old = ?footbridge=old must show the Carsoel deck's 40 m2)
+---
+**Rule.** A measured road deck (data/overrides.json bridgePlans, the UrbIS plan decks) covers every measured street surface (UrbIS sidewalks, tram road, roadway) that continues off it at its level: where such a surface would otherwise be draped over the cutting's bank, the deck's ring is widened to it (a wing slab with its wall down into the bank and the railing over the drop). A street surface drawn in the air beside a deck is a defect, whatever the deck's own edges look like.
+
+**Why.** The Carsoel deck at Saint-Job station (hand plan, citydefects A) stopped at its abutment line; UrbIS draws the Rue de la Pecherie / Carsoel sidewalk (be/id/streetsurface/134927 and the tram road 17109's corner) on past it over the south-west bank, and the street stage, which only raises a street on a deck inside the deck's ring, laid it on the bare DTM there: a paving strip and a tree pit sagging 1-5 m down the slope ("Saint-Job deck sidewalks over the bank", owner defect list 2026-11-17). deckJoins saw it only as "street step at the joint" (0.66-0.71 m) and it stayed on an allow list. The ring is now widened along the bank crest (bridgePlans 1342926162 `bank`; `?footbridge=old`: the hand ring), and check H measures the hanging street itself, not the joint. Left (allowed in deckJoins): the hand plan's top is the road profile, 0.26-0.40 m over the at-grade street along its south-west abutment.

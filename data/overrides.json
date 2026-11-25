@@ -814,7 +814,12 @@
         "half": 9.3,
         "level": 71.9
       },
-      "_ring": "Both ends overlap the UrbIS street polygons by ~1.5 m (the deck top tucks 10 cm under the drawn street there) of Avenue Carsoel exactly (west: tram road be/id/streetsurface/17109 and sidewalks 134927 / 132971, which already have the new layout; east: 28868, 132776, 132777), so the measured street continues the deck without overlap; the north edge at the east end (railed) is the sidewalk's back edge over the opened cutting (the 1928 bridge's site)."
+      "_ring": "Both ends overlap the UrbIS street polygons by ~1.5 m (the deck top tucks 10 cm under the drawn street there) of Avenue Carsoel exactly (west: tram road be/id/streetsurface/17109 and sidewalks 134927 / 132971, which already have the new layout; east: 28868, 132776, 132777), so the measured street continues the deck without overlap; the north edge at the east end (railed) is the sidewalk's back edge over the opened cutting (the 1928 bridge's site).",
+      "bank": {
+        "why": "claude/footbridge (TODO 2026-11-17 'Saint-Job deck sidewalks over the bank', rule deck-covers-street): the Rue de la Pecherie / Carsoel sidewalk (UrbIS be/id/streetsurface/134927 + the tram road 17109's corner) runs on past the hand ring's west edge over the cutting's south-west bank; the street stage draped it on the bare DTM there (1-5 m over the slope, deckJoins 'street step at the joint' 0.66-0.71 m). The ring widened west to the sidewalk's back edge (x 870.6, z 529.6), its new north-west edge a wing wall into the bank with the railing over the drop. ?footbridge=old: the hand ring.",
+        "ring": [[883.8, 514.3], [881.5, 519.3], [879.6, 519.2], [876.3, 521.3], [874.4, 523.6], [869.6, 524.2], [865.4, 526.8], [863.0, 527.3], [862.6, 529.0], [869.5, 529.6], [877.8, 533.0], [893.51, 543.78], [894.93, 546.42], [918.32, 536.09], [926.92, 539.41], [931.4, 534.7], [932.8, 534.6], [943.0, 528.3], [943.8, 523.0], [932.56, 524.6], [917.33, 496.32]],
+        "free": [10, 11, 19]
+      }
     }
   },
   "bridgeProfiles": {

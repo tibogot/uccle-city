@@ -14,17 +14,23 @@
 //   node --import ./tools/road_audit/register.mjs tools/audit/deckJoins.mjs [T...]     (default: the plan decks' tiles)
 import "../road_audit/register.mjs";        // (the viewer's bare "three" imports; mergeGate.mjs runs plain node)
 import { buildTile } from "../roadfix/tile.mjs";
-import { deckHeight } from "../../viewer/streets/bridgeDecks.js";
+import { deckHeight, inRing } from "../../viewer/streets/bridgeDecks.js";
 
+const HANG = 0.6, HANG_R = 6, HANG_N = 3;     // (rule deck-covers-street) m over the ground, m round the ring, m2 tolerated
 const JOIN = 0.15, RAIL_DROP = 0.8, FREE_DROP = 0.15, STREET_STEP = 0.25, MIN_RUN = 1.0, OUT = 1.0;     // OUT: m out (the 1 m grids: nearer, a cell straddles the edge)
-const TILES = process.argv.slice(2).map((t) => t.toUpperCase());
+const OLD = process.argv.includes("--old");                   // (claude/footbridge) ?footbridge=old: the hand ring without its bank sidewalks
+const TILES = process.argv.slice(2).filter((a) => !a.startsWith("--")).map((t) => t.toUpperCase());
 const tiles = TILES.length ? TILES : ["H6", "J5"];      // the plan decks: Carsoel (Saint-Job station), Chaussee de Waterloo (Vivier d'Oie)
 let fails = 0;
 // known open items (reported, not failed): remove an entry when it is fixed
-const SJ = "Saint-Job's hand-measured Carsoel deck (citydefects A, data/overrides.json bridgePlans 1342926162): UrbIS sidewalks reach past its west / south-west ring over the bank (a paving slab with a tree pit hangs 0.8-1.3 m over the slope); the ring to be widened to them (as vivier's ringPlans pads its free edges), seen in the browser 2026-11-17";
-const ALLOW = { "H6 r1342926162_0 edge 0": SJ, "H6 r1342926162_0 edge 2": SJ, "H6 r1342926162_0 edge 13": SJ };
+// (claude/footbridge) the sidewalks over the bank are covered now (bank ring, check H); left: the hand plan's top is the
+// road's profile, 0.26-0.40 m over the street at grade along its south-west abutment (Avenue Laterale's sidewalk, the
+// tram road's corner): the deck top to be blended into the streets at its abutments (the UrbIS plans' residual fit
+// sampled the DTM, which reads 0.1-0.5 m under the drawn street there: needs the drawn street's level)
+const SJ = "Saint-Job's hand-measured Carsoel deck (data/overrides.json bridgePlans 1342926162): its top (the road profile) stands 0.26-0.40 m over the street at grade along the south-west abutment; to blend into the drawn streets (claude/footbridge left it: a fit on the DTM overshoots)";
+const ALLOW = { "H6 r1342926162_0 edge 0": SJ, "H6 r1342926162_0 edge 1": SJ, "H6 r1342926162_0 edge 20": SJ };
 for (const T of tiles) {
-  const d = await buildTile(T, { keepNet: true, ...(process.env.VIVIER_OLD ? { vivier: false } : {}) });
+  const d = await buildTile(T, { keepNet: true, ...(process.env.VIVIER_OLD ? { vivier: false } : {}), ...(OLD ? { footbridge: false } : {}) });
   const { hm, drive } = d, h = hm.h, Y = hm.y, g = drive.ground;
   // a measured street drawn there (the UrbIS class raster: not the rail's / a platform's drive surface)
   const sg = d.road.surfaceData?.grid;
@@ -76,6 +82,25 @@ for (const T of tiles) {
         else { flush(); if (kind) run.push({ kind, step, p: [+x.toFixed(1), +z.toFixed(1)] }); }
       }
       flush();
+    }
+    // (claude/footbridge, rule deck-covers-street) H: no measured street HANGING off the deck: within HANG_R m outside
+    // its ring, a street drawn more than HANG m over the terrain under it (the Carsoel deck's Rue de la Pecherie sidewalk
+    // ran on past the hand ring over the bank, draped 1-5 m over the slope: the deck must cover it)
+    {
+      const [bx0, bz0, bx1, bz1] = deck.box;
+      let hang = 0, worst = 0, at = null;
+      for (let x = Math.floor(bx0 - HANG_R); x <= bx1 + HANG_R; x++) for (let z = Math.floor(bz0 - HANG_R); z <= bz1 + HANG_R; z++) {
+        if (inRing(ring, x, z) || !measured(x, z)) continue;
+        let near = false;
+        for (let i = 0; i < ring.length && !near; i++) { const [ax, az] = ring[i], [cx, cz] = ring[(i + 1) % ring.length], dx = cx - ax, dz = cz - az, l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)); near = Math.hypot(ax + dx * t - x, az + dz * t - z) <= HANG_R; }
+        if (!near) continue;
+        const c = Math.round((x - h.x0) / h.step), r = Math.round((z - h.z0) / h.step), k = r * h.cols + c;
+        if (!((g.delta[k] || 0) > 0)) continue;
+        const over = Y[k] + g.delta[k] / 100 - hm.ground(x, z);
+        if (over > HANG) { hang++; if (process.env.HANG_LIST) console.log("    hang", x, z, over.toFixed(2)); if (over > worst) { worst = over; at = [x, z]; } }
+      }
+      stats.hanging = hang;
+      if (hang >= HANG_N) bad.push({ edge: "H", free: false, kind: `street hanging off the deck (${hang} m2 drawn > ${HANG} m over the ground within ${HANG_R} m of the ring)`, from: at, to: at, worst: worst.toFixed(2) });
     }
     console.log(`${T} ${deck.id} "${deck.name}" (${deck.plan.urbis ? `UrbIS ${deck.plan.urbis}` : "hand plan"}): ${JSON.stringify(stats)}`);
     for (const b of bad) {

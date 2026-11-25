@@ -101,6 +101,8 @@ import { setCellCullSun } from "./cellCull.js";                 // perf4: tile m
 import { freeze } from "./staticFreeze.js";                       // perf4: ?freeze=1 the tile layers' world matrices computed once (opt-in)
 import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
+import { footTop, footColliders } from "./rail/footbridge.js";            // (claude/footbridge) the station footbridges (tile worker built)
+import { footMaterials } from "./rail/footbridgeLook.js";
 import { cityGrass } from "./grass/cityGrass.js";
 import { cityBirds } from "./birds/cityBirds.js";
 import { liteShown } from "./liteShown.js";
@@ -459,12 +461,13 @@ window.__carriage = carriageRefs;
 function addBridgeDecks(decks, hm) {
   for (const d of decks || []) {
     let e = bridgeDeckRefs.get(d.id);
-    if (!e) { e = { fn: Object.assign(deckHeight(d, (x, z) => (worldRef?.tiles.length ? worldRef.at(x, z).hm.ground(x, z) : hm.ground(x, z)), { drawn: true }), { osm: true }), n: 0 };   // (the nearest tile's ground: a deck may cross a tile edge, road fix round 2; before the first tile is in world.tiles, e.g. ?tile=H6 whose bridge deck is asked during its own build, this tile's hm)
+    if (!e) { e = { fn: d.fn ? Object.assign(d.fn, { osm: true }) : Object.assign(deckHeight(d, (x, z) => (worldRef?.tiles.length ? worldRef.at(x, z).hm.ground(x, z) : hm.ground(x, z)), { drawn: true }), { osm: true }), n: 0 };   // (the nearest tile's ground: a deck may cross a tile edge, road fix round 2; before the first tile is in world.tiles, e.g. ?tile=H6 whose bridge deck is asked during its own build, this tile's hm)
      bridgeDeckRefs.set(d.id, e); worldRef?.decks.push(e.fn); }
     e.n++;
   }
 }
 let bridgeDeckMat = null;
+const footCols = new Set();           // (claude/footbridge) the footbridges whose car walls are in (driver.addStatic, once)
 // the plan decks' look (citydefects 2026-11-16; ?decklook=old: vertex colours): the streets' own asphalt and sidewalk /
 // kerb materials (roadPaint.js: the same tone and texture as the street the deck carries), the library's cast concrete
 // on the fascia, walls, upstands and soffit, dark steel rails; one draw per slot (streets/bridgeDecks.js PLAN_SLOTS)
@@ -478,6 +481,7 @@ function deckMaterials() {
   const brick = libMaterial("brick_red_brussels", { mapping: "world" }), stone = libMaterial("stone_blue", { mapping: "world" });
   deckLookMats = [asphaltMaterial(null), concreteMaterial(), concreteMaterial(), conc, steel, brick, stone];
   deckLookMats.forEach((m, i) => { m.userData.shared = true; m.name = `road-bridge-deck ${["asphalt", "paving", "kerb", "concrete", "steel", "brick", "stone"][i]}`; });
+  deckLookMats.push(...footMaterials());     // (claude/footbridge) slots 7 / 8: the footbridges' resin deck and galvanised steel
   return deckLookMats;
 }
 function bridgeDeckMesh(bd) {
@@ -788,7 +792,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
     carrefour: params.get("carrefour") !== "old",                                                  // claude/carrefour: the Carrefour Market's retail-box look (buildingLooks set "carrefour"), ?carrefour=old = the generated block
     places2: params.get("places2") !== "old",                                                      // claude/places2: Le Pigeon Noir's ochre-mustard render + its white neighbour (buildingLooks set "places2"), ?places2=old = the generated look
-    cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2, vivier: VIVIER,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
+    cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2, vivier: VIVIER, footbridge: params.get("footbridge") !== "old",                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
     roadBend: params.get("roadbend") !== "old",                                                    // curvedroads: the engine strips trimmed at bends tighter than the road is wide (viewer/streets/roadBends.js, docs/roads/BENDS.md), ?roadbend=old = folded as built
     roadLines: params.get("roadlines") !== "old",                                                  // markings (census F, rule 33): the lane strips + their lines on the measured carriageway, clipped off sidewalks (viewer/streets/lineFit.js), ?roadlines=old = as the median width fit put them
     streetInv: params.get("streetinv") !== "old",                                                  // claude/street1 (rule street-invariants): no line rather than a wrong line (edge lines only as offsets of measured kerbs, none at confidence X, unmeasured roads unpainted at any length: viewer/streets/lineFit.js), ?streetinv=old = as before
@@ -994,7 +998,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // the orthophoto for the textured ground's far blend (docs/materials/GROUND.md), fetched alongside the tile data
   const orthoP = groundLook() && F.ortho ? texLoader.loadAsync(new URL(F.ortho, DATA).href).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }).catch(() => null) : null;
   let d = await tileData(entry);                    // (heap: let go at the end, docs/HEAP.md: only what the tile keeps stays)
-  const decks = d.bridgeDecks;
+  const decks = d.bridgeDecks, footRefs = (d.footbridges || []).map((fb) => ({ id: `foot:${fb.id}` }));
   let busy = 0, longest = 0, mark = performance.now(), worst = "";
   const slices = [];
   const frame = (label = "") => { const dt = performance.now() - mark; busy += dt; if (dt > 4) slices.push(`${label} ${dt.toFixed(0)}`); if (dt > longest) { longest = dt; worst = label; }
@@ -1018,6 +1022,16 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // the OSM road bridges' decks this tile carries (viewer/streets/bridgeDecks.js): drawn here, walked / driven via world.decks
   // (before the grass: a deck is a solid for it, no blades through the Carsoel deck's slab; citydefects 2026-11-16)
   const deckMeshes = (d.bridgeDecks || []).map(bridgeDeckMesh);
+  // (claude/footbridge, rule footbridge-built; ?footbridge=old: none) the station footbridges this tile holds: drawn with
+  // the decks' materials (one mesh, slot groups), in the roads group (the third person's BVH: real treads), walked via
+  // world.decks, their stair walls / girder ends at the ground in the car's walls
+  for (const fb of d.footbridges || []) {
+    deckMeshes.push(Object.assign(bridgeDeckMesh(fb), { name: `footbridge ${fb.id}` }));
+    addBridgeDecks([{ id: `foot:${fb.id}`, fn: footTop(fb) }], hm);
+    const cols = footCols.has(fb.id) ? [] : footColliders(fb, (x, z) => hm.surface(x, z));     // (once: the car's static walls stay)
+    footCols.add(fb.id);
+    if (cols.length) { if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols); }
+  }
   if (deckMeshes.length) own.roads.add(...deckMeshes);
   await frame("roads");
   const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover, await orthoP);
@@ -1229,6 +1243,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const dispose = () => {
     cityProps.removeTile(entry.name);               // (props: its knocked-over props back to rest, forgotten)
     removeBridgeDecks(decks);
+    removeBridgeDecks(footRefs);
     cityKit.removeTile(entry.name);
     cityRoofs.removeTile(entry.name);               // its instances leave the roof pools
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
