@@ -32,7 +32,7 @@ import { addRussian } from "./russianCity.js";
 import { addHeros } from "./heros/herosCity.js";
 import { addPublicArt } from "./publicart/artCity.js";
 import { addPlaygrounds, playgroundRootNames } from "./playgroundCity.js";   // claude/places2: the playground kit in the city (claude/places3: the timber kit, its colliders)
-import { addChristmas, xmasActive } from "./christmas/xmasCity.js";
+import { xmasActive } from "./christmas/xmasDate.js";   // (claude/xmasreview: the layer's code itself is imported only when it is on: xmasCity.js below)
 import { addRosaire } from "./rosaireCity.js";
 import { addObservatory } from "./observatoryCity.js";
 import { addAugustin } from "./augustinCity.js";
@@ -1623,7 +1623,9 @@ async function main() {
   // at LOW fetch priority, and only after the cover when no decorated area is in the boot's ring (bootGate.js whenXmasNeeded)
   if (xmasActive(params)) heroes.push(() => {
     window.__xmasPending = true;                    // (?quick=1: quickReady waits until the layer is in or has failed)
-    whenXmasNeeded().then(() => addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }))
+    // (claude/xmasreview, rule xmas-low-priority) the layer's modules (xmasCity.js, xmasKit.js, the GLTF / meshopt
+    // loaders) are fetched only now: outside the season the boot loads no Christmas code beyond the date switch
+    whenXmasNeeded().then(() => import("./christmas/xmasCity.js")).then(({ addChristmas }) => addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }))
       .catch((e) => log(`christmas failed (${e.message}): reload with ?xmas=0`)).finally(() => { window.__xmasPending = false; });
   });
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)

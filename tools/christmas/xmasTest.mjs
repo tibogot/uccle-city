@@ -10,12 +10,32 @@ const ok = (c, msg) => { console.log(`${c ? "PASS" : "FAIL"} ${msg}`); if (!c) f
 const { xmasActive, buildSpans, XmasField } = await import("../../viewer/christmas/xmasCity.js");
 const THREE_ = await import("three/webgpu");
 const P = (s) => new URLSearchParams(s);
-ok(xmasActive(P(""), new Date(2026, 11, 1)) === true, "1 Dec: on");
-ok(xmasActive(P(""), new Date(2026, 10, 30)) === false, "30 Nov: off");
-ok(xmasActive(P(""), new Date(2027, 0, 6)) === true, "6 Jan: on");
-ok(xmasActive(P(""), new Date(2027, 0, 7)) === false, "7 Jan: off");
+ok(xmasActive(P(""), new Date(2026, 11, 1, 12)) === true, "1 Dec: on");
+ok(xmasActive(P(""), new Date(2026, 10, 30, 12)) === false, "30 Nov: off");
+ok(xmasActive(P(""), new Date(2027, 0, 6, 12)) === true, "6 Jan: on");
+ok(xmasActive(P(""), new Date(2027, 0, 7, 12)) === false, "7 Jan: off");
 ok(xmasActive(P("xmas=1"), new Date(2026, 6, 1)) === true && xmasActive(P("xmas=0"), new Date(2026, 11, 24)) === false, "?xmas=1 / ?xmas=0 force");
 ok(xmasActive(P("day=350"), new Date(2026, 6, 1)) === true && xmasActive(P("day=200"), new Date(2026, 11, 24)) === false, "?day= decides when given");
+// (claude/xmasreview) the season follows BRUSSELS' calendar, whatever the visitor's time zone (instants in UTC)
+{
+  const U = (y, mo, d, h, mi = 0) => new Date(Date.UTC(y, mo, d, h, mi));
+  ok(xmasActive(P(""), U(2026, 10, 30, 23, 30)) === true, "30 Nov 23:30 UTC = 1 Dec 00:30 in Brussels: on");
+  ok(xmasActive(P(""), U(2026, 10, 30, 22, 30)) === false, "30 Nov 22:30 UTC = 23:30 in Brussels: still off");
+  ok(xmasActive(P(""), U(2027, 0, 6, 22, 30)) === true && xmasActive(P(""), U(2027, 0, 6, 23, 30)) === false, "6 Jan 23:30 Brussels on, 7 Jan 00:30 Brussels off");
+  ok(xmasActive(P("xmas=0"), U(2026, 11, 24, 12)) === false && xmasActive(P("xmas=1"), U(2026, 6, 1, 12)) === true, "?xmas=0 / ?xmas=1 still force it under the Brussels date");
+  const { brusselsDate } = await import("../../viewer/christmas/xmasDate.js");
+  const b = brusselsDate(U(2026, 11, 31, 23, 30));
+  ok(b.month === 0 && b.day === 1, `brusselsDate: 31 Dec 23:30 UTC is 1 Jan in Brussels (${b.month + 1}/${b.day})`);
+}
+// (claude/xmasreview, rule joins) the fir's foot is the lowest ground under its planter, not the centre's
+{
+  const { treeFootY, PLANTER_R } = await import("../../viewer/christmas/xmasCity.js");
+  const slope = (x, z) => 70 + 0.012 * x + 0.004 * z;              // a 1.3 % slope, as Place de Saint-Job's paving
+  const t = { x: 0, z: 0, scale: 1 }, y = treeFootY(t, slope);
+  let lo = Infinity; for (let k = 0; k < 64; k++) { const a = (k * Math.PI) / 32; lo = Math.min(lo, slope(Math.cos(a) * PLANTER_R, Math.sin(a) * PLANTER_R)); }
+  ok(y <= lo + 0.002 && y < slope(0, 0), `fir foot: the planter's lowest rim point on a slope (${y.toFixed(3)} vs rim min ${lo.toFixed(3)}, centre ${slope(0, 0).toFixed(3)})`);
+  ok(/t\.y = treeFootY\(t, world\.walkY\) - 0\.02/.test(fs.readFileSync(new URL("../../viewer/christmas/xmasCity.js", import.meta.url), "utf8")), "the city sets each fir on treeFootY (the planter's lowest ground)");
+}
 
 // ---- the kit
 const { loadXmasKit } = await import("../../viewer/christmas/xmasKit.js");
@@ -183,7 +203,7 @@ ok(empty === 0, "empty instanced meshes are hidden (no draw)");
   const psp = buildSpans(pd.spans.map((s) => ({ a: hookPoint(s.a, 50 + s.a.h, s.b), b: hookPoint(s.b, 50 + s.b.h, s.a), sag: s.sag, motif: false })));
   ok(pd.spans.length >= 10 && psp.bulbs.attributes.position.count / 6 > 200, `the pole garlands build with the street garlands' code: ${pd.spans.length} garlands, ${psp.bulbs.attributes.position.count / 6} LEDs`);
   const W = await import("../../viewer/christmas/xmasWindows.js");
-  const D = (y, mo, d) => new Date(y, mo, d);
+  const D = (y, mo, d) => new Date(y, mo, d, 12);
   ok(W.xmasWinOn(P(""), D(2026, 11, 1)) && !W.xmasWinOn(P(""), D(2026, 10, 30)) && !W.xmasWinOn(P("xmas=0"), D(2026, 11, 24)) && !W.xmasWinOn(P("xmas=1&xmaswin=0"), D(2026, 11, 24)) && W.xmasWinOn(P("xmas=1"), D(2026, 6, 1)),
     "December windows compiled in with the layer only (1 Dec on, 30 Nov off, ?xmas=0 off, ?xmaswin=0 off, ?xmas=1 on)");
   ok(W.xmasWin.value === 0, "the December windows' uniform is 0 until the layer starts (and stays 0 when it is off)");

@@ -14,6 +14,10 @@
 //            >= 0.8 m over it; never across a park fence
 //   firs, chalets  >= 1 m from every street lamp (as the city places them, viewer/streets/lampPlace.js), >= 1 m from a
 //            park fence line
+//   street furniture  (claude/xmasreview) every chalet's footprint (roof + propped shutter, oriented) >= 0.5 m from the
+//            drawn street furniture (streetFurniture below: plate posts, sign poles, postboxes, stops, Villo, bins,
+//            hoops, benches, bike parkings), each fir's crown (2.95 m x scale) clear of it; the customers' strip
+//            (1.5 m) in front of each hatch clear of the fir's crown + 0.3 m
 // import { siteFit } from "tools/christmas/siteFit.mjs"; siteFit(site) -> { rows: [{ ok, msg }], counts }
 // node tools/christmas/siteFit.mjs [site.json]: the report (exit 1 on a misfit)
 import fs from "node:fs";
@@ -43,6 +47,32 @@ export function hiddenIds() {
     }
   }
   return out;
+}
+
+/** (claude/xmasreview) the drawn street furniture of a tile as [x, z, radius] points (build_site.py street_furniture
+ *  mirrors this list): the first market put a chalet's roof through the Place de Saint-Job street-name plate post */
+export function streetFurniture(T) {
+  const L = (p) => (fs.existsSync(path.join(ROOT, p)) ? J(p) : {});
+  const out = [];
+  const sl = L(`data/streetlife/${T}.json`), sk = L(`data/streetkit/${T}.json`), fu = L(`data/furniture/${T}.json`), fe = L(`data/tiles/${T}/features.json`);
+  for (const q of sl.plates ?? []) if (q.mount === "post") out.push([q.x, q.z, 0.1, "plate post"]);
+  for (const q of sl.postboxes ?? []) out.push([q.x, q.z, 0.35, "postbox"]);
+  for (const q of sl.stops ?? []) out.push([q.x, q.z, q.shelter ? 1.6 : 0.3, "stop"]);
+  for (const q of [...(sk.signs ?? []), ...(sk.posts ?? [])]) out.push([q.x, q.z, 0.1, "sign pole"]);
+  for (const v of Array.isArray(sk.villo) ? sk.villo : []) {
+    for (const q of [...(v.bikes ?? []), ...(v.docks ?? [])]) out.push([q.x, q.z, 0.5, "Villo"]);
+    if (v.totem) out.push([v.totem.x, v.totem.z, 0.4, "Villo totem"]);
+  }
+  for (const k of ["bins", "boxes", "hoops", "benches", "banks"]) for (const q of fu[k] ?? []) if (q.x != null) out.push([q.x, q.z, 0.6, k]);
+  for (const q of fe.points ?? []) if (q.kind === "bicycle_parking") out.push([q.x, q.z, 0.8, "bike parking"]);
+  return out;
+}
+/** a chalet's oriented rectangles (build_site.py chalets_on_square: half width 1.8, front reach 1.45 with the shutter,
+ *  back 1.35): the distance from (px, pz) to its footprint, and to the customers' strip (1.5 m) in front of the hatch */
+export function chaletDist(c, px, pz) {
+  const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), ux = fz, uz = -fx;
+  const lx = (px - c.x) * ux + (pz - c.z) * uz, ly = (px - c.x) * fx + (pz - c.z) * fz, ax = Math.max(Math.abs(lx) - 1.8, 0);
+  return { foot: Math.hypot(ax, Math.max(ly - 1.45, -1.35 - ly, 0)), front: Math.hypot(ax, Math.max(ly - 2.95, 1.45 - ly, 0)) };
 }
 
 export async function siteFit(site, { lamps = true } = {}) {
@@ -213,6 +243,19 @@ export async function siteFit(site, { lamps = true } = {}) {
     for (const q of items) for (const [name, P] of parks) { const d = (pip(q.x, q.z, P.ring) ? -1 : 1) * edist(q.x, q.z, P.ring) - q.r; if (Math.abs(d) < 1.0) bad.push(`${q.tag}: ${d.toFixed(2)} m from the ${name} park fence`); }
     counts.standing = { items: items.length, lamps: nLamps, bad: bad.length };
     row(!bad.length, `firs and chalets: ${items.length} clear of the ${nLamps} street lamps of their tiles (>= 1 m past the footprint) and of the park fences${bad.length ? " :: " + bad.join("; ") : ""}`);
+  }
+  // ---- (claude/xmasreview) firs and chalets: the street furniture; the customers' strip in front of each hatch
+  {
+    const bad = [];
+    const tiles = [...new Set([...site.trees, ...(site.chalets ?? [])].flatMap((q) => [-6, 6].flatMap((d) => [tileOf(q.x + d, q.z + d), tileOf(q.x - d, q.z + d)])).filter(Boolean))];
+    const F = tiles.flatMap((T) => streetFurniture(T));
+    for (const [i, c] of (site.chalets ?? []).entries()) {
+      for (const [x, z, r, k] of F) { const d = chaletDist(c, x, z).foot - r; if (d < 0.5) bad.push(`chalet ${i}: ${d.toFixed(2)} m from a ${k} at (${x.toFixed(1)}, ${z.toFixed(1)}) (< 0.5)`); }
+      for (const t of site.trees) { const d = chaletDist(c, t.x, t.z).front - 2.95 * t.scale; if (d < 0.3) bad.push(`chalet ${i}: the customers' strip ${d.toFixed(2)} m from the ${t.id} fir's crown (< 0.3)`); }
+    }
+    for (const t of site.trees) for (const [x, z, r, k] of F) { const d = Math.hypot(x - t.x, z - t.z) - r - 2.95 * t.scale; if (d < 0) bad.push(`fir ${t.id}: a ${k} at (${x.toFixed(1)}, ${z.toFixed(1)}) inside its crown`); }
+    counts.furniture = { tiles, items: F.length, bad: bad.length };
+    row(!bad.length, `street furniture: ${(site.chalets ?? []).length} chalets >= 0.5 m from the ${F.length} furniture pieces of tiles ${tiles.join(" ")} (plate posts, sign poles, postboxes, stops, Villo, bins, hoops, bike parkings), the firs' crowns clear of them, every hatch's customers' strip clear of the fir's crown${bad.length ? " :: " + bad.join("; ") : ""}`);
   }
   return { rows, counts };
 }

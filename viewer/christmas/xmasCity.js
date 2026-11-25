@@ -259,6 +259,15 @@ function emptySpanGeometry() {
   g.computeBoundingSphere();
   return g;
 }
+/** (claude/xmasreview, rule joins) the fir's foot: the LOWEST drawn ground under its planter (the octagon's corners and
+ *  edge midpoints at 1.4 m x scale, and the centre), so the planter's skirt meets the paving all round. The centre alone
+ *  left the Place de Saint-Job planter 1.7 cm in the air on its downhill side (browser review 2026-11-26) */
+export const PLANTER_R = 1.4;
+export function treeFootY(t, walkY) {
+  let y = walkY(t.x, t.z);
+  for (let k = 0; k < 16; k++) { const a = (k * Math.PI) / 8, r = PLANTER_R * t.scale; y = Math.min(y, walkY(t.x + Math.cos(a) * r, t.z + Math.sin(a) * r)); }
+  return y;
+}
 export const HOOK_TOL = 0.25;      // m: a listed lamp / tram-pole hook vs the pole the city draws (tools/christmas/xmasPoles.mjs)
 
 // ------------------------------------------------------------------------------------------------ the city layer
@@ -398,7 +407,7 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
     let changed = placeChalets();
     for (const t of trees) {
       if (t.placed || !world.tiles.some((T) => T.name === t.tile)) continue;
-      t.y = world.walkY(t.x, t.z) - 0.02; t.placed = true; changed = true;
+      t.y = treeFootY(t, world.walkY) - 0.02; t.placed = true; changed = true;
       field.add("tree", place(t.x, t.y, t.z, t.yaw, t.scale, t.scale, t.scale), `tree ${t.id}`);
       // the octagonal planter (1.38 m) blocks the car (drive colliders, viewer/drive/driveMode.js addStatic)
       const ring = Array.from({ length: 8 }, (_, k) => { const a = Math.PI / 8 + (k * Math.PI) / 4, r = 1.4 * t.scale; return [t.x + Math.cos(a) * r, t.z + Math.sin(a) * r]; });
