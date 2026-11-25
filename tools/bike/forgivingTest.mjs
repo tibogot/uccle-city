@@ -36,10 +36,10 @@ const T0 = performance.now();
   const want = { kerb: 0.05, cobbles: 0.05, bumps: 0.05, roots: 0.05, pump: 0.05, sand: 0.05, slope: 0.1, jump: 0.05, bowl: 0.05, drop: 0.05 };
   for (const [g, lim] of Object.entries(want)) {
     const G = groups[g], pm = G ? G.crashes / (G.secs / 60) : NaN;
-    check(`casual rider, ${g} (${G?.runs.join(", ")})`, G && pm <= lim, `${G?.crashes} crashes in ${G?.rides} rides (${f2(pm)} a minute)${G && G.crashes ? ": " + Object.entries(G.causes).map(([c, n]) => `${c} ${n}`).join(", ") : ""}`, `<= ${lim} a minute (before: kerbs 7.7-8.8, sand turning 3.3, the bowl 2.5)`);
+    check(`casual rider, ${g} (${G?.runs.join(", ")})`, G && pm <= lim, `${G?.crashes} crashes in ${G?.rides} rides (${f2(pm)} a minute)${G && G.crashes ? ": " + Object.entries(G.causes).map(([c, n]) => `${c} ${n}`).join(", ") : ""}`, `<= ${lim} a minute (old tuning: kerbs 6.5-8.8, sand turning 1.5, bowl carving 1.0)`);
   }
   const P = groups.plaza;
-  check("casual rider, the plaza (a wall, posts, a car, a log: real hits allowed)", P && P.crashes / (P.secs / 60) < 1, `${P?.crashes} crashes in ${P?.rides} rides (${f2(P?.crashes / (P?.secs / 60))} a minute): ${Object.entries(P?.causes || {}).map(([c, n]) => `${c} ${n}`).join(", ")}`, "< 1 a minute, only real hits (before 2.55, 30 of them 'landed sideways')");
+  check("casual rider, the plaza (a wall, posts, a car, a log: real hits allowed)", P && P.crashes / (P.secs / 60) < 1, `${P?.crashes} crashes in ${P?.rides} rides (${f2(P?.crashes / (P?.secs / 60))} a minute): ${Object.entries(P?.causes || {}).map(([c, n]) => `${c} ${n}`).join(", ")}`, "< 1 a minute, only real hits (old tuning 1.50, 11 of them 'landed sideways')");
   const soft = Object.entries(T.causes).filter(([c]) => !/hit a (wall|car|post)|front wheel hit the kerb/.test(c)).reduce((a, [, n]) => a + n, 0);
   check("casual rider: no soft crash anywhere (landing / wash-out / endo / loop-out)", soft <= 1, `${soft} (all causes: ${Object.entries(T.causes).map(([c, n]) => `${c} ${n}`).join(", ") || "none"}; ${f2(T.perMin)} crashes a minute in all)`, "<= 1 over every ride");
 }

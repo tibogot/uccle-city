@@ -91,12 +91,12 @@ thing (move = pedal / brake / steer, Shift = run / sprint, Space = jump / hop, C
 | contacts | springK 170 /s^2, springC 8 /s, maxComp 0.11 m, fnMax 80, legRange 0.12 m, legRate 9 /s, pumpGain 45 |
 | pedal | powerCruise 130 W, powerSprint 320 W, forceCruise 1.6, forceSprint 2.4 m/s^2, rollout 4.39 m, cadenceMax 128 rpm, drag 0.0055 /m |
 | brakes | brakeFront 5.2, brakeRear 4.6 m/s^2, skidAt 0.85, skidMu 0.75, grip x1 |
-| steer | maxLean 0.65 rad, leanRate 7, leanV0 1.2 / leanV1 5 m/s, lowSteer 0.75 rad, barV0 1.5 / barV1 4.5 m/s, yawResponse 12, tyreRate 25, skidYaw 1.6, washSlip 1.6 m/s, washTime 0.3 s |
+| steer | maxLean 0.65 rad, leanRate 7, leanV0 1.2 / leanV1 5 m/s, lowSteer 0.75 rad, barV0 1.5 / barV1 4.5 m/s, yawResponse 12, tyreRate 25, skidYaw 1.6, washSlip 2.0 m/s, washTime 0.45 s |
 | pitch | riderPitch 24 rad/s^2, pitchDamp 1.6, manualAssist 0.8, manualAngle 0.30 rad |
-| air | airPitch 8, airPitchDamp 1.8, airLevel 4, airYaw 9, airYawDamp 2.2 |
+| air | airPitch 8, airPitchDamp 1.8, airLevel 8, airLevelDamp 4, airAlign 7, airYaw 9, airYawDamp 2.2 |
 | hop | popVel 1.35 m/s, popPreload 1.8 m/s, preloadTime 0.28 s, popPitch 1.2 rad/s, coyote 0.08 s, hopLead 0.22 s, hopBuffer 0.26 s, kerbCatch 0.045 m, kerbCatchLoss 0.04 |
-| steps | stepRoll 0.07 m, faceSlope 1.6, faceCrash 3.2 m/s, rearClimb 0.25 m, rearBonk 0.45 |
-| landing (sketchy / bail) | nose 0.28 / 0.70, tail 0.50 / 1.00, lean 0.33 / 0.77, yaw 0.33 / 0.80 rad, hard 5.0 / 9.8 m/s, trick 0.12 / 0.35; absorb 1.4 m/s, landLoss 0.25, wobbleTime 0.45 s, wobbleGrip 0.35, wobbleLean 0.14 rad, sketchyLoss 0.12, loopOut 0.85, endo 0.62 rad, crashSpeed 4.5 m/s |
+| steps | stepRoll 0.07 m, faceSlope 1.6, faceCrash 4.5 m/s, stepClimb 0.19 m, climbV 1.6 m/s, climbLoss 0.10, climbAngle 1.05 rad, rearClimb 0.25 m, rearBonk 0.10 |
+| landing (sketchy / bail) | nose 0.35 / 0.96 (noseHard 0.38), tail 0.55 / 1.05, lean 0.35 / 0.85, yaw 0.35 / 0.80 rad, hard 5.0 / 9.8 m/s, trick 0.12 / 0.35; absorb 1.4 m/s, landLoss 0.25, wobbleTime 0.45 s, wobbleGrip 0.35, wobbleLean 0.14 rad, sketchyLoss 0.12, loopOut 0.85, endo 0.72 rad, autoSave 1, crashSpeed 4.8 m/s, crashSquare 0.6 |
 | grind (round 2) | snapReach 0.45 m, snapAbove 0.30 / snapBelow 0.05 m, snapAngle 0.70 rad, snapTime 0.08 s, pegR 0.02 / pegOut 0.10 m, grindDecel 0.9 / rail 0.5 m/s^2, grindMinSpeed 1.0 m/s, stallTime 1.2 s, cornerExit 0.785 rad, cornerPop 1.0 m/s, grindAssist 0.8, grindTip 1.6, grindHold 2.5, grindSteer 2.2, grindBump 0.5, grindCrash 7 m/s |
 | push | pushGrade 0.10, pushSpeed 0.85 m/s, pushDelay 0.8 s, walk 1.3 m/s, footSpeed 0.6 m/s, footLean 0.08 rad, respawn 2.2 s |
 
@@ -424,6 +424,87 @@ crashes; the ledge grind slows to a stall after ~8 m, then drops off); the lab s
 in all 4 modes along the ledge, the stairs, the bench and the wall: 0 frames inside a solid. NOT checked: the sound
 (stopped on the owner's request: the owner heard it and found it annoying; the node checks cover the graph) and the
 rider's weight by eye beyond stills.
+
+## Forgiving falls (2026-11-25, rule bike-falls-on-hard-hits, gate row `bikefall`)
+Owner, after the lab: "it's cool but it's too easy to fall. With the BMX we should fall only if we hit something hard, but
+it should go easily over bumps and all."
+
+**Measured first** (`node tools/bike/casualRide.mjs [--seeds N] [--spot name]`): a CASUAL keyboard rider - W held the whole
+time (Shift for 30 % of the seeds), the steering in steps (A / D held while the line drifts, through the keyboard's ramp,
+a 0.12-0.32 s reaction, random thumb taps), no lean input, the hop late or never - rides every lab spot over 40 seeds
+(kerbs up / down square and at 25 / 45 deg and a side face at 30 deg, the new cobbled lane, bump field and three small
+drops 25 / 40 / 60 cm at x 44-75, roots, the pump rollers, sand straight and turning, the 12 % / 20 % slopes, the kicker,
+the table, the bowl across and carving, the plaza with its wall, posts, car and log). Every crash logged with its cause:
+
+| ride (40 seeds each) | old tuning: crashes | causes | now |
+|---|---|---|---|
+| kerb up square / 25 deg / 45 deg | 38 / 37 / 38 | front wheel hit the kerb | 0 / 0 / 0 |
+| kerb side face, 30 deg | 33 | front wheel hit the kerb | 0 |
+| kerb down square / 45 deg, cobbles, bumps, roots, sand straight, kicker, table, bowl across, small drops | 0 | - | 0 |
+| pump rollers | 1 | looped out | 0 |
+| sand turning | 10 | washed out 6, landed sideways 4 | 0 |
+| slope 12 % up + down / down weaving / steep 20 % | 2 / 15 / 1 | landed sideways (+ 1 washed out) | 0 / 0 / 0 |
+| bowl carving | 11 | landed sideways 8, looped out 3 | 0 |
+| plaza wandering (real hits allowed) | 20 | landed sideways 11, wall 6, over the bars 2, kerb 1 | 6: wall 4, kicker side 1, over the bars 1 |
+| **all** | **206 (1.49 a minute)** | kerb 147, landed sideways 40, washed out 7, wall 6, looped out 4 | **6 (0.05 a minute)** |
+
+(A first, twitchier version of the rider - wider weaving, no look-ahead on the yaw - measured 2.26 a minute on the old
+tuning, 146 of them "landed sideways": the same causes, more of the air one.)
+
+**Why each one happened, and the change** (all in viewer/bike/bikePhysics.js, every constant a lab slider):
+1. **Kerb faces**: any face over stepRoll (7 cm) stopped the front wheel, over 3.2 m/s = over the bars, at any angle.
+   Now a face up to **stepClimb 19 cm** met within **climbAngle 60 deg** of square at more than **climbV 1.6 m/s** is
+   ROLLED UP: a grounded front wheel gets a small bar pull spread over the steps before the face (no hitch: one cheap
+   probe ahead a step, the scan only when the ground rises there), at the face it is lifted to where it rolls (as the kerb
+   catch); a thump - **climbLoss 0.10** of the speed at 19 cm, a small wobble. Also when the contact swings into the face
+   by the bike PITCHING (the pull moves the contact under the hub forward: the velocity's face test did not see it, the
+   general one stopped the bike dead). An oblique face (past 60 deg) is a GLANCE: the speed into it taken out, the bike
+   turned along it, a wobble. Higher faces square at speed stay a crash (**faceCrash 4.5 m/s**, was 3.2). The rear wheel
+   now rolls up the same way (lifted to where it rolls; the old climb speed at the rear contact, sqrt(2 g h), threw the
+   bike nose-down into the air: 7.8 m/s into the kerb landed 3 m on, nose down 56 deg); **rearBonk 0.45 -> 0.10**.
+   A wheel's spring on a face no longer pushes it back: a contact's slope is JUDGED (`judgeSlopeP`: a smooth transition
+   keeps its slope up to 76 deg, a face uses the ground over half a metre, a crest its own slope) - every wheel on a kerb
+   face was braked by the face's 45 deg normal (-10 % of the speed per wheel). Walking pace still stops at a 15 cm kerb.
+2. **Landed sideways** after small hops: the steer key held from the ground (the casual rider was turning) spun the bike
+   at airYaw 9 rad/s^2 the moment the wheels left, and the yaw rate kept turning the heading after touch-down while the
+   path did not (a slide, then "washed out" under a landing judged clean). Now a SPIN needs the steer pressed IN the air
+   (`spinArm`: a key still held from the ground does not spin until it is let go) and held past the ramp's 0.85 (~0.25 s:
+   a correction tap is not a spin); with no spin the heading is drawn to the flight path (**airAlign 7**); the tyres stop
+   the spin at touch-down (yaw rate x 0.3).
+3. **Washed out in sand**: the tyre's friction circle counted the rolling resistance and the sand's sink as tyre force,
+   leaving little side grip; and the handlebar turn at walking pace was not grip-limited (a full lock at 3 m/s asked
+   8.8 m/s^2 of a 4.1 m/s^2 surface). Now the circle shares only brakes + drive, and the yaw never asks more than the
+   surface's grip (a skid still steers past it on purpose). A wash-out is a real slide: **washSlip 2.0 m/s for washTime
+   0.45 s** (was 1.6 / 0.3).
+4. **Air attitude**: **airLevel 8** (was 4), critically damped without lean input (**airLevelDamp 4**: the old one
+   overshot into a nose-down landing). Z / X still override it (Z held off a 1.5 m ledge = over the bars).
+5. **Auto-save** (**autoSave 1**, no lean input only): a wheelie the kid did not ask for (Shift, a bump, a kerb) past the
+   manual's angle is put back down; rolling off a drop (the rear still on the lip, the nose going down) he pulls the bars
+   up. X held = his own manual (the old rules: loop out past loopOut).
+6. **Bail bands where a kid really falls**: nose down 20 / **55 deg** (was 16 / 40), lowered by a hard impact (**noseHard
+   0.38** rad from vn 3 to 7 m/s: a 2 m drop onto the front wheel bails at ~36 deg), nose up 31 / 60 deg, lean 20 / 49 deg,
+   sideways 20 / 46 deg, impact unchanged; **endo 0.72** rad (was 0.62).
+7. **Walls**: a crash needs the speed INTO it over **crashSpeed 4.8 m/s** AND a square hit, within acos(**crashSquare
+   0.6**) = 53 deg (rule 40's number); a glance slides along it.
+8. Found on the way: the shared `polyBoxContact` (viewer/drive/colliders.js) made three closures and boxed their
+   arguments on every wall contact: with the kerbs rolled, the zero-garbage check's D6 ride reached the pavement and the
+   house walls (25 young collections, budget 8). Rewritten closure-free (a scratch object; the same arithmetic, the same
+   candidate order: tools/collide/wallTest.mjs and tools/moto/physicsTest.mjs print identical output): **4**.
+
+**Checks** (`node tools/bike/forgivingTest.mjs`, gate row `bikefall`, 22 checks, ~3 s): the casual rider per group over
+24 seeds: <= 0.05 crashes a minute (slopes 0.1) and no soft crash anywhere; the hard hits still crash (a wall / car / post
+head-on at 6 m/s; landings nose down 70 deg, sideways 55 deg, 2 m onto the front wheel at 40 deg, 5.5 m flat; Z held off
+a ledge; off a 2 m ledge into a wall; a 30 cm face at 22 km/h) and the gentle ones do not (a wall at 4 m/s or at 70 deg
+from square, a 2 m level drop, nose 30 / sideways 30 deg = sketchy, the kerb at walking pace = stopped); skill kept (a hop
+over the kerb loses 12 % of the speed, rolling it up 18 %; at 34 km/h the kicker hands-off is sketchy, crouched clean;
+the casual rider's kicker landings ~half sketchy). bikeTest: the kerb checks now say "rolled up at 22 km/h (a thump),
+a 30 cm face at 22 km/h = over the bars, walking pace stops, 2.5 m/s rolls"; the hop-buffer / kerb-catch checks run on a
+kerb that must be hopped (stepClimb 0); the landing-band checks with the air assists off (the attitude set is the one
+judged).
+
+**For the owner to feel**: the kerb roll-up (a thump + a wobble: enough feedback, or too soft?), the air heading drawn to
+the path (too much "help"?), the auto-save on Shift wheelies. Known: riding off the SIDE of the table can leave the bike
+hanging on its 1.2 m side face (no crash, it stops: R / G).
 
 ## Into the city (next jobs, not done here)
 - Ground: `ground(x, z, out)` from the drive surface (viewer/drive/colliders.js `driveHeight` + central differences:
