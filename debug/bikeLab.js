@@ -42,7 +42,7 @@ import { loadBmx } from "../viewer/kid/bmxModel.js";
 
 const qs = new URLSearchParams(location.search);
 const USE_KID = qs.get("kid") !== "0";
-const KID_A = qs.get("kid") === "a";
+const KID_A = qs.get("kid") !== "old";     // (kid A is the default since the polish round, 2026-11-26; ?kid=old: the scripted kid)
 if (KID_A) Object.assign(RIDE, RIDE_KIDA);
 const DEFAULTS = { ...BIKE }, PARK_DEFAULTS = { ...BIKE_PARK }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
 const renderer = new THREE.WebGPURenderer({ antialias: true });
@@ -283,7 +283,7 @@ if (USE_KID) {
     world.add(new PrismSet(CLp.polys.map((p) => ({ rings: p.rings, base: -2, top: p.drawTop ?? (p.kind === KIND.wall ? (p.top ?? 2.5) : (p.top ?? (p.kind === KIND.car ? 1.45 : 2.5))) })),
       CLp.circles.map((c) => ({ x: c.x, z: c.z, r: c.r, base: -2, top: 1.1 }))));
     const tp = new ThirdPerson({ scene, camera, dom: renderer.domElement, world, controller: { height: 1.45, radius: 0.24 } });
-    // ?kid=a: the MPFB kid A (docs/KIDCHAR.md phase 2; the default stays the old kid until the owner OKs)
+    // the MPFB kid A (docs/KIDCHAR.md: the default; ?kid=old: the scripted kid, ?kid=0: the placeholder rider)
     const info = await tp.useCharacter(KID_A ? "kidA" : "kid", renderer);
     K.tp = tp; K.kid = info.kid;
     K.rider = new RiderIK(info.kid.gltf.scene, info.kid.gltf.animations);
