@@ -119,12 +119,38 @@ The same greybox, bird, camera and input. The current controller runs `FalconGam
 
 The far / family bird ("Falcon_ Merged Animations", 7k faces) goes through the same script with `--far` (textures at 1024).
 
-Status: **the owner's Sketchfab files were not in `C:\Users\tibog\Downloads\uccle-falcon-src\` yet.** The script has been run end to end on Mesh2Motion's own bird mesh as a stand-in: 11 clips exported, previews rendered. The real build and the side-by-side check wait for the files:
+### The build (2026-11-25, from the owner's downloads)
+
+The two Sketchfab GLBs (`peregrine_falcon.glb`, `falcon__merged_animations.glb` in `C:\Users\tibog\Downloads\uccle-falcon-src\`) are untouched SOURCE files. Everything below is repeatable from them, all scripted:
 
 ```
-node tools/blender/meshoptDecode.mjs <uccle-falcon-src>/mesh2motion/animations <uccle-falcon-src>/mesh2motion-plain/animations
-blender --factory-startup -b -P tools/blender/falconV2.py -- --mesh <uccle-falcon-src>/peregrine/scene.gltf --rig <uccle-falcon-src>/mesh2motion-plain --out models/bird/v2/falcon_v2.glb --preview <dir>
+node tools/blender/meshoptDecode.mjs <src>/mesh2motion/animations <src>/mesh2motion-plain/animations   (once; model.glb copied beside)
+blender --factory-startup -b -P tools/blender/falconV2.py -- --mesh <src>/peregrine_falcon.glb --rig <src>/mesh2motion-plain --out <src>/build/falcon_v2.raw.glb [--preview <dir>]
+node tools/falconV2pack.mjs <src>/build/falcon_v2.raw.glb models/bird/v2/falcon_v2.glb        (--fast: UASTC level 1, no RDO)
 ```
+
+`tools/textures` needs `npm ci` (ktx2-encoder) for the pack.
+
+What the download needed, found on the way:
+
+- **The bind pose is not usable.** 1786 of its 15195 vertices sit hundreds of metres off in the raw (rest) positions; only its own skin brings them back. So the bind shape is the skin's deformation at a frame of its own animation: the most symmetric, compact spread-wing frame (frame 510, its last). `--frame N` overrides.
+- **The scale.** It is in centimetres under a x100 node chain. It is scaled to a 1.05 m wingspan, origin at the feet.
+- **Bone-display shapes.** The importer adds an `Icosphere` bone-display mesh; it is dropped.
+- **Seven UV sets.** Only the first is kept.
+- **The legs.** The download's legs hang (an attack pose) where the rig's legs are tucked. A nearest-surface weight transfer split the feet between the leg, the hips and the tail, and the toes stretched into streaks. Every vertex below the thighs or partly on a leg bone now follows its thigh rigidly. The gym tucks the v2 thighs further back in flight.
+- **Translation tracks.** The Mesh2Motion clips' hips / root translation tracks are in its own unscaled units (the hips 1.2 m up after the fit), so the clips keep rotations only.
+- **The materials.** The feathers' alpha BLEND became MASK (cut-out, no sorting). Emission and the specular extensions are dropped.
+
+Shipped: `models/bird/v2/falcon_v2.glb`. 25,298 triangles, 11 clips (Flap, Glide, Idle, Walk, Hop, TakeOff, Land, Stoop, Talons, Flare, Perch). EXT_meshopt_compression geometry and three 1024 px KTX2 textures (base colour sRGB, ORM, normal): **2.96 MB** (the download: 6.7 MB). The gate row checks all of it.
+
+How it looks (screenshots in `C:\Users\tibog\Downloads\uccle-falcon-gym\`):
+
+- **In flight it reads far better than the current bird**: real feathers, the adult slate / barred plumage.
+- **The folded poses are weak**: Perch and Stoop, the Mesh2Motion folded wing on this mesh. The download's wing feathers do not follow the rig's folded wing well (crumpled feathers). The talons hang open.
+
+These need a weight pass on the wing feathers: a per-feather rigid assignment like the legs, or the download's own wing bones mapped onto ours.
+
+The far / family bird (`--far`) builds (7,268 triangles, `<src>/build/falcon_v2_far.raw.glb`) but **is not shipped**. Its frame choice takes a flat glide where its legs are tucked into the body, and the rigid-leg rule catches 1734 of 4885 vertices: streaks. It needs `--frame` set by hand and a tighter leg rule.
 
 Then the gym's panel "model" offers v2 and "side by side" stands both models on a plinth. The gate row checks the triangle count (8k-30k) and the clips.
 
@@ -135,4 +161,4 @@ Then the gym's panel "model" offers v2 and "side by side" stands both models on 
 - **The landing uses a scripted final** (a Hermite curve, as the city's). It can pass through a thin railing on the way in.
 - **The vertical take-off's "boxed" test is geometric** (rays): a bird boxed by trees does not count them.
 - **Not in the city yet.** Adopting it means routing `viewer/falconGame/` through `GymFlight` against the city's `column` / roof grid: a `sphereHit` / `ray` / `clearUp` over the tile data, and `ledges` from the roof ridges plus the church perches.
-- **v2**: the poses of our own clips need a look on the real mesh. The fit assumes a spread-wing bind pose: the script warns when the span is under 1.3x the length.
+- **v2**: the folded poses (Perch, Stoop) and the hanging talons need a weight pass (above). The far model is not shipped. v2 wears the adult plumage (the player is a juvenile in the story: a juvenile repaint would need peregrine.py's painter on v2's UVs).

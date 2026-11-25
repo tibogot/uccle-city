@@ -107,6 +107,10 @@ if (fs.existsSync(v2)) {
   const clips = (j.animations || []).map((a) => a.name);
   check(tris >= 8000 && tris <= 30000, "v2 falcon: triangles 8k-30k", tris);
   for (const c of ["Flap", "Glide", "Idle", "Walk", "Hop", "TakeOff", "Land", "Stoop", "Talons", "Perch"]) check(clips.includes(c), `v2 falcon clip ${c}`);
+  const ext = j.extensionsUsed || [];
+  check(ext.includes("EXT_meshopt_compression") && ext.includes("KHR_texture_basisu") && (j.images || []).every((im) => im.mimeType === "image/ktx2"), "v2 falcon packed: meshopt geometry + KTX2 textures (tools/falconV2pack.mjs)");
+  check((j.materials || []).every((m) => m.alphaMode !== "BLEND" && !m.emissiveTexture), "v2 falcon materials: cut-out feathers (no BLEND), no emission");
+  check(fs.statSync(v2).size < 4.5e6, "v2 falcon file < 4.5 MB", `${(fs.statSync(v2).size / 1e6).toFixed(2)} MB`);
 } else out.push("note models/bird/v2/falcon_v2.glb not built yet (the owner's Sketchfab files): v2 checks skipped");
 
 if (!quiet || fails.length) console.log(out.join("\n"));

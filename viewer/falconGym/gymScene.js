@@ -50,7 +50,7 @@ export function buildGymScene(scene) {
   TREE_CROWNS.forEach((t, i) => {
     const a = new THREE.IcosahedronGeometry(t.r, 1).translate(t.x, t.y, t.z);
     const b = new THREE.IcosahedronGeometry(t.r * 0.7, 1).rotateY(i).translate(t.x + t.r * 0.35, t.y + t.r * 0.35, t.z - t.r * 0.2);
-    crowns.push(a.toNonIndexed(), b.toNonIndexed());
+    crowns.push(a, b);
   });
   const cg = mergeGeometries(crowns, false); cg.computeVertexNormals();
   const cm = new THREE.Mesh(cg, M.leaves); cm.castShadow = cm.receiveShadow = true; cm.name = "gym-crowns"; group.add(cm);

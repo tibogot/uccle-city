@@ -10,6 +10,8 @@
 import * as THREE from "three/webgpu";
 import { texture, uv } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { loadFalconAssets } from "../falcons.js";
 import { BirdRig } from "../birdRig.js";
@@ -17,6 +19,8 @@ import { BirdRig } from "../birdRig.js";
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
 const M2M = new URL("../../models/bird/v2/m2m/", import.meta.url);
 const V2 = new URL("../../models/bird/v2/falcon_v2.glb", import.meta.url);
+const TRANSCODER = "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/libs/basis/";
+let ktx = null;
 const KEYS = ["perch", "flap", "glide", "walk", "hop", "takeoff", "land", "stoop"];
 
 function applyBodyScale(root) {
@@ -41,11 +45,14 @@ export async function v2Exists() { try { const r = await fetch(V2, { method: "HE
 
 export class GymBird {
   /** which: "current" | "v2" */
-  static async create(which = "current", span = 1.05) {
+  static async create(which = "current", span = 1.05, renderer = null) {
     const [A, M] = await Promise.all([loadFalconAssets(), loadM2MClips()]);
     if (which === "v2") {
-      const g = await new GLTFLoader().loadAsync(V2.href);
-      return new GymBird({ scene: g.scene, clips: g.animations, v2: true }, M, span, A);
+      // (tools/falconV2pack.mjs: EXT_meshopt_compression + KTX2 textures)
+      if (!ktx) { ktx = new KTX2Loader().setTranscoderPath(TRANSCODER); if (renderer) ktx.detectSupport(renderer); }
+      const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(ktx).loadAsync(V2.href);
+      // rotations only: the Mesh2Motion clips' hips / root translations are in its own (unscaled) units
+      return new GymBird({ scene: g.scene, clips: g.animations.map((c) => rotOnly(c, c.name)), v2: true }, M, span, A);
     }
     return new GymBird({ scene: A.bird.scene, clips: A.clips, v2: false }, M, span, A);
   }
@@ -155,7 +162,8 @@ export class GymBird {
     L.flare = ease(L.flare, mode === "land" ? 1 : air ? f.brake : 0, 6, dt);
     L.talons = ease(L.talons, talons, 10, dt);
     L.bank = ease(L.bank, air ? -f.phi : 0, 6, dt);
-    L.legs = ease(L.legs, air && !talons ? 0.5 * (1 - L.flare) : 0, 4, dt);
+    // (v2: its legs hang in the download's bind pose and follow the thigh rigidly: tucked further back in flight)
+    L.legs = ease(L.legs, air && !talons ? (this.which === "v2" ? 1.6 : 0.5) * (1 - L.flare) : 0, 4, dt);
     L.head = ease(L.head, air ? Math.max(0, -f.gamma) * 0.5 + look : look, 4, dt);
     const E = this.extra;
     const tk = this.actions.stoop ? 0.15 * L.tuck : L.tuck;     // (v2: the clip folds the wings)

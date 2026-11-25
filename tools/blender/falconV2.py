@@ -15,8 +15,8 @@ with the Mesh2Motion bird clips (CC0) and our own falcon clips, exported to mode
 Steps (all scripted, repeatable, no clicks):
   1. the rig: model.glb's armature + its reference mesh (the weights come from it); every animations/*.glb's action
      onto that armature (Flap, Glide, Idle, Walk, Hop, Take_Off -> TakeOff, Land)
-  2. the mesh: every mesh object of the download joined into one, its own armature / animation dropped (the bind
-     pose kept), transforms applied; turned so the wingspan is along X and the nose toward -Y (Blender frame), the
+  2. the mesh: every mesh object of the download joined into one, its own armature / animation dropped (the shape its
+     skin gives at a frame of its own animation: --frame), transforms applied, 1.05 m span, origin at the feet; turned so the wingspan is along X and the nose toward -Y (Blender frame), the
      nose found as the denser end (the head) unless --yaw
   3. the fit: the rig + reference mesh scaled uniformly to the mesh's beak-to-tail length, moved onto it; the wing
      chains then stretched along X so the rig's wing tips reach the mesh's (the joints scale with it)
@@ -27,7 +27,8 @@ Steps (all scripted, repeatable, no clicks):
      tail down and fanned), Perch (upright, wings folded along the back, legs under)
   6. shading: the mesh's own normals kept where it has custom normals, else a Weighted Normal modifier (no smoothing
      across hard edges: docs/rules/blender-clean-normals.md)
-  7. export: glTF binary, all actions, JPEG textures, no lights / cameras; --preview: Cycles (OPTIX) renders of the
+  7. export: glTF binary, all actions (rotations only), PNG textures (alpha kept) + raw RGBA dumps for the KTX2 pack
+     (tools/falconV2pack.mjs: meshopt + KTX2 -> models/bird/v2/), no lights / cameras; --preview: Cycles (OPTIX) renders of the
      Glide, Stoop and Perch poses under a grazing light + a checker ground (the shading check)
 """
 import bpy, sys, os, math, glob
@@ -76,12 +77,40 @@ if MESH.lower().endswith((".glb", ".gltf")): bpy.ops.import_scene.gltf(filepath=
 elif MESH.lower().endswith(".fbx"): bpy.ops.import_scene.fbx(filepath=MESH)
 else: raise SystemExit(f"unknown mesh format {MESH}")
 imported = [o for o in bpy.data.objects if o not in before]
-meshes = [o for o in imported if o.type == "MESH"]
+meshes = [o for o in imported if o.type == "MESH" and (any(m.type == "ARMATURE" for m in o.modifiers) or o.parent is not None)]
+# (the importer also makes an "Icosphere" bone-display shape: no skin, no parent: not the bird)
+meshes.sort(key=lambda o: -len(o.data.vertices))
 assert meshes, "no mesh in the download"
+# THE BIND SHAPE. Some downloads carry vertices whose raw (bind) positions are garbage that only their skin brings
+# back (the Sketchfab peregrine: 1786 of 15195 vertices hundreds of metres off in the rest pose). So the mesh is taken
+# as its skin DEFORMS it at a frame of its own animation: --frame N, or the frame (every 5th) whose shape is the most
+# symmetric spread-wing one in the smallest box (the bird's own "T-pose"); none: the raw positions.
+import numpy as np
+def shape_at(o):
+    ev = o.evaluated_get(bpy.context.evaluated_depsgraph_get()); m = ev.to_mesh()
+    W = np.array([tuple(ev.matrix_world @ v.co) for v in m.vertices]); ev.to_mesh_clear(); return W
+arms = [m.object for o in meshes for m in o.modifiers if m.type == "ARMATURE" and m.object]
+act = arms[0].animation_data.action if arms and arms[0].animation_data else None
+FRAME = arg("--frame")
+if act or FRAME is not None:
+    if FRAME is None:
+        best = None
+        for f in range(int(act.frame_range[0]), int(act.frame_range[1]) + 1, 5):
+            scene.frame_set(f); W = np.vstack([shape_at(o) for o in meshes]); lo_, hi_ = W.min(0), W.max(0); ext = hi_ - lo_
+            sym = min(-lo_[0], hi_[0]) / max(-lo_[0], hi_[0], 1e-9) if lo_[0] < 0 < hi_[0] else 0
+            # symmetric (>= 0.95) and compact: the smallest box for its span (a stray part stretches the box)
+            score = ext[0] ** 3 / max(ext[0] * ext[1] * ext[2], 1e-12) if sym >= 0.95 and ext[0] > ext[1] else -1
+            if best is None or score > best[0]: best = (score, f)
+        FRAME = best[1]
+    scene.frame_set(int(FRAME))
+    for o in meshes:
+        dg = bpy.context.evaluated_depsgraph_get()
+        nm = bpy.data.meshes.new_from_object(o.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
+        o.data = nm
+    print(f"[falconV2] bind shape: the skin's deformation at frame {FRAME}")
 for o in meshes:
     for m in list(o.modifiers):
         if m.type == "ARMATURE": o.modifiers.remove(m)
-    o.parent and (o.matrix_world.copy())
 for o in meshes:
     mw = o.matrix_world.copy(); o.parent = None; o.matrix_world = mw
     if o.data.shape_keys: o.shape_key_clear()
@@ -90,7 +119,10 @@ for o in imported:
     if o not in meshes: bpy.data.objects.remove(o)
 for a in list(bpy.data.actions):
     if a.name not in actions: bpy.data.actions.remove(a)
-select(meshes); bpy.ops.object.join(); tgt = bpy.context.view_layer.objects.active; tgt.name = "FalconV2"
+select(meshes)
+if len(meshes) > 1: bpy.ops.object.join()
+tgt = meshes[0]; tgt.name = "FalconV2"
+print(f"[falconV2] mesh objects joined: {len(meshes)}")
 select([tgt]); bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 me = tgt.data
 def bbox(o):
@@ -109,6 +141,15 @@ else:
     if nhi > nlo:                                    # the head toward +Y: turn it to -Y (the rig's nose)
         tgt.rotation_euler.z = math.pi; select([tgt]); bpy.ops.object.transform_apply(rotation=True); lo, hi, P = bbox(tgt)
 span, length = hi.x - lo.x, hi.y - lo.y
+# life size: the wingspan to SPAN m (a juvenile female ~1.05 m), whatever units the download uses
+SPAN = float(arg("--span", "1.05"))
+kk = SPAN / span
+tgt.scale = (kk, kk, kk); select([tgt]); bpy.ops.object.transform_apply(scale=True); lo, hi, P = bbox(tgt)
+# the origin at the bird's feet: the box's bottom centre (the loader puts the root there)
+tgt.location = (-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z); select([tgt]); bpy.ops.object.transform_apply(location=True); lo, hi, P = bbox(tgt)
+span, length = hi.x - lo.x, hi.y - lo.y
+# one UV map (the first: the one the textures use), no shape keys; the extra sets a scan export carries cost bytes only
+while len(me.uv_layers) > 1: me.uv_layers.remove(me.uv_layers[-1])
 print(f"[falconV2] mesh {len(me.vertices)} verts {len(me.polygons)} faces, span {span:.3f} length {length:.3f} height {hi.z - lo.z:.3f}")
 if span < 1.3 * length: print("[falconV2] WARNING: the wings do not look spread (span < 1.3 x length): the fit needs a spread-wing bind pose")
 
@@ -144,6 +185,24 @@ select([tgt]); bpy.ops.object.datalayout_transfer(modifier=dt.name); bpy.ops.obj
 bpy.ops.object.vertex_group_normalize_all(lock_active=False)
 bpy.ops.object.vertex_group_limit_total(limit=4)
 bpy.ops.object.vertex_group_normalize_all(lock_active=False)
+# THE LEGS RIGID. The download's legs (hanging in its bind pose) do not lie along the rig's (tucked) leg bones: a
+# nearest-surface transfer splits a foot between the leg, the hips and the tail and the toes stretch into streaks.
+# Every vertex below the thighs (and inside the body's width) or mostly on a leg bone follows its side's thigh alone:
+# the leg swings as one piece (the flight layers and the Talons / Perch clips turn the thigh), never stretches.
+bpy.context.view_layer.update()
+gi = {g.name: g.index for g in tgt.vertex_groups}
+LEGB = ("UpperLeg", "LowerLeg", "AnkleLeg", "Foot", "Toes")
+hz = min((arm.matrix_world @ arm.data.bones[f"UpperLeg_{s_}"].head_local).z for s_ in ("L", "R"))
+lx = max(abs((arm.matrix_world @ arm.data.bones[f"UpperLeg_{s_}"].head_local).x) for s_ in ("L", "R"))
+rigid = 0
+for v in me.vertices:
+    w = {tgt.vertex_groups[g.group].name: g.weight for g in v.groups}
+    legw = sum(x for k, x in w.items() if k.startswith(LEGB))
+    if legw > 0.12 or (v.co.z < hz - 0.01 and abs(v.co.x) < lx * 3):
+        side = "L" if v.co.x >= 0 else "R"
+        for g in list(v.groups): tgt.vertex_groups[g.group].remove([v.index])
+        tgt.vertex_groups[f"UpperLeg_{side}"].add([v.index], 1.0, "REPLACE"); rigid += 1
+print(f"[falconV2] legs: {rigid} vertices rigid on the thighs (below z {hz:.3f})")
 am = tgt.modifiers.new("rig", "ARMATURE"); am.object = arm
 tgt.parent = arm
 bpy.data.objects.remove(ref)
@@ -214,11 +273,31 @@ for img in bpy.data.images:
         s = TEX / max(img.size); img.scale(max(1, int(img.size[0] * s)), max(1, int(img.size[1] * s)))
 
 # ------------------------------------------------------------------------------------------------ 7. export (+ previews)
+# rotations only: the Mesh2Motion clips' bone translations are in its own unscaled units (the hips 1.2 m up after
+# the fit); the bone lengths are ours
+for act in actions.values():
+    for layer in act.layers:
+        for strip in layer.strips:
+            for cb in strip.channelbags:
+                for fc in list(cb.fcurves):
+                    if fc.data_path.endswith((".location", ".scale")): cb.fcurves.remove(fc)
 os.makedirs(os.path.dirname(os.path.abspath(OUT)), exist_ok=True)
 select([arm, tgt])
 bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", use_selection=True, export_animations=True, export_animation_mode="ACTIONS",
-    export_force_sampling=True, export_optimize_animation_size=True, export_image_format="JPEG", export_jpeg_quality=88, export_lights=False, export_cameras=False,
+    export_force_sampling=True, export_optimize_animation_size=True, export_image_format="AUTO", export_lights=False, export_cameras=False,
     export_skins=True, export_all_influences=False, export_yup=True, export_apply=False)
+# the textures as raw RGBA (top row first) + their colour space, for the pack step's KTX2 (tools/falconV2pack.mjs)
+TEXDIR = OUT + ".tex"; os.makedirs(TEXDIR, exist_ok=True)
+import json
+meta = {}
+for img in bpy.data.images:
+    if img.users == 0 or img.size[0] == 0: continue
+    w, h = img.size; px = np.empty(w * h * 4, dtype=np.float32); img.pixels.foreach_get(px)
+    a = (np.clip(px.reshape(h, w, 4)[::-1], 0, 1) * 255 + 0.5).astype(np.uint8)
+    fn = "".join(c if c.isalnum() or c in "._-" else "_" for c in img.name)
+    a.tofile(os.path.join(TEXDIR, fn + ".rgba"))
+    meta[img.name] = {"file": fn + ".rgba", "width": w, "height": h, "srgb": img.colorspace_settings.name.lower().startswith("srgb")}
+json.dump(meta, open(os.path.join(TEXDIR, "textures.json"), "w"), indent=1)
 tris = sum(len(p.vertices) - 2 for p in me.polygons)
 print(f"[falconV2] wrote {OUT}: {tris} triangles, {len(actions)} clips")
 

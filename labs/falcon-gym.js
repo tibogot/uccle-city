@@ -48,7 +48,7 @@ scene.add(pigeons.mesh);
 const input = new FalconInput(renderer.domElement, { invert: qp.get("invert") === "1" });
 const fcam = new FalconCamera(camera, scene);
 const HAS_V2 = await v2Exists();
-const birds = { current: await GymBird.create("current"), v2: HAS_V2 ? await GymBird.create("v2").catch((e) => { log(`v2 failed: ${e.message}`); return null; }) : null };
+const birds = { current: await GymBird.create("current"), v2: HAS_V2 ? await GymBird.create("v2", 1.05, renderer).catch((e) => { log(`v2 failed: ${e.message}`); return null; }) : null };
 let bird = birds.current;
 scene.add(bird.root);
 // the side-by-side stand (the model comparison): both models perched on a plinth by the field, life size
@@ -61,6 +61,7 @@ game.size.readable = 2.0; game.size.life = GYM.span;
 const C = new GymControls();
 
 // ------------------------------------------------------------------------------------------------ starts
+let script = null;                       // a demo's scripted input (cleared by any start)
 const START = {
   "on the field": () => place(FIELD.x + 8, Y0, FIELD.z + 18, 0),
   "in the alley (4 m)": () => place(62, Y0, -9, -Math.PI / 2),
@@ -74,11 +75,13 @@ const START = {
   "high, 800 m (stoop)": () => fly(200, Y0 + 800, 260, Math.atan2(200, 260), 18),
 };
 function place(x, y, z, h) {
+  script = null;
   if (S.ctl === "gym") gf.placeOnGround(x, y, z, h);
   else game.perchOn({ name: "ground", pos: new THREE.Vector3(x, y, z), yaw: h, roof: y > Y0 + 1 });
   input.syncAim(h, 0);
 }
 function fly(x, y, z, h, V) {
+  script = null;
   if (S.ctl === "gym") gf.launchAt(x, y, z, h, V, 0); else game.start(x, y, z, h, V, 0);
   input.syncAim(h, 0);
 }
@@ -144,27 +147,27 @@ function setModel(v) {
   bird.root.removeFromParent(); bird = nb; scene.add(bird.root); game.bird = bird; S.model = v;
 }
 let standBirds = null;
+const STAND_F = { heading: 0, gamma: 0, alpha: 0, phi: 0, fold: 0, flapLevel: 0, brake: 0, V: 15, walkV: 0 };
 async function setCompare(on) {
   stand.visible = on;
   if (on && !standBirds) {
     standBirds = [];
-    const plinth = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.2, 1.2), gym.materials.trim); plinth.position.set(0, Y0 + 0.6, 0); plinth.castShadow = plinth.receiveShadow = true; stand.add(plinth);
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(4.4, 1.2, 1.2), gym.materials.trim); plinth.position.set(0, Y0 + 0.6, 0); plinth.castShadow = plinth.receiveShadow = true; stand.add(plinth);
     for (const [i, w] of [["current", -0.8], ["v2", 0.8]].map((x) => x)) {
       if (i === "v2" && !HAS_V2) continue;
-      const b = await GymBird.create(i, 1.05); b.root.position.set(w, Y0 + 1.2 + 0.18, 0); stand.add(b.root); standBirds.push(b);
+      const b = await GymBird.create(i, 1.05, renderer); b.root.position.set(w * 1.6, Y0 + 1.2 + 0.25, 0); stand.add(b.root); standBirds.push(b);
     }
     stand.position.set(FIELD.x - 6, 0, FIELD.z + 10); stand.rotation.y = Math.PI * 0.85;
   }
 }
 
 // ------------------------------------------------------------------------------------------------ demos (scripted inputs for the screenshots / checks)
-let script = null;
 function demo(name) {
   if (S.ctl !== "gym") switchCtl("gym");
   if (name === "stoop") {
     START["high, 300 m (stoop)"]();
     let released = false;
-    script = (f, C) => { C.aimYaw = Math.atan2(-(FIELD.x - f.pos.x), -(FIELD.z - f.pos.z)); C.aimPitch = released ? 0 : -1.35; C.stoop = released ? 0 : 1; if (f.guarding) released = true; if (released && f.mode === "fly" && f.gamma > 0.2) script = null; };
+    script = (f, C) => { C.aimYaw = Math.atan2(-(FIELD.x - f.pos.x), -(FIELD.z - f.pos.z)); C.aimPitch = released ? 0 : -1.35; C.stoop = released ? 0 : 1; if (f.guarding) released = true; if (released && f.mode === "fly" && f.gamma > -0.05) script = null; };
   } else if (name === "alley") { START["in the alley (4 m)"](); C.jump = true; script = (f, C) => { if (f.mode === "fly") script = null; }; }
   else if (name === "passage") { START["under the passage"](); C.jump = true; script = (f, C) => { if (f.mode === "fly") script = null; }; }
 }
@@ -284,7 +287,8 @@ function step(dtReal) {
   camOpt.aim = aiming ? aimV.set(-Math.sin(input.aim.yaw) * Math.cos(input.aim.pitch), Math.sin(input.aim.pitch), -Math.cos(input.aim.yaw) * Math.cos(input.aim.pitch)) : null;
   camOpt.zoom = input.zoom; camIn.span = bird.span;
   fcam.update(dtReal, camIn, camOpt);
-  if (standBirds) for (const b of standBirds) { b.pose(dtReal, b.root.position, gf, { mode: "perch", perchYaw: 0 }); }
+  // the stand: both models in the glide (wings spread: the shape to compare), or the clip the panel previews
+  if (standBirds) for (const b of standBirds) b.pose(dtReal, b.root.position, STAND_F, { mode: "fly" });
 }
 lab.advance = (sec) => { const n = Math.round(sec * 60); for (let i = 0; i < n; i++) step(1 / 60); };
 renderer.setAnimationLoop(() => {
