@@ -22,7 +22,7 @@ import { loadFalconAssets } from "../falcons.js";
 import { BirdRig } from "../birdRig.js";
 import { birdRoll, rigBank, V2_WALK_MPS } from "./gymFlight.js";
 import { FalconBird, GRIP } from "../falconFlight/falconBird.js";
-import { HeldPrey } from "../falconFlight/heldPrey.js";
+import { HeldPrey, loadHeldPigeon } from "../falconFlight/heldPrey.js";
 
 const _I = new THREE.Quaternion();
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
@@ -68,10 +68,12 @@ export class GymBird {
   /** which: "current" | "v2" */
   /** opts.ktx2: a KTX2 loader to use (node tests: a stub) */
   static async create(which = "current", span = 1.05, renderer = null, plumage = "juvenile", opts = {}) {
-    const [A, M] = await Promise.all([loadFalconAssets(), loadM2MClips()]);
+    const [A, M] = await Promise.all([loadFalconAssets(), loadM2MClips(), loadHeldPigeon()]);
     if (which === "v2") {
       // (tools/falconV2pack.mjs: EXT_meshopt_compression + KTX2 textures)
       if (opts.ktx2) ktx = opts.ktx2;
+      // (the page's ONE KTX2 loader, viewer/materials/scans.js: a second one warned "multiple active KTX2 loaders")
+      if (!ktx && renderer) { try { ktx = (await import("../materials/scans.js")).ktxLoader(renderer); } catch { /* the lab without the city's materials */ } }
       if (!ktx) { ktx = new KTX2Loader().setTranscoderPath(TRANSCODER); if (renderer) ktx.detectSupport(renderer); }
       const L = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(ktx);
       const [g, gFar] = await Promise.all([L.loadAsync(V2.href), L.loadAsync(V2_FAR.href).catch(() => null)]);
@@ -304,4 +306,4 @@ export class GymBird {
 }
 // the city's catch on v2: falconBird.js's own (they read root, span, toes, held, prey, hold; rule falcon-gym "the v2 in
 // the city": one grip for both birds)
-for (const k of ["carry", "drop", "gripPoint", "holdPrey", "gripCheck"]) GymBird.prototype[k] = FalconBird.prototype[k];
+for (const k of ["carry", "drop", "gripPoint", "holdPrey", "gripCheck", "bodyLength"]) GymBird.prototype[k] = FalconBird.prototype[k];

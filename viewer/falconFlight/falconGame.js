@@ -29,6 +29,8 @@ import { CityGymFlight, FALCON_CTL } from "./gymCity.js";
 import { CityGymWorld } from "./cityGymWorld.js";
 /** ?falconcol=old also keeps round 1's take-off (a drop forward from the perch's own height: from the ground or a flat
  *  roof it touched down again at once) */
+/** (round 4, gym) the climb-out after a catch: to agl m over the roofs ahead, at most pitch rad up, for at most T s */
+export const CLIMB_OUT = { agl: 15, pitch: 0.45, T: 6 };
 const COL_OLD = typeof location !== "undefined" && /[?&]falcon(col|hit)=old(&|$)/.test(location.search);
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
@@ -376,6 +378,20 @@ export class FalconGame {
         if (inp.aim) { inp.aim.yaw = C.aimYaw; inp.aim.pitch = clamp(C.aimPitch, -1.45, 0.6); }
       }
     } else if (F) F.release(dt, f);
+    // ---- (round 4) the CLIMB-OUT after a catch: back up to CLIMB_OUT.agl m over the roofs ahead, power on, unless the
+    // player pulls down (W / the stick forward) or dives again; the gym's pull-out bottoms at the prey's height and left
+    // the falcon 1-3 m over the roofs after every catch (browser 2026-11-25)
+    const CO = this._climbOut;
+    if (CO && f.mode === "fly" && !(F && F.diving)) {
+      CO.t += dt;
+      const fl = f.floorAhead(Math.max(f.V, 8)), over = f.pos.y - fl;
+      if (I.vert < -0.3 || C.stoop > 0.5 || CO.t > CLIMB_OUT.T || over >= CLIMB_OUT.agl) this._climbOut = null;
+      else {
+        const need = CLIMB_OUT.agl + 1 - over;
+        C.aimYaw = C.aimYaw ?? f.heading; C.aimPitch = clamp(Math.atan2(need, 18), 0.12, CLIMB_OUT.pitch); C.power = 1;
+        if (inp.aim) inp.aim.pitch = C.aimPitch;
+      }
+    } else if (CO && (f.mode !== "fly" || (F && F.diving))) this._climbOut = null;
     // ---- the flight
     const t1 = performance.now();
     const was = this._gymMode;
@@ -409,7 +425,9 @@ export class FalconGame {
     }
     if (this.mode === "fly") {
       this.score.maxSpeed = Math.max(this.score.maxSpeed, f.V);
+      const n0 = this.score.catches;
       if (F) this.strikeFun(dt, dtReal, inp, cam); else this.strike(dt, inp);
+      if (this.score.catches > n0 && this.climbOut !== false) this._climbOut = { t: 0 };
     }
     inp.take("strike");
     if (F && this.mode !== "fly") { F.slowK = 1; F.release(dt, f); }

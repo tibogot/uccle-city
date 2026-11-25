@@ -12,6 +12,47 @@ import * as THREE from "three/webgpu";
 import { attribute, uniform } from "three/tsl";
 import { pigeonGeometry } from "./pigeons.js";
 import { nearBirdGeometry, SPECIES, PART } from "../birds/birdMesh.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+// ROUND 4 (rule falcon-catch-fun "round 4"): the square pigeon and the sky pigeon in the talons are a real caught-pigeon
+// model (models/bird/prey/pigeon_held.glb, tools/blender/heldPigeon.py: limp, the head hanging, one wing folded and one
+// half open and drooping, the blue-grey plumage, the iridescent neck, the two black wing bars, the white rump, the pink
+// feet; 1.9k triangles, vertex colours, no texture), smooth-shaded; the others stay the baked limp shapes below, now
+// with normals (one pipeline: position, normal, color). And the size: LIFE size against the falcon (heldLifeRatio).
+const PIGEON_GLB = new URL("../../models/bird/prey/pigeon_held.glb", import.meta.url);
+/** life lengths, beak to tail (m): a tiercel 0.40; a feral pigeon 0.32, a jackdaw 0.34, a starling 0.21, a black-headed
+ *  gull 0.39, a ring-necked parakeet 0.40 (with its long tail) */
+export const LIFE_LEN = { falcon: 0.40, pigeon: 0.32, jackdaw: 0.34, starling: 0.21, gull: 0.39, parakeet: 0.40 };
+/** the held bird's length / the falcon's length, at life size: look = { shape, kind } (heldLook) */
+export function heldLifeRatio(look) {
+  const sp = look?.shape === "square" ? (/jackdaw/.test(look.kind || "") ? "jackdaw" : "pigeon") : look?.shape;
+  return (LIFE_LEN[sp] ?? LIFE_LEN.pigeon) / LIFE_LEN.falcon;
+}
+let pigeonP = null;
+/** the caught-pigeon model into the shapes (once; the baked square shape stays if it fails to load) */
+export function loadHeldPigeon() {
+  return (pigeonP ??= new GLTFLoader().loadAsync(PIGEON_GLB.href).then((g) => {
+    let mesh = null; g.scene.traverse((o) => { if (o.isMesh && !mesh) mesh = o; });
+    if (!mesh) return false;
+    const src = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry;
+    const n = src.attributes.position.count, C = src.attributes.color, col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { col[i * 3] = C.getX(i); col[i * 3 + 1] = C.getY(i); col[i * 3 + 2] = C.getZ(i); }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(Array.from(src.attributes.position.array), 3));
+    geo.setAttribute("normal", new THREE.Float32BufferAttribute(Array.from(src.attributes.normal.array), 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    geo.computeBoundingBox(); geo.computeBoundingSphere();
+    // the body's own ellipsoid (tools/blender/heldPigeon.py's loft without the neck, the wings, the tail): what "inside
+    // the pigeon" means for the grip check (its box takes the drooping wing too)
+    geo.userData.body = { c: [0, 0.006, 0.012], r: [0.053, 0.047, 0.076] };
+    // the contact for the grip: the belly's lowest point under the body (not a wing tip or a foot)
+    geo.userData.belly = [0, 0.006 - 0.05, 0.0];
+    geo.userData.head = [0, 0.069, -0.047];               // (the drooped head's centre: hanging, below the body in the talons)
+    const G = heldShapes();
+    G.square = geo; G.pigeon = geo.clone(); G.pigeon.computeBoundingBox(); G.pigeon.userData = geo.userData;
+    return true;
+  }).catch(() => false));
+}
 
 /** the limp pose: fold per side (0 open .. 1 folded), the hanging angle (rad, toward the back: under the falcon once
  *  rolled belly-up), the head's droop (rad) */
@@ -53,6 +94,7 @@ function skyLimp(sp) {
   const S = SPECIES[sp], g = nearBirdGeometry(), P = g.attributes.position.array, A = g.attributes.part.array, I = g.index.array;
   const len = S.len, span = S.span, bodyHW = len * 0.11, half = span * 0.5;
   const pos = [], col = [];
+  const bmn = [Infinity, Infinity, Infinity], bmx = [-Infinity, -Infinity, -Infinity];   // (round 4: the body's own box)
   const colOf = (part, s) => (part === PART.back || part === PART.tail ? S.back : part === PART.belly ? S.belly : part === PART.head ? S.head : part === PART.beak ? S.beak : s > 0.72 ? S.tipC : S.wing);
   for (let t = 0; t < I.length; t += 3) {
     for (let c = 0; c < 3; c++) {
@@ -78,16 +120,25 @@ function skyLimp(sp) {
         }
       }
       pos.push(-x, y, -z);
+      if (part === PART.back || part === PART.belly) { const q = [-x, y, -z]; for (let k = 0; k < 3; k++) { if (q[k] < bmn[k]) bmn[k] = q[k]; if (q[k] > bmx[k]) bmx[k] = q[k]; } }
       const k = colOf(part, s); col.push(k[0], k[1], k[2]);
     }
   }
-  return finish(pos, col);
+  return bodyOf(finish(pos, col), bmn, bmx);
 }
 
+/** (round 4) the body's own ellipsoid and belly point (the grip's contact, the check's "inside"), from its box */
+function bodyOf(g, mn, mx) {
+  if (mn[0] === Infinity) return g;
+  g.userData.body = { c: [0, 1, 2].map((k) => (mn[k] + mx[k]) / 2), r: [0, 1, 2].map((k) => (mx[k] - mn[k]) / 2) };
+  g.userData.belly = [(mn[0] + mx[0]) / 2, mn[1], (mn[2] + mx[2]) / 2];
+  return g;
+}
 function finish(pos, col) {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
   g.computeBoundingBox(); g.computeBoundingSphere();
   return g;
 }
@@ -108,10 +159,11 @@ export class HeldPrey {
   constructor() {
     const G = heldShapes();
     this.tint = uniform(new THREE.Color(1, 1, 1));
-    const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.8, metalness: 0, flatShading: true, side: THREE.DoubleSide });
+    const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.8, metalness: 0, side: THREE.DoubleSide });
     m.name = "falcon-held-prey";
     m.colorNode = attribute("color", "vec3").mul(this.tint);
     this.mesh = new THREE.Mesh(G.square, m);
+    this.mat = m;
     this.mesh.name = "falcon-held-prey"; this.mesh.visible = false;
     this.mesh.castShadow = true; this.mesh.receiveShadow = true; this.mesh.frustumCulled = false;
     this.look = { shape: "square", scale: 1, tint: [1, 1, 1] };

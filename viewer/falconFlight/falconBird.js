@@ -12,7 +12,7 @@ import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { loadFalconAssets } from "../falcons.js";
 import { BirdRig } from "../birdRig.js";
 import { FUN, FUN_OLD } from "./falconFun.js";
-import { HeldPrey } from "./heldPrey.js";
+import { HeldPrey, loadHeldPigeon, heldLifeRatio } from "./heldPrey.js";
 
 const MODEL_SPAN = 6.44;   // peregrine.glb wingspan in model units (viewer/falcons.js)
 /** (falcon fun round 3) the grip: the toes curled (rad) round the held pigeon, sunk this share of its depth into its
@@ -34,7 +34,7 @@ function applyBodyScale(root) {
 
 export class FalconBird {
   static async create(span = 2.0) {
-    const A = await loadFalconAssets();
+    const [A] = await Promise.all([loadFalconAssets(), loadHeldPigeon()]);
     return new FalconBird(A, span);
   }
   constructor(A, span) {
@@ -112,11 +112,18 @@ export class FalconBird {
     if (FUN_OLD || !this.toes) return;
     if (!p.geometry.boundingBox) p.geometry.computeBoundingBox();
     const bb = p.geometry.boundingBox, H = (this.hold ??= { belly: new THREE.Vector3(), depth: 0, len: 0, k: 1, from: new THREE.Vector3(), has: false, perch: 0, err: 0, top: 0, s: 1, own: false });
-    // (the held bird's own size: its flock's draw scale; prey_carry: 0.95 x the falcon's scale, as before)
-    H.s = own ? look.scale : 0.95 * k; H.own = own;
+    // (round 4: the held bird at LIFE size against the falcon as it is drawn now: its life length / a tiercel's 40 cm x
+    // the falcon's own beak-to-tail length, every frame (the falcon's drawn span changes with the height); round 3B held
+    // it at its flock's draw scale, x1.4, beside a life-size falcon near the roofs: bigger than the falcon.
+    // prey_carry: 0.95 x the falcon's scale, as before)
+    H.own = own; H.life = own ? heldLifeRatio(look) : 0; H.lenPerSpan = own ? this.bodyLength() / this.span : 0;
+    H.s = own ? H.life * H.lenPerSpan * this.span / Math.max(1e-4, bb.max.z - bb.min.z) : 0.95 * k;
+    if (own) p.scale.setScalar(H.s);
     // the contact: the middle of the belly (the mesh's lowest face, between its breast and its vent)
-    H.belly.set((bb.min.x + bb.max.x) / 2, bb.min.y, (bb.min.z + bb.max.z) * 0.5);
-    H.depth = bb.max.y - bb.min.y; H.len = bb.max.z - bb.min.z;
+    const ub = p.geometry.userData?.belly;                 // (round 4: the model's own belly point; else its box's)
+    if (ub) H.belly.set(ub[0], ub[1], ub[2]); else H.belly.set((bb.min.x + bb.max.x) / 2, bb.min.y, (bb.min.z + bb.max.z) * 0.5);
+    const ubd = p.geometry.userData?.body;
+    H.depth = ubd ? 2 * ubd.r[1] : bb.max.y - bb.min.y; H.len = bb.max.z - bb.min.z;   // (round 4: the body's depth, not the wing's)
     H.has = !!from; H.k = from ? 0 : 1;
     // (struck: it starts where it flew, the blend carries it in from there: no first frame at the old offset)
     // (kept in the falcon's frame: the pigeon is carried along as the talons close on it, not left behind in the air)
@@ -132,6 +139,13 @@ export class FalconBird {
   }
   drop() { if (!this.prey) return null; const p = this.prey; this.prey = null; if (this.held && p === this.held.mesh) this.held.hide(); else p.removeFromParent(); return p; }
 
+  /** (round 4) the falcon's beak-to-tail length as drawn now (m): the upper mandible's tip to the tail's tip */
+  bodyLength() {
+    const R = this.model, a = (this._bl ??= { b: R.getObjectByName("mouth_upper_tip"), t: R.getObjectByName("tail_tip") });
+    if (!a.b || !a.t) return 0.44 * this.span;
+    this.root.updateMatrixWorld(true);
+    return a.b.getWorldPosition(_a).distanceTo(a.t.getWorldPosition(_b));
+  }
   /** (round 3) the grip point, root-local: between the two feet, 35 % of the way from the toes' roots to their tips
    *  (where the closed toes meet the pigeon); out (Vector3) */
   gripPoint(out, world = false) {
@@ -146,7 +160,9 @@ export class FalconBird {
    *  depth into the plumage: no gap), head forward, body along the falcon's; the strike's blend from where it flew;
    *  perched: laid on the ledge under the feet (the falcon stands on it, mantling) */
   holdPrey(dt, mode) {
-    const p = this.prey, H = this.hold, s = H.s;
+    const p = this.prey, H = this.hold;
+    if (H.life) H.s = H.life * H.lenPerSpan * this.span / Math.max(1e-4, H.len);   // (round 4: life size, the span now)
+    const s = H.s;
     this.root.updateMatrixWorld(true);
     this.gripPoint(_g);
     H.perch = ease(H.perch, mode === "perch" ? 1 : 0, 6, dt);

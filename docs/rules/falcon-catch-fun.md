@@ -138,7 +138,7 @@ The coordinator's review of the round 3 screenshots (c_pigeon_held_grip_closeup,
   - `heldPrey.js` bakes the shapes once on the CPU. A square flock's bird uses pigeons.js `pigeonGeometry`. A sky bird uses birdMesh.js `nearBirdGeometry`, laid out by its species row the way skyFlocks.js does it.
   - Every shape is posed limp: the right wing folded with its tip at the tail's tip, the left wing hanging a little open, the head forward and drooping, the feet tucked away.
   - The colour is the bird's own. A square bird keeps its iTint (its morph, a jackdaw's black-grey, a racer's pale blue). A sky bird gets its species' palette.
-  - The size is the flock's draw scale: x1.4 for the square flocks. A sky bird gets 0.92-1.08, from three's TSL pcg hash on its index, exactly as skyFlocks.js birdFrame sizes it.
+  - The size (superseded by round 4: LIFE size against the falcon) was the flock's draw scale: x1.4 for the square flocks. A sky bird got 0.92-1.08, from three's TSL pcg hash on its index, exactly as skyFlocks.js birdFrame sizes it.
   - `Pigeons.heldLook`, `GpuPrey.heldLook` and `PreyMux.heldLook` say how bird i is drawn. falconGame.js funCatch reads that look before take() and hands it to carry().
   - It is one pooled mesh, a child of the falcon. A catch swaps its geometry and sets one tint uniform. Every shape has the same attributes (position + color), so there is one pipeline, warmed with the falcon in cityFlyer.js warm().
   - The vertices never move (no DynamicDrawUsage, no MOVER), and the mesh adds no light.
@@ -190,3 +190,38 @@ Screenshots (C:\Users\tibog\Downloads\uccle-falcon3\):
 - partB_held_pigeon_closeup.jpg: the square pigeon in its plumage, seen from below, in the talons.
 - partB_catch_banner.jpg: the CAUGHT! banner alone on screen. The radio card at the right is the mission kit's, not this HUD.
 - partB_tutorial_pigeon_spot.jpg: the open flat roof where the tutorial pigeon sat.
+
+## Round 4 (2026-11-25): the caught pigeon at life size, a real pigeon in the talons, the climb-out
+
+The coordinator's review of the city switches' screenshots (`uccle-falcon-city/6_v2_carry_pigeon_in_talons.jpg`): "the held pigeon is a big grey faceted block, larger than the falcon, so the catch reads as wrong".
+
+**1. Life size.**
+- **Why.** Round 3B held the bird at its flock's draw scale, x1.4 for the square flocks. Near the roofs the falcon is drawn at life size (`falconGame.js` span: 1 m low, 2 m high up), so the held pigeon was 1.4 x life beside a life-size falcon: longer than the falcon.
+- **Rule.** The held bird is drawn at LIFE size against the falcon as it is drawn now, every frame (`heldPrey.js` LIFE_LEN, `falconBird.js` carry / holdPrey / bodyLength). Its bounding length is its life length / a tiercel's 40 cm x the falcon's own beak-to-tail length:
+  - a feral pigeon 32 cm: 0.8
+  - a jackdaw 34 cm
+  - a starling 21 cm
+  - a black-headed gull 39 cm
+  - a ring-necked parakeet 40 cm (with its tail)
+- **Check.** `falconfun` (round 3B / 4: held / falcon length = the life ratio within 6 %, a pigeon 0.7-0.9); `falconcity` (v2: 0.79-0.88 through a 7 s carry).
+
+**2. A real caught pigeon.**
+- **Why.** The held "pigeon" was pigeons.js's flock geometry, a few dozen flat-shaded triangles, made for a bird seen at 20-200 m. At 1 m from the strike camera it read as a block.
+- **Rule.** The square pigeon and the sky pigeon in the talons are `models/bird/prey/pigeon_held.glb`. It is built by script (`tools/blender/heldPigeon.py`, Blender 5.0 headless) and shares nothing: 1.9k triangles, vertex colours, smooth normals, no texture. It is posed limp:
+  - the neck bent back 86 deg, so the head hangs below the body in the talons
+  - the right wing folded on the flank
+  - the left wing half open and drooping
+  - the feet tucked
+  - the colours: blue-grey with the iridescent green / purple neck, the two black bars, the dark primaries, the white rump, the dark tail band, pink feet
+
+  The grip's contact is its belly point and its body ellipsoid (`userData.belly` / `body`), not its box: the drooping wing makes the box twice the body. The other species keep their baked limp shapes, with their own body boxes and normals (one pipeline: position, normal, color). The flock's tint still multiplies it (a jackdaw's black-grey, a racer's pale blue).
+- **Check.**
+  - the close-up sheet `uccle-falcon-city/r2_pigeon_sheet.jpg` (Cycles, OptiX: upright and as held)
+  - `falconfun`: every held shape <= 4 cm from the grip and no falcon body vertex inside its body ellipsoid, on the real rig; the pigeon model loads
+  - `falconcity`: the same on v2, the model in use, its head below its body in >= 95 % of the level / gliding frames
+
+**3. The climb-out (the gym controller).**
+- **Why.** The gym's pull-out bottoms at the prey's height. After a catch the falcon flew on 1-3 m over the roofs (browser, `5_*` / `6_*`).
+- **Rule.** After a catch, the gym controller climbs back (power on, at most 0.45 rad up) until it is 15 m over the roofs ahead (`falconGame.js` CLIMB_OUT). It stops at 6 s, or when the player pulls down, stoops or dives on a new lock.
+- **Check.** `falconcity`: with the player hands-off for 4 s after each catch, >= 80 % of the catches get back to >= 15 m (17 / 17). Self-test: without the climb-out, at most 60 % do (8 / 16, some at 2-4 m).
+

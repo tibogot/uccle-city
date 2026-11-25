@@ -244,3 +244,5 @@ Browser row `falconcity`.
 - The Talons clip's weight >= 0.8 with strike on.
 - The far LOD on the same skeleton: far at 200 m, near at 4 m.
 
+**One KTX2 loader (round 4).** v2's textures load through the page's own KTX2 loader (`viewer/materials/scans.js` ktxLoader). Its own second loader warned "Multiple active KTX2 loaders may cause performance issues". Check: browser row `falconcity`, no such warning.
+

@@ -167,13 +167,15 @@ function stoop(ctl, h = 300) {
 
 // ------------------------------------------------------------------------------------------------ the catch
 /** the simple player of falconFunTest.mjs over the square: look at the lock (or the arrow), hold the strike button */
-function hunt(ctl, sd, T = 90) {
+function hunt(ctl, sd, T = 90, climbOut = true) {
   seed = sd;
   W.roosts = roosts();
   const P = new Pigeons({ world: W, roosts: W.roosts, home: { x: 0, z: -210 }, count: 120, scale: 1.4, ground: 0.4 });
   P.flockHomes = [{ x: 0, z: -210, r: 45, h: 28, w: 0.12 }, { x: 25, z: -230, r: 38, h: 40, w: -0.14 }];
   const { g, inp } = game(ctl, P);
+  if (!climbOut) g.climbOut = false;
   g.start(0, 30, -120, 0, 14, 0);
+  const after = [];                   // (round 4) per catch: the highest over the roofs in the 4 s after it
   let first = -1, crashes = 0;
   const say = g.say.bind(g); g.say = (s) => { if (/^hit |tumbl/.test(s)) crashes++; say(s); };
   const tmp = { x: 0, y: 0, z: 0 }, falcon = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, speed: 0, stoop: false };
@@ -183,8 +185,11 @@ function hunt(ctl, sd, T = 90) {
     const f = g.f;
     if (g.mode === "perch") { if (ctl === "gym") inp.C.flap = (Math.floor(real * 4) % 2) ? 1 : 0; else inp.actions.add("land"); }
     let tx = null;
-    if (g.target >= 0) { P.pos(g.target, tmp); tx = tmp; } else if (g.fun.arrow.on) tx = g.fun.arrow;
-    inp.talons = g.target >= 0;
+    // (round 4: hands off for 4 s after a catch: what the falcon does by itself then, the climb-out)
+    const handsOff = after.length && real - after[after.length - 1].t0 < 4;
+    if (handsOff) { /* nothing held */ }
+    else if (g.target >= 0) { P.pos(g.target, tmp); tx = tmp; } else if (g.fun.arrow.on) tx = g.fun.arrow;
+    inp.talons = g.target >= 0 && !handsOff;
     if (tx) {
       const dx = tx.x - f.pos.x, dy = tx.y - f.pos.y, dz = tx.z - f.pos.z, hd = Math.hypot(dx, dz), a = agl(f);
       inp.aim.yaw = Math.atan2(-dx, -dz); inp.aim.pitch = clamp(Math.atan2(dy, hd), -1.4, 0.5);
@@ -195,11 +200,12 @@ function hunt(ctl, sd, T = 90) {
     if (age >= 0) { age += DT; const S = FUN.strike; g.timeScale = age < S.hold ? S.slow : Math.min(1, S.slow + (age - S.hold) / S.ease); if (g.timeScale >= 1) { g.timeScale = 1; age = -1; } }
     const n0 = g.score.catches;
     g.update(DT, null);
-    if (g.score.catches > n0) { if (first < 0) first = real; age = 0; }
+    if (g.score.catches > n0) { if (first < 0) first = real; age = 0; after.push({ t0: real, max: 0, pulled: false }); }
+    for (const a of after) if (real - a.t0 < 4) a.max = Math.max(a.max, agl(g.f));
     falcon.x = f.pos.x; falcon.y = f.pos.y; falcon.z = f.pos.z; falcon.vx = f.vel.x; falcon.vy = f.vel.y; falcon.vz = f.vel.z; falcon.speed = f.V; falcon.stoop = f.fold > 0.7;
     P.update(DT * g.timeScale * g.fun.slowK, real, falcon, null, false);
   }
-  return { first, catches: g.score.catches, crashes, maxKmh: Math.round(g.score.maxSpeed * 3.6) };
+  return { first, catches: g.score.catches, crashes, maxKmh: Math.round(g.score.maxSpeed * 3.6), after };
 }
 
 // ------------------------------------------------------------------------------------------------ the ledge pool
@@ -243,14 +249,17 @@ async function v2grip() {
     for (let i = 0; i < P.count; i += 2) { let mb = -1, mw = 0; for (let c = 0; c < 4; c++) { const w = SW.getComponent(i, c); if (w > mw) { mw = w; mb = SI.getComponent(i, c); } } if (!legs.has(mb)) body.push([m, i]); }
   }
   const v = new THREE.Vector3(), inv = new THREE.Matrix4(), last = new THREE.Vector3(), cur = new THREE.Vector3();
-  let errMax = 0, inside = 0, samples = 0, step = 0, held = 0, strikeW = 0, k = 0;
+  let errMax = 0, inside = 0, samples = 0, step = 0, held = 0, strikeW = 0, k = 0, heads = 0, headBelow = 0;
+  const ratios = [];
   const where = {};
   const pen = (t) => {
     b.root.updateMatrixWorld(true); for (const m of b.meshes) m.skeleton.update();
     inv.copy(b.prey.matrixWorld).invert(); const bb = b.prey.geometry.boundingBox;
     for (const [m, i] of body) {
       m.getVertexPosition(i, v); v.applyMatrix4(m.matrixWorld).applyMatrix4(inv);
-      const ex = (2 * v.x - bb.min.x - bb.max.x) / (bb.max.x - bb.min.x), ey = (2 * v.y - bb.min.y - bb.max.y) / (bb.max.y - bb.min.y), ez = (2 * v.z - bb.min.z - bb.max.z) / (bb.max.z - bb.min.z);
+      // (round 4: the pigeon model's own body ellipsoid, heldPrey.js userData.body: its box takes the drooping wing)
+      const E = b.prey.geometry.userData?.body;
+      const ex = E ? (v.x - E.c[0]) / E.r[0] : (2 * v.x - bb.min.x - bb.max.x) / (bb.max.x - bb.min.x), ey = E ? (v.y - E.c[1]) / E.r[1] : (2 * v.y - bb.min.y - bb.max.y) / (bb.max.y - bb.min.y), ez = E ? (v.z - E.c[2]) / E.r[2] : (2 * v.z - bb.min.z - bb.max.z) / (bb.max.z - bb.min.z);
       if (ex * ex + ey * ey + ez * ez < 1) { inside++; const SI = m.geometry.attributes.skinIndex; const bn = m.skeleton.bones[SI.getComponent(i, 0)].name + "@" + t.toFixed(1); where[bn] = (where[bn] || 0) + 1; }
     }
     samples++;
@@ -269,6 +278,12 @@ async function v2grip() {
     last.copy(cur);
     const Gc = b.gripCheck();
     if (Gc.k >= 1 && b.hold.perch < 0.02) { errMax = Math.max(errMax, Gc.err); held++; }
+    // (round 4) the caught-pigeon model: life size against the falcon, the head hanging below its body
+    if (Gc.k >= 1 && mode === "fly") {
+      const U = b.prey.geometry.userData, bb = b.prey.geometry.boundingBox;
+      ratios.push((bb.max.z - bb.min.z) * b.prey.scale.x / b.bodyLength());
+      if (U.head && Math.abs(fl.gamma) < 0.3 && Math.abs(fl.phi) < 0.6) { const hy = v.set(...U.head).applyMatrix4(b.prey.matrixWorld).y, cy = cur.set(...U.body.c).applyMatrix4(b.prey.matrixWorld).y; heads++; if (hy < cy) headBelow++; b.prey.getWorldPosition(cur); }
+    }
     if (k % 24 === 0 && b.hold.perch < 0.02 && mode !== "perch") pen(t);   // (the carry: in the air and the landing; perched it is laid)
   }
   // the strike pose alone (game time): strike 1 for 0.6 s in flight
@@ -279,9 +294,10 @@ async function v2grip() {
   b.setSpan(1.0); cam.position.set(pos.x, pos.y, pos.z + 200); cam.updateMatrixWorld();
   const farLod = b.updateLod(cam, 900); cam.position.set(pos.x, pos.y, pos.z + 4); const nearLod = b.updateLod(cam, 900);
   const farBound = !!b.far?.length && b.far.every((m) => m.skeleton === b.mesh.skeleton);
+  const model = !!b.prey.geometry.userData?.head;
   b.drop();
   if (TRACE) console.log(where);
-  return { errMax, inside, samples, step, held, strikeW, farLod, nearLod, farBound, toes: !!b.toes, gripLayers: !!b.rig.layers?.gripL || JSON.stringify(Object.keys(b.extra)).includes("gripL") };
+  return { model, heads, headBelow, rMin: Math.min(...ratios), rMax: Math.max(...ratios), errMax, inside, samples, step, held, strikeW, farLod, nearLod, farBound, toes: !!b.toes, gripLayers: !!b.rig.layers?.gripL || JSON.stringify(Object.keys(b.extra)).includes("gripL") };
 }
 
 // ------------------------------------------------------------------------------------------------ run
@@ -312,12 +328,19 @@ check("gym: a 300 m stoop over the town >= 300 km/h, pulled out with no contact"
 check("current: the 300 m stoop over the town (as before), no contact", DC.kmh >= 230 && DC.minAgl > 0.5 && DC.tumbles === 0, `${DC.kmh} km/h, lowest ${DC.minAgl} m, contacts ${DC.tumbles}`);
 const HG = [hunt("gym", 11), hunt("gym", 23)], HC = [hunt("current", 11), hunt("current", 23)];
 check("gym: the fun catch over the square (the simple player): the first <= 30 s, >= 3 in 90 s, no crash", HG.every((r) => r.first >= 0 && r.first <= 30 && r.catches >= 3 && r.crashes <= 1), HG.map((r) => `first ${r.first.toFixed(1)} s, ${r.catches} caught, ${r.crashes} crashes, top ${r.maxKmh} km/h`).join("; "));
+{
+  const A = HG.flatMap((r) => r.after), N = [hunt("gym", 11, 90, false), hunt("gym", 23, 90, false)].flatMap((r) => r.after);
+  const ok = A.filter((a) => a.max >= 15).length, okN = N.filter((a) => a.max >= 15).length;
+  check("gym: the climb-out after a catch: back to >= 15 m over the roofs within 4 s (>= 80 % of the catches; the player hands-off)", A.length >= 4 && ok >= 0.8 * A.length, `${ok} / ${A.length} catches (highest in the 4 s after: ${A.map((a) => a.max.toFixed(0)).join(", ")} m); self-test, no climb-out: ${okN} / ${N.length} (${N.map((a) => a.max.toFixed(0)).join(", ")} m)`);
+  check("self-test: without the climb-out the falcon stays low after its catches (hands-off: at most 60 % reach 15 m, some stay 2-4 m over the roofs)", okN <= 0.6 * N.length && N.some((a) => a.max < 6), `${okN} / ${N.length} vs ${ok} / ${A.length}`);
+}
 check("current: the same catch (as before)", HC.every((r) => r.first >= 0 && r.first <= 30 && r.catches >= 3), HC.map((r) => `first ${r.first.toFixed(1)} s, ${r.catches} caught, ${r.crashes} crashes`).join("; "));
 const PL = pool();
 check("gym: the ledge pool round the falcon: sills, railings, the lamp, roof edges, ridges, the tree; rebuilt in slices of <= 520 samples (no spike), two fixed pools swapped", PL.builds >= 50 && PL.maxWork <= 520 && PL.same && PL.kinds.sill > 10 && PL.kinds.railing > 2 && PL.kinds["roof edge"] > 10 && PL.kinds.ridge > 5, `${PL.builds} rebuilds, largest slice ${PL.maxWork} samples, pools kept ${PL.same}; last: ${Object.entries(PL.kinds).map(([k, n]) => `${n} ${k}`).join(", ")}`);
 }
 const V = await v2grip();
 check("v2: the caught bird held IN its talons on its own foot bones (the real v2 rig, a 7 s carry): belly to the grip <= 4 cm, no v2 body vertex inside it, the blend with no step > 0.35 m a frame", V.toes && V.held > 200 && V.errMax <= 0.04 && V.inside === 0 && V.samples > 10 && V.step <= 0.35, `grip error max ${(V.errMax * 100).toFixed(1)} cm over ${V.held} frames, body vertices inside ${V.inside} (${V.samples} poses), blend step ${V.step.toFixed(2)} m`);
+check("v2 round 4: the caught pigeon is the model (models/bird/prey/pigeon_held.glb) at LIFE size (held / v2 length 0.7-0.9 all the carry), its head hanging below its body (>= 95 % of the level / gliding frames: |path| < 17 deg, bank < 34 deg)", V.model && V.rMin >= 0.7 && V.rMax <= 0.9 && V.heads > 30 && V.headBelow >= 0.95 * V.heads, `model ${V.model}, length ratio ${V.rMin.toFixed(2)}-${V.rMax.toFixed(2)}, head below ${V.headBelow} / ${V.heads} frames`);
 check("v2: the strike pose is its Talons clip (strike 1: the clip's weight), its far LOD on the same skeleton switched by the drawn span", V.strikeW > 0.8 && V.farBound && V.farLod === "far" && V.nearLod === "near", `Talons weight ${V.strikeW.toFixed(2)}, far LOD bound ${V.farBound}, at 200 m ${V.farLod}, at 4 m ${V.nearLod}`);
 const bad = results.filter((r) => !r.ok);
 console.log(`falconcity: ${results.length - bad.length}/${results.length} PASS${bad.length ? ` (FAIL: ${bad.map((b) => b.name).join("; ")})` : ""}`);

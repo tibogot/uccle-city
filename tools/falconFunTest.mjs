@@ -345,7 +345,11 @@ async function rig() {
   const { loadFalconAssets } = await import("../viewer/falcons.js");
   const { FalconBird } = await import("../viewer/falconFlight/falconBird.js");
   const A = await loadFalconAssets();
+  // (round 4: the caught-pigeon model, models/bird/prey/pigeon_held.glb, in the held shapes)
+  const { loadHeldPigeon } = await import("../viewer/falconFlight/heldPrey.js");
+  const PG = await loadHeldPigeon();
   console.error = warn;
+  if (!PG) throw new Error("models/bird/prey/pigeon_held.glb did not load");
   return (RIG = { A, FalconBird, prey: A.nest.scene.getObjectByName("prey_carry") });
 }
 /** (round 3 part B) look: the held bird as its flock draws it (heldPrey.js { shape, scale, tint }); null: prey_carry */
@@ -367,7 +371,9 @@ async function grip(look = null) {
     for (const i of body) {
       mesh.getVertexPosition(i, v); v.applyMatrix4(mesh.matrixWorld).applyMatrix4(inv);
       // (inside the pigeon's body: the ellipsoid in its box, the shape of a pigeon's body; the box's corners are air)
-      const ex = (2 * v.x - bb.min.x - bb.max.x) / (bb.max.x - bb.min.x), ey = (2 * v.y - bb.min.y - bb.max.y) / (bb.max.y - bb.min.y), ez = (2 * v.z - bb.min.z - bb.max.z) / (bb.max.z - bb.min.z);
+      // (round 4: the pigeon model's own body ellipsoid, heldPrey.js userData.body: its box takes the drooping wing)
+      const E = b.prey.geometry.userData?.body;
+      const ex = E ? (v.x - E.c[0]) / E.r[0] : (2 * v.x - bb.min.x - bb.max.x) / (bb.max.x - bb.min.x), ey = E ? (v.y - E.c[1]) / E.r[1] : (2 * v.y - bb.min.y - bb.max.y) / (bb.max.y - bb.min.y), ez = E ? (v.z - E.c[2]) / E.r[2] : (2 * v.z - bb.min.z - bb.max.z) / (bb.max.z - bb.min.z);
       if (ex * ex + ey * ey + ez * ez < 1) inside++;
     }
     samples++;
@@ -401,7 +407,7 @@ async function heldSpecies(old) {
   const { PreyMux } = await import("../viewer/falconGame/hunt.js");
   const { GpuPrey } = await import("../viewer/falconGame/gpuPrey.js");
   const { SLOTS, TOTAL } = await import("../viewer/birds/skyFlocks.js");
-  const { heldShapes } = await import("../viewer/falconFlight/heldPrey.js");
+  const { heldShapes, heldLifeRatio } = await import("../viewer/falconFlight/heldPrey.js");
   const { pigeonGeometry } = await import("../viewer/falconFlight/pigeons.js");
   const { SPECIES } = await import("../viewer/birds/birdMesh.js");
   seed = 31;
@@ -432,9 +438,12 @@ async function heldSpecies(old) {
     const tint = b.held && p === b.held.mesh ? [b.held.tint.value.r, b.held.tint.value.g, b.held.tint.value.b] : null;
     const tintOK = !!tint && tint.every((v, k) => Math.abs(v - c.tint[k]) < 1e-4);
     if (!p.geometry.boundingBox) p.geometry.computeBoundingBox();
-    const scale = b.hold?.s ?? 0, len = lenOf(p.geometry.boundingBox) * scale, fl = flockLen[c.want] * (c.scale ?? look?.scale ?? 1);
-    const sizeOK = len / fl > 0.85 && len / fl < 1.35 && (c.scale == null ? scale >= 0.92 && scale <= 1.08 : Math.abs(scale - c.scale) < 1e-6);
-    out.push({ label: c.label, want: c.want, got, ok: got === c.want && tintOK && sizeOK, tintOK, sizeOK, ratio: len / fl });
+    // (round 4: LIFE size against the falcon as drawn: held length / the falcon's beak-to-tail length = the life ratio
+    // (a feral pigeon 32 cm / a tiercel 40 cm = 0.8), a pigeon within 0.7-0.9; round 3B: the flock's draw scale)
+    const scale = b.hold?.s ?? 0, len = lenOf(p.geometry.boundingBox) * scale, fal = b.bodyLength();
+    const want = heldLifeRatio(look), ratio = len / fal, pigeon = /pigeon|racer/.test(c.label);
+    const sizeOK = Math.abs(ratio / want - 1) < 0.06 && (!pigeon || (ratio >= 0.7 && ratio <= 0.9));
+    out.push({ label: c.label, want: c.want, got, ok: got === c.want && tintOK && sizeOK, tintOK, sizeOK, ratio });
   }
   return out;
 }
@@ -550,7 +559,7 @@ if (!OLD) {
   check("round 3B self-test: round 3's HUD showed a MISSED line under the CAUGHT banner (its miss rule, its 4 s of lines)", oldBoth > 0, `${oldBoth} catches with a MISSED line still up (${HUs.map((h) => h.oldBoth).join(", ")})`);
   check("round 3B: the first catch's \"Got it!\" hint only after its banner faded", HUs.every((h) => h.gotit >= FUN.banner && h.gotit < FUN.banner + 0.5), HUs.map((h) => `${h.gotit.toFixed(2)} s`).join(", ") + ` (the banner ${FUN.banner} s)`);
   const HS = await heldSpecies(false), HO = await heldSpecies(true);
-  check("round 3B: the held bird is the caught bird (its species' shape, its flock's tint, its drawn size)", HS.every((c) => c.ok), HS.map((c) => `${c.label}: ${c.got}${c.ok ? "" : ` (want ${c.want}, tint ${c.tintOK}, size ${c.sizeOK})`} x${c.ratio.toFixed(2)}`).join("; "));
+  check("round 3B / 4: the held bird is the caught bird (its species' shape, its flock's tint) at LIFE size against the falcon (held / falcon length = the life ratio; a pigeon 0.7-0.9)", HS.every((c) => c.ok), HS.map((c) => `${c.label}: ${c.got}${c.ok ? "" : ` (want ${c.want}, tint ${c.tintOK}, size ${c.sizeOK})`} ${c.ratio.toFixed(2)} of the falcon`).join("; "));
   check("round 3B self-test: round 3's carry held the nest's grey prey_carry for every catch", HO.every((c) => c.got === "prey_carry" && !c.ok), HO.map((c) => `${c.label}: ${c.got}`).join("; "));
   const TS = [], TN = [];
   for (let s = 0; s < 3; s++) { TS.push(play(2000 + s * 7919, 30, false, { world: treeWorld })); TN.push(play(2000 + s * 7919, 30, false, { world: treeWorld, clear: false })); }
