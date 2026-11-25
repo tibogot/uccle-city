@@ -42,6 +42,19 @@ for (const m of J.materials || []) {
   for (const t of [pb.metallicRoughnessTexture, m.normalTexture, m.occlusionTexture]) if (t) roles.set(texImg(t.index), "linear");
 }
 J.extensionsUsed = (J.extensionsUsed || []).filter((e) => e !== "KHR_materials_specular" && e !== "KHR_materials_emissive_strength");
+// the textures no material uses any more (the emission maps just dropped) go, with their images: they were shipped as
+// raw PNG bytes (base B: two 1024 px emission maps, 1.5 MB)
+{
+  const used = new Set(); const refs = [];
+  for (const m of J.materials || []) { const pb = m.pbrMetallicRoughness || {}; for (const t of [pb.baseColorTexture, pb.metallicRoughnessTexture, m.normalTexture, m.occlusionTexture]) if (t) { used.add(t.index); refs.push(t); } }
+  const tmap = new Map(), tex = []; (J.textures || []).forEach((t, i) => { if (used.has(i)) { tmap.set(i, tex.length); tex.push(t); } });
+  for (const r of refs) r.index = tmap.get(r.index);
+  const iused = new Set(tex.map((t) => t.source)), imap = new Map(), imgs = []; (J.images || []).forEach((im, i) => { if (iused.has(i)) { imap.set(i, imgs.length); imgs.push(im); } });
+  for (const t of tex) t.source = imap.get(t.source);
+  const nr = new Map(); for (const [k, v] of roles) if (imap.has(k)) nr.set(imap.get(k), v); roles.clear(); for (const [k, v] of nr) roles.set(k, v);
+  if ((J.images || []).length !== imgs.length) console.log(`  textures: ${(J.textures || []).length} -> ${tex.length}, images ${(J.images || []).length} -> ${imgs.length} (unused ones dropped)`);
+  if (J.textures) J.textures = tex; if (J.images) J.images = imgs;
+}
 
 // ------------------------------------------------------------------------------------------------ textures -> KTX2
 const imgBytes = new Map();   // image index -> KTX2 bytes
@@ -74,11 +87,48 @@ for (const [name, T] of Object.entries(texMeta)) {
   const file = path.basename(DST).replace(/\.glb$/, `_${name}.ktx2`);
   fs.mkdirSync(path.dirname(DST), { recursive: true });
   fs.writeFileSync(path.join(path.dirname(DST), file), Buffer.from(ktx));
-  J.asset.extras.variants[name] = { file, replaces: "baseColorTexture", width: T.width, height: T.height };
+  J.asset.extras.variants[name] = { file, replaces: "baseColorTexture", width: T.width, height: T.height, ...(T.material ? { material: T.material, image: T.variant_of } : {}) };   // (base B: one a material)
   console.log(`  variant ${name}: ${T.width}x${T.height} -> ${file} ${(ktx.length / 1024).toFixed(0)} KB KTX2`);
 }
 for (const t of J.textures || []) { const s = t.source; t.extensions = { KHR_texture_basisu: { source: s } }; delete t.source; }
 if ((J.textures || []).length) { J.extensionsUsed.push("KHR_texture_basisu"); J.extensionsRequired = [...new Set([...(J.extensionsRequired || []), "KHR_texture_basisu"])]; }   // (the far LOD has none)
+
+// ------------------------------------------------------------------------------------------------ the rest-pose channels
+// Blender's forced sampling writes a translation, rotation and scale track for every bone in every clip: most of them
+// (base B: 2852 of 3300) hold the bone's rest value from the first key to the last. A missing track IS the rest pose to
+// three's mixer (its PropertyMixer fills the weight no clip covers with the bound original state, the rest) and to
+// tools/falconV2pose.mjs: they go, losslessly; then the accessors nothing uses any more.
+{
+  const NCc = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT4: 16 };
+  const rdF = (ai) => { const a = J.accessors[ai], v = J.bufferViews[a.bufferView], n = NCc[a.type], o = new Float32Array(a.count * n), st = v.byteStride || n * 4, off = (v.byteOffset || 0) + (a.byteOffset || 0); for (let i = 0; i < a.count; i++) for (let j = 0; j < n; j++) o[i * n + j] = BIN.readFloatLE(off + i * st + j * 4); return { o, n, c: a.count }; };
+  let drop = 0, total = 0;
+  for (const an of J.animations || []) {
+    const keep = [];
+    for (const ch of an.channels) {
+      total++; const sm = an.samplers[ch.sampler], a = J.accessors[sm.output];
+      if (a.componentType !== 5126) { keep.push(ch); continue; }
+      const { o, n, c } = rdF(sm.output); let constant = true;
+      for (let i = 1; i < c && constant; i++) for (let j = 0; j < n; j++) if (Math.abs(o[i * n + j] - o[j]) > 1e-6) { constant = false; break; }
+      const nd = J.nodes[ch.target.node], p = ch.target.path;
+      const r = p === "rotation" ? nd.rotation || [0, 0, 0, 1] : p === "translation" ? nd.translation || [0, 0, 0] : p === "scale" ? nd.scale || [1, 1, 1] : null;
+      let d = Infinity;
+      if (constant && r) { d = 0; for (let j = 0; j < n; j++) d = Math.max(d, Math.abs(o[j] - r[j])); if (p === "rotation") { let d2 = 0; for (let j = 0; j < 4; j++) d2 = Math.max(d2, Math.abs(-o[j] - r[j])); d = Math.min(d, d2); } }
+      if (d < 1e-5) drop++; else keep.push(ch);
+    }
+    const smap = new Map(), smp = [];
+    for (const ch of keep) { if (!smap.has(ch.sampler)) { smap.set(ch.sampler, smp.length); smp.push(an.samplers[ch.sampler]); } ch.sampler = smap.get(ch.sampler); }
+    an.channels = keep; an.samplers = smp;
+  }
+  // the accessors still used, renumbered
+  const refs = [];
+  for (const m of J.meshes || []) for (const pr of m.primitives) { for (const k in pr.attributes) refs.push([pr.attributes, k]); if (pr.indices != null) refs.push([pr, "indices"]); for (const t of pr.targets || []) for (const k in t) refs.push([t, k]); }
+  for (const sk of J.skins || []) if (sk.inverseBindMatrices != null) refs.push([sk, "inverseBindMatrices"]);
+  for (const an of J.animations || []) for (const sm of an.samplers) refs.push([sm, "input"], [sm, "output"]);
+  const amap = new Map(), acc = [];
+  for (const [o, k] of refs) { const i = o[k]; if (!amap.has(i)) { amap.set(i, acc.length); acc.push(J.accessors[i]); } o[k] = amap.get(i); }
+  console.log(`  clips: ${drop} of ${total} channels hold the rest pose throughout: dropped; accessors ${J.accessors.length} -> ${acc.length}`);
+  J.accessors = acc;
+}
 
 // ------------------------------------------------------------------------------------------------ merge the small views
 // Blender writes one buffer view per animation sampler (1700+ for 11 clips x 65 bones): the JSON (~0.7 MB) and the
@@ -92,8 +142,9 @@ if ((J.textures || []).length) { J.extensionsUsed.push("KHR_texture_basisu"); J.
   const mergeable = (vi) => !J.bufferViews[vi].target && !J.bufferViews[vi].byteStride && !imgV.has(vi) && es.get(vi) > 0 && es.get(vi) % 4 === 0;
   const parts = [], nViews = [], vmap = new Map(); let off = 0;
   const put = (b) => { const o = off; parts.push(b); off += b.length; const pad = (4 - (b.length % 4)) % 4; if (pad) { parts.push(Buffer.alloc(pad)); off += pad; } return o; };
-  J.bufferViews.forEach((v, vi) => { if (!mergeable(vi)) { vmap.set(vi, [nViews.length, 0]); nViews.push({ ...v, byteOffset: put(Buffer.from(BIN.subarray(v.byteOffset || 0, (v.byteOffset || 0) + v.byteLength))) }); } });
-  const groups = new Map(); J.bufferViews.forEach((v, vi) => { if (mergeable(vi)) (groups.get(es.get(vi)) || groups.set(es.get(vi), []).get(es.get(vi))).push(vi); });
+  const refd = new Set([...J.accessors.map((a) => a.bufferView), ...(J.images || []).map((im) => im.bufferView)].filter((v) => v != null));
+  J.bufferViews.forEach((v, vi) => { if (refd.has(vi) && !mergeable(vi)) { vmap.set(vi, [nViews.length, 0]); nViews.push({ ...v, byteOffset: put(Buffer.from(BIN.subarray(v.byteOffset || 0, (v.byteOffset || 0) + v.byteLength))) }); } });
+  const groups = new Map(); J.bufferViews.forEach((v, vi) => { if (refd.has(vi) && mergeable(vi)) (groups.get(es.get(vi)) || groups.set(es.get(vi), []).get(es.get(vi))).push(vi); });
   for (const [e, list] of groups) {
     const start = off, ni = nViews.length;
     for (const vi of list) { const v = J.bufferViews[vi]; const b = Buffer.from(BIN.subarray(v.byteOffset || 0, (v.byteOffset || 0) + v.byteLength)); const o = off; parts.push(b); off += b.length; vmap.set(vi, [ni, o - start]); }

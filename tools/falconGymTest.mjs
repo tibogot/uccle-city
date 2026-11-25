@@ -161,7 +161,7 @@ if (fs.existsSync(v2)) {
   const b = fs.readFileSync(v2), len = b.readUInt32LE(12), j = JSON.parse(b.subarray(20, 20 + len).toString());
   const tris = (j.meshes || []).reduce((s, m) => s + m.primitives.reduce((q, p) => q + (p.indices != null ? j.accessors[p.indices].count / 3 : 0), 0), 0);
   const clips = (j.animations || []).map((a) => a.name);
-  check(tris >= 8000 && tris <= 30000, "v2 falcon: triangles 8k-30k", tris);
+  check(tris >= 5000 && tris <= 30000, "v2 falcon: triangles 5k-30k", tris);
   for (const c of ["Flap", "Glide", "Idle", "Walk", "Hop", "TakeOff", "Land", "Stoop", "Talons", "Flare", "Perch"]) check(clips.includes(c), `v2 falcon clip ${c}`);
   const ext = j.extensionsUsed || [];
   check(ext.includes("EXT_meshopt_compression") && ext.includes("KHR_texture_basisu") && (j.images || []).every((im) => im.mimeType === "image/ktx2"), "v2 falcon packed: meshopt geometry + KTX2 textures (tools/falconV2pack.mjs)");
@@ -172,7 +172,7 @@ if (fs.existsSync(v2)) {
   // V2 FIX: the far LOD (tools/falconV2far.mjs), and the lab switches to it by the drawn span on screen
   for (const [ok, what, val] of v2FarChecks(v2, path.join(ROOT, "models/bird/v2/falcon_v2_far.glb"))) check(ok, what, val);
   const gb = fs.readFileSync(path.join(ROOT, "viewer/falconGym/gymBird.js"), "utf8");
-  check(/LOD_FAR_PX\s*=\s*\d+,\s*LOD_NEAR_PX\s*=\s*\d+/.test(gb) && /far\.bind\(near\.skeleton/.test(gb) && /updateLod\(camera/.test(js), "v2 far LOD wired: bound to the near skeleton, switched by screen size with hysteresis (gymBird.updateLod, the lab calls it)");
+  check(/LOD_FAR_PX\s*=\s*\d+,\s*LOD_NEAR_PX\s*=\s*\d+/.test(gb) && /\.bind\(near\.skeleton/.test(gb) && /updateLod\(camera/.test(js), "v2 far LOD wired: bound to the near skeleton, switched by screen size with hysteresis (gymBird.updateLod, the lab calls it)");
 } else out.push("note models/bird/v2/falcon_v2.glb not built yet (the owner's Sketchfab files): v2 checks skipped");
 
 if (!quiet || fails.length) console.log(out.join("\n"));

@@ -9,7 +9,7 @@ before they go into the city game. URL (the job's server): `http://localhost:884
 - `?time=midday|golden|...`
 - `?pigeons=40`, `?wind=3`
 
-Rule: `docs/rules/falcon-gym.md`. Gate row: `falcongym` (`tools/falconGymTest.mjs`, headless). Browser row: `falcongym`.
+Rule: `docs/rules/falcon-gym.md` (the v2: "the v2 base"). Gate row: `falcongym` (`tools/falconGymTest.mjs`, headless). Browser row: `falcongym`.
 
 ## What is where
 
@@ -21,7 +21,8 @@ Rule: `docs/rules/falcon-gym.md`. Gate row: `falcongym` (`tools/falconGymTest.mj
 | `viewer/falconGym/gymBird.js` | the falcon: the current model or v2. It adds the ground and take-off clips and the same procedural layers (`viewer/birdRig.js`) |
 | `labs/falcon-gym.*` | the lab: both controllers (switchable), pigeons (`viewer/falconFlight/pigeons.js`), the air (`air.js`: a thermal over the field, slope lift off the blocks), the chase camera (`falconCamera.js`). Our own panel (`viewer/panelUI.js`) |
 | `tools/falconGymTest.mjs` | the gate row's checks |
-| `tools/blender/falconV2.py`, `tools/blender/meshoptDecode.mjs` | the v2 model build (below) |
+| `tools/blender/falconV2b.py`, `tools/falconV2pack.mjs`, `tools/falconV2far.mjs` | the v2 model build (base B, below); `tools/blender/falconV2.py` the first base's (shelved) |
+| `tools/falconV2pose.mjs`, `tools/ktx2Decode.mjs` | the v2's pose / hole / pad / plumage checks on the shipped files (the gate row) |
 
 The playground, with the ground at 70 m TAW so the haze sits as at Place de Saint-Job:
 
@@ -93,6 +94,62 @@ The same greybox, bird, camera and input. The current controller runs `FalconGam
 - the hands-off level speed: current = a glide trim at 13 m/s that sinks
 
 ## The model and its animations
+
+### The v2 now: base B, Hector Bonada's model (2026-11-25, rule falcon-gym "the v2 base")
+
+The owner found the first v2 full of holes: "plenty of holes in its body", "the model looks good on Sketchfab, please check well". The cause was the 25k download itself: separate tube-like feather cards on a spread-wing bind, which every fold opens into fingers (screenshots `uccle-falcon-gym/v2fix_src_*`). Bonada's "Falcon_ Merged Animations" (CC BY 4.0) has continuous wing and tail surfaces, and in its own idle it already perches like a peregrine. It is now the v2, near and far. The 25k and its build (`tools/blender/falconV2.py`, the sections below) are kept for the record, not shipped.
+
+```
+blender --factory-startup -b -P tools/blender/falconV2b.py -- --mesh <src>/falcon__merged_animations.glb --out <src>/build/v2b/falcon_v2.raw.glb
+node tools/falconV2pack.mjs <src>/build/v2b/falcon_v2.raw.glb models/bird/v2/falcon_v2.glb
+node tools/falconV2far.mjs <src>/build/v2b/falcon_v2.raw.glb <src>/build/v2b/falcon_v2_far.raw.glb --tris 2500
+node tools/falconV2pack.mjs <src>/build/v2b/falcon_v2_far.raw.glb models/bird/v2/falcon_v2_far.glb
+blender --factory-startup -b -P tools/blender/falconV2preview.py -- --glb <raw.glb> --variants --out <dir> --shots perch_side,walk_side,stoop_side
+```
+
+The build takes ~20 s; the pack ~80 s.
+
+- **The rig.** The download's own 95 joints, renamed to our bird rig's names where one exists (`BONEMAP`: Pelvis = hips, Humerus / Ulna / Aula = wing_1 / 2 / 3, TF2 / TF3 = tail_fan_1 / 2, Thigh ... Toe = UpperLeg ... Foot...). The others are kept as `b_<name>` (digits, clavicles, Spine2...), and our helpers are added: root, spine_3, tail_tip, wing_tip. 100 bones.
+- **The bind.** The importer's bone rest does not match the skin's bind, so the bind is the idle's frame 48 (`--bind`). The perch is exact.
+- **The frame.** Nose -Y, scaled so the glide's tips span 1.05 m (x0.587), the feet at the origin.
+- **The skin.** Its own weights, bone for bone, on three materials: the body, the eyes, the flight feathers.
+- **Its clips, baked exactly** (each bone's posed matrix -> our local):
+  - Perch = Idle: f24-178, looped with a 24-frame blend; its primaries' tips and tail, which dipped 2 cm through the floor, are lifted per frame and smoothed
+  - TakeOff: f178-238
+  - Land: f304-352
+  - Flap: its own 12-frame beat f216-228, which loops exactly
+  - Glide: f256 held, the toes closed
+- **Ours, from its poses:**
+  - Stoop: the idle's folded wings and tail, the body level, the feet tucked under the tail's base, the toes closed
+  - Talons: the glide, the legs forward, the toes spread
+  - Flare: the glide, the wings forward and up, the tail down and fanned, the legs forward
+  - Walk: 10 frames, 12 cm steps, 60 % stance, planted at 0.48 m/s, a waddle, the body 28 deg, the hips 9 cm
+  - Hop: 20 frames: a crouch, a push, the feet tucked up, a landing
+  - In both Walk and Hop the legs go by IK, the feet flat as perched, and the toe PADS are put on the floor (not a claw tip).
+- **The look.**
+  - The eyes: its glowing blue, emissive and mirror-like iris darkened to a peregrine's dark brown, roughness 0.28, 256 px.
+  - The juvenile plumage, painted on its own UVs as V2 POLISH's. There is one KTX2 for each painted material (`falcon_v2_juvenile.ktx2`: the body; `_juvenile_1`: the flight feathers), named in `asset.extras.variants` with their material. Upper and under parts are read on the glide pose.
+- **Shipped.**
+  - `falcon_v2.glb`: 7,268 triangles, 11 clips, 5 KTX2 textures, **3.2 MB**
+  - `falcon_v2_juvenile*.ktx2`: 0.75 + 0.58 MB
+  - `falcon_v2_far.glb`: **2,476 triangles, 0.29 MB**, the same joints, clips and materials, no textures
+- **The pack** (`falconV2pack.mjs`), for both files:
+  - drops the textures nobody uses (the emission maps)
+  - drops the 2,832 of 3,300 animation channels that hold the rest pose throughout (lossless: a missing track is the rest to three's mixer)
+  - merges Blender's 2,300 per-sampler buffer views into ~25
+- **In the gym** (`gymBird.js`):
+  - all three meshes; the plumage set per material
+  - the far LOD bound to the near skeleton per material, switched by the drawn span (far under 56 px, near again over 68 px)
+  - the span measured in the Glide (the bind is folded), and the rig's layers calibrated there too
+  - the fold / tuck layers fade out with the Stoop clip, which folds by itself
+  - the flare layer opens the tail toward the Flare clip's fan
+  - `?v2src=<url>` loads another build to look at
+- **Checked** (gate row `falcongym`, `tools/falconV2pose.mjs`):
+  - the rig names; the perched pose; the toe PADS 0-5 mm over the floor (Perch, Walk, Hop); the toes spread on the ground and closed in flight
+  - the crouched Walk / Hop; the tail closed / fanned
+  - no see-through holes in the body (six views, the cut-out alpha honoured); no "finger" slits when folded; the underwing not showing when folded
+  - the juvenile; the far LOD
+
 
 **Mesh2Motion (checked 2026-11-25).**
 
@@ -196,8 +253,9 @@ O again (or Esc) returns to the exact flight state. `?orbit=1` starts in it.
 - **The landing uses a scripted final** (a Hermite curve, as the city's). It can pass through a thin railing on the way in.
 - **The vertical take-off's "boxed" test is geometric** (rays): a bird boxed by trees does not count them.
 - **Not in the city yet.** Adopting it means routing `viewer/falconGame/` through `GymFlight` against the city's `column` / roof grid: a `sphereHit` / `ray` / `clearUp` over the tile data, and `ledges` from the roof ridges plus the church perches.
-- **v2**:
-  - The tail stays fanned in folded poses: its cards are on one bone, and the rig has no side bones to close it.
-  - Walk shows the long Mesh2Motion stride on the download's leg lengths.
-  - The far model is decided but not built (above).
-  - The underwing coverts show buff at the folded wrists.
+- **v2 (base B)**:
+  - The gym's walk is 1 m/s (`GYM.walk`); a peregrine walks at ~0.3-0.5. The Walk plants its feet at 0.48 m/s and plays at most 2.5x, so at 1 m/s the feet slide a little.
+  - The wing tips are ~3 cm off the tail line when perched, as the download has them.
+  - The download's own wing-covert fringe shows as a dark serrated edge at the folded wing's front (as on Sketchfab).
+  - From above in the Walk there is a 0.5 cm² opening between the folded wing's edge and the back (the hole check's limit is 0.5).
+  - The bind is a folded pose. A layer added to `birdRig.js` has to be calibrated in the Glide, as `gymBird.js` does.

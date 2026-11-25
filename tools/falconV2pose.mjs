@@ -1,17 +1,18 @@
 // tools/falconV2pose.mjs: the falcon v2's POSE checks on the shipped glb (gate row `falcongym`, rule falcon-gym "the v2
-// model"): the meshopt glb decoded, its skin evaluated in Node (linear blend skinning, the clips sampled at their
-// first key), no three.js. What the V2 POLISH fixed stays fixed:
-//   - Perch stands like a perched peregrine: the body upright (35-65 deg), the feet on the ground under the hips, the
-//     hips low (the tarsi under the belly), the folded wings' tips by the tail, the toes closed
-//   - the feather cards are rigid (one bone each), so a fold turns them whole: no card edge stretches in Perch / Stoop
-//   - the toes: closed in flight (Glide) and in Perch, open in Talons
-//   - the juvenile plumage beside it (KTX2, named in the glb, the base colour's size)
-//   import { v2PoseChecks } from "./falconV2pose.mjs"; v2PoseChecks(glbPath) -> [[ok, what, value], ...]
+// model" / "the v2 base"): the meshopt glb decoded, its skin evaluated in Node (linear blend skinning, clips sampled in
+// time, every primitive), no three.js. Base B (tools/blender/falconV2b.py, Hector Bonada's model on our rig names):
+//   - it stands like a perched peregrine: upright, the hips low, the TOE PADS on the ground (not a claw tip), the toes
+//     spread; the folded wings' tips by the tail; the tail closed
+//   - it walks and hops crouched, a foot's pads on the ground through the cycle
+//   - the toes closed (a grip) only in flight; spread on the ground and in Talons
+//   - the tail closed when folded, fanned in the glide and the flare
+//   - NO HOLES: the silhouette from six directions has no see-through hole (ground and folded clips)
+//   - the far LOD (v2FarChecks), the juvenile plumage (KTX2 beside the glb, one per painted material)
+//   import { v2PoseChecks, v2FarChecks } from "./falconV2pose.mjs";  node tools/falconV2pose.mjs [glb] [far.glb] [--measure]
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
-
 import { decodeKTX2 } from "./ktx2Decode.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -37,12 +38,12 @@ function readGlb(file) {
     const a = J.accessors[i], v = views[a.bufferView], n = NC[a.type];
     const T = { 5120: Int8Array, 5121: Uint8Array, 5122: Int16Array, 5123: Uint16Array, 5125: Uint32Array, 5126: Float32Array }[a.componentType];
     const cs = T.BYTES_PER_ELEMENT, stride = v.stride || cs * n, dv = new DataView(v.data.buffer, v.data.byteOffset, v.data.byteLength);
-    const out = new Float64Array(a.count * n), norm = a.normalized ? { 5121: 255, 5123: 65535, 5120: 127, 5122: 32767 }[a.componentType] : 1;
+    const out = new Float64Array(a.count * n), nrm = a.normalized ? { 5121: 255, 5123: 65535, 5120: 127, 5122: 32767 }[a.componentType] : 1;
     const get = { 5120: "getInt8", 5121: "getUint8", 5122: "getInt16", 5123: "getUint16", 5125: "getUint32", 5126: "getFloat32" }[a.componentType];
-    for (let k = 0; k < a.count; k++) for (let c = 0; c < n; c++) out[k * n + c] = dv[get]((a.byteOffset || 0) + k * stride + c * cs, true) / norm;
+    for (let k = 0; k < a.count; k++) for (let c = 0; c < n; c++) out[k * n + c] = dv[get]((a.byteOffset || 0) + k * stride + c * cs, true) / nrm;
     return out;
   };
-  return { J, acc };
+  return { J, acc, BIN };
 }
 
 // ------------------------------------------------------------------------------------------------ small maths (column-major 4x4)
@@ -57,21 +58,33 @@ function trs(t = [0, 0, 0], q = [0, 0, 0, 1], s = [1, 1, 1]) {
 const xf = (m, x, y, z) => [m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]];
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], len = (a) => Math.hypot(a[0], a[1], a[2]);
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const angle = (a, b) => Math.acos(Math.max(-1, Math.min(1, dot(a, b) / (len(a) * len(b) || 1)))) * 180 / Math.PI;
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const unit = (a) => { const l = len(a) || 1; return a.map((x) => x / l); };
 
 // ------------------------------------------------------------------------------------------------ the skinned bird
+/** every primitive of the skinned mesh, concatenated: P, JN, WT, IDX (offset), UV, PRIM (each vertex's primitive) */
 export function loadV2(file) {
-  const { J, acc } = readGlb(file);
+  const { J, acc, BIN } = readGlb(file);
   const mi = J.nodes.findIndex((n) => n.skin != null && n.mesh != null), mn = J.nodes[mi], skin = J.skins[mn.skin];
-  const prim = J.meshes[mn.mesh].primitives[0];
-  const P = acc(prim.attributes.POSITION), JN = acc(prim.attributes.JOINTS_0), WT = acc(prim.attributes.WEIGHTS_0), IDX = acc(prim.indices);
-  const IBM = acc(skin.inverseBindMatrices), joints = skin.joints, NV = P.length / 3;
+  const prims = J.meshes[mn.mesh].primitives;
+  const parts = prims.map((p) => ({ P: acc(p.attributes.POSITION), JN: acc(p.attributes.JOINTS_0), WT: acc(p.attributes.WEIGHTS_0), IDX: acc(p.indices), UV: p.attributes.TEXCOORD_0 != null ? acc(p.attributes.TEXCOORD_0) : null, mat: p.material }));
+  const NV = parts.reduce((s, p) => s + p.P.length / 3, 0), NI = parts.reduce((s, p) => s + p.IDX.length, 0);
+  const P = new Float64Array(NV * 3), JN = new Float64Array(NV * 4), WT = new Float64Array(NV * 4), UV = new Float64Array(NV * 2), IDX = new Uint32Array(NI), PRIM = new Uint8Array(NV);
+  let vo = 0, io = 0;
+  parts.forEach((p, k) => {
+    const n = p.P.length / 3; P.set(p.P, vo * 3); JN.set(p.JN, vo * 4); WT.set(p.WT, vo * 4); if (p.UV) UV.set(p.UV, vo * 2); PRIM.fill(k, vo, vo + n);
+    for (let i = 0; i < p.IDX.length; i++) IDX[io + i] = p.IDX[i] + vo;
+    vo += n; io += p.IDX.length;
+  });
+  const IBM = acc(skin.inverseBindMatrices), joints = skin.joints;
   const parent = new Int32Array(J.nodes.length).fill(-1);
   J.nodes.forEach((n, i) => (n.children || []).forEach((c) => { parent[c] = i; }));
   const byName = Object.fromEntries(J.nodes.map((n, i) => [n.name, i]));
   const clips = Object.fromEntries((J.animations || []).map((a) => [a.name, a]));
-  /** the node world matrices with `clip` at time t (s; null: its first key), linear keys (nlerp); clip null: the rest */
-  function world(clip, t = null, extra = null) {
+  const dur = (c) => Math.max(0, ...clips[c].samplers.map((sm) => J.accessors[sm.input].max?.[0] ?? 0));
+  /** the node world matrices with `clip` at time t (s; null: its first key), linear keys (nlerp); clip null: the rest
+   *  (a bone without a track in the clip keeps its rest: what three's mixer does too) */
+  function world(clip, t = null) {
     const T = J.nodes.map((n) => ({ t: n.translation || [0, 0, 0], r: n.rotation || [0, 0, 0, 1], s: n.scale || [1, 1, 1] }));
     if (clip) for (const ch of clips[clip].channels) {
       const sm = clips[clip].samplers[ch.sampler], out = acc(sm.output), p = ch.target.path;
@@ -88,16 +101,14 @@ export function loadV2(file) {
       }
       if (p === "rotation") T[ch.target.node].r = v; else T[ch.target.node].t = v;
     }
-    // (experiments: extra = { nodeName: [x, y, z, w] } post-multiplied onto the node's rotation, a local turn)
-    if (extra) for (const [n, q] of Object.entries(extra)) { const r = T[byName[n]].r, [x, y, z, w] = r, [a, b, c, d] = q; T[byName[n]].r = [w * a + x * d + y * c - z * b, w * b - x * c + y * d + z * a, w * c + x * b - y * a + z * d, w * d - x * a - y * b - z * c]; }
     const W = new Array(J.nodes.length);
     const get = (i) => W[i] ??= parent[i] < 0 ? trs(T[i].t, T[i].r, T[i].s) : mul(get(parent[i]), trs(T[i].t, T[i].r, T[i].s));
     J.nodes.forEach((_, i) => get(i));
     return W;
   }
   /** the posed vertices (Float64Array xyz) and the joints' world positions by name */
-  function pose(clip, t = null, extra = null) {
-    const W = world(clip, t, extra), S = joints.map((j, k) => mul(W[j], IBM.subarray(k * 16, k * 16 + 16)));
+  function pose(clip, t = null) {
+    const W = world(clip, t), S = joints.map((j, k) => mul(W[j], IBM.subarray(k * 16, k * 16 + 16)));
     const X = new Float64Array(NV * 3);
     for (let v = 0; v < NV; v++) {
       let x = 0, y = 0, z = 0;
@@ -110,158 +121,240 @@ export function loadV2(file) {
     const at = (name) => { const m = W[byName[name]]; return [m[12], m[13], m[14]]; };
     return { X, at };
   }
-  // per vertex: its main joint's name and weight
   const main = new Array(NV), mainW = new Float64Array(NV);
   for (let v = 0; v < NV; v++) { let b = 0; for (let c = 1; c < 4; c++) if (WT[v * 4 + c] > WT[v * 4 + b]) b = c; main[v] = J.nodes[joints[JN[v * 4 + b]]].name; mainW[v] = WT[v * 4 + b]; }
-  const UV = prim.attributes.TEXCOORD_0 != null ? acc(prim.attributes.TEXCOORD_0) : null;
-  return { J, NV, IDX, P, UV, main, mainW, clips, pose, byName, acc };
+  const matName = parts.map((p) => J.materials?.[p.mat]?.name || "");
+  return { J, BIN, NV, IDX, P, UV, PRIM, prims, matName, main, mainW, clips, dur, pose, byName, acc, parent };
 }
 
-/** the tail's feather cards: small loose parts (<= 80 vertices) mainly on a tail bone */
-export function tailParts(B, parts) { return [...parts.values()].filter((vs) => vs.length <= 80 && B.main[vs[0]].startsWith("tail")); }
-/** the tail's width (m) across its outer 40 % (along tail_2 -> tail_tip), the lateral (x) extent of its cards */
-export function tailTipWidth(B, parts, p) {
-  const a = p.at("tail_2"), b = p.at("tail_tip"), ax = sub(b, a), L = len(ax), u = ax.map((x) => x / L), X = p.X;
-  const vs = tailParts(B, parts).flat(); let smax = 0;
-  for (const v of vs) smax = Math.max(smax, dot(sub([X[v * 3], X[v * 3 + 1], X[v * 3 + 2]], a), u));
+// ------------------------------------------------------------------------------------------------ measures
+const isToe = (n) => /^(Toes_|Toes_tip_|b_[lr]_Digit)/.test(n);
+const side = (n) => (/_L$|^b_l_/.test(n) ? "L" : /_R$|^b_r_/.test(n) ? "R" : null);
+const isTail = (n) => /^(tail_|b_[lr]_TF|b_Tail|b_TF)/.test(n);
+/** per foot: the lowest toe-PAD point (y: the toes' vertices) and the lowest point of the whole foot */
+function feet(B, X) {
+  const o = { L: { pad: Infinity, all: Infinity }, R: { pad: Infinity, all: Infinity } };
+  for (let v = 0; v < B.NV; v++) {
+    const m = B.main[v], s = side(m); if (!s) continue; const y = X[v * 3 + 1];
+    if (isToe(m)) { o[s].pad = Math.min(o[s].pad, y); o[s].all = Math.min(o[s].all, y); } else if (/^(Foot_|AnkleLeg_)/.test(m)) o[s].all = Math.min(o[s].all, y);
+  }
+  return o;
+}
+/** per foot: the toes' spread, the widest distance between two toe-tip joints (the last joints of the digit chains) */
+function toeSpread(B, p) {
+  const ends = { L: [], R: [] };
+  for (const [n, i] of Object.entries(B.byName)) {
+    if (!isToe(n) || /nub/.test(n)) continue;
+    const kids = (B.J.nodes[i].children || []).map((c) => B.J.nodes[c].name).filter((c) => isToe(c) && !/nub/.test(c));
+    if (!kids.length) { const s = side(n); if (s) ends[s].push(p.at(n)); }
+  }
+  const sp = (a) => { let m = 0; for (const x of a) for (const y of a) m = Math.max(m, len(sub(x, y))); return m; };
+  return { L: sp(ends.L), R: sp(ends.R) };
+}
+/** the tail's width (m) across its outer 40 % (along tail_1 -> tail_tip): the lateral (x) extent of its vertices */
+export function tailTipWidth(B, p) {
+  const a = p.at("tail_1"), u = unit(sub(p.at("tail_tip"), a)), X = p.X; let smax = 0;
+  for (let v = 0; v < B.NV; v++) if (isTail(B.main[v])) smax = Math.max(smax, dot(sub([X[v * 3], X[v * 3 + 1], X[v * 3 + 2]], a), u));
   let mn = Infinity, mx = -Infinity;
-  for (const v of vs) if (dot(sub([X[v * 3], X[v * 3 + 1], X[v * 3 + 2]], a), u) > 0.6 * smax) { mn = Math.min(mn, X[v * 3]); mx = Math.max(mx, X[v * 3]); }
+  for (let v = 0; v < B.NV; v++) if (isTail(B.main[v]) && dot(sub([X[v * 3], X[v * 3 + 1], X[v * 3 + 2]], a), u) > 0.6 * smax) { mn = Math.min(mn, X[v * 3]); mx = Math.max(mx, X[v * 3]); }
   return mx - mn;
 }
+/** SEE-THROUGH HOLES: the posed mesh rasterised orthographically (2 mm cells; the cut-out alpha of its textures
+ *  honoured) from a direction; the uncovered cells the outside cannot reach (flood fill from the border) are holes
+ *  (openings of more than 8 cells, 0.3 cm2: smaller ones are the raster's seams and the cut-out alpha's pinholes). Returns cm2: holes, silhouette */
+export function holes(B, X, dir, alpha, cell = 0.002, dump = null, skip = null) {
+  const d = unit(dir), up0 = Math.abs(d[1]) > 0.9 ? [1, 0, 0] : [0, 1, 0], e1 = unit(cross(up0, d)), e2 = cross(d, e1);
+  const NV = B.NV, U = new Float64Array(NV), V = new Float64Array(NV);
+  let u0 = Infinity, v0 = Infinity, u1 = -Infinity, v1 = -Infinity;
+  for (let i = 0; i < NV; i++) { const p = [X[i * 3], X[i * 3 + 1], X[i * 3 + 2]]; U[i] = dot(p, e1); V[i] = dot(p, e2); u0 = Math.min(u0, U[i]); u1 = Math.max(u1, U[i]); v0 = Math.min(v0, V[i]); v1 = Math.max(v1, V[i]); }
+  const W = Math.ceil((u1 - u0) / cell) + 3, H = Math.ceil((v1 - v0) / cell) + 3, cov = new Uint8Array(W * H), legc = new Uint8Array(W * H);
+  for (let t = 0; t < B.IDX.length; t += 3) {
+    const a = B.IDX[t], b = B.IDX[t + 1], c = B.IDX[t + 2], A = alpha?.[B.PRIM[a]];
+    const isLeg = skip ? skip(B.main[a]) : false;
+    const xa = (U[a] - u0) / cell + 1, ya = (V[a] - v0) / cell + 1, xb = (U[b] - u0) / cell + 1, yb = (V[b] - v0) / cell + 1, xc = (U[c] - u0) / cell + 1, yc = (V[c] - v0) / cell + 1;
+    const den = (yb - yc) * (xa - xc) + (xc - xb) * (ya - yc); if (Math.abs(den) < 1e-12) continue;
+    const X0 = Math.max(0, Math.floor(Math.min(xa, xb, xc))), X1 = Math.min(W - 1, Math.ceil(Math.max(xa, xb, xc))), Y0 = Math.max(0, Math.floor(Math.min(ya, yb, yc))), Y1 = Math.min(H - 1, Math.ceil(Math.max(ya, yb, yc)));
+    for (let y = Y0; y <= Y1; y++) for (let x = X0; x <= X1; x++) {
+      const px = x + 0.5, py = y + 0.5, l0 = ((yb - yc) * (px - xc) + (xc - xb) * (py - yc)) / den, l1 = ((yc - ya) * (px - xc) + (xa - xc) * (py - yc)) / den, l2 = 1 - l0 - l1;
+      if (l0 < -1e-6 || l1 < -1e-6 || l2 < -1e-6) continue;
+      if (A) { const uu = l0 * B.UV[a * 2] + l1 * B.UV[b * 2] + l2 * B.UV[c * 2], vv = l0 * B.UV[a * 2 + 1] + l1 * B.UV[b * 2 + 1] + l2 * B.UV[c * 2 + 1]; if (A(uu, vv) < 128) continue; }
+      cov[y * W + x] = 1; if (isLeg) legc[y * W + x] = 1;
+    }
+  }
+  // (the cells next to a leg: a gap bordered by a leg or a foot is the leg's, not a hole in the body)
+  const nearLeg = new Uint8Array(W * H);
+  if (skip) for (let i = 0; i < W * H; i++) if (legc[i]) { const x = i % W, y = (i / W) | 0; for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < W && yy < H) nearLeg[yy * W + xx] = 1; } }
+  const out = new Uint8Array(W * H), st = [];
+  for (let x = 0; x < W; x++) st.push(x, (H - 1) * W + x);
+  for (let y = 0; y < H; y++) st.push(y * W, y * W + W - 1);
+  while (st.length) { const i = st.pop(); if (out[i] || cov[i]) continue; out[i] = 1; const x = i % W, y = (i / W) | 0; if (x > 0) st.push(i - 1); if (x < W - 1) st.push(i + 1); if (y > 0) st.push(i - W); if (y < H - 1) st.push(i + W); }
+  let real = 0, sil = 0; const seen = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    if (cov[i]) { sil++; continue; }
+    if (out[i] || seen[i]) continue;
+    let n = 0, leg = false; const q = [i]; seen[i] = 1;
+    while (q.length) { const j = q.pop(); n++; if (nearLeg[j]) leg = true; const x = j % W, y = (j / W) | 0; for (const k of [x > 0 ? j - 1 : -1, x < W - 1 ? j + 1 : -1, y > 0 ? j - W : -1, y < H - 1 ? j + W : -1]) if (k >= 0 && !cov[k] && !out[k] && !seen[k]) { seen[k] = 1; q.push(k); } }
+    sil += n; if (n > 8 && !leg) real += n;
+  }
+  // SLITS: what a closing of the silhouette (dilate then erode, 3 cells = 6 mm) fills: the narrow gaps between parts that
+  // open to the outside (a fanned-out folded wing's "fingers"), which the enclosed-hole count cannot see
+  const R = 3, dil = new Uint8Array(W * H), clo = new Uint8Array(W * H), tmp = new Uint8Array(W * H);
+  const pass = (src, dst, isMax) => {            // separable square max / min filter, radius R
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let v = isMax ? 0 : 1; for (let k = -R; k <= R; k++) { const xx = x + k; const c = xx < 0 || xx >= W ? 0 : src[y * W + xx]; v = isMax ? v | c : v & c; } tmp[y * W + x] = v; }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let v = isMax ? 0 : 1; for (let k = -R; k <= R; k++) { const yy = y + k; const c = yy < 0 || yy >= H ? 0 : tmp[yy * W + x]; v = isMax ? v | c : v & c; } dst[y * W + x] = v; }
+  };
+  pass(cov, dil, true); pass(dil, clo, false);
+  let slit = 0; for (let i = 0; i < W * H; i++) if (clo[i] && !cov[i] && !nearLeg[i]) slit++;
+  if (dump) { const img = Buffer.alloc(W * H); for (let i = 0; i < W * H; i++) img[i] = cov[i] ? 90 : out[i] ? 255 : 0; fs.writeFileSync(dump, Buffer.concat([Buffer.from(`P5 ${W} ${H} 255
+`), img])); }   // (black: a hole)
+  return { hole: real * cell * cell * 1e4, sil: sil * cell * cell * 1e4, slit: slit * cell * cell * 1e4 };
+}
+/** the cut-out alpha of each primitive's base colour, from the shipped KTX2 (three's Basis transcoder) */
+export async function alphaSamplers(B) {
+  const J = B.J, out = [];
+  for (const p of B.prims) {
+    const m = J.materials?.[p.material], ti = m?.pbrMetallicRoughness?.baseColorTexture?.index;
+    if (m?.alphaMode !== "MASK" || ti == null) { out.push(null); continue; }
+    const src = J.textures[ti].extensions?.KHR_texture_basisu?.source ?? J.textures[ti].source, v = J.bufferViews[J.images[src].bufferView];
+    const T = await decodeKTX2(B.BIN.subarray(v.byteOffset || 0, (v.byteOffset || 0) + v.byteLength));
+    out.push((u, w) => { const x = Math.min(T.width - 1, Math.max(0, Math.floor((u - Math.floor(u)) * T.width))), y = Math.min(T.height - 1, Math.max(0, Math.floor((w - Math.floor(w)) * T.height))); return T.data[(y * T.width + x) * 4 + 3]; });
+  }
+  return out;
+}
+export const SLIT_MAX = 0.015;
+export const VIEWS = { side: [1, 0.05, 0], back: [0, 0.15, -1], front: [0, 0.1, 1], above: [0.05, 1, -0.1], below: [0.05, -1, 0.1], three: [0.7, 0.4, -0.6] };
+
+export async function v2Measures(file) {
+  const B = loadV2(file), M = { clips: Object.keys(B.clips) };
+  for (const c of ["Perch", "Walk", "Hop", "Stoop", "Glide", "Talons", "Flare"]) if (!B.clips[c]) { M.missing = c; return { B, M }; }
+  const perch = B.pose("Perch");
+  const body = sub(perch.at("spine_1"), perch.at("hips")); M.pitch = Math.atan2(body[1], Math.hypot(body[0], body[2])) * 180 / Math.PI;
+  M.perchFeet = feet(B, perch.X);
+  let lowest = Infinity; for (let v = 0; v < B.NV; v++) lowest = Math.min(lowest, perch.X[v * 3 + 1]); M.perchLowest = lowest;
+  M.hip = (perch.at("UpperLeg_L")[1] + perch.at("UpperLeg_R")[1]) / 2;
+  let belly = Infinity; for (let v = 0; v < B.NV; v++) if (/^(hips|spine_[01]|b_Spine2)$/.test(B.main[v])) belly = Math.min(belly, perch.X[v * 3 + 1]);
+  M.legBelow = belly - Math.min(perch.at("Foot_L")[1], perch.at("Foot_R")[1]);
+  M.tips = ["L", "R"].map((s) => { const p = perch.at(`wing_tip_${s}`), a = perch.at("tail_1"), d = sub(perch.at("tail_tip"), a), t = Math.max(0, Math.min(1, dot(sub(p, a), d) / dot(d, d))); return { d: len(sub(p, [a[0] + d[0] * t, a[1] + d[1] * t, a[2] + d[2] * t])), behind: dot(sub(p, perch.at("hips")), body) < 0 }; });
+  M.spread = {}; for (const c of ["Perch", "Talons", "Glide", "Stoop"]) M.spread[c] = toeSpread(B, B.pose(c));
+  M.tail = {}; for (const c of ["Perch", "Walk", "Hop", "Stoop", "Glide", "Flare"]) M.tail[c] = tailTipWidth(B, B.pose(c));
+  M.cycle = {};
+  for (const [c, f0, f1] of [["Walk", 0, 1], ["Hop", 0, 0.3]]) {
+    const D = B.dur(c); let hip = 0, leg = -Infinity, padMin = Infinity, padMax = -Infinity, allMin = Infinity;
+    for (let i = 0; i < 8; i++) {
+      const p = B.pose(c, D * (f0 + (f1 - f0) * i / 8)), X = p.X;
+      hip = Math.max(hip, (p.at("UpperLeg_L")[1] + p.at("UpperLeg_R")[1]) / 2);
+      let bl = Infinity; for (let v = 0; v < B.NV; v++) if (/^(hips|spine_[01]|b_Spine2)$/.test(B.main[v])) bl = Math.min(bl, X[v * 3 + 1]);
+      leg = Math.max(leg, bl - Math.min(p.at("Foot_L")[1], p.at("Foot_R")[1]));
+      const f = feet(B, X), low = Math.min(f.L.pad, f.R.pad); padMin = Math.min(padMin, low); padMax = Math.max(padMax, low); allMin = Math.min(allMin, f.L.all, f.R.all);
+    }
+    M.cycle[c] = { hip, leg, padMin, padMax, allMin };
+  }
+  return { B, M };
+}
+
 export async function v2PoseChecks(file) {
   const out = [], ok = (c, what, val) => out.push([!!c, what, val]);
-  const B = loadV2(file), { NV, IDX, main, mainW } = B;
-  const has = (...cs) => cs.every((c) => B.clips[c]);
-  if (!has("Perch", "Stoop", "Glide", "Talons")) { ok(false, "v2 pose checks: clips Perch / Stoop / Glide / Talons", Object.keys(B.clips).join(" ")); return out; }
-  // loose parts (union-find over the triangles) -> the feather cards: small parts on ONE joint (weight 1)
-  const par = new Int32Array(NV).map((_, i) => i), find = (i) => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; };
-  for (let t = 0; t < IDX.length; t += 3) for (const [a, b] of [[IDX[t], IDX[t + 1]], [IDX[t + 1], IDX[t + 2]]]) { const ra = find(a), rb = find(b); if (ra !== rb) par[ra] = rb; }
-  const parts = new Map(); for (let v = 0; v < NV; v++) { const r = find(v); (parts.get(r) || parts.set(r, []).get(r)).push(v); }
-  const wingCards = [...parts.values()].filter((vs) => vs.length <= 300 && main[vs[0]].startsWith("wing") && vs.every((v) => mainW[v] > 0.999 && main[v] === main[vs[0]]));
-  ok(wingCards.length >= 60, "v2 wing feather cards rigid (one bone each, weight 1)", `${wingCards.length} cards`);
-  const cardV = new Uint8Array(NV); for (const vs of wingCards) for (const v of vs) cardV[v] = 1;
-  const rest = B.pose(null).X;
-  const stretch = (X) => {
-    let m = 0;
-    for (let t = 0; t < IDX.length; t += 3) for (const [a, b] of [[IDX[t], IDX[t + 1]], [IDX[t + 1], IDX[t + 2]], [IDX[t + 2], IDX[t]]]) {
-      if (!cardV[a]) continue;
-      const l0 = Math.hypot(rest[a * 3] - rest[b * 3], rest[a * 3 + 1] - rest[b * 3 + 1], rest[a * 3 + 2] - rest[b * 3 + 2]);
-      const l1 = Math.hypot(X[a * 3] - X[b * 3], X[a * 3 + 1] - X[b * 3 + 1], X[a * 3 + 2] - X[b * 3 + 2]);
-      if (l0 > 1e-5) m = Math.max(m, Math.abs(l1 / l0 - 1));
-    }
-    return m;
-  };
-  const perch = B.pose("Perch"), stoop = B.pose("Stoop"), glide = B.pose("Glide"), talons = B.pose("Talons");
-  for (const [n, p] of [["Perch", perch], ["Stoop", stoop]]) { const s = stretch(p.X); ok(s < 0.02, `v2 ${n}: no feather card stretches (folded wing: cards turn whole)`, `max ${(s * 100).toFixed(2)} %`); }
-  // Perch: the body's line (hips -> spine_1) above the horizontal (glTF: +Y up, +Z the nose)
-  const { X, at } = perch;
-  const body = sub(at("spine_1"), at("hips")), pitch = Math.atan2(body[1], Math.hypot(body[0], body[2])) * 180 / Math.PI;
-  ok(pitch >= 35 && pitch <= 65, "v2 Perch: body upright 35-65 deg", `${pitch.toFixed(0)} deg`);
-  // the feet on the ground (the root's origin), nothing below it; the hips low over the feet
-  let footMin = Infinity, allMin = Infinity;
-  for (let v = 0; v < NV; v++) { const y = X[v * 3 + 1]; allMin = Math.min(allMin, y); if (/^(Foot|Toes)/.test(main[v])) footMin = Math.min(footMin, y); }
-  ok(Math.abs(footMin) < 0.012 && allMin > -0.015, "v2 Perch: the feet on the ground, nothing under it", `feet ${(footMin * 100).toFixed(1)} cm, lowest ${(allMin * 100).toFixed(1)} cm`);
-  // short legs: the hips low, and the bare leg below the belly's feathers short (the belly's lowest body vertex over
-  // the foot's joint: the tarsus mostly hidden; the download's attack-pose legs showed 15+ cm)
-  const hipY = (at("UpperLeg_L")[1] + at("UpperLeg_R")[1]) / 2, footY = (at("Foot_L")[1] + at("Foot_R")[1]) / 2;
-  let belly = Infinity; for (let v = 0; v < NV; v++) if (/^(hips|spine_[01])$/.test(main[v])) belly = Math.min(belly, X[v * 3 + 1]);
-  ok(hipY < 0.16 && belly - footY < 0.06, "v2 Perch: short legs under the belly (hip joints < 16 cm up, < 6 cm of leg below the belly)", `hips ${(hipY * 100).toFixed(1)} cm, leg below the belly ${((belly - footY) * 100).toFixed(1)} cm`);
-  const feetUnder = ["L", "R"].map((s) => { const f = at(`Foot_${s}`), h = at(`UpperLeg_${s}`); return Math.hypot(f[0] - h[0], f[2] - h[2]); });
-  ok(Math.max(...feetUnder) < 0.07, "v2 Perch: the feet under the hips (< 7 cm off)", feetUnder.map((d) => `${(d * 100).toFixed(1)} cm`).join(" / "));
-  // the folded wings' tips (the outermost rest vertex a side) on the tail, behind the hips
-  const tips = [1, -1].map((sg) => { let b = -1; for (let v = 0; v < NV; v++) if (b < 0 || sg * B.P[v * 3] > sg * B.P[b * 3]) b = v; return [X[b * 3], X[b * 3 + 1], X[b * 3 + 2]]; });
-  // (the tail is fanned in the bind: the tips lie on its feathers, off its centre line)
-  const tipD = tips.map((p) => { let m = Infinity; for (let v = 0; v < NV; v++) if (main[v].startsWith("tail")) m = Math.min(m, Math.hypot(X[v * 3] - p[0], X[v * 3 + 1] - p[1], X[v * 3 + 2] - p[2])); return m; });
-  const behind = tips.every((p) => dot(sub(p, at("hips")), body) < 0);
-  ok(Math.max(...tipD) < 0.06 && behind, "v2 Perch: the folded wings' tips on the tail (< 6 cm from its feathers, behind the hips)", tipD.map((d) => `${(d * 100).toFixed(1)} cm`).join(" / "));
-  // the toes: the curl = the claw's line (Toes_tip -> its farthest vertex) against the foot's (Foot -> Toes), signed:
-  // + toward the sole (the side the tarsus comes from), - bent back
-  const curl = (p, s) => {
-    let far = null, fd = -1; const th = p.at(`Toes_tip_${s}`);
-    for (let v = 0; v < NV; v++) if (main[v] === `Toes_tip_${s}`) { const q = [p.X[v * 3], p.X[v * 3 + 1], p.X[v * 3 + 2]], d = len(sub(q, th)); if (d > fd) { fd = d; far = q; } }
-    if (!far) return 0;
-    const f = sub(p.at(`Toes_${s}`), p.at(`Foot_${s}`)), a = sub(p.at(`Foot_${s}`), p.at(`AnkleLeg_${s}`)), lf = len(f);
-    const u = f.map((x) => x / lf), ad = dot(a, u), n0 = [a[0] - u[0] * ad, a[1] - u[1] * ad, a[2] - u[2] * ad], ln = len(n0), n = n0.map((x) => x / ln);
-    const c = sub(far, th); return Math.atan2(dot(c, n), dot(c, u)) * 180 / Math.PI;
-  };
-  const cg = Math.min(curl(glide, "L"), curl(glide, "R")), cp = Math.min(curl(perch, "L"), curl(perch, "R")), ct = Math.max(curl(talons, "L"), curl(talons, "R")), ct0 = Math.min(curl(talons, "L"), curl(talons, "R"));
-  ok(cg >= 45 && cp >= 45, "v2 toes closed in flight (Glide) and on the perch (curl >= 45 deg toward the sole)", `glide ${cg.toFixed(0)}, perch ${cp.toFixed(0)} deg`);
-  ok(ct <= 25 && ct0 >= -35, "v2 Talons: toes open (curl <= 25 deg, not bent back past -35)", `${ct0.toFixed(0)} .. ${ct.toFixed(0)} deg`);
-  // V2 FIX: the tail closes in the folded poses and fans in the glide / flare (its own feather bones, tail_fan_*):
-  // the width across the tail's outer 40 % (its feather cards' tips, along tail_2 -> tail_tip), the lateral (x) extent
-  ok(tailParts(B, parts).length >= 10 && Object.keys(B.byName).filter((n) => n.startsWith("tail_fan_")).length >= 6, "v2 tail: its own feather bones (tail_fan_*), the feather cards on them", `${Object.keys(B.byName).filter((n) => n.startsWith("tail_fan_")).length} bones`);
-  const tw = {}; for (const c of ["Perch", "Walk", "Hop", "Stoop", "Talons", "Glide", "Flare"]) if (B.clips[c]) tw[c] = tailTipWidth(B, parts, B.pose(c));
-  const folded = ["Perch", "Walk", "Hop", "Stoop", "Talons"].filter((c) => tw[c] != null), wmax = Math.max(...folded.map((c) => tw[c]));
-  ok(wmax < 0.10, "v2 tail closed when folded (Perch / Walk / Hop / Stoop / Talons: < 10 cm across its tip half)", folded.map((c) => `${c} ${(tw[c] * 100).toFixed(1)}`).join(", ") + " cm");
-  ok(tw.Glide > wmax + 0.03 && tw.Flare >= 0.25 && tw.Flare > tw.Glide, "v2 tail fans in flight (Glide wider than folded, Flare >= 25 cm, the widest)", `Glide ${(tw.Glide * 100).toFixed(1)}, Flare ${(tw.Flare * 100).toFixed(1)} cm`);
-  // V2 FIX: the Walk and the Hop crouched like a peregrine's (the legs mostly under the belly feathers), the feet on
-  // the ground, sampled through the cycle: the hips low, the bare leg below the belly short, the stance foot down
-  const dur = (c) => Math.max(...B.clips[c].samplers.map((sm) => { const a = B.J.accessors[sm.input]; return a.max?.[0] ?? 0; }));
+  const { B, M } = await v2Measures(file);
+  if (M.missing) { ok(false, "v2 pose checks: the clips Perch / Walk / Hop / Stoop / Glide / Talons / Flare", `missing ${M.missing}`); return out; }
+  const cm = (x) => (x * 100).toFixed(1), mm = (x) => (x * 1000).toFixed(1);
+  const ours = ["root", "hips", "spine_0", "spine_1", "spine_2", "spine_3", "head", "mouth_upper_tip", "tail_1", "tail_tip", ...["UpperLeg", "LowerLeg", "AnkleLeg", "Foot", "Toes", "Toes_tip", "wing_1", "wing_2", "wing_3", "wing_tip"].flatMap((n) => [`${n}_L`, `${n}_R`])];
+  const miss = ours.filter((n) => B.byName[n] == null);
+  ok(!miss.length, "v2 rig: our bird rig's bone names (viewer/birdRig.js's layers, the gym)", miss.length ? `missing ${miss.join(" ")}` : `${Object.keys(B.byName).length} nodes`);
+  ok(M.pitch >= 35 && M.pitch <= 65, "v2 Perch: body upright 35-65 deg", `${M.pitch.toFixed(0)} deg`);
+  // THE FEET ON THE GROUND BY THEIR PADS (rule falcon-gym "the v2 base": the first v2's check took the lowest foot
+  // point, a curled claw tip, and passed while the pads floated 1.5-3 cm up)
+  const pf = M.perchFeet, padOk = (f) => f.pad > -0.003 && f.pad < 0.005 && f.all > -0.003;
+  ok(padOk(pf.L) && padOk(pf.R) && M.perchLowest > -0.005, "v2 Perch: the toe PADS on the ground (lowest pad 0-5 mm, nothing below -3 mm)", `pads L ${mm(pf.L.pad)} R ${mm(pf.R.pad)} mm, lowest foot ${mm(Math.min(pf.L.all, pf.R.all))} mm, lowest ${mm(M.perchLowest)} mm`);
+  ok(M.hip < 0.16 && M.legBelow < 0.06, "v2 Perch: short legs under the belly (hip joints < 16 cm up, < 6 cm of leg below the belly)", `hips ${cm(M.hip)} cm, leg below the belly ${cm(M.legBelow)} cm`);
+  ok(M.tips.every((t) => t.d < 0.06 && t.behind), "v2 Perch: the folded wings' tips by the tail (< 6 cm from its line, behind the hips)", M.tips.map((t) => `${cm(t.d)} cm`).join(" / "));
+  const spr = (c) => Math.min(M.spread[c].L, M.spread[c].R), sprMax = (c) => Math.max(M.spread[c].L, M.spread[c].R);
+  ok(spr("Perch") >= 0.035 && spr("Talons") >= 0.035, "v2 toes spread on the ground and in Talons (the toe tips >= 3.5 cm apart)", `Perch ${cm(spr("Perch"))}, Talons ${cm(spr("Talons"))} cm`);
+  ok(sprMax("Glide") < 0.7 * spr("Perch") && sprMax("Stoop") < 0.7 * spr("Perch"), "v2 toes closed in flight (Glide, Stoop: the spread < 0.7 x the perched)", `Glide ${cm(sprMax("Glide"))}, Stoop ${cm(sprMax("Stoop"))} cm`);
   for (const [c, hipMax, legMax] of [["Walk", 0.125, 0.045], ["Hop", 0.15, 0.06]]) {
-    if (!B.clips[c]) { ok(false, `v2 ${c}: clip`, "missing"); continue; }
-    let hip = 0, leg = -Infinity, gmin = Infinity, gmax = -Infinity; const D = dur(c);
-    for (let i = 0; i < 8; i++) {
-      const p = B.pose(c, (D * i) / 8), Xc = p.X;
-      hip = Math.max(hip, (p.at("UpperLeg_L")[1] + p.at("UpperLeg_R")[1]) / 2);
-      let bl = Infinity, fm = Infinity;
-      for (let v = 0; v < NV; v++) { const y = Xc[v * 3 + 1]; if (/^(hips|spine_[01])$/.test(main[v])) bl = Math.min(bl, y); if (/^(Foot|Toes)/.test(main[v])) fm = Math.min(fm, y); }
-      // the bare leg below the belly: from the belly's lowest point down to the lower foot joint
-      leg = Math.max(leg, bl - Math.min(p.at("Foot_L")[1], p.at("Foot_R")[1]));
-      gmin = Math.min(gmin, fm); gmax = Math.max(gmax, fm);
-    }
-    ok(hip < hipMax && leg < legMax, `v2 ${c}: crouched, the legs mostly hidden (hip joints < ${hipMax * 100} cm up, < ${legMax * 100} cm of leg below the belly, through the cycle)`, `hips <= ${(hip * 100).toFixed(1)} cm, leg below the belly <= ${(leg * 100).toFixed(1)} cm`);
-    if (c === "Walk") ok(gmin > -0.012 && gmax < 0.012, "v2 Walk: a foot on the ground through the cycle (the lowest foot point within 1.2 cm of it)", `${(gmin * 100).toFixed(1)} .. ${(gmax * 100).toFixed(1)} cm`);
+    const y = M.cycle[c];
+    ok(y.hip < hipMax && y.leg < legMax, `v2 ${c}: crouched, the legs mostly hidden (hip joints < ${hipMax * 100} cm up, < ${legMax * 100} cm of leg below the belly, through the cycle)`, `hips <= ${cm(y.hip)} cm, leg below the belly <= ${cm(y.leg)} cm`);
+    ok(y.padMin > -0.003 && y.padMax < 0.005 && y.allMin > -0.003, `v2 ${c}: a foot's PADS on the ground through ${c === "Hop" ? "the crouch" : "the cycle"} (0-5 mm, nothing below -3 mm)`, `pads ${mm(y.padMin)} .. ${mm(y.padMax)} mm, lowest ${mm(y.allMin)} mm`);
   }
-  // the juvenile plumage (the player): its KTX2 beside the glb, named in it, the base colour's size
-  const v = B.J.asset?.extras?.variants?.juvenile, f = v && path.join(path.dirname(file), v.file);
-  const okFile = f && fs.existsSync(f) && fs.readFileSync(f).subarray(0, 12).toString("latin1").includes("KTX 20");
-  const baseImg = B.J.materials?.[0]?.pbrMetallicRoughness?.baseColorTexture != null;
-  ok(okFile && baseImg && v.width >= 512 && v.height >= 512, "v2 juvenile plumage: KTX2 beside the glb, named in it (asset.extras.variants)", v ? `${v.file} ${v.width}x${v.height}` : "missing");
-  // V2 FIX: the folded wing shows its dark upper side, no buff at the wrists. The wing's covert sheets' faces that
-  // face OUTWARD in a folded pose (the posed normal against the body's axis), coloured by the shipped juvenile KTX2
-  // (three's Basis transcoder): the buff share of their area (luminance > 110 / 255, a cream edge counts; the upper side's brown ~ 65), the
-  // wing proper (beyond 6 cm from the midline in the bind: the mantle's own buff fringes are the back's)
-  if (okFile && B.UV) {
-    const T = await decodeKTX2(fs.readFileSync(f)), UV = B.UV;
-    const lum = (t) => {
-      const u = (UV[IDX[t] * 2] + UV[IDX[t + 1] * 2] + UV[IDX[t + 2] * 2]) / 3, w = (UV[IDX[t] * 2 + 1] + UV[IDX[t + 1] * 2 + 1] + UV[IDX[t + 2] * 2 + 1]) / 3;
+  const folded = ["Perch", "Walk", "Hop", "Stoop"], wmax = Math.max(...folded.map((c) => M.tail[c]));
+  ok(wmax < 0.12 && wmax < 0.5 * M.tail.Glide, "v2 tail closed when folded (Perch / Walk / Hop / Stoop: < 12 cm and < half the glide's, across its tip half)", folded.map((c) => `${c} ${cm(M.tail[c])}`).join(", ") + ` cm (glide ${cm(M.tail.Glide)})`);
+  ok(M.tail.Glide > wmax + 0.02 && M.tail.Flare > wmax + 0.03, "v2 tail fans in flight (Glide > folded + 2 cm, Flare > folded + 3 cm)", `Glide ${cm(M.tail.Glide)}, Flare ${cm(M.tail.Flare)} cm`);
+  // NO HOLES (rule falcon-gym "the v2 base": the owner, "plenty of holes in its body")
+  // (the legs and feet left out: the gaps between the toes and the tarsus are a foot's, not a hole in the body)
+  const legs = (n) => /^(UpperLeg|LowerLeg|AnkleLeg|Foot|Toes|b_[lr]_Digit)/.test(n);
+  const alpha = await alphaSamplers(B), res = [];
+  for (const c of ["Perch", "Walk", "Hop", "Stoop", "Idle", "Glide"]) {
+    if (!B.clips[c]) continue;
+    const X = B.pose(c, c === "Walk" ? B.dur(c) * 0.3 : null).X;
+    for (const [vn, d] of Object.entries(VIEWS)) { const h = holes(B, X, d, alpha, 0.002, null, legs); res.push([c, vn, h.hole, h.sil, h.slit / h.sil]); }
+  }
+  const worst = res.reduce((a, b) => (b[2] > a[2] ? b : a));
+  ok(worst[2] < 0.5, "v2 no see-through holes in the body (Perch / Walk / Hop / Stoop / Idle / Glide, six views, the cut-out alpha honoured; gaps bordered by a leg are the leg's: < 0.5 cm2)", `worst ${worst[0]} ${worst[1]} ${worst[2].toFixed(2)} cm2 of ${worst[3].toFixed(0)} cm2`);
+  // (the slits from above and behind, the legs and feet left out: the toes' own gaps are a foot's, not a hole)
+  const fold = [];
+  for (const c of ["Perch", "Walk", "Hop", "Stoop", "Idle"]) {
+    if (!B.clips[c]) continue;
+    const X = B.pose(c, c === "Walk" ? B.dur(c) * 0.3 : null).X;
+    // (the stoop from behind is its cross-section: its outline is feather tips)
+    for (const vn of c === "Stoop" ? ["above"] : ["above", "back"]) { const h = holes(B, X, VIEWS[vn], alpha, 0.002, null, legs); fold.push([c, vn, h.hole, h.sil, h.slit / h.sil]); }
+  }
+  const ws = fold.reduce((a, b) => (b[4] > a[4] ? b : a));
+  ok(ws[4] < SLIT_MAX, `v2 no slits between the parts when folded (Perch / Walk / Hop / Stoop / Idle, from above and behind, not by a leg: gaps under 12 mm that a 6 mm closing fills < ${SLIT_MAX * 100} % of the silhouette)`, `worst ${ws[0]} ${ws[1]} ${(ws[4] * 100).toFixed(1)} %`);
+  // the juvenile plumage: one KTX2 a painted material beside the glb, named in it
+  const vars = Object.entries(B.J.asset?.extras?.variants || {}).filter(([k]) => k.startsWith("juvenile"));
+  const files = vars.map(([, v]) => path.join(path.dirname(file), v.file)), okFiles = vars.length > 0 && files.every((f) => fs.existsSync(f) && fs.readFileSync(f).subarray(0, 12).toString("latin1").includes("KTX 20"));
+  ok(okFiles && vars.every(([, v]) => v.width >= 512 && v.material), "v2 juvenile plumage: a KTX2 per painted material beside the glb, named in it (asset.extras.variants)", vars.map(([k, v]) => `${k}: ${v.file} (${v.material})`).join(", ") || "missing");
+  // THE FOLDED WING SHOWS ITS UPPER SIDE (rule falcon-gym "the folded wing shows its upper side"): the wing's faces that
+  // face outward in a folded pose (the posed normal against the body's axis), coloured by the shipped juvenile KTX2 of
+  // their material: the buff (luminance > 110 / 255; the upper side's brown ~ 65) share of their area
+  if (okFiles) {
+    const byMat = {}; for (const [, v] of vars) byMat[v.material] = await decodeKTX2(fs.readFileSync(path.join(path.dirname(file), v.file)));
+    const lumAt = (t) => {
+      const T = byMat[B.matName[B.PRIM[B.IDX[t]]]]; if (!T) return null;
+      const u = (B.UV[B.IDX[t] * 2] + B.UV[B.IDX[t + 1] * 2] + B.UV[B.IDX[t + 2] * 2]) / 3, w = (B.UV[B.IDX[t] * 2 + 1] + B.UV[B.IDX[t + 1] * 2 + 1] + B.UV[B.IDX[t + 2] * 2 + 1]) / 3;
       const x = Math.min(T.width - 1, Math.max(0, Math.floor((u - Math.floor(u)) * T.width))), y = Math.min(T.height - 1, Math.max(0, Math.floor((w - Math.floor(w)) * T.height))), o = (y * T.width + x) * 4;
       return 0.3 * T.data[o] + 0.59 * T.data[o + 1] + 0.11 * T.data[o + 2];
     };
-    const res = [];
-    for (const c of ["Perch", "Walk", "Stoop"]) {
-      const p = B.pose(c), Xc = p.X, h = p.at("hips"), ax = sub(p.at("spine_1"), h), L = len(ax), u = ax.map((x) => x / L);
-      let A = 0, buff = 0;
-      for (let t = 0; t < IDX.length; t += 3) {
-        const a = IDX[t], b = IDX[t + 1], cc = IDX[t + 2];
-        if (cardV[a] || !/^wing_[1-4]_/.test(main[a]) || Math.abs(rest[a * 3]) < 0.06) continue;   // (the wing proper: not the mantle at its root)
-        const e1 = [Xc[b * 3] - Xc[a * 3], Xc[b * 3 + 1] - Xc[a * 3 + 1], Xc[b * 3 + 2] - Xc[a * 3 + 2]], e2 = [Xc[cc * 3] - Xc[a * 3], Xc[cc * 3 + 1] - Xc[a * 3 + 1], Xc[cc * 3 + 2] - Xc[a * 3 + 2]];
-        const n = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]], ar = len(n) / 2; if (ar < 1e-12) continue;
-        const m = [0, 1, 2].map((k) => (Xc[a * 3 + k] + Xc[b * 3 + k] + Xc[cc * 3 + k]) / 3 - h[k]), md = dot(m, u), o = m.map((x, k) => x - u[k] * md), ol = len(o) || 1;
-        if (dot(n, o) / (2 * ar * ol) <= 0.2) continue;
-        A += ar; if (lum(t) > 110) buff += ar;
-      }
-      res.push([c, buff / Math.max(A, 1e-12), buff]);
+    // (the UNDERWING: the faces whose normal points down in the glide, the wings spread: a juvenile's upper side has
+    // pale fringes of its own, only the underwing must not show)
+    const G = B.pose("Glide").X, under = new Uint8Array(B.IDX.length / 3);
+    for (let t = 0; t < B.IDX.length; t += 3) {
+      const a = B.IDX[t], b = B.IDX[t + 1], cc = B.IDX[t + 2];
+      const n = cross([G[b * 3] - G[a * 3], G[b * 3 + 1] - G[a * 3 + 1], G[b * 3 + 2] - G[a * 3 + 2]], [G[cc * 3] - G[a * 3], G[cc * 3 + 1] - G[a * 3 + 1], G[cc * 3 + 2] - G[a * 3 + 2]]);
+      under[t / 3] = n[1] < -0.3 * len(n) ? 1 : 0;
     }
-    const worst = Math.max(...res.map((r) => r[1]));
-    ok(worst < 0.01, "v2 folded wing shows its upper side (juvenile: < 1 % of the outward-facing covert area buff, Perch / Walk / Stoop; the wing beyond 6 cm from the midline)", res.map(([c, sh, a]) => `${c} ${(sh * 100).toFixed(1)} % (${(a * 1e4).toFixed(1)} cm2)`).join(", "));
+    const rs = [];
+    for (const c of ["Perch", "Walk", "Stoop"]) {
+      const p = B.pose(c), X = p.X, h = p.at("hips"), u = unit(sub(p.at("spine_1"), h)); let A = 0, buff = 0;
+      for (let t = 0; t < B.IDX.length; t += 3) {
+        const a = B.IDX[t], b = B.IDX[t + 1], cc = B.IDX[t + 2]; if (!/^wing_/.test(B.main[a]) || !under[t / 3]) continue;
+        const e1 = [X[b * 3] - X[a * 3], X[b * 3 + 1] - X[a * 3 + 1], X[b * 3 + 2] - X[a * 3 + 2]], e2 = [X[cc * 3] - X[a * 3], X[cc * 3 + 1] - X[a * 3 + 1], X[cc * 3 + 2] - X[a * 3 + 2]];
+        const n = cross(e1, e2), ar = len(n) / 2; if (ar < 1e-12) continue;
+        const m = [0, 1, 2].map((k) => (X[a * 3 + k] + X[b * 3 + k] + X[cc * 3 + k]) / 3 - h[k]), md = dot(m, u), o = m.map((x, k) => x - u[k] * md), ol = len(o) || 1;
+        if (dot(n, o) / (2 * ar * ol) <= 0.2) continue;
+        const L = lumAt(t); if (L == null) continue;
+        A += ar; if (L > 110) buff += ar;
+      }
+      rs.push([c, buff * 1e4, A * 1e4]);
+    }
+    const worstB = Math.max(...rs.map((r) => r[1]));
+    ok(worstB < 1.0, "v2 folded wing shows its upper side (juvenile: the underwing's buff facing outward when folded < 1 cm2, Perch / Walk / Stoop)", rs.map(([c, b, a]) => `${c} ${b.toFixed(2)} of ${a.toFixed(1)} cm2`).join(", "));
   }
   return out;
 }
 
-/** V2 FIX: the far LOD (tools/falconV2far.mjs -> falcon_v2_far.glb): 5-7k triangles, the near bird's joints in the same
- *  order (the gym binds it to the near skeleton), the same clips, no textures of its own (it wears the near material),
- *  small, and posed like the near bird (its box in Perch / Glide / Stoop within 1.5 cm a side: no card lost or caved) */
-export function v2FarChecks(nearFile, farFile) {
+/** the far LOD (tools/falconV2far.mjs -> falcon_v2_far.glb): 2-3k triangles, the near bird's joints in the same order
+ *  (the gym binds it to the near skeleton), the same clips and materials, no textures of its own, small, and posed like
+ *  the near bird (its box in Perch / Glide / Stoop within 1.5 cm a side) */
+export function v2FarChecks(nearFile, farFile, [tmin, tmax] = [2000, 3000]) {
   const out = [], ok = (c, what, val) => out.push([!!c, what, val]);
   if (!fs.existsSync(farFile)) { ok(false, "v2 far LOD: models/bird/v2/falcon_v2_far.glb exists (tools/falconV2far.mjs)", "missing"); return out; }
   const N = loadV2(nearFile), F = loadV2(farFile), tris = F.IDX.length / 3;
-  ok(tris >= 5000 && tris <= 7000, "v2 far LOD: 5k-7k triangles", `${tris} (near ${N.IDX.length / 3})`);
+  ok(tris >= tmin && tris <= tmax, `v2 far LOD: ${tmin / 1000}k-${tmax / 1000}k triangles`, `${tris} (near ${N.IDX.length / 3})`);
   const jn = (B) => { const mi = B.J.nodes.findIndex((n) => n.skin != null && n.mesh != null); return B.J.skins[B.J.nodes[mi].skin].joints.map((j) => B.J.nodes[j].name).join(","); };
   ok(jn(N) === jn(F), "v2 far LOD: the near bird's joints, in the same order (bound to its skeleton)", `${jn(F).split(",").length} joints`);
   const cn = (B) => Object.keys(B.clips).sort().join(" ");
   ok(cn(N) === cn(F), "v2 far LOD: the same clips", cn(F));
-  ok(!(F.J.images || []).length && F.J.asset?.extras?.sharesTexturesWith === "falcon_v2.glb" && fs.statSync(farFile).size < 1.0e6, "v2 far LOD: no textures of its own (wears falcon_v2.glb's), < 1 MB", `${(fs.statSync(farFile).size / 1e6).toFixed(2)} MB`);
+  ok(!(F.J.images || []).length && F.J.asset?.extras?.sharesTexturesWith === "falcon_v2.glb" && fs.statSync(farFile).size < 1.0e6 && F.matName.join() === N.matName.join(), "v2 far LOD: no textures of its own (wears falcon_v2.glb's materials), < 1 MB", `${(fs.statSync(farFile).size / 1e6).toFixed(2)} MB, materials ${F.matName.length}`);
   const box = (B, c) => { const X = B.pose(c).X, mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity]; for (let v = 0; v < X.length / 3; v++) for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], X[v * 3 + k]); mx[k] = Math.max(mx[k], X[v * 3 + k]); } return [...mn, ...mx]; };
   const dev = ["Perch", "Glide", "Stoop"].map((c) => { const a = box(N, c), b = box(F, c); return [c, Math.max(...a.map((x, i) => Math.abs(x - b[i])))]; });
   ok(dev.every(([, d]) => d < 0.015), "v2 far LOD: posed like the near bird (its box within 1.5 cm a side, Perch / Glide / Stoop)", dev.map(([c, d]) => `${c} ${(d * 100).toFixed(1)} cm`).join(", "));
@@ -269,8 +362,10 @@ export function v2FarChecks(nearFile, farFile) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const r = await v2PoseChecks(process.argv[2] || path.join(here, "../models/bird/v2/falcon_v2.glb"));
-  const far = process.argv[3] || path.join(path.dirname(process.argv[2] || path.join(here, "../models/bird/v2/falcon_v2.glb")), "falcon_v2_far.glb");
-  if (fs.existsSync(far)) r.push(...v2FarChecks(process.argv[2] || path.join(here, "../models/bird/v2/falcon_v2.glb"), far));
+  const near = process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : path.join(here, "../models/bird/v2/falcon_v2.glb");
+  if (process.argv.includes("--measure")) { const { M } = await v2Measures(near); console.log(JSON.stringify(M, (k, v) => (typeof v === "number" ? +v.toFixed(4) : v))); process.exit(0); }
+  const r = await v2PoseChecks(near);
+  const far = process.argv[3] && !process.argv[3].startsWith("--") ? process.argv[3] : path.join(path.dirname(near), "falcon_v2_far.glb");
+  if (fs.existsSync(far)) r.push(...v2FarChecks(near, far));
   for (const [c, w, v] of r) console.log(`${c ? "ok  " : "FAIL"} ${w}: ${v}`);
 }

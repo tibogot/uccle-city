@@ -20,8 +20,19 @@ scene = bpy.context.scene
 bpy.ops.import_scene.gltf(filepath=GLB)
 arm = next(o for o in scene.objects if o.type == "ARMATURE")
 bird = next(o for o in scene.objects if o.type == "MESH" and any(m.type == "ARMATURE" for m in o.modifiers))
+print("[preview] images", [i.name for i in bpy.data.images])
 for o in list(scene.objects):
     if o.type == "MESH" and o is not bird: bpy.data.objects.remove(o)
+if "--variants" in argv:
+    # (base B: every painted plumage of <glb>.tex/textures.json, <glb>.<key>.png, on the image it replaces)
+    import json
+    meta = json.load(open(GLB + ".tex/textures.json"))
+    for key, T in meta.items():
+        if not T.get("variant_of") or not os.path.exists(GLB + f".{key}.png"): continue
+        img = bpy.data.images.load(GLB + f".{key}.png")
+        for slot in bird.material_slots:
+            for n in slot.material.node_tree.nodes:
+                if n.type == "TEX_IMAGE" and n.image and (n.image.name == T["variant_of"] or n.image.name.startswith(T["variant_of"] + ".")): n.image = img
 if TEXP:
     img = bpy.data.images.load(TEXP)
     for slot in bird.material_slots:
@@ -67,6 +78,13 @@ SHOT = {
     "perch_wrist": ("Perch", 1, (1, -0.35, 0.05), 0.0),
     "stoop_side": ("Stoop", 1, (1, 0.0, 0.1), 0.25),
     "walk_front": ("Walk", 2, (0.6, -1, 0.2), 0.0),
+    "flap": ("Flap", 3, (0.6, -0.7, 0.5), 0.25),
+    "glide_under": ("Glide", 1, (0.25, -0.45, -0.55), 1.6),
+    "takeoff": ("TakeOff", 30, (1, -0.3, 0.3), 0.0),
+    "land": ("Land", 30, (1, -0.3, 0.3), 0.0),
+    "perch_above": ("Perch", 1, (0.15, 0.3, 1), 0.0),
+    "perch_below": ("Perch", 1, (0.3, -0.3, -0.4), 0.3),
+    "feet": ("Perch", 1, (0.5, -1, 0.25), 0.0),
 }
 os.makedirs(OUT, exist_ok=True)
 acts = {a.name: a for a in bpy.data.actions}

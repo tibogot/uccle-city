@@ -22,12 +22,13 @@ const _I = new THREE.Quaternion();
 const V2_WALK_MPS = 0.12 / (0.6 * 10 / 24);          // v2's Walk: the speed its stance feet stay planted at (0.48 m/s)
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
 const M2M = new URL("../../models/bird/v2/m2m/", import.meta.url);
-const V2 = new URL("../../models/bird/v2/falcon_v2.glb", import.meta.url);
-const V2_JUV = new URL("../../models/bird/v2/falcon_v2_juvenile.ktx2", import.meta.url);
-const V2_FAR = new URL("../../models/bird/v2/falcon_v2_far.glb", import.meta.url);
-// THE FAR LOD (v2, tools/falconV2far.mjs: ~6k triangles, the same rig, clips and UVs, no textures of its own): its
-// mesh is bound to the near bird's skeleton and wears its material, so one mixer drives both and the plumage switch
-// changes both. The switch is by the drawn wingspan on screen, with hysteresis, where the bird is small: the far one
+// (?v2src=<url>: another build of the v2 to look at in the lab, e.g. a candidate before it replaces the shipped one)
+const QS = new URLSearchParams(globalThis.location?.search || "");
+const V2 = QS.get("v2src") ? new URL(QS.get("v2src"), globalThis.location.href) : new URL("../../models/bird/v2/falcon_v2.glb", import.meta.url);
+const V2_FAR = new URL(V2.pathname.replace(/\.glb$/, "_far.glb"), V2);
+// THE FAR LOD (v2, tools/falconV2far.mjs: ~2.5k triangles, the same rig, clips, UVs and materials, no textures of its
+// own): each of its meshes is bound to the near bird's skeleton and wears the near mesh's material of the same name, so
+// one mixer drives both and the plumage switch changes both. The switch is by the drawn wingspan on screen, with hysteresis, where the bird is small: the far one
 // below LOD_FAR_PX, the near one again above LOD_NEAR_PX (no flicker at the threshold)
 export const LOD_FAR_PX = 56, LOD_NEAR_PX = 68;
 const _lp = new THREE.Vector3();
@@ -65,12 +66,19 @@ export class GymBird {
       if (!ktx) { ktx = new KTX2Loader().setTranscoderPath(TRANSCODER); if (renderer) ktx.detectSupport(renderer); }
       const L = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(ktx);
       const [g, gFar] = await Promise.all([L.loadAsync(V2.href), L.loadAsync(V2_FAR.href).catch(() => null)]);
-      // the juvenile plumage: its own KTX2, the adult's sampler and colour space (missing file: the adult only)
-      const juv = await ktx.loadAsync(V2_JUV.href).catch(() => null);
-      // rotations only (+ v2's own root translation): the Mesh2Motion clips' translations were in its own units
+      // rotations only (+ v2's own root translation)
       const b = new GymBird({ scene: g.scene, clips: g.animations.map((c) => rotOnly(c, c.name, true)), v2: true }, M, span, A);
-      b.plumages = { adult: b.mesh.material.map, juvenile: juv };
-      if (juv) { const m = b.plumages.adult; juv.colorSpace = THREE.SRGBColorSpace; juv.flipY = m.flipY; juv.wrapS = m.wrapS; juv.wrapT = m.wrapT; juv.channel = m.channel; }
+      // the plumages: the adult = the glb's own base colours; the juvenile = the KTX2 files beside it, one a painted
+      // material (asset.extras.variants: { juvenile*: { file, material } }), the adult's sampler and colour space
+      const adult = new Map(b.meshes.map((m) => [m.material.name, m.material.map])), juvenile = new Map();
+      for (const [k, v] of Object.entries(g.asset?.extras?.variants || {})) {
+        if (!k.startsWith("juvenile")) continue;
+        const t = await ktx.loadAsync(new URL(v.file, V2).href).catch(() => null), m = adult.get(v.material ?? b.mesh.material.name);
+        if (!t || !m) continue;
+        t.colorSpace = THREE.SRGBColorSpace; t.flipY = m.flipY; t.wrapS = m.wrapS; t.wrapT = m.wrapT; t.channel = m.channel;
+        juvenile.set(v.material ?? b.mesh.material.name, t);
+      }
+      b.plumages = { adult, juvenile: juvenile.size ? juvenile : null };
       b.setPlumage(plumage);
       if (gFar) b.attachFar(gFar);
       return b;
@@ -83,7 +91,9 @@ export class GymBird {
     const model = cloneSkinned(src.scene);
     model.rotation.y = Math.PI;                        // nose +z in the model, -z for the root
     this.model = model;
-    let mesh = null; model.traverse((o) => { if (o.isSkinnedMesh) { mesh ??= o; o.castShadow = o.receiveShadow = true; o.frustumCulled = false; } if (o.isMesh && !o.isSkinnedMesh) o.visible = false; });
+    let mesh = null; const meshes = [];
+    model.traverse((o) => { if (o.isSkinnedMesh) { mesh ??= o; meshes.push(o); o.castShadow = o.receiveShadow = true; o.frustumCulled = false; } if (o.isMesh && !o.isSkinnedMesh) o.visible = false; });
+    this.meshes = meshes;                              // (v2 base B: the body, the eyes, the flight feathers)
     if (!src.v2) {
       const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.78, metalness: 0 });
       mat.colorNode = texture(A.juvTex, uv()).rgb;
@@ -114,6 +124,14 @@ export class GymBird {
       act.play(); act.setEffectiveWeight(0); this.actions[k] = act; this.w[k] = k === "glide" ? 1 : 0;
     }
     this.flapDur = clips.flap.duration;
+    if (src.v2 && this.actions.glide) {
+      // (v2's bind is the perched idle, its wings folded: the span is the glide's, tip to tip)
+      this.actions.glide.setEffectiveWeight(1); this.mixer.update(0); model.updateMatrixWorld(true);
+      const d = tl && tr ? tl.getWorldPosition(a).distanceTo(tr.getWorldPosition(b)) : 0;
+      if (d > 0.5 * this.modelSpan) this.modelSpan = d / model.scale.x;
+      // (and the rig's layers below are calibrated in this spread pose: BirdRig finds each layer's axis by turning a
+      // bone and watching its tip, and on the folded bind a "fold" or "tuck" found the wrong way: the stoop's wing rose)
+    }
     this.rig = new BirdRig(this.root);
     this.rig.addLayer("spreadL", "wing_1_L", "wing_tip_L", [-1, 0, 0]); this.rig.addLayer("spreadR", "wing_1_R", "wing_tip_R", [1, 0, 0]);
     this.rig.addLayer("handL", "wing_3_L", "wing_tip_L", [0.3, 0, 1]); this.rig.addLayer("handR", "wing_3_R", "wing_tip_R", [-0.3, 0, 1]);
@@ -121,10 +139,13 @@ export class GymBird {
     this.rig.addLayer("raiseL", "wing_1_L", "wing_tip_L", [0, 1, 0]); this.rig.addLayer("raiseR", "wing_1_R", "wing_tip_R", [0, 1, 0]);
     this.rig.addLayer("talonL", "UpperLeg_L", "Toes_tip_L", [0, -0.4, -1]); this.rig.addLayer("talonR", "UpperLeg_R", "Toes_tip_R", [0, -0.4, -1]);
     this.rig.addLayer("headDown", "head", "mouth_upper_tip", [0, -1, 0]);
+    if (src.v2 && this.actions.glide) this.actions.glide.setEffectiveWeight(0);
     // (v2) the tail's own feather bones (tail_fan_*, tools/blender/falconV2.py "the tail closes"): every clip keys their
     // fold; the flare / brake layer opens the fan on top (the bind is the full fan: identity). The mixer rewrites them
     // each frame, so nothing accumulates
     this.fan = []; model.traverse((o) => { if (o.isBone && o.name.startsWith("tail_fan_")) this.fan.push(o); });
+    // (the open fan: the Flare clip's first key for each; the bind's otherwise)
+    this.fanOpen = this.fan.map((bn) => { const t = clips.flare?.tracks.find((k) => k.name === `${bn.name}.quaternion`); return t ? new THREE.Quaternion().fromArray(t.values, 0) : bn.quaternion.clone(); });
     this.lay = { fold: 0, tuck: 0, flare: 0, talons: 0, bank: 0, legs: 0.4, head: 0, pitch: 0 };
     this.extra = { spreadL: 0, spreadR: 0, handL: 0, handR: 0, wristL: 0, wristR: 0, raiseL: 0, raiseR: 0, talonL: 0, talonR: 0, headDown: 0 };
     this.tw = Object.fromEntries(KEYS.map((k) => [k, 0]));
@@ -135,16 +156,22 @@ export class GymBird {
 
   /** the far LOD's mesh on this bird's skeleton and material (v2: the same 65 joints in the same order) */
   attachFar(g) {
-    let src = null; g.scene.traverse((o) => { if (o.isSkinnedMesh) src ??= o; });
-    const near = this.mesh;
-    if (!src || src.skeleton.bones.length !== near.skeleton.bones.length || src.skeleton.bones.some((b, i) => b.name !== near.skeleton.bones[i].name)) return;
-    const far = new THREE.SkinnedMesh(src.geometry, near.material);
-    far.name = `${near.name}-far`; far.position.copy(near.position); far.quaternion.copy(near.quaternion); far.scale.copy(near.scale);
-    far.castShadow = far.receiveShadow = true; far.frustumCulled = false; far.visible = false;
-    near.parent.add(far); far.updateMatrixWorld(true);
-    far.bind(near.skeleton, near.bindMatrix);
-    this.far = far; this.lod = "near"; this.lodMode = "auto";
-    this.lodTris = { near: near.geometry.index.count / 3, far: src.geometry.index.count / 3 };
+    const far = [];
+    g.scene.traverse((o) => { if (o.isSkinnedMesh) far.push(o); });
+    const near = this.mesh, byMat = new Map(this.meshes.map((m) => [m.material.name, m]));
+    if (!far.length || far.some((f) => f.skeleton.bones.length !== near.skeleton.bones.length || f.skeleton.bones.some((b, i) => b.name !== near.skeleton.bones[i].name))) return;
+    this.far = [];
+    for (const src of far) {
+      const nm = byMat.get(src.material.name) || near;
+      const m = new THREE.SkinnedMesh(src.geometry, nm.material);
+      m.name = `${nm.name}-far`; m.position.copy(nm.position); m.quaternion.copy(nm.quaternion); m.scale.copy(nm.scale);
+      m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.visible = false;
+      nm.parent.add(m); m.updateMatrixWorld(true); m.bind(near.skeleton, nm.bindMatrix);
+      this.far.push(m);
+    }
+    this.lod = "near"; this.lodMode = "auto";
+    const tri = (ms) => ms.reduce((s, m) => s + (m.geometry.index ? m.geometry.index.count / 3 : 0), 0);
+    this.lodTris = { near: tri(this.meshes), far: tri(this.far) };
   }
   /** the LOD by the drawn span on screen (px): call once a frame after pose(). mode: "auto" | "near" | "far" */
   updateLod(camera, viewH) {
@@ -153,14 +180,18 @@ export class GymBird {
     const d = Math.max(camera.position.distanceTo(_lp), 1e-3), px = (this.span / (2 * d * Math.tan((camera.fov * Math.PI) / 360))) * viewH;
     this.lodPx = px;
     const want = this.lodMode === "near" ? "near" : this.lodMode === "far" ? "far" : this.lod === "near" ? (px < LOD_FAR_PX ? "far" : "near") : (px > LOD_NEAR_PX ? "near" : "far");
-    if (want !== this.lod) { this.lod = want; this.mesh.visible = want === "near"; this.far.visible = want === "far"; }
+    if (want !== this.lod) { this.lod = want; for (const m of this.meshes) m.visible = want === "near"; for (const m of this.far) m.visible = want === "far"; }
     return this.lod;
   }
-  /** "juvenile" (the player) | "adult" (the church family): v2 only */
+  /** "juvenile" (the player) | "adult" (the church family): v2 only; each mesh's base colour from that plumage's map */
   setPlumage(name) {
-    const t = this.plumages?.[name];
-    if (!t || this.mesh.material.map === t) return;
-    this.mesh.material.map = t; this.mesh.material.needsUpdate = true; this.plumage = name;
+    const P = this.plumages?.[name];
+    if (!P) return;
+    for (const m of this.meshes) {
+      const t = P.get(m.material.name) || this.plumages.adult.get(m.material.name);
+      if (t && m.material.map !== t) { m.material.map = t; m.material.needsUpdate = true; }
+    }
+    this.plumage = name;
   }
   setSpan(span) { this.span = span; this.model.scale.setScalar(span / this.modelSpan); }
   carry(preyMesh, material) {
@@ -203,6 +234,9 @@ export class GymBird {
     const rate = mode === "perch" || mode === "walk" ? 6 : 7;
     for (const k in this.w) { this.w[k] = ease(this.w[k], T[k], rate, wdt); sum += this.w[k]; }   // (wdt: the orbit view eases even while paused)
     for (const k in this.w) this.actions[k].setEffectiveWeight(this.w[k] / Math.max(sum, 1e-4));
+    // (v2: its Stoop clip folds the wings itself, so the fold / tuck / spread layers fade out with that clip's weight:
+    // on top of the folded clip they folded a second time and stood the wing up above the back)
+    const unfolded = this.actions.stoop ? 1 - (this.w.stoop || 0) / Math.max(sum, 1e-4) : 1;
     this.actions.flap.timeScale = 0.9 + 1.0 * f.flapLevel + (mode === "land" || mode === "launch" ? 0.7 : 0);
     // (v2's Walk plants its feet at V2_WALK_MPS (tools/blender/falconV2.py WALK_*: 0.12 m stance sweep, 60 % stance,
     // 10 frames): played at the ground speed's rate, capped, so a fast walk does not turn into a blur of steps)
@@ -213,7 +247,7 @@ export class GymBird {
     // the layers
     const air = mode === "fly";
     const tuck = air ? Math.max(0, (f.fold - 0.5) / 0.5) : 0;
-    L.fold = ease(L.fold, air ? Math.min(1, f.fold * 1.6) * (this.actions.stoop ? 0.3 : 1) : 0, 9, wdt);
+    L.fold = ease(L.fold, air ? Math.min(1, f.fold * 1.6) * (this.actions.stoop ? 0.3 * unfolded : 1) : 0, 9, wdt);
     L.tuck = ease(L.tuck, tuck, 8, wdt);
     L.flare = ease(L.flare, mode === "land" ? 1 : air ? f.brake : 0, 6, wdt);
     L.talons = ease(L.talons, talons, 10, wdt);
@@ -221,15 +255,15 @@ export class GymBird {
     L.legs = ease(L.legs, air && !talons ? 0.5 * (1 - L.flare) : 0, 4, wdt);
     L.head = ease(L.head, air ? Math.max(0, -f.gamma) * 0.5 + look : look, 4, wdt);
     const E = this.extra;
-    const tk = this.actions.stoop ? 0.15 * L.tuck : L.tuck;     // (v2: the clip folds the wings)
+    const tk = this.actions.stoop ? 0.15 * L.tuck * unfolded : L.tuck;     // (v2: the clip folds the wings)
     E.handL = E.handR = 0.9 * tk; E.wristL = E.wristR = 0.45 * tk;
-    E.spreadL = E.spreadR = 0.15 * L.flare - 0.1 * L.tuck;
+    E.spreadL = E.spreadR = 0.15 * L.flare - 0.1 * L.tuck * unfolded;
     E.raiseL = E.raiseR = 0.35 * L.flare;
     E.talonL = E.talonR = 1.1 * Math.max(L.talons, L.flare * 0.8);
     E.headDown = L.head;
     this.rig.restore();
     this.mixer.update(dt);
-    if (L.flare > 1e-3) for (const b of this.fan) b.quaternion.slerp(_I, L.flare);
+    if (L.flare > 1e-3) this.fan.forEach((b, i) => b.quaternion.slerp(this.fanOpen[i], L.flare));
     this.rig.apply({ fold: L.fold, bank: L.bank, legs: L.legs, brake: L.flare, extra: E });
   }
 }

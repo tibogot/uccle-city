@@ -1,7 +1,7 @@
 ---
 status: provisional
 added: 2026-11-25
-check: `falcongym` (tools/falconGymTest.mjs: the gym controller headless in the gym's greybox: cruise, chase and stoop speeds, the pull-out, the alley take-off, the passage hop-out, the 15 deg wall graze, the landing flare and the edge launch, the ceiling, the bank into the turn for both controllers and every input path; the lab's files; the v2 model's triangles and clips once built, and its poses: tools/falconV2pose.mjs) + browser row `falcongym` (the lab loads with no console error)
+check: `falcongym` (tools/falconGymTest.mjs: the gym controller headless in the gym's greybox: cruise, chase and stoop speeds, the pull-out, the alley take-off, the passage hop-out, the 15 deg wall graze, the landing flare and the edge launch, the ceiling, the bank into the turn for both controllers and every input path; the lab's files; the v2 model's triangles and clips once built, and its poses, holes, pads, plumage and far LOD: tools/falconV2pose.mjs) + browser row `falcongym` (the lab loads with no console error)
 ---
 **Rule.** The falcon flies at a real peregrine's speeds and takes off like one, and small mistakes never stun it. Measured headless in the Falcon Gym (`labs/falcon-gym.html`, `viewer/falconGym/gymFlight.js`):
 
@@ -39,6 +39,8 @@ Nothing checked the whole against the owner's numbers. The take-off was a drop f
 
 ## The v2 model (V2 POLISH, 2026-11-25)
 
+(The first base, the 25k download: shelved the same day, see "The v2 base" below. Its pose rules (upright perch, short legs, wing tips by the tail, toes) still bind the v2; its rigid-card rules and checks are retired with it.)
+
 **Rule.** The falcon v2 (`models/bird/v2/falcon_v2.glb`, built by `tools/blender/falconV2.py`) poses like a real peregrine, checked on the shipped glb by `tools/falconV2pose.mjs` (the skin evaluated in Node):
 
 - **Perched (the Perch clip).** The body upright, 35-65 deg (built at 45). The feet on the ground under the hip joints (< 7 cm off), nothing below the ground. Short legs: the hip joints < 16 cm up and < 6 cm of leg showing below the belly. The folded wings' tips on the tail (< 6 cm from its feathers), behind the hips.
@@ -69,11 +71,11 @@ The fixes (all in the script):
 
 ### The tail closes when folded
 
-**Rule.** The tail is a closed stack of feathers when the falcon is folded: perched, walking, hopping, in the stoop and in Talons, < 10 cm across its outer 40 %. It is half spread in the glide and the flap (wider than folded by > 3 cm), and a full fan in the flare and the landing (>= 25 cm, the widest). The gym's flare / brake layer opens it on top (`gymBird.js`). Built by `tools/blender/falconV2.py` ("the tail closes"): each fanned feather position has its own bone (`tail_fan_<i>_<L|R>`, children of `tail_2`, heads at the cards' roots), and every clip keys their fold (`TAILFOLD`). The outer feathers fold under the central pair.
+**Rule.** The tail is a closed stack of feathers when the falcon is folded: perched, walking, hopping and in the stoop: < 12 cm across its outer 40 % and under half the glide's (base B; the first base: < 10 cm). Spread in the glide and the flare. The gym's flare / brake layer opens it toward the Flare clip's fan (`gymBird.js` `fanOpen`). Base B: the fan bones are the download's own tail-feather bones (TF2 / TF3, renamed `tail_fan_*`). The first base: Built by `tools/blender/falconV2.py` ("the tail closes"): each fanned feather position has its own bone (`tail_fan_<i>_<L|R>`, children of `tail_2`, heads at the cards' roots), and every clip keys their fold (`TAILFOLD`). The outer feathers fold under the central pair.
 
 **Why.** Coordinator's review of the V2 POLISH: "the tail stays fanned in folded poses". The download's bind spreads the tail as a full fan (96 deg, 35 cm). The Mesh2Motion rig has one tail chain (`tail_1..tail_tip`), so all 22 tail cards were rigid on `tail_2` and no clip could close them. Nothing measured the tail's width.
 
-**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs` `tailTipWidth`): the feather bones exist, the folded width, and the glide / flare spread. The first build fails 3 of these (folded 25.6 cm everywhere).
+**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs` `tailTipWidth`): the folded width and the glide / flare spread. The first build failed them (folded 25.6 cm everywhere).
 
 ### The walk and the hop are crouched
 
@@ -89,7 +91,54 @@ The fixes (all in the script):
 
 **Why.** Coordinator's review: "the underwing shows buff at the folded wrists". The juvenile paint picked the buff underparts by the bind normal: down, or toward the nose for the breast. The wing's covert sheets matched too: their underside and their leading edge, which faces the nose in the spread bind. Folded, the leading edge and the elbow / wrist crease face outward, so buff strips showed down the front of the folded wing. The adult texture has them dark. Rolling the forearm or the hand does not help: the crease exposes ~6 cm2 a wing in any roll (measured from -30 to +30 deg). The fault was in the paint, not the pose.
 
-**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs`). It decodes the shipped KTX2 with three's own Basis transcoder (`tools/ktx2Decode.mjs`). The first build fails it (10-13 % buff).
+**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs`). It decodes the shipped KTX2 with three's own Basis transcoder (`tools/ktx2Decode.mjs`). Base B: the UNDERWING (the faces whose normal points down in the glide) that faces outward when folded: < 1 cm² of it buff (0.5). A juvenile's upper side has pale fringes of its own. The first build failed it (10-13 % buff).
+
+## The v2 base (V2 BASE B, 2026-11-25): Bonada's model, no holes, the feet on their pads
+
+**Rule.** The falcon v2 is built from Hector Bonada's "Falcon_ Merged Animations" (Sketchfab, CC BY 4.0) by `tools/blender/falconV2b.py`.
+
+- **Its own skin and motion.** It keeps its own continuous wing and tail surfaces, its own skin weights bone for bone, and its own idle, take-off, glide, flap beat and landing, baked exactly. Its bones are renamed to our bird rig's names (the 55, plus 45 of its own: the tail fans, the digits, the clavicles), so `viewer/birdRig.js`'s layers, the gym and the checks work.
+- **No rigid-card step, no weight transfer.** Our clips (Stoop, Talons, Flare, Walk, Hop) are made from its poses.
+- **No holes.** From six directions, in Perch, Walk, Hop, Stoop, Idle and Glide, with the cut-out alpha honoured, no see-through hole in the body over 0.5 cm² (a gap bordered by a leg is the leg's). Folded, from above and behind, the narrow gaps a 6 mm closing of the silhouette fills (the "fingers") stay under 1.5 % of it.
+- **On the ground the toe PADS touch the floor.** In Perch, through the Walk cycle and in the Hop's crouch, the lowest toe-pad point is 0-5 mm over the floor, nothing of the foot below -3 mm, and the toes are spread (tips >= 3.5 cm apart). The closed grip only in flight (Glide, Stoop: the spread < 0.7 x the perched) or with prey. Nothing of the perched bird under the floor.
+- **The tail.** Closed when folded (< 12 cm and under half the glide's, across its tip half); fanned in the glide and the flare.
+- **The far LOD** (`falcon_v2_far.glb`, `tools/falconV2far.mjs`) is 2-3k triangles with the same joints, clips and materials, no textures of its own, posed within 1.5 cm of the near bird. The lab switches to it by the drawn span (56 px out, 68 px back in: no flicker).
+
+**Why.** Owner, 2026-11-25, looking at the first v2 in the gym:
+
+> plenty of holes in its body, something looks wrong
+
+and from behind:
+
+> the model looks good on Sketchfab, please check well
+
+The investigation (screenshots `uccle-falcon-gym/v2fix_src_*`):
+
+- **The first base was the cause, not our pipeline.** The 25k "Peregrine Falcon" download is built of separate tube-like feather cards on a spread-wing bind, with a binary alpha (so the BLEND -> MASK change was not the cause). Its own animation never folds the wings. Half folded, in its own clip, its hand already splays into fingers.
+- **Our fold made it worse.** It turned each 5-card sheet whole, so the gaps opened wider. The card shapes themselves could not be fixed in that mesh.
+- **Bonada's model already perches correctly** in its own idle: continuous wings lying on the back, a closed tail, the toes flat on the floor.
+
+The owner also found the feet floating:
+
+> the toes curl like a grip in mid-air, the shadow apart from the feet
+
+**Root cause:** the first v2's Perch / Walk / Hop curled the claws into a grip (72 deg) and put the lowest CLAW TIP on the floor, so the pads floated 1.5-3 cm (measured 39 mm in the served Perch). The gate's check measured "the lowest foot vertex", which a claw tip satisfies: it passed while the feet floated. The check now measures the pads.
+
+Found on the way:
+
+- The download's own idle dips its primaries and tail up to 2 cm through its (invisible) floor: lifted per frame, smoothed.
+- Its eyes are a glowing blue iris, emissive and mirror-like: darkened to a peregrine's dark brown, roughness 0.28.
+- Its rest pose does not match its skin's bind (the importer's rest wing tips coincide), so the bind is the idle's frame 48.
+- `birdRig.js` calibrates its layers on the rest pose. On this folded bind, and on top of a Stoop clip that already folds, the fold / tuck layers stood the wing up. The gym calibrates the rig in the Glide and fades the fold layers out with the Stoop clip's weight.
+
+**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs`, the shipped glb's skin evaluated in Node, the KTX2 textures decoded with three's Basis transcoder):
+
+- the rig names; the perched body; the pads; the toes' spread in flight and on the ground
+- the crouched Walk / Hop with the pads down
+- the tail; the holes and the slits; the folded wing's underwing
+- the juvenile per material; the far LOD
+
+The served 25k v2 fails 7 of them: pads 39 mm up, toe tips not measurable, holes 15 cm², slits 3.8 %.
 
 ## Bank into the turn (2026-11-25)
 
