@@ -19,6 +19,7 @@
 // (the tile's road meshes: the treads are real steps), the catenary capped under the decks (footSoffitCap).
 
 export const FB = { depth: 0.75, girderH: 1.3, girderT: 0.12, rise: 0.17, landing: 1.4, wall: 0.2, railH: 1.0, post: 1.5, skirt: 2.0, sink: 0.3, canopyH: 2.7 };
+const PAD = 1.0;
 export const FOOT_SLOT = { paving: 1, kerb: 2, concrete: 3, resin: 7, galv: 8 };
 
 const inBox = (b, x, z, m = 0) => x >= b[0] - m && z >= b[1] - m && x <= b[2] + m && z <= b[3] + m;
@@ -41,11 +42,15 @@ function frame(p) {
 function stairLayout(p) {
   const F = frame(p), top = Math.max(p.ya, p.yb), bot = Math.min(p.ya, p.yb), H = top - bot, rev = p.yb > p.ya;
   const k = Math.max(0, p.landings ?? 0), n = Math.max(1, Math.round(H / FB.rise)), rise = H / n;
-  const run = Math.max(0.5, F.L - k * FB.landing), going = Math.min(0.4, Math.max(0.2, run / n));
+  // (a flat pad at the head and the foot, PAD m: the 1 m terrain grid cannot follow a stair right to its end, the pad
+  // meets the street / path there level: carveUnder leaves it, footbridgeAudit F2 / F4)
+  const pad = F.L - k * FB.landing - 2 * PAD >= n * 0.24 ? PAD : 0;
+  const run = Math.max(0.5, F.L - k * FB.landing - 2 * pad), going = Math.min(0.4, Math.max(0.2, run / n));
   const per = [], base = Math.floor(n / (k + 1));
   for (let f = 0; f <= k; f++) per.push(base + (f < n - base * (k + 1) ? 1 : 0));
   const knots = [[0, top]], treads = [];
   let u = 0, y = top;
+  if (pad) { treads.push({ u0: 0, u1: pad, y: top, pad: true }); u = pad; knots.push([u, top]); }
   for (let f = 0; f <= k; f++) {
     for (let j = 0; j < per[f]; j++) { y -= rise; treads.push({ u0: u, u1: u + going, y }); u += going; }
     knots.push([u, y]);
@@ -53,8 +58,8 @@ function stairLayout(p) {
   }
   if (u < F.L) { treads[treads.length - 1].u1 = F.L; knots.push([F.L, bot]); }
   // (a stair whose b is its top: the same layout mirrored along u)
-  if (rev) return { rise, going, knots: knots.map(([q, yy]) => [F.L - q, yy]).reverse(), treads: treads.map((t) => ({ u0: F.L - t.u1, u1: F.L - t.u0, y: t.y })).reverse(), rev };
-  return { rise, going, knots, treads, rev };
+  if (rev) return { rise, going, pad, knots: knots.map(([q, yy]) => [F.L - q, yy]).reverse(), treads: treads.map((t) => ({ u0: F.L - t.u1, u1: F.L - t.u0, y: t.y, pad: t.pad })).reverse(), rev };
+  return { rise, going, pad, knots, treads, rev };
 }
 const along = (knots, u) => {
   if (u <= knots[0][0]) return knots[0][1];
@@ -67,7 +72,7 @@ const along = (knots, u) => {
 export function resolveFootbridge(spec, groundAt) {
   const parts = spec.parts.map((p) => {
     const lv = (v, q) => (typeof v === "number" ? v : +groundAt(q[0], q[1]).toFixed(3));
-    const r = { kind: p.kind, a: p.a, b: p.b, w: p.w, ya: lv(p.ya, p.a), yb: lv(p.yb, p.b), landings: p.landings ?? 0, canopy: p.canopy ?? 0, piers: !!p.piers };
+    const r = { kind: p.kind, a: p.a, b: p.b, w: p.w, ya: lv(p.ya, p.a), yb: lv(p.yb, p.b), ga: p.ya === "ground", gb: p.yb === "ground", landings: p.landings ?? 0, canopy: p.canopy ?? 0, piers: !!p.piers };
     r.knots = r.kind === "stair" ? stairLayout(r).knots : [[0, r.ya], [frame(r).L, r.yb]];
     return r;
   });
@@ -241,6 +246,7 @@ export function footbridgeMesh(fb, surface, platforms = []) {
         quad([0, 1, 0], FOOT_SLOT.paving, [A0[0], t.y, A0[1]], [B0[0], t.y, B0[1]], [B1[0], t.y, B1[1]], [A1[0], t.y, A1[1]]);
         // the riser on the tread's upper side (a stair descending a -> b: at u0, up to the tread above; mirrored: at u1),
         // facing down the stair (the climber's side)
+        if (t.pad) continue;
         const ur = L.rev ? t.u1 : t.u0, R0 = F.at(ur, -hw), R1 = F.at(ur, hw), dir = L.rev ? -1 : 1;
         quad([F.tx * dir, 0, F.tz * dir], FOOT_SLOT.concrete, [R0[0], t.y, R0[1]], [R1[0], t.y, R1[1]], [R1[0], t.y + L.rise, R1[1]], [R0[0], t.y + L.rise, R0[1]]);
       }
@@ -313,7 +319,7 @@ export function footbridgeMesh(fb, surface, platforms = []) {
  *  under its walk line (a stair / landing: 0.3 m, a deck: its underside + 0.1): the bank no longer covers the treads
  *  or pokes through a deck end. Before it, each stair / landing part keeps the bank's level just outside its walls
  *  (p.outerS: the retaining walls rise to it). Returns the cells moved. */
-const CARVE_M = 0.8;
+const CARVE_M = 0.8, END_KEEP = 1.4;
 export function carveUnder(fbs, Y, H, surface) {
   let moved = 0;
   for (const fb of fbs) for (const p of fb.parts) {
@@ -333,7 +339,9 @@ export function carveUnder(fbs, Y, H, surface) {
       for (let c = Math.max(0, Math.floor((x0 - 2 - H.x0) / H.step)); c <= Math.min(H.cols - 1, Math.ceil((x1 + 2 - H.x0) / H.step)); c++) {
         const x = H.x0 + c * H.step, z = H.z0 + r * H.step, [u, v] = F.loc(x, z);
         if (u < 0 || u > F.L || Math.abs(v) > hw + CARVE_M) continue;
-        const lim = along(p.knots, u) - deep, k = r * H.cols + c;
+        // (a welded end: the street / path it meets stays at its level, only what stands over the walk comes down to it)
+        const keep = (p.ga && u < END_KEEP) || (p.gb && u > F.L - END_KEEP);
+        const lim = along(p.knots, u) - (keep ? 0.06 : deep), k = r * H.cols + c;
         if (Y[k] > lim) { Y[k] = lim; moved++; }
       }
   }

@@ -215,7 +215,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 
 **Defects found 2026-11-17**
 - [~] Wire clearance too low under Av. des Tilleuls / Hospices / Carsoel bridges. **claude/places1: decks on their DSM-measured profile (rule deck-profile-measured): Tilleuls over the L26/5 chord 81.16 -> 82.09 m, wire 3.64 -> 4.54 m over the rail. Left: Hospices 2.9 m (DSM = deck top, so the L124 rail heights / the 0.9 m slab under that old bridge are the suspects) and Carsoel 4.54 m (hand-measured plan deck).**
-- [ ] Vivier d'Oie station footbridges (UrbIS 751 / 752); Saint-Job deck sidewalks over the bank.
+- [x] Vivier d'Oie station footbridges (UrbIS 751 / 752); Saint-Job deck sidewalks over the bank. (claude/footbridge 2026-11-25: both footbridges built, viewer/rail/footbridge.js + data/rail/footbridges.json, rule footbridge-built, gate row footbridge; the Carsoel ring widened to its bank sidewalks, rule deck-covers-street, deckjoins H; ?footbridge=old. Left: the Carsoel hand plan top 0.26-0.40 m over the at-grade street along its SW abutment, deckJoins allow list)
 - [ ] Sharp leftovers: pedestrians / flags / grass motion vectors, window-mosaic repro, car streaking at 0.6 res.
 - [ ] Cobble junction pads.
 
