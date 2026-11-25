@@ -28,13 +28,15 @@ import { createBikeModel } from "../viewer/bike/bikeModel.js";
 import { BikeCamera, BIKE_CAMERA } from "../viewer/bike/bikeCamera.js";
 import { BikeKeys } from "../viewer/bike/bikeInput.js";
 import { ThirdPerson, CollisionWorld, Heightfield, PrismSet } from "../viewer/character/index.js";
-import { RiderIK, RIDE } from "../viewer/kid/riderIK.js";
+import { RiderIK, RIDE, RIDE_KIDA } from "../viewer/kid/riderIK.js";
 import { MOUNT, createMount, stepMount, parkStep, ridden, mountSpot } from "../viewer/kid/kidMount.js";
 import { findBikeEmpties } from "../viewer/kid/bikeRig.js";
 import { loadBmx } from "../viewer/kid/bmxModel.js";
 
 const qs = new URLSearchParams(location.search);
 const USE_KID = qs.get("kid") !== "0";
+const KID_A = qs.get("kid") === "a";
+if (KID_A) Object.assign(RIDE, RIDE_KIDA);
 const DEFAULTS = { ...BIKE }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
 const renderer = new THREE.WebGPURenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -252,7 +254,8 @@ if (USE_KID) {
     world.add(new PrismSet(CLp.polys.map((p) => ({ rings: p.rings, base: -2, top: p.drawTop ?? (p.kind === KIND.wall ? (p.top ?? 2.5) : (p.top ?? (p.kind === KIND.car ? 1.45 : 2.5))) })),
       CLp.circles.map((c) => ({ x: c.x, z: c.z, r: c.r, base: -2, top: 1.1 }))));
     const tp = new ThirdPerson({ scene, camera, dom: renderer.domElement, world, controller: { height: 1.45, radius: 0.24 } });
-    const info = await tp.useCharacter("kid", renderer);
+    // ?kid=a: the MPFB kid A (docs/KIDCHAR.md phase 2; the default stays the old kid until the owner OKs)
+    const info = await tp.useCharacter(KID_A ? "kidA" : "kid", renderer);
     K.tp = tp; K.kid = info.kid;
     K.rider = new RiderIK(info.kid.gltf.scene, info.kid.gltf.animations);
     K.E = K.bmx ? K.bmx.empties : findBikeEmpties(model.root, model.empties.frame); K.E.cg = BIKE.cgHeight;
@@ -314,6 +317,11 @@ const ui = new Panel({ title: "Bike Lab", persist: "bikelab", search: true });
   };
   const O = { outfit: "yellow ringer", bmx: qs.get("colourway") || "blue" };
   fk.add(O, "bmx", ["blue", "red", "purple"]).name("BMX colourway").onChange((v) => K.bmx?.setColourway(v));
+  if (KID_A) {
+    const CA = { cap: qs.get("cap") === "back" ? "back" : "fwd" };
+    fk.add(CA, "cap", ["fwd", "back"]).name("cap (A)").onChange((v) => K.kid?.setCap(v));
+    setTimeout(() => K.kid?.setCap(CA.cap), 0);
+  } else
   fk.add(O, "outfit", Object.keys(OUTFITS)).name("outfit").onChange((v) => {
     if (!K.kid) return;
     import("../viewer/kid/kidModel.js").then(({ KID_PALETTE }) => { for (const n of K.kid.slots) K.kid.setColor(n, (OUTFITS[v][n] ?? KID_PALETTE[n])); });
@@ -363,9 +371,36 @@ async function kidCandidates(on) {
     fkc.add(KC, "yaw", -3.15, 3.15, 0.01).name("camera yaw").listen();
     const view = (i, yaw, d) => () => { if (!KCs.api) return; KC.yaw = yaw; KC.pitch = i < 0 ? 0.12 : 0.05; KCs.api.focus(i, d); };
     fkc.buttons([["all: front", view(-1, 0)], ["all: 3/4", view(-1, 0.7)], ["all: side", view(-1, Math.PI / 2, 5.5)], ["all: back", view(-1, Math.PI)],
-      ["face A", view(0, 0.35)], ["face B", view(1, 0.35)], ["face C", view(2, 0.35)], ["face now", view(3, 0.35)]], 4);
+      ["face A", view(0, 0.35)], ["face A v2", view(1, 0.35)], ["face B", view(2, 0.35)], ["face C", view(3, 0.35)], ["face now", view(4, 0.35)]], 4);
   });
   if (KCs.show) kidCandidates(true);
+  // the pose sheet (the MPFB kid A in 9 extreme clip poses: tearing / poke-through by eye) and a night test light
+  // (the same two lights, dimmed and tinted: no light added or removed)
+  const PSs = { show: qs.get("poses") === "1", night: qs.get("night") === "1", api: null };
+  const DAY = { hemi: hemi.intensity, sun: sun.intensity, bg: scene.background.getHex(), sunCol: sun.color.getHex() };
+  const night = (on) => {
+    hemi.intensity = on ? 0.12 : DAY.hemi; sun.intensity = on ? 0.35 : DAY.sun;
+    sun.color.setHex(on ? 0x9fb4ff : DAY.sunCol); scene.background.setHex(on ? 0x0d1526 : DAY.bg); scene.fog.color.setHex(on ? 0x0d1526 : DAY.bg);
+  };
+  const poses = async (on) => {
+    if (on && !PSs.api) { const { loadPoseSheet } = await import("../viewer/kid/kidPoseSheet.js"); PSs.api = await loadPoseSheet(renderer, scene, "kidA"); }
+    if (!PSs.api) return;
+    const sd = s.heading - Math.PI / 2, x = s.x + Math.sin(sd) * 6, z = s.z + Math.cos(sd) * 6;
+    PSs.api.place(x, z, Math.atan2(10, 6) - 0.5, (px, pz) => W.height(px, pz));
+    PSs.api.setVisible(on);
+  };
+  const viewPoses = async () => {
+    if (!KCs.api) { KCs.show = true; await kidCandidates(true); }
+    if (!PSs.api || !PSs.api.group.visible) { PSs.show = true; await poses(true); }
+    import("../viewer/kid/kidCandidates.js").then(({ KC }) => { KC.height = 0.75; KC.dist = 6.5; KC.pitch = 0.12; KC.yaw = 0; });
+    KCs.api._focus = PSs.api.items[4];
+  };
+  fkc.add(PSs, "show").name("pose sheet: kid A (9 clip poses)").onChange(poses);
+  fkc.add(PSs, "night").name("night (test light)").onChange(night);
+  fkc.buttons([["view the pose sheet", viewPoses]], 1);
+  if (PSs.night) night(true);
+  if (PSs.show) poses(true);
+  window.__kidLab = { KCs, PSs, night, poses, viewPoses };
 }
 const fr = ui.addFolder("Ride");
 fr.add(P, "pause").name("pause (P)");

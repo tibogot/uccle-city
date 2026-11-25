@@ -43,6 +43,14 @@ export async function loadKidCandidates(renderer, scene) {
   const idle = kg.animations.find((a) => a.name === "Idle");
   const action = idle ? mixer.clipAction(idle) : null;
   items.push({ id: "now", label: "current kid", sub: `1.46 m · ${kid.tris[0]} tris (LOD0)`, root: kg.scene, mixer, action, kid });
+  // the chosen one, v2 (models/characters/kidA.glb: the game build, on the UAL clips): next to its v1 and the old kid
+  try {
+    const { loadCharacter } = await import("../character/characterModel.js");
+    const ch = await loadCharacter("kidA", { renderer });
+    const mxA = new THREE.AnimationMixer(ch.gltf.scene), idleA = ch.gltf.animations.find((a) => a.name === "Idle");
+    ch.gltf.scene.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    items.splice(1, 0, { id: "a2", label: "A v2 (game build)", sub: `${ch.info.lods.join(" / ")} tris · 1 draw`, root: ch.gltf.scene, mixer: mxA, action: idleA ? mxA.clipAction(idleA) : null, kid: ch.info.kid, info: { height: 1.49, tris: ch.info.lods[0] } });
+  } catch (e) { console.warn("[kid candidates] kidA:", e); }
   for (const it of items) group.add(it.root);
   // labels (DOM, projected each frame)
   const labels = items.map((it) => {

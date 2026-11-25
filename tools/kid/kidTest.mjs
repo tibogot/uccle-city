@@ -22,6 +22,7 @@ const quiet = process.argv.includes("--quiet");
 const MODEL = (() => { const i = process.argv.indexOf("--model"); return i > 0 ? process.argv[i + 1] : "kid"; })();
 const IS_A = MODEL !== "kid";
 const BUDGET = IS_A ? [22000, 8500, 2200] : [15000, 6000, 2000];
+if (IS_A) { const R = await import("../../viewer/kid/riderIK.js"); Object.assign(R.RIDE, R.RIDE_KIDA); }
 const rows = [];
 let failed = 0;
 const check = (name, ok, got, want) => { rows.push([name, ok ? "PASS" : "FAIL", got, want]); if (!ok) failed++; };

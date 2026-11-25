@@ -56,11 +56,13 @@ export function kidAtlasMaterial(slots, url, renderer) {
   m.alphaTest = 0.5;
   const base = tex.rgb;
   // painted: the AO softened toward a warm tint, a faint rim; the skin a touch of warm "subsurface" glow (no shine)
-  const aoTint = mix(vec3(0.42, 0.30, 0.26), vec3(1, 1, 1), ao);
+  // (a lighter AO than the old kid's: his textures already carry their shading, the full tint made the face muddy
+  // under the cap in the lab's light)
+  const aoTint = mix(vec3(0.70, 0.60, 0.56), vec3(1, 1, 1), ao);
   const rim = pow(float(1).sub(clamp(dot(normalView, positionViewDirection), 0, 1)), float(3)).mul(0.10);
   const isSkin = select(slot.equal(int(Math.max(0, slots.indexOf("skin")))), float(1), float(0));
   m.colorNode = base.mul(aoTint).add(base.mul(rim));
-  m.emissiveNode = base.mul(vec3(0.16, 0.05, 0.03)).mul(isSkin).mul(ao);
+  m.emissiveNode = base.mul(vec3(0.07, 0.025, 0.015)).mul(isSkin).mul(ao);
   m.opacityNode = tex.a.mul(float(1).sub(uHide.element(slot)));
   m.roughnessNode = uRough.element(slot);
   m.userData.slots = slots; m.userData.uHide = uHide; m.userData.tex = tex;

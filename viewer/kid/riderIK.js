@@ -18,6 +18,11 @@
 // get-up, sitting). All on three.js bones (a few small vectors a frame).
 import * as THREE from "three/webgpu";
 
+/** The MPFB kid A (docs/KIDCHAR.md phase 2) on the same BMX: his real-proportioned torso is longer from the hips to the
+ *  shoulders, so at the default seat the spine's full bend left his shoulders 8 cm short of the grips and the body slid
+ *  off the saddle toward the bars; the hips sit 4.5 cm further forward on the saddle (about 5 cm of slide left, spine 43 deg; 6 cm damped the landing wobble under the test's 5 cm).
+ *  Applied by the lab for ?kid=a and by tools/kid/kidTest.mjs --model kidA. */
+export const RIDE_KIDA = { hipBack: -0.045 };
 export const RIDE = {
   hipUp: 0.075, hipBack: 0.0,                // seated: the pelvis joint above / behind the seat empty (m, frame axes)
   standUp: 0.16, standFwd: 0.12,             // standing (sprint, preload, air)
