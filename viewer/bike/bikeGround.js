@@ -90,12 +90,39 @@ feature("stairs", STAIRS.x0, STAIRS.x1, STAIRS.z0, STAIRS.zr, SURF.asphalt, (x, 
   if (z < S.zl) return S.h;
   return S.h * (1 - (z - S.zl) / S.ramp);
 }, 0.05);
+// (forgiving falls, 2026-11-25) a cobbled lane, a field of dirt bumps and a lane of small drops: what a casual rider
+// must ride through without a crash (tools/bike/casualRide.mjs)
+export const COBBLES = { x0: 44, x1: 50, z0: 40, z1: 70 };
+export const BUMPS = { x0: 54, x1: 60, z0: 40, z1: 70 };
+export const DROPS = { x: 69, x0: 63, x1: 75, z0: 40, len: 36, steps: [[0, 10, 0.25], [12, 10, 0.40], [24, 10, 0.60]] };
+feature("cobbles", COBBLES.x0, COBBLES.x1, COBBLES.z0, COBBLES.z1, SURF.setts, (x, z) => {
+  // setts 11 x 14 cm in running bond, domed 1.5 cm, the joints 1 cm deep
+  const row = Math.floor(z / 0.14), u = x / 0.11 + (row & 1) * 0.5, a = u - Math.floor(u), b = z / 0.14 - row;
+  const e = smoothstep(COBBLES.x0, COBBLES.x0 + 0.3, x) * (1 - smoothstep(COBBLES.x1 - 0.3, COBBLES.x1, x)) * smoothstep(COBBLES.z0, COBBLES.z0 + 0.5, z) * (1 - smoothstep(COBBLES.z1 - 0.5, COBBLES.z1, z));
+  return 0.015 * Math.sin(Math.PI * a) * Math.sin(Math.PI * b) * e;
+}, 0.05);
+feature("bumps", BUMPS.x0, BUMPS.x1, BUMPS.z0, BUMPS.z1, SURF.dirt, (x, z) => {
+  // dirt bumps 5-12 cm, 0.6-1.4 m across, scattered (a fixed pattern)
+  let h = 0;
+  for (let k = 0; k < 46; k++) {
+    const cx = BUMPS.x0 + 0.8 + ((k * 0.618034) % 1) * (BUMPS.x1 - BUMPS.x0 - 1.6), cz = BUMPS.z0 + 1 + k * (BUMPS.z1 - BUMPS.z0 - 2) / 46;
+    const rr = 0.3 + ((k * 0.414214) % 1) * 0.4, hh = 0.05 + ((k * 0.732051) % 1) * 0.07, d2 = ((x - cx) ** 2 + (z - cz) ** 2) / (rr * rr);
+    if (d2 < 1) h += hh * (1 - d2) * (1 - d2);
+  }
+  return h;
+}, 0.1);
+feature("drops", DROPS.x0, DROPS.x1, DROPS.z0, DROPS.z0 + DROPS.len, SURF.asphalt, (x, z) => {
+  // three small drops: a gentle 10 % ramp up to a plateau, then a square face down (25 / 40 / 60 cm)
+  const s = z - DROPS.z0;
+  for (const [z0, run, h] of DROPS.steps) if (s >= z0 && s < z0 + run) return Math.min(h, (s - z0) * 0.1);
+  return 0;
+}, 0.05);
 const slopeH = (s, G, run, flat) => G * (sm(s) - sm(s - run) - sm(s - run - flat) + sm(s - 2 * run - flat));
 feature("slope", SLOPE.x0 - 2, SLOPE.x0 + 92, SLOPE.z0, SLOPE.z1, SURF.asphalt, (x) => slopeH(x - SLOPE.x0, SLOPE.grade, 40, 10), 0.5);
 feature("steep", STEEP.x0 - 2, STEEP.x0 + 48, STEEP.z0, STEEP.z1, SURF.asphalt, (x) => slopeH(x - STEEP.x0, STEEP.grade, 20, 6), 0.5);
 
 /** asphalt areas outside the features (the rest is grass) */
-const ASPHALT = [[-60, 140, -40, 10], [-3, 3, 10, 100], [10, 20, 10, 60], [24, 28, 10, 50], [STREET.x0, STREET.x1, STREET.z0, STREET.z1]];
+const ASPHALT = [[-60, 140, -40, 10], [-3, 3, 10, 100], [10, 20, 10, 60], [24, 28, 10, 50], [40, 78, 32, 76], [STREET.x0, STREET.x1, STREET.z0, STREET.z1]];
 const inR = (x, z, a, b, c, d) => x >= a && x < b && z >= c && z < d;
 
 export const FEATURES = F;
