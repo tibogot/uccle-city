@@ -37,7 +37,10 @@ const UAL2 = path.resolve(arg("--ual2", path.join(RAW, "ual2/x/Universal Animati
 const FPS = 30;
 const report = process.argv.includes("--report");
 const KID = process.argv.includes("--kid");
-const NAME = KID ? "kid" : "ual";
+// --kid --src kidA: the MPFB kid A (docs/KIDCHAR.md: tools/blender/kidMakeHuman.py --game -> kidA_src.glb + kidA_rig.json,
+// T-posed onto the UAL bone directions): the same build on his joints, his UVs kept (one atlas, kidA_atlas.ktx2)
+const SRC = KID ? arg("--src", "kid") : null;
+const NAME = KID ? SRC : "ual";
 
 // source clip -> our name, role, loop, root-motion kind ("line": an in-place cycle, "air": jump / fall / land, "none")
 const CLIPS = [
@@ -67,8 +70,8 @@ const CLIPS = [
 ];
 
 const g = readGLB(UAL1), g2 = readGLB(UAL2);
-const KS = KID ? readGLB(path.join(ROOT, "models/characters/kid_src.glb")) : null;
-const KIDRIG = KID ? JSON.parse(fs.readFileSync(path.join(ROOT, "models/characters/kid_rig.json"), "utf8")) : null;
+const KS = KID ? readGLB(path.join(ROOT, `models/characters/${SRC}_src.glb`)) : null;
+const KIDRIG = KID ? JSON.parse(fs.readFileSync(path.join(ROOT, `models/characters/${SRC}_rig.json`), "utf8")) : null;
 // the AUTHORED ground speeds: the root-motion twin of UAL1 (pelvis travel over the cycle)
 const RM = readGLB(arg("--ual1rm", UAL1.replace(/\.glb$/, "_RM.glb")));
 function rmSpeed(name) {
@@ -403,12 +406,14 @@ if (!KID) {
     let nv = 0, ni = 0;
     for (const p of prims) { nv += KJ.accessors[p.attributes.POSITION].count; ni += KJ.accessors[p.indices].count; }
     const POS = new Float32Array(nv * 3), NRM = new Float32Array(nv * 3), JNT = new Uint8Array(nv * 4), WGT = new Float32Array(nv * 4), AO = new Uint8Array(nv * 4), SLOT = new Float32Array(nv);
+    const hasUV = prims.every((p) => p.attributes.TEXCOORD_0 !== undefined), UV = hasUV ? new Float32Array(nv * 2) : null;
     const IDX = nv < 65536 ? new Uint16Array(ni) : new Uint32Array(ni);
     let vo = 0, io = 0;
     for (const p of prims) {
       const P = KS.accessor(p.attributes.POSITION), Nn = KS.accessor(p.attributes.NORMAL), Jt = KS.accessor(p.attributes.JOINTS_0), Wt = KS.accessor(p.attributes.WEIGHTS_0), I = KS.accessor(p.indices);
       const C = p.attributes.COLOR_0 !== undefined ? KS.accessor(p.attributes.COLOR_0) : null, cnt = P.length / 3, cn = C ? C.length / cnt : 0;
       POS.set(P, vo * 3); NRM.set(Nn, vo * 3);
+      if (UV) UV.set(KS.accessor(p.attributes.TEXCOORD_0), vo * 2);
       for (let i = 0; i < cnt; i++) {
         let sw = 0; for (let kk = 0; kk < 4; kk++) sw += Wt[i * 4 + kk];
         for (let kk = 0; kk < 4; kk++) { JNT[(vo + i) * 4 + kk] = jmap[Jt[i * 4 + kk]]; WGT[(vo + i) * 4 + kk] = Wt[i * 4 + kk] / (sw || 1); }
@@ -422,7 +427,9 @@ if (!KID) {
     const aPos = addAcc(POS, "VEC3", 5126, minmax(POS, 3), 34962), aNrm = addAcc(NRM, "VEC3", 5126, {}, 34962);
     const aJnt = addAcc(JNT, "VEC4", 5121, {}, 34962), aWgt = addAcc(WGT, "VEC4", 5126, {}, 34962), aClr = addAcc(AO, "VEC4", 5121, { normalized: true }, 34962);
     const aSlot = addAcc(SLOT, "SCALAR", 5126, {}, 34962), aIdx = addAcc(IDX, "SCALAR", nv < 65536 ? 5123 : 5125, {}, 34963);
-    meshesOut.push({ name: nd.name, extras: { slots, tris: ni / 3 }, primitives: [{ attributes: { POSITION: aPos, NORMAL: aNrm, JOINTS_0: aJnt, WEIGHTS_0: aWgt, COLOR_0: aClr, _SLOT: aSlot }, indices: aIdx, material: 0 }] });
+    const attrs = { POSITION: aPos, NORMAL: aNrm, JOINTS_0: aJnt, WEIGHTS_0: aWgt, COLOR_0: aClr, _SLOT: aSlot };
+    if (UV) attrs.TEXCOORD_0 = addAcc(UV, "VEC2", 5126, {}, 34962);
+    meshesOut.push({ name: nd.name, extras: { slots, tris: ni / 3 }, primitives: [{ attributes: attrs, indices: aIdx, material: 0 }] });
     console.log(`  ${nd.name}: ${nv} verts ${ni / 3} tris, ${prims.length} slots merged`);
   }
 }
@@ -515,5 +522,5 @@ const bh = Buffer.alloc(8); bh.writeUInt32LE(bb.length, 0); bh.writeUInt32LE(0x0
 const OUT = path.join(ROOT, `models/characters/${NAME}.glb`);
 fs.writeFileSync(OUT, Buffer.concat([head, jh, jb, bh, bb]));
 fs.writeFileSync(path.join(ROOT, `models/characters/${NAME}.json`), JSON.stringify({ model: `${NAME}.glb`, fps: FPS, rest: Object.fromEntries(Object.entries(REST).map(([k, x]) => [k, +x.toFixed(4)])),
-  ...(KID ? { kid: { height: KIDRIG.height, pelvisScale: KIDRIG.pelvisScale, slots: KIDRIG.slots, tris: meshesOut.map((m) => m.extras.tris), outfit: KIDRIG.outfit, sole: KIDRIG.sole } } : {}), clips: meta }, null, 1));
+  ...(KID ? { kid: { height: KIDRIG.height, pelvisScale: KIDRIG.pelvisScale, slots: KIDRIG.slots, tris: meshesOut.map((m) => m.extras.tris), outfit: KIDRIG.outfit, sole: KIDRIG.sole, ...(KIDRIG.atlas ? { atlas: KIDRIG.atlas, source: SRC } : {}) } } : {}), clips: meta }, null, 1));
 console.log(`wrote models/characters/${NAME}.glb (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB: ${meshesOut.map((m) => m.name).join(" / ")}, ${animations.length} clips ${(animBytes / 1024).toFixed(0)} KB) + ${NAME}.json`);
