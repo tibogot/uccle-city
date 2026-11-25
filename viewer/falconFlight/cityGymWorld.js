@@ -17,6 +17,7 @@
 //   pads                   the perches that are no part of the height grid (sills, railings, lamps, church perches,
 //                          ridges): small discs (r 0.35 m) the falcon stands on, in a 2 m bucket grid over the pool
 // No allocation per frame (one shared result object a query, the pools made once).
+import { sillHasBox } from "../plants/windowBoxRule.js";
 const CAP = 512;                 // ledges in the pool
 const CAND = 4096;               // candidates a rebuild collects (the nearest CAP kept)
 const R_LEDGE = 70;              // m round the falcon: kit / roosts / trees / lamps
@@ -50,6 +51,7 @@ export class CityGymWorld {
     this.edgeH = new Float32Array(Math.pow(Math.ceil(2 * R_EDGE / EDGE_STEP) + 1, 2));
     this.stats = { builds: 0, ledges: 0, pads: 0, maxWork: 0, slices: 0, byKind: new Int32Array(LEDGE_KINDS.length) };
     this.Y0 = 0;
+    this.boxes = true;           // the city's window boxes are on (cityPlants.js): their sills are no perches
   }
   floor(x, z) { return this.w.floor(x, z); }
   ground(x, z) { return this.w.ground(x, z); }
@@ -65,7 +67,12 @@ export class CityGymWorld {
       const L = this.ledges;
       for (let n = G.heads[j * GRID + i]; n >= 0; n = G.next[n]) {
         const q = L[G.pad[n]], dx = x - q.x, dz = z - q.z;
-        if (dx * dx + dz * dz < PAD_R * PAD_R && q.y <= y + 0.5 && q.y > o.floor) { o.floor = q.y; o.pad = G.pad[n]; o.tree = null; }
+        if (dx * dx + dz * dz >= PAD_R * PAD_R || q.y > y + 0.5) continue;
+        if (q.y > o.floor) { o.floor = q.y; o.pad = G.pad[n]; o.tree = null; }
+        // a sill / railing under the drawn eaves: the 1 m roof grid's cell takes the wall's line, so it reads the roof
+        // over the sill (browser: "height -5 m" on a sill); here the pad is the floor and the roof grid's top the
+        // ceiling over a 2 m niche (a window's opening)
+        else if (o.floor > y && q.y > y - 2) { o.ceil = Math.min(o.ceil, Math.max(o.floor, q.y + 2)); o.floor = q.y; o.pad = G.pad[n]; o.tree = null; }
       }
     }
     return o;
@@ -211,6 +218,7 @@ export class CityGymWorld {
         for (; J.at < A.length && n < budget; J.at += S, n++) {
           const x = A[J.at], z = A[J.at + 2];
           if ((x - cx) ** 2 + (z - cz) ** 2 > R2) continue;
+          if (kind === 2 && this.boxes && sillHasBox(A, J.at)) continue;      // (a window box on it: geraniums, no perch)
           const nx = A[J.at + 3], nz = A[J.at + 4];
           this.add(x + nx * out, A[J.at + 1] + up, z + nz * out, Math.atan2(-nx, -nz), kind, cx, cz);
         }

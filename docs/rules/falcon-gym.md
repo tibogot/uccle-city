@@ -201,6 +201,9 @@ The old sign fails 12 of these checks.
   - the façade kit's window sills and balcony / balconnet railings (the tiles' own kit placements; `viewer/main.js` keeps `tile.kit`)
   - the street lamps, the ridge / church roosts, the crowns' tops and the family's perches (the eyrie's ledge)
 - **The pads.** The perches that are not in the height grid (sills, railings, lamps, church perches, ridges) are 0.35 m pads the falcon stands on.
+  - A sill under the drawn eaves: the 1 m roof grid's cell takes the wall's line and reads the roof over the sill. There the pad is the floor, and the roof the ceiling over a 2 m niche (browser: "height -5 m" on a sill).
+  - A sill with a window box (`viewer/plants/windowBoxRule.js`, the rule cityPlants.js plants them by) is no perch. In the browser, a falcon stood hidden in the geraniums.
+  - On a sill or a railing, the perched camera looks at the falcon from the street.
 - **The cost.** The pool is rebuilt round the falcon in slices of at most ~400 samples a frame, nearest first, into two fixed pools that are swapped. Nothing is allocated per frame (`gymFlight.js`'s look-ahead and launch lost their per-frame arrays).
 - **The auto-dive.** Its aim (`falconFun.js dive`: the eased lead point over the solids) is handed to the gym's steering; in the last 14 m it aims at the bird itself.
 - **The launch off an edge** (`gymCity.js` CityGymFlight.edgeLaunch) takes the freest of five directions within 63 deg of the facing. A sill faces the street, and the house opposite is 10-15 m off.

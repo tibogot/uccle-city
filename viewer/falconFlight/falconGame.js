@@ -110,7 +110,7 @@ export class FalconGame {
   }
   perchOn(p) {
     // (gym: standing there, its own ground mode)
-    if (this.gw) { this.f.placeOnGround(p.pos.x, p.pos.y, p.pos.z, p.yaw); this._gymMode = "ground"; this.mode = "perch"; this.perch = p; this.landing = null; if (p.eyrie && this.bird.prey) this.deliver(); return; }
+    if (this.gw) { this.f.placeOnGround(p.pos.x, p.pos.y, p.pos.z, p.yaw); this._gymMode = "ground"; Object.assign(this._gp, { name: p.name || "ground", roof: !!p.roof }); this._gp.pos.copy(p.pos); this._gp.yaw = p.yaw; this._gp.camYaw = p.name === "sill" || p.name === "railing" ? p.yaw + Math.PI : p.yaw; this.mode = "perch"; this.perch = this._gp; this.landing = null; if (p.eyrie && this.bird.prey) this.deliver(); return; }
     this.mode = "perch"; this.perch = p; this.landing = null;
     this.f.vel.x = this.f.vel.y = this.f.vel.z = 0; this.f.V = 0;
     // (falconfix, owner: "when it lands everything is shaking") the flight's live state is frozen on a perch (sub() does
@@ -392,6 +392,8 @@ export class FalconGame {
       const p = this._gp;
       p.pos.set(f.pos.x, f.feetY, f.pos.z); p.yaw = f.heading; p.roof = f.feetY > this.world.ground(f.pos.x, f.pos.z) + 1.5;
       if (was !== "ground" && was !== "hop") p.name = was === "land" && f._land ? f._land.q.name : p.roof ? "roof" : "ground";
+      // (on a sill / railing the bird faces the street, the wall behind it: the perched camera looks at it from outside)
+      p.camYaw = p.name === "sill" || p.name === "railing" ? f.heading + Math.PI : f.heading;
       this.mode = "perch"; this.perch = p; this.landing = null;
       // landed on the eyrie's ledge with prey: delivered
       if (was === "land" && this.bird.prey) { const q = this.perches.find((x) => x.eyrie); if (q && q.pos.distanceTo(p.pos) < 2) this.deliver(); }
