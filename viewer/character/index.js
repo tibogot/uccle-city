@@ -117,7 +117,7 @@ export class ThirdPerson {
       if (this._capsuleSpeeds) { this.ctl.p.walkSpeed = this._capsuleSpeeds[0]; this.ctl.p.runSpeed = this._capsuleSpeeds[1]; this.ctl.p.groundAccel = this._capsuleSpeeds[2]; this.ctl.p.groundDecel = this._capsuleSpeeds[3]; }
       return { name: "capsule" };
     }
-    const ch = await loadCharacter(name);
+    const ch = await loadCharacter(name, { renderer });
     const found = this.body.setModel(ch.gltf, ch.opts);
     this._capsuleSpeeds ||= [this.ctl.p.walkSpeed, this.ctl.p.runSpeed, this.ctl.p.groundAccel, this.ctl.p.groundDecel];
     if (this.body.loco) {

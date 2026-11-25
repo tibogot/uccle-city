@@ -18,15 +18,19 @@ import { readGLB, sampleAnim, worldPose, q as Q, v as V } from "../characters/gl
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1")), "../..");
 const quiet = process.argv.includes("--quiet");
+// --model kidA: the same checks on the MPFB kid (docs/KIDCHAR.md: models/characters/kidA.glb, one atlas, 3 LODs ~20k / 8k / 2k)
+const MODEL = (() => { const i = process.argv.indexOf("--model"); return i > 0 ? process.argv[i + 1] : "kid"; })();
+const IS_A = MODEL !== "kid";
+const BUDGET = IS_A ? [22000, 8500, 2200] : [15000, 6000, 2000];
 const rows = [];
 let failed = 0;
 const check = (name, ok, got, want) => { rows.push([name, ok ? "PASS" : "FAIL", got, want]); if (!ok) failed++; };
 const t0 = performance.now();
 
 // ------------------------------------------------------------------------------------------------ skeleton + budgets
-const kid = readGLB(path.join(ROOT, "models/characters/kid.glb"));
+const kid = readGLB(path.join(ROOT, `models/characters/${MODEL}.glb`));
 const ual = readGLB(path.join(ROOT, "models/characters/ual.glb"));
-const meta = JSON.parse(fs.readFileSync(path.join(ROOT, "models/characters/kid.json"), "utf8"));
+const meta = JSON.parse(fs.readFileSync(path.join(ROOT, `models/characters/${MODEL}.json`), "utf8"));
 const jn = (g) => g.json.skins[0].joints.map((i) => g.nodes[i].name);
 const kj = jn(kid), uj = jn(ual);
 check("skeleton = the UAL rig's joints (names, order)", kj.length === uj.length && kj.every((n, i) => n === uj[i]), `${kj.length} joints${kj.every((n, i) => n === uj[i]) ? "" : " (differ)"}`, `${uj.length}, identical`);
@@ -36,10 +40,16 @@ check("rest orientations kept (only the offsets moved)", rotErr < 2e-3, `max ${(
 const W0 = worldPose(kid, sampleAnim(kid, null, 0));
 check("height 1.40-1.50 m (an 11-12 year old)", meta.kid.height > 1.4 && meta.kid.height < 1.5, `${meta.kid.height} m`, "1.40-1.50");
 const tris = kid.json.meshes.map((m) => kid.json.accessors[m.primitives[0].indices].count / 3);
-check("LODs: LOD0 <= 15k, LOD1 <= 6k, LOD2 <= 2k tris; one primitive each", tris[0] <= 15000 && tris[1] <= 6000 && tris[2] <= 2000 && kid.json.meshes.every((m) => m.primitives.length === 1), tris.join(" / "), "<= 15000 / 6000 / 2000");
-const { KID_PALETTE } = await import("../../viewer/kid/kidModel.js").catch(() => ({ KID_PALETTE: null }));
+check(`LODs: ${BUDGET.join(" / ")} tris at most; one primitive each (one draw)`, tris.every((t, i) => t <= BUDGET[i]) && kid.json.meshes.every((m) => m.primitives.length === 1), tris.join(" / "), `<= ${BUDGET.join(" / ")}`);
+const { KID_PALETTE, KIDA_ROUGH } = await import("../../viewer/kid/kidModel.js").catch(() => ({ KID_PALETTE: null }));
 const slots = meta.kid.slots;
-if (KID_PALETTE) check("named slots: every slot has a palette colour", slots.every((sl) => sl in KID_PALETTE), slots.join(","), "all in KID_PALETTE");
+if (!IS_A && KID_PALETTE) check("named slots: every slot has a palette colour", slots.every((sl) => sl in KID_PALETTE), slots.join(","), "all in KID_PALETTE");
+if (IS_A && KIDA_ROUGH) check("named slots: every slot has a roughness (the atlas carries the colour)", slots.every((sl) => sl in KIDA_ROUGH), slots.join(","), "all in KIDA_ROUGH");
+if (IS_A) {
+  // the LODs pop-free budget: each LOD at least ~ 1/3 of the one before (no sudden silhouette loss at a switch)
+  check("LOD ratios (no popping): LOD1 >= 30 % of LOD0, LOD2 >= 20 % of LOD1", tris[1] >= 0.3 * tris[0] && tris[2] >= 0.2 * tris[1], `${(tris[1] / tris[0] * 100).toFixed(0)} % / ${(tris[2] / tris[1] * 100).toFixed(0)} %`, ">= 30 % / 20 %");
+  check("one atlas (KTX2) next to the model", fs.existsSync(path.join(ROOT, "models/characters", meta.kid.atlas)), meta.kid.atlas, "exists");
+}
 
 // ------------------------------------------------------------------------------------------------ stray pieces, spikes
 // (round 3: a flake of the shirt cut off by a hem plane stood up at the shoulder; a hem vertex took the waist's weights
@@ -55,7 +65,7 @@ if (KID_PALETTE) check("named slots: every slot has a palette colour", slots.eve
   const at = new Map(), weld = new Int32Array(nv);
   for (let i = 0; i < nv; i++) { const k = key(i); if (at.has(k)) { par[find(i)] = find(at.get(k)); weld[i] = at.get(k); } else { at.set(k, i); weld[i] = i; } }
   for (let t = 0; t < I.length; t += 3) { par[find(I[t])] = find(I[t + 1]); par[find(I[t + 1])] = find(I[t + 2]); }
-  const BODY = new Set(["skin", "shirt", "shirt_trim", "shorts", "socks", "sock_stripe", "shoe", "sole", "shoe_accent", "lace"].map((n) => slots.indexOf(n)));
+  const BODY = new Set((IS_A ? ["skin", "tee", "shorts", "socks", "shoes", "jacket"] : ["skin", "shirt", "shirt_trim", "shorts", "socks", "sock_stripe", "shoe", "sole", "shoe_accent", "lace"]).map((n) => slots.indexOf(n)));
   const comp = new Map();
   // (a SPIKE: a triangle folded against its neighbours - its normal more than 115 deg off the mean normal round its
   // corners (a hem band turns 90 deg: allowed) - and longer than 2 cm: a flake or a blade)
@@ -107,7 +117,7 @@ for (const f of packs.length ? packs : [path.join(ROOT, "models/characters/ual.g
 }
 check(`every UAL clip binds to the kid (${packs.length ? "UAL1 + UAL2 packs" : "ual.glb's clips (no raw packs here)"})`, nUnbound === 0 && nClips > 0, `${nClips - nUnbound}/${nClips}${unbound.size ? " missing " + [...unbound].join(",") : ""}`, "all");
 const kidClipsOk = kid.anims.every((a) => a.channels.every((ch) => kid.nodes[ch.node] && (ch.path === "rotation" || kid.nodes[ch.node].name === "pelvis")));
-check("kid.glb clips: rotations + the pelvis translation only, all on kid joints", kidClipsOk && kid.anims.length >= 30, `${kid.anims.length} clips`, ">= 30, rotations + pelvis");
+check(`${MODEL}.glb clips: rotations + the pelvis translation only, all on kid joints`, kidClipsOk && kid.anims.length >= 30, `${kid.anims.length} clips`, ">= 30, rotations + pelvis");
 
 // ------------------------------------------------------------------------------------------------ deformation (CPU skinning)
 function deformStats(g) {
@@ -143,6 +153,7 @@ function deformStats(g) {
     if (js[1][0] < 0.15) continue;
     for (const [rn, pair] of Object.entries(REG)) if (pair.includes(js[0][1]) && pair.includes(js[1][1]) && js[0][1] !== js[1][1]) { region[i] = rn; break; }
   }
+  const SLT = m0.attributes._SLOT !== undefined ? g.accessor(m0.attributes._SLOT) : null, slotBad = {};
   const rest = skinAt(sampleAnim(g, null, 0));
   let bindErr = 0;
   for (let i = 0; i < nv * 3; i++) bindErr = Math.max(bindErr, Math.abs(rest[i] - P[i]));
@@ -168,7 +179,7 @@ function deformStats(g) {
         const r = len(X, edges[e][0], edges[e][1]) / L0[e];
         if (!(r === r)) { nan++; continue; }
         if (r > hi) hi = r; if (r < lo) lo = r;
-        if (r > 2.5 || r < 0.25) { over++; const j = region[edges[e][0]]; if (j) regionBad[j] = (regionBad[j] || 0) + 1; }
+        if (r > 2.5 || r < 0.25) { over++; const j = region[edges[e][0]]; if (j) { regionBad[j] = (regionBad[j] || 0) + 1; if (SLT) { const k = `${j}:${SLT[edges[e][0]]}`; slotBad[k] = (slotBad[k] || 0) + 1; if (process.env.KID_DEBUG && !slotBad["ex" + k]) { const [a0, b0] = edges[e]; slotBad["ex" + k] = `${name} r ${r.toFixed(1)} a(${[0, 1, 2].map((c) => P[a0 * 3 + c].toFixed(3))}) b(${[0, 1, 2].map((c) => P[b0 * 3 + c].toFixed(3))})`; } } } }
         n++;
       }
     }
@@ -178,6 +189,7 @@ function deformStats(g) {
     worst.over = (worst.over || 0) + over / n;
   }
   const regionFrac = Object.fromEntries(Object.keys(regionN).filter((k) => k !== "frames").map((k) => [k, (regionBad[k] || 0) / (regionN[k] * regionN.frames)]));
+  if (process.env.KID_DEBUG && SLT) console.log("torn edges by region:slot", slotBad);
   return { regionFrac, bindErr, nan: worst.nan, hi: worst.hi, lo: worst.lo, frac: worst.over / Math.max(1, res.length), res };
 }
 
@@ -207,12 +219,12 @@ else {
   const { BIKE, createBikeState, bikePose } = await import("../../viewer/bike/bikePhysics.js");
   const { findBikeEmpties } = await import("../../viewer/kid/bikeRig.js");
   const { prepareKid } = await import("../../viewer/kid/kidModel.js");
-  const buf = fs.readFileSync(path.join(ROOT, "models/characters/kid.glb"));
+  const buf = fs.readFileSync(path.join(ROOT, `models/characters/${MODEL}.glb`));
   const gltf = await new GLTFLoader().parseAsync(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), "");
   let prepErr = "";
-  try { const k = prepareKid(gltf); if (k.meshes.length !== 3) prepErr = `${k.meshes.length} LODs`; k.autoLod(30); if (k.lod !== 1) prepErr += " LOD by distance"; k.autoLod(2); }
+  try { const k = prepareKid(gltf, IS_A ? { atlas: "none" } : {}); if (k.meshes.length !== 3) prepErr = `${k.meshes.length} LODs`; k.autoLod(30); if (k.lod !== 1) prepErr += " LOD by distance"; k.autoLod(2); }
   catch (e) { prepErr = e.message; }
-  check("kidModel: 3 LOD meshes, palette material, LOD switch", !prepErr, prepErr || "ok", "ok");
+  check(`kidModel: 3 LOD meshes, ${IS_A ? "atlas" : "palette"} material, LOD switch`, !prepErr, prepErr || "ok", "ok");
   const scene = new THREE.Scene(), holder = new THREE.Group();
   holder.add(gltf.scene); scene.add(holder);
   const rider = new RiderIK(gltf.scene, gltf.animations);

@@ -30,6 +30,11 @@ export const CHARACTERS = {
   // with the same ratios as the UAL mannequin's.
   kid: { file: "kid.glb", meta: "kid.json", label: "The kid (scripted, UAL rig + clips, CC0)", system: "loco", kid: true,
     move: { walk: 1.1, run: 4.0, sprint: 5.6, crouch: 0.72, accel: 12, decel: 14 } },
+  // THE MPFB KID (docs/KIDCHAR.md phase 2: the owner's candidate A, tools/blender/kidMakeHuman.py --game +
+  // tools/characters/kidABuild.mjs): the same UAL rig + 33 clips, real proportions, one atlas (KTX2), 3 LODs.
+  // Gaits: the old kid's x his leg-length ratio (1.07).
+  kidA: { file: "kidA.glb", meta: "kidA.json", label: "The kid A (MakeHuman MPFB, UAL rig + clips, CC0)", system: "loco", kid: true, atlas: "kidA_atlas.ktx2",
+    move: { walk: 1.18, run: 4.25, sprint: 6.0, crouch: 0.77, accel: 12, decel: 14 } },
   hoodie: { file: "hoodie.glb", label: "Hoodie (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
   casual: { file: "casual.glb", label: "Casual (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
 };
@@ -42,13 +47,13 @@ const LEG = (s) => ({ upper: `UpperLeg${s}`, lower: `LowerLeg${s}`, end: `LowerL
  * A locomotion character (system "loco"): one GLB with the skinned body (one primitive, vertex colours) and its
  * in-place clips, and the clips' metadata (contacts, touch-downs, speeds, stairs). Bone names as GLTFLoader keeps them.
  */
-async function loadLoco(name, def) {
+async function loadLoco(name, def, renderer = null) {
   const base = new URL("../../models/characters/", import.meta.url).href;
   const [gltf, meta] = await Promise.all([new GLTFLoader().loadAsync(base + def.file), fetch(base + def.meta).then((r) => { if (!r.ok) throw new Error(`${def.meta} ${r.status}`); return r.json(); })]);
   let tris = 0, mesh = null, kid = null;
   if (def.kid) {
     const { prepareKid } = await import("../kid/kidModel.js");
-    kid = prepareKid(gltf); tris = kid.tris[0];
+    kid = prepareKid(gltf, def.atlas ? { atlas: base + def.atlas, renderer } : {}); tris = kid.tris[0];
   }
   gltf.scene.traverse((o) => { if (o.isSkinnedMesh && !mesh) mesh = o; });
   if (mesh && !kid) {
@@ -66,9 +71,9 @@ async function loadLoco(name, def) {
   };
 }
 
-export async function loadCharacter(name = "hoodie", { height = 1.76 } = {}) {
+export async function loadCharacter(name = "hoodie", { height = 1.76, renderer = null } = {}) {
   const def = CHARACTERS[name] || CHARACTERS.hoodie;
-  if (def.system === "loco") return loadLoco(name, def);
+  if (def.system === "loco") return loadLoco(name, def, renderer);
   const gltf = await new GLTFLoader().loadAsync(new URL(`../../models/characters/${def.file}`, import.meta.url).href);
   const t0 = performance.now();
   const tris = mergeSkinned(gltf.scene);

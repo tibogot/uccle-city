@@ -91,6 +91,25 @@ def bone_p(n, end="head"):
     b = rig.pose.bones[n]
     return rig.matrix_world @ (b.head if end == "head" else b.tail)
 
+def smooth_weights(o, reps, f=0.5):
+    """the bone weights of a mesh relaxed toward their neighbours' (other vertex groups untouched)"""
+    bones = {g.index for g in o.vertex_groups if g.name in BONES}
+    bm = bmesh.new(); bm.from_mesh(o.data); dl = bm.verts.layers.deform.active
+    bm.verts.ensure_lookup_table()
+    for _ in range(reps):
+        cur = [{gi: w for gi, w in v[dl].items() if gi in bones} for v in bm.verts]
+        for v in bm.verts:
+            nb = [cur[e.other_vert(v).index] for e in v.link_edges]
+            if not nb: continue
+            keys = set(cur[v.index]).union(*nb)
+            new = {k: (1 - f) * cur[v.index].get(k, 0.0) + f * sum(n.get(k, 0.0) for n in nb) / len(nb) for k in keys}
+            tot = sum(new.values()) or 1.0
+            for k in list(v[dl].keys()):
+                if k in bones: del v[dl][k]
+            for k, w in new.items():
+                if w / tot > 1e-3: v[dl][k] = w / tot
+    bm.to_mesh(o.data); bm.free()
+
 def delete_group(inner, name):
     g = basemesh.vertex_groups.get(name) or basemesh.vertex_groups.new(name=name)
     g.add(sorted(inner), 1.0, "REPLACE")
@@ -130,10 +149,13 @@ def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True
     kd = kdtree.KDTree(len(has))
     for k, v in enumerate(has): kd.insert(v.co, k)
     kd.balance()
-    for v in bm.verts:
+    for v in bm.verts:     # (inverse-distance blend of the 4 nearest: one nearest vertex could sit across a weight edge)
         if len(v[dl]) == 0:
-            _, k, _ = kd.find(v.co)
-            for gi, w in has[k][dl].items(): v[dl][gi] = w
+            acc, tot = {}, 0.0
+            for co, k, d in kd.find_n(v.co, 4):
+                wk = 1.0 / max(d, 1e-4); tot += wk
+                for gi, w in has[k][dl].items(): acc[gi] = acc.get(gi, 0.0) + w * wk
+            for gi, w in acc.items(): v[dl][gi] = w / tot
     for lay in list(bm.loops.layers.uv.values()): bm.loops.layers.uv.remove(lay)
     bm.verts.layers.int.remove(src)
     me2 = bpy.data.meshes.new(name); bm.to_mesh(me2); bm.free()
@@ -261,7 +283,13 @@ def build_outfit():
         fx = bone_p("foot_l" if p.x > 0 else "foot_r")
         p2 = Vector((fx.x + (p.x - fx.x) * 1.08, fx.y + (p.y - fx.y) * 1.06, p.z * 1.06))
         v.co = shoes.matrix_world.inverted() @ p2
-    delete_group(inner_j, "Delete.kid_jacket"); delete_group(inner_s, "Delete.kid_socks")
+    # the skin inside the shorts goes too (the pants' own delete group left the crotch: it tore at the hips in the
+    # crouch / walk clips, hidden but counted, and wasted tris)
+    zc = knee + C.get("shorts_above_knee", 0.035)
+    inner_p = {i for i in range(len(me.vertices)) if inbody[i] and dom[i] in ("pelvis", "thigh_l", "thigh_r") and zc + 0.03 < P(i).z < pel + 0.06}
+    delete_group(inner_j, "Delete.kid_jacket"); delete_group(inner_s, "Delete.kid_socks"); delete_group(inner_p, "Delete.kid_shorts")
+    # cloth weights smoothed (the low-poly shorts' crotch and the jacket's shoulders stretched in strides / reaches)
+    for o, rep in ((parts[SHORTS], 10), (jacket, 3)): smooth_weights(o, rep)
     print(f"outfit: jacket {len(jacket.data.polygons)} f, socks {len(socks.data.polygons)} f, cap {len(cap.data.polygons)} f, tee -{len(gone_t)} v, shoes -{len(gone2)} v")
     return {"kid_jacket": jacket, "kid_socks": socks, "kid_cap": cap, "kid_brim_f": brims[0], "kid_brim_b": brims[1]}
 
