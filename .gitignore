@@ -100,3 +100,5 @@ models/christmas/*.raw.glb
 models/villa/*.raw.glb
 models/villa/audit/*.json
 !models/villa/audit/*.allow.json
+# the Calevoet underpass (tools/blender/underpass.py): the raw exports
+models/underpass/*.raw.glb

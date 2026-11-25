@@ -9,12 +9,13 @@ import { partFromBufferGeometry } from "../tools/mesh_audit/audit.js";
 import { auditContact } from "../tools/mesh_audit/contact.js";
 import { TUNNEL_ROOTS } from "./rail/tunnels.js";
 import { ART_ROOTS } from "./publicart/artRoots.js";
+import { UNDERPASS_ROOT } from "./underground/underpass.js";
 import { needCpu } from "./heapDrop.js";
 
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "papenkasteel", "stpierre", "observatory", "augustin", "russian", "rosaire", "sacrecoeur", "saintmarc", "latourdefrein", "heros",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
   "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek",
-  ...TUNNEL_ROOTS, ...ART_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js), the public art (viewer/publicart/)
+  ...TUNNEL_ROOTS, ...ART_ROOTS, UNDERPASS_ROOT];                                   // the road tunnels (viewer/rail/tunnels.js), the public art (viewer/publicart/)
 
 const meshParts = (root, name, filter = null) => {
   const out = [];
