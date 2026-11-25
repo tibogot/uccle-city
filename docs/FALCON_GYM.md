@@ -104,16 +104,19 @@ The same greybox, bird, camera and input. The current controller runs `FalconGam
 
 1. The rig and all Mesh2Motion clips. `tools/blender/meshoptDecode.mjs` decodes the meshopt files first: Blender 5.0's importer cannot read `EXT_meshopt_compression`.
 2. The Sketchfab mesh. Its own armature and animation are dropped, it is joined into one mesh and turned so the span is on X and the nose on -Y (the denser end is the head; `--yaw` overrides).
-3. The fit. The rig is scaled uniformly to beak-to-tail length, then the wing chains are stretched to the mesh's wing tips.
-4. The weights. Mesh2Motion's reference mesh's vertex groups are copied by a Data Transfer (nearest face, interpolated), normalised, 4 bones a vertex. This is more robust than bone-heat weighting on a scan-like mesh, which often fails on non-manifold feathers.
-5. Our own clips on top:
-   - **Stoop**: the Mesh2Motion folded wings in flight, legs back, tail closed
+3. The fit. The rig is scaled uniformly to beak-to-tail length. Then the wing, leg, neck and head bones are moved onto the download's OWN joints (V2 POLISH, below): its bones, or where its skin weights blend.
+4. The weights. Mesh2Motion's reference mesh's vertex groups are copied by a Data Transfer (nearest face, interpolated), normalised, 4 bones a vertex. This is more robust than bone-heat weighting on a scan-like mesh, which often fails on non-manifold feathers. Then:
+   - the legs take the download's own leg weights, bone for bone
+   - every feather card is rigid on one bone
+   - the covert sheets lose their feather-bone weights and are smoothed
+5. The clips:
+   - Mesh2Motion's Flap, Glide, Idle, Walk, Hop, TakeOff and Land, retargeted onto the moved bones. Walk, Idle and Hop also get our folded wing and their feet put on the floor (a root translation).
+   - **Stoop**: our folded wing, legs back, tail closed
    - **Talons**: legs forward, toes open
-   - **Flare**: wings forward and up, tail down
-   - **Perch**: the folded-wing stand
-   - plus Mesh2Motion's Flap, Glide, Idle, Walk, Hop, TakeOff and Land
+   - **Flare**: wings forward and up, tail down, toes open
+   - **Perch**: upright, wings folded with the tips on the tail, the legs by IK from the feet, toes gripping
 6. Shading: the mesh's own custom normals are kept, else a Weighted Normal modifier (keep sharp).
-7. The glb export with JPEG textures ≤ 2048, all actions. `--preview`: Cycles renders (OptiX) of Glide, Stoop, Perch and Flare on a checker under a grazing sun.
+7. The glb export with JPEG textures ≤ 2048, all actions, and the juvenile plumage (step 8 of the script). Previews: `tools/blender/falconV2preview.py`, Cycles (OptiX) renders of the exported glb's clips on a checker under a grazing sun, `--tex` for the juvenile.
 
 **Why this way.** Path (b), weight-painting onto `peregrine.glb`, gives the same skeleton but its clips stop at Flap/Glide/Idle/Walk. Mesh2Motion's newer set adds Hop, TakeOff and Land on the same bones, and it is CC0. In the gym, the current model already plays Mesh2Motion's TakeOff/Land/Hop: quaternion tracks only, decoded copies in `models/bird/v2/m2m/`.
 
@@ -125,8 +128,9 @@ The two Sketchfab GLBs (`peregrine_falcon.glb`, `falcon__merged_animations.glb` 
 
 ```
 node tools/blender/meshoptDecode.mjs <src>/mesh2motion/animations <src>/mesh2motion-plain/animations   (once; model.glb copied beside)
-blender --factory-startup -b -P tools/blender/falconV2.py -- --mesh <src>/peregrine_falcon.glb --rig <src>/mesh2motion-plain --out <src>/build/falcon_v2.raw.glb [--preview <dir>]
+blender --factory-startup -b -P tools/blender/falconV2.py -- --mesh <src>/peregrine_falcon.glb --rig <src>/mesh2motion-plain --out <src>/build/falcon_v2.raw.glb
 node tools/falconV2pack.mjs <src>/build/falcon_v2.raw.glb models/bird/v2/falcon_v2.glb        (--fast: UASTC level 1, no RDO)
+blender --factory-startup -b -P tools/blender/falconV2preview.py -- --glb <src>/build/falcon_v2.raw.glb --out <dir> --tex <src>/build/falcon_v2.raw.glb.juvenile.png
 ```
 
 `tools/textures` needs `npm ci` (ktx2-encoder) for the pack.
@@ -137,22 +141,39 @@ What the download needed, found on the way:
 - **The scale.** It is in centimetres under a x100 node chain. It is scaled to a 1.05 m wingspan, origin at the feet.
 - **Bone-display shapes.** The importer adds an `Icosphere` bone-display mesh; it is dropped.
 - **Seven UV sets.** Only the first is kept.
-- **The legs.** The download's legs hang (an attack pose) where the rig's legs are tucked. A nearest-surface weight transfer split the feet between the leg, the hips and the tail, and the toes stretched into streaks. Every vertex below the thighs or partly on a leg bone now follows its thigh rigidly. The gym tucks the v2 thighs further back in flight.
-- **Translation tracks.** The Mesh2Motion clips' hips / root translation tracks are in its own unscaled units (the hips 1.2 m up after the fit), so the clips keep rotations only.
+- **The bind is an attack pose.** Its legs hang, its head is held ~15 cm higher than the rig's, its beak is open and its toes splay. Before the shape is taken, its own rig is posed:
+  - the tibiotarsus and tarsus shortened to a peregrine's (7.5 / 5.0 cm on a 1.05 m span, from 8.7 / 6.5)
+  - the toes squared to the tarsus, the hallux straight back, the joints half curled
+  - the beak closed (the lower mandible turned up about its hinge)
+- **Translation tracks.** The Mesh2Motion clips' hips / root translation tracks are in its own unscaled units (the hips 1.2 m up after the fit), so the clips keep rotations only. The one exception is the root's translation in our Perch and the grounded Walk / Idle / Hop: it is ours, in metres, and the gym keeps `root.position`.
 - **The materials.** The feathers' alpha BLEND became MASK (cut-out, no sorting). Emission and the specular extensions are dropped.
 
-Shipped: `models/bird/v2/falcon_v2.glb`. 25,298 triangles, 11 clips (Flap, Glide, Idle, Walk, Hop, TakeOff, Land, Stoop, Talons, Flare, Perch). EXT_meshopt_compression geometry and three 1024 px KTX2 textures (base colour sRGB, ORM, normal): **2.96 MB** (the download: 6.7 MB). The gate row checks all of it.
+Shipped: `models/bird/v2/falcon_v2.glb`. 25,298 triangles, 11 clips (Flap, Glide, Idle, Walk, Hop, TakeOff, Land, Stoop, Talons, Flare, Perch). EXT_meshopt_compression geometry and three 1024 px KTX2 textures (base colour sRGB, ORM, normal): **2.7 MB**. Beside it, `falcon_v2_juvenile.ktx2` (0.7 MB): the juvenile base colour, named in the glb's `asset.extras.variants`. The gym's v2 wears it by default; the panel's "v2 plumage" switches to the adult. The gate row checks all of it, poses included (`tools/falconV2pose.mjs`).
 
-How it looks (screenshots in `C:\Users\tibog\Downloads\uccle-falcon-gym\`):
+The gym's panel "model" offers v2. "Side by side" stands both models on a plinth, perched (the panel's "stand pose": perch / glide).
 
-- **In flight it reads far better than the current bird**: real feathers, the adult slate / barred plumage.
-- **The folded poses are weak**: Perch and Stoop, the Mesh2Motion folded wing on this mesh. The download's wing feathers do not follow the rig's folded wing well (crumpled feathers). The talons hang open.
+### V2 POLISH (2026-11-25): the perched pose, the folded wings, the talons, the juvenile
 
-These need a weight pass on the wing feathers: a per-feather rigid assignment like the legs, or the download's own wing bones mapped onto ours.
+The first build stood with its wings spread flat on long stick legs, crumpled its feathers when folding, hung its talons open and wore the adult plumage (screenshots `2-*`, `6-*` in `C:\Users\tibog\Downloads\uccle-falcon-gym\`). Rule: `docs/rules/falcon-gym.md` "The v2 model".
 
-The far / family bird (`--far`) builds (7,268 triangles, `<src>/build/falcon_v2_far.raw.glb`) but **is not shipped**. Its frame choice takes a flat glide where its legs are tucked into the body, and the rigid-leg rule catches 1734 of 4885 vertices: streaks. It needs `--frame` set by hand and a tighter leg rule.
+- **The wings by landmarks.** Mesh2Motion's arm is shorter than the download's, so the X stretch put its elbow and wrist mid-forearm and mid-hand. Now its shoulder, elbow, wrist and tip go onto the download's own, piecewise along the span (the reference mesh with them).
+- **The legs on the download's joints and weights.** Hip, knee, ankle, foot and the middle toe's two knuckles. Front toes: proximal phalanx on `Foot`, middle on `Toes`, claw on `Toes_tip`; the hallux on `Foot`.
+- **The neck and head on the download's.** The joints are where its neck / skull weights blend: the bind's head is ~15 cm higher than the rig's. The neck takes the clips' directions, so the head comes back in line in flight.
+- **The feather cards rigid, by the download's own feather groups.** Five sheets a wing: the outer primaries on the hand (`wing_5`), FF4-5 on `wing_feather_4_1`, FF6-8 on `_3_1`, FF9-11 on `_2_1`, FF12-17 on `_1_1`. The tail's cards are on `tail_2`. The covert sheets keep no feather-bone weight. A fold turns whole cards: 0.00 % card stretch in Perch and Stoop.
+- **Our own folded wing.** Mesh2Motion's Idle fold fanned this mesh's sheets out. Each wing bone and each sheet's bone is now set as a frame (its line and the wing's upper surface): the humerus back, the forearm forward along the flank, the hand back over the back, the sheets back along the body. In Perch the hand is searched so the tips lie on the tail.
+- **Perch.** The body turned up to 45 deg and moved down by the root's translation (hips 13 cm over the feet). The neck up the body's line, the head level. The tail and the wing sheets lifted off the ground. The legs by IK from the feet up: tarsus near upright, knee forward in the belly. Toes flat, claws curled.
+- **Talons / Flare** open the toes (the claw ~10 deg); flight keeps the bind's half-closed curl (~84 deg).
+- **The juvenile plumage** is painted by the script on v2's own UVs from the adult texture. The adult's lightness is ramped to the juvenile's browns, with buff fringes on the upperparts. The underparts get the adult's bars removed (their fine detail kept), buff with dark VERTICAL drop streaks (the throat plainer). The cere and eye ring go yellow -> bluish-grey; the feet are paler. Palette: `peregrine.py --variant juvenile`'s.
 
-Then the gym's panel "model" offers v2 and "side by side" stands both models on a plinth. The gate row checks the triangle count (8k-30k) and the clips.
+Before / after (Cycles, OptiX): `C:\Users\tibog\Downloads\uccle-falcon-gym\v2polish_compare.png` (perched front / side / back, stoop, glide, talons), `v2polish_after_*.png`, `v2polish_before_*.png`, `v2polish_adult_*.png`.
+
+**The far / family bird: decided, not built.** The best option is a meshopt-simplified v2 (~5-7k triangles) on the same rig, not the second Sketchfab model (`--far` builds it: 7,268 triangles):
+
+- the same 55 bones and clips (the family plays the same Perch / Glide / Stoop), and the same UVs, so the adult KTX2 is shared (no extra texture download)
+- no look change at the LOD switch
+- the second model has its own attack-pose bind with legs tucked into the body: 1734 of 4885 vertices caught by the leg rule (streaks)
+
+To do: `meshopt_simplifyWithAttributes` per loose part, keeping each feather card's 4 corners. Cards cannot collapse into the body: they are rigid on one bone.
 
 ## Weak points / left
 
@@ -161,4 +182,8 @@ Then the gym's panel "model" offers v2 and "side by side" stands both models on 
 - **The landing uses a scripted final** (a Hermite curve, as the city's). It can pass through a thin railing on the way in.
 - **The vertical take-off's "boxed" test is geometric** (rays): a bird boxed by trees does not count them.
 - **Not in the city yet.** Adopting it means routing `viewer/falconGame/` through `GymFlight` against the city's `column` / roof grid: a `sphereHit` / `ray` / `clearUp` over the tile data, and `ledges` from the roof ridges plus the church perches.
-- **v2**: the folded poses (Perch, Stoop) and the hanging talons need a weight pass (above). The far model is not shipped. v2 wears the adult plumage (the player is a juvenile in the story: a juvenile repaint would need peregrine.py's painter on v2's UVs).
+- **v2**:
+  - The tail stays fanned in folded poses: its cards are on one bone, and the rig has no side bones to close it.
+  - Walk shows the long Mesh2Motion stride on the download's leg lengths.
+  - The far model is decided but not built (above).
+  - The underwing coverts show buff at the folded wrists.

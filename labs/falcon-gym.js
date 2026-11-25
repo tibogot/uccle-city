@@ -89,7 +89,7 @@ game.reset = () => START[S.start]();
 
 // ------------------------------------------------------------------------------------------------ panel
 const S = {
-  ctl: qp.get("ctl") === "current" ? "current" : "gym", model: "current", compare: false, clip: "auto", start: "on the field", slowmo: 1,
+  ctl: qp.get("ctl") === "current" ? "current" : "gym", model: "current", plumage: "juvenile", compare: false, standPose: "perch", clip: "auto", start: "on the field", slowmo: 1,
   time: preset, hour: lighting.hour, post: true, pigeons: pigeons.count, readable: 2.0,
   readout: "", stats: "",
   ...Object.fromEntries(["cruise", "stoopPush", "nMax", "nMaxStoop", "thrust0", "stunVn", "look", "rollRate"].map((k) => [k, GYM[k]])),
@@ -98,7 +98,9 @@ const ui = new Panel({ title: "Falcon Gym" });
 const f0 = ui.addFolder("Falcon");
 f0.add(S, "ctl", ["gym", "current"]).name("controller").onChange((v) => switchCtl(v));
 f0.add(S, "model", HAS_V2 && birds.v2 ? ["current", "v2"] : ["current"]).name("model").onChange((v) => setModel(v)).hint(HAS_V2 ? "" : "v2: models/bird/v2/falcon_v2.glb not built yet");
+if (birds.v2?.plumages?.juvenile) f0.add(S, "plumage", ["juvenile", "adult"]).name("v2 plumage").onChange((v) => { for (const b of [birds.v2, ...(standBirds || [])]) b?.setPlumage?.(v); });
 f0.add(S, "compare").name("side by side (both models on the stand)").onChange((v) => setCompare(v));
+f0.add(S, "standPose", ["perch", "glide"]).name("stand pose").onChange((v) => placeStand());
 f0.add(S, "clip", ["auto", "perch", "flap", "glide", "walk", "hop", "takeoff", "land", "stoop"]).name("clip (preview)").onChange((v) => { for (const b of Object.values(birds)) if (b) b.forceClip = v === "auto" ? null : v; });
 f0.add(S, "slowmo", 0.05, 1, 0.05).name("time scale");
 f0.add(S, "readable", 1, 3, 0.05).name("drawn span in the air (m)").onChange((v) => { game.size.readable = v; });
@@ -147,6 +149,8 @@ function setModel(v) {
   bird.root.removeFromParent(); bird = nb; scene.add(bird.root); game.bird = bird; S.model = v;
 }
 let standBirds = null;
+// perched on the plinth's top (the feet on it), or held 25 cm over it in the glide
+function placeStand() { for (const b of standBirds || []) b.root.position.set(b.standX, Y0 + 1.2 + (S.standPose === "perch" ? 0 : 0.25), 0); }
 const STAND_F = { heading: 0, gamma: 0, alpha: 0, phi: 0, fold: 0, flapLevel: 0, brake: 0, V: 15, walkV: 0 };
 async function setCompare(on) {
   stand.visible = on;
@@ -155,8 +159,9 @@ async function setCompare(on) {
     const plinth = new THREE.Mesh(new THREE.BoxGeometry(4.4, 1.2, 1.2), gym.materials.trim); plinth.position.set(0, Y0 + 0.6, 0); plinth.castShadow = plinth.receiveShadow = true; stand.add(plinth);
     for (const [i, w] of [["current", -0.8], ["v2", 0.8]].map((x) => x)) {
       if (i === "v2" && !HAS_V2) continue;
-      const b = await GymBird.create(i, 1.05, renderer); b.root.position.set(w * 1.6, Y0 + 1.2 + 0.25, 0); stand.add(b.root); standBirds.push(b);
+      const b = await GymBird.create(i, 1.05, renderer, S.plumage); b.standX = w * 1.6; stand.add(b.root); standBirds.push(b);
     }
+    placeStand();
     stand.position.set(FIELD.x - 6, 0, FIELD.z + 10); stand.rotation.y = Math.PI * 0.85;
   }
 }
@@ -287,8 +292,8 @@ function step(dtReal) {
   camOpt.aim = aiming ? aimV.set(-Math.sin(input.aim.yaw) * Math.cos(input.aim.pitch), Math.sin(input.aim.pitch), -Math.cos(input.aim.yaw) * Math.cos(input.aim.pitch)) : null;
   camOpt.zoom = input.zoom; camIn.span = bird.span;
   fcam.update(dtReal, camIn, camOpt);
-  // the stand: both models in the glide (wings spread: the shape to compare), or the clip the panel previews
-  if (standBirds) for (const b of standBirds) b.pose(dtReal, b.root.position, STAND_F, { mode: "fly" });
+  // the stand: both models perched (the standing shape) or in the glide (wings spread), or the clip the panel previews
+  if (standBirds) for (const b of standBirds) b.pose(dtReal, b.root.position, STAND_F, { mode: S.standPose === "perch" ? "perch" : "fly" });
 }
 lab.advance = (sec) => { const n = Math.round(sec * 60); for (let i = 0; i < n; i++) step(1 / 60); };
 renderer.setAnimationLoop(() => {
@@ -312,6 +317,6 @@ if (qp.get("start")) { const k = { field: "on the field", alley: "in the alley (
 if (S.ctl === "current") game.start(0, Y0 + 40, 60, 0, 18);
 START[S.start]();
 $("loading").remove();
-Object.assign(lab, { renderer, scene, camera, world, gym, air, pigeons, input, fcam, game, gf, C, S, START, demo, birds, get bird() { return bird; }, setModel, setCompare, switchCtl, lighting, step });
+Object.assign(lab, { renderer, scene, camera, world, gym, air, pigeons, input, fcam, game, gf, C, S, START, demo, birds, get bird() { return bird; }, setModel, setCompare, placeStand, get standBirds() { return standBirds; }, switchCtl, lighting, step });
 window.lab = lab;
 log(`ready: ${world.boxes.length} boxes, ${world.ledges.length} ledges, v2 ${HAS_V2 ? "found" : "not built"}`);

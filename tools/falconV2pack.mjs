@@ -10,6 +10,7 @@
 // repeatable from them. No LODs inside: the near bird is one player falcon (25k triangles); the far / family birds are
 // the second, 7k model (--far build).
 //   node tools/falconV2pack.mjs <raw.glb> <out.glb> [--fast]
+// (+ <out>_juvenile.ktx2: the juvenile plumage, named in the glb's asset.extras.variants)
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -56,6 +57,23 @@ for (const [i, im] of (J.images || []).entries()) {
   });
   imgBytes.set(i, Buffer.from(ktx));
   console.log(`  ${im.name}: ${T.width}x${T.height} ${srgb ? "sRGB" : "linear"} -> ${(ktx.length / 1024).toFixed(0)} KB KTX2 (${Date.now() - t0} ms)`);
+}
+// the plumage variants (tools/blender/falconV2.py step 8: "juvenile", the player's young of the year) as their own
+// KTX2 beside the glb (<out>_juvenile.ktx2), the same encoding as the base colour they replace; the glb names them
+J.asset.extras = { ...(J.asset.extras || {}), variants: {} };
+for (const [name, T] of Object.entries(texMeta)) {
+  if (!T.variant_of) continue;
+  const data = new Uint8Array(fs.readFileSync(path.join(SRC + ".tex", T.file)));
+  const ktx = await encodeToKTX2(data, {
+    isUASTC: true, uastcLDRQualityLevel: FAST ? 1 : 2, needSupercompression: true, enableRDO: !FAST, rdoQualityLevel: 1.0,
+    generateMipmap: true, isKTX2File: true, isPerceptual: true, isSetKTX2SRGBTransferFunc: true, isNormalMap: false,
+    imageDecoder: async () => ({ width: T.width, height: T.height, data }),
+  });
+  const file = path.basename(DST).replace(/\.glb$/, `_${name}.ktx2`);
+  fs.mkdirSync(path.dirname(DST), { recursive: true });
+  fs.writeFileSync(path.join(path.dirname(DST), file), Buffer.from(ktx));
+  J.asset.extras.variants[name] = { file, replaces: "baseColorTexture", width: T.width, height: T.height };
+  console.log(`  variant ${name}: ${T.width}x${T.height} -> ${file} ${(ktx.length / 1024).toFixed(0)} KB KTX2`);
 }
 for (const t of J.textures || []) { const s = t.source; t.extensions = { KHR_texture_basisu: { source: s } }; delete t.source; }
 J.extensionsUsed.push("KHR_texture_basisu"); J.extensionsRequired = [...new Set([...(J.extensionsRequired || []), "KHR_texture_basisu"])];

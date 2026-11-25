@@ -1,7 +1,7 @@
 ---
 status: provisional
 added: 2026-11-25
-check: `falcongym` (tools/falconGymTest.mjs: the gym controller headless in the gym's greybox: cruise, chase and stoop speeds, the pull-out, the alley take-off, the passage hop-out, the 15 deg wall graze, the landing flare and the edge launch, the ceiling; the lab's files; the v2 model's triangles and clips once built) + browser row `falcongym` (the lab loads with no console error)
+check: `falcongym` (tools/falconGymTest.mjs: the gym controller headless in the gym's greybox: cruise, chase and stoop speeds, the pull-out, the alley take-off, the passage hop-out, the 15 deg wall graze, the landing flare and the edge launch, the ceiling; the lab's files; the v2 model's triangles and clips once built, and its poses: tools/falconV2pose.mjs) + browser row `falcongym` (the lab loads with no console error)
 ---
 **Rule.** The falcon flies at a real peregrine's speeds and takes off like one, and small mistakes never stun it. Measured headless in the Falcon Gym (`labs/falcon-gym.html`, `viewer/falconGym/gymFlight.js`):
 
@@ -36,3 +36,31 @@ The city game's controller has grown by layers:
 Nothing checked the whole against the owner's numbers. The take-off was a drop forward from the perch's own height: from the ground between buildings it touched down again at once.
 
 **Scope.** The gym controller is a proposal next to the city's (the panel switches them). The rule binds the gym now and the city once it adopts the controller.
+
+## The v2 model (V2 POLISH, 2026-11-25)
+
+**Rule.** The falcon v2 (`models/bird/v2/falcon_v2.glb`, built by `tools/blender/falconV2.py`) poses like a real peregrine, checked on the shipped glb by `tools/falconV2pose.mjs` (the skin evaluated in Node):
+
+- **Perched (the Perch clip).** The body upright, 35-65 deg (built at 45). The feet on the ground under the hip joints (< 7 cm off), nothing below the ground. Short legs: the hip joints < 16 cm up and < 6 cm of leg showing below the belly. The folded wings' tips on the tail (< 6 cm from its feathers), behind the hips.
+- **Folded wings slide, they never crumple.** Every wing feather card (a loose part of the download) is rigid on ONE bone, weight 1. No card edge stretches in Perch or Stoop (< 2 %). The covert sheets carry no feather-bone weight.
+- **Toes.** Closed in flight (Glide) and on the perch: the claw >= 45 deg toward the sole. Open in Talons: <= 25 deg, never bent back past -35.
+- **Plumage.** The player is a juvenile. `falcon_v2_juvenile.ktx2` sits beside the glb and is named in its `asset.extras.variants`. The adult texture stays in the glb, for the church family.
+
+**Why.** The coordinator's review of v2's first build (screenshots `uccle-falcon-gym/2-*`, `6-*`): it stood with its wings spread flat on long stick legs, and its folded poses crumpled the wing feathers. Its talons hung open, and it wore the adult plumage. The causes, found on the way:
+
+- **The fit stretched the Mesh2Motion wing along X.** Mesh2Motion's arm is shorter than the download's, so its elbow and wrist landed mid-forearm and mid-hand, and the fold bent cards in the middle.
+- **The weights came from a nearest-surface transfer.** One card's vertices got different bones (a fold tore it), and the covert sheets got feather-bone weights.
+- **The download's bind is an attack pose.** Its legs hang, its head is ~15 cm higher than the rig's (the skull took the neck's weights), its beak is open and its toes splay. Its legs were made rigid on the thighs, so they could only swing as sticks.
+- **Mesh2Motion's own fold fans this mesh's feathers out.** Its feather bones turn the sheets about the wrong pivots.
+
+The fixes (all in the script):
+
+- the wing, leg, neck and head bones moved onto the download's own joints (its bones, or where its weights blend)
+- the legs on the download's own leg weights
+- per-card rigid binding by the download's feather groups
+- our own folded-wing frames
+- the Perch clip by IK from the feet up, with the root's translation
+- the beak closed, the toes squared to the tarsus and half curled in the bind
+- the juvenile painted on v2's own UVs from the adult's lightness, with the bars swapped for vertical streaks
+
+**Check.** Gate row `falcongym` (`tools/falconGymTest.mjs` runs `tools/falconV2pose.mjs`). The first build fails 6 of these checks.

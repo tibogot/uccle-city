@@ -1,13 +1,14 @@
 // tools/falconGymTest.mjs: the Falcon Gym's checks (gate row `falcongym`, docs/rules/falcon-gym.md, docs/FALCON_GYM.md).
 // Headless: the gym's own controller (viewer/falconGym/gymFlight.js) in the gym's greybox (gymLayout.js), simple
 // scripted players at 60 Hz. Plus the files the lab loads (models, the lab page / module) and the v2 model's triangle
-// count and clips when it exists.
+// count and clips when it exists, and its poses (tools/falconV2pose.mjs: the skin evaluated in Node).
 //   node tools/falconGymTest.mjs [--quiet]
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { GymFlight, GymControls, GYM } from "../viewer/falconGym/gymFlight.js";
 import { makeGymWorld, Y0, LEDGES } from "../viewer/falconGym/gymLayout.js";
+import { v2PoseChecks } from "./falconV2pose.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const quiet = process.argv.includes("--quiet");
@@ -106,11 +107,13 @@ if (fs.existsSync(v2)) {
   const tris = (j.meshes || []).reduce((s, m) => s + m.primitives.reduce((q, p) => q + (p.indices != null ? j.accessors[p.indices].count / 3 : 0), 0), 0);
   const clips = (j.animations || []).map((a) => a.name);
   check(tris >= 8000 && tris <= 30000, "v2 falcon: triangles 8k-30k", tris);
-  for (const c of ["Flap", "Glide", "Idle", "Walk", "Hop", "TakeOff", "Land", "Stoop", "Talons", "Perch"]) check(clips.includes(c), `v2 falcon clip ${c}`);
+  for (const c of ["Flap", "Glide", "Idle", "Walk", "Hop", "TakeOff", "Land", "Stoop", "Talons", "Flare", "Perch"]) check(clips.includes(c), `v2 falcon clip ${c}`);
   const ext = j.extensionsUsed || [];
   check(ext.includes("EXT_meshopt_compression") && ext.includes("KHR_texture_basisu") && (j.images || []).every((im) => im.mimeType === "image/ktx2"), "v2 falcon packed: meshopt geometry + KTX2 textures (tools/falconV2pack.mjs)");
   check((j.materials || []).every((m) => m.alphaMode !== "BLEND" && !m.emissiveTexture), "v2 falcon materials: cut-out feathers (no BLEND), no emission");
   check(fs.statSync(v2).size < 4.5e6, "v2 falcon file < 4.5 MB", `${(fs.statSync(v2).size / 1e6).toFixed(2)} MB`);
+  // the V2 POLISH (rule falcon-gym "the v2 model"): the perched pose, the folded wings' cards, the toes, the juvenile
+  for (const [ok, what, val] of v2PoseChecks(v2)) check(ok, what, val);
 } else out.push("note models/bird/v2/falcon_v2.glb not built yet (the owner's Sketchfab files): v2 checks skipped");
 
 if (!quiet || fails.length) console.log(out.join("\n"));

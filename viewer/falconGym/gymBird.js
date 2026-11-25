@@ -4,7 +4,8 @@
 //             Mesh2Motion bird clips Take_Off, Land, Hop (models/bird/v2/m2m/, CC0: the SAME 55-bone bird rig as
 //             peregrine.glb, so they play on it as they are; quaternion tracks only, the bone lengths stay ours)
 //   v2        models/bird/v2/falcon_v2.glb (tools/blender/falconV2.py: the Sketchfab peregrine re-rigged onto that rig,
-//             with our own Stoop / Talons / Flare / Perch / TakeOff / Hop clips) when it exists
+//             with our own Stoop / Talons / Flare / Perch / TakeOff / Hop clips) when it exists; it wears the juvenile
+//             plumage (falcon_v2_juvenile.ktx2: the player is the young of the year) or the adult (the glb's own)
 // Modes: fly | land | perch (= standing) | walk | hop | launch. One mixer, the clip weights eased (sum 1), then the
 // layers (fold, tuck, flare, talons, bank) as falconBird.js. No per-frame allocation.
 import * as THREE from "three/webgpu";
@@ -19,6 +20,7 @@ import { BirdRig } from "../birdRig.js";
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
 const M2M = new URL("../../models/bird/v2/m2m/", import.meta.url);
 const V2 = new URL("../../models/bird/v2/falcon_v2.glb", import.meta.url);
+const V2_JUV = new URL("../../models/bird/v2/falcon_v2_juvenile.ktx2", import.meta.url);
 const TRANSCODER = "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/libs/basis/";
 let ktx = null;
 const KEYS = ["perch", "flap", "glide", "walk", "hop", "takeoff", "land", "stoop"];
@@ -27,9 +29,10 @@ function applyBodyScale(root) {
   const S = (n, k) => { const b = root.getObjectByName(n); if (b) b.scale.multiplyScalar(k); };
   S("hips", 1.3); S("wing_1_L", 1 / 1.3); S("wing_1_R", 1 / 1.3); S("tail_1", 1.12);
 }
-/** quaternion tracks only (the clip's rotations on our bone lengths), named as the rig */
-function rotOnly(clip, name) {
-  const c = new THREE.AnimationClip(name, clip.duration, clip.tracks.filter((t) => t.name.endsWith(".quaternion")));
+/** quaternion tracks only (the clip's rotations on our bone lengths), named as the rig; keepRoot: v2's own root
+ *  translation too (its Perch lowers the upright body onto the feet, its ground clips put the feet on the floor) */
+function rotOnly(clip, name, keepRoot = false) {
+  const c = new THREE.AnimationClip(name, clip.duration, clip.tracks.filter((t) => t.name.endsWith(".quaternion") || (keepRoot && t.name === "root.position")));
   return c;
 }
 let m2mP = null;
@@ -45,14 +48,20 @@ export async function v2Exists() { try { const r = await fetch(V2, { method: "HE
 
 export class GymBird {
   /** which: "current" | "v2" */
-  static async create(which = "current", span = 1.05, renderer = null) {
+  static async create(which = "current", span = 1.05, renderer = null, plumage = "juvenile") {
     const [A, M] = await Promise.all([loadFalconAssets(), loadM2MClips()]);
     if (which === "v2") {
       // (tools/falconV2pack.mjs: EXT_meshopt_compression + KTX2 textures)
       if (!ktx) { ktx = new KTX2Loader().setTranscoderPath(TRANSCODER); if (renderer) ktx.detectSupport(renderer); }
       const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(ktx).loadAsync(V2.href);
-      // rotations only: the Mesh2Motion clips' hips / root translations are in its own (unscaled) units
-      return new GymBird({ scene: g.scene, clips: g.animations.map((c) => rotOnly(c, c.name)), v2: true }, M, span, A);
+      // the juvenile plumage: its own KTX2, the adult's sampler and colour space (missing file: the adult only)
+      const juv = await ktx.loadAsync(V2_JUV.href).catch(() => null);
+      // rotations only (+ v2's own root translation): the Mesh2Motion clips' translations were in its own units
+      const b = new GymBird({ scene: g.scene, clips: g.animations.map((c) => rotOnly(c, c.name, true)), v2: true }, M, span, A);
+      b.plumages = { adult: b.mesh.material.map, juvenile: juv };
+      if (juv) { const m = b.plumages.adult; juv.colorSpace = THREE.SRGBColorSpace; juv.flipY = m.flipY; juv.wrapS = m.wrapS; juv.wrapT = m.wrapT; juv.channel = m.channel; }
+      b.setPlumage(plumage);
+      return b;
     }
     return new GymBird({ scene: A.bird.scene, clips: A.clips, v2: false }, M, span, A);
   }
@@ -108,6 +117,12 @@ export class GymBird {
     this.setSpan(span);
   }
 
+  /** "juvenile" (the player) | "adult" (the church family): v2 only */
+  setPlumage(name) {
+    const t = this.plumages?.[name];
+    if (!t || this.mesh.material.map === t) return;
+    this.mesh.material.map = t; this.mesh.material.needsUpdate = true; this.plumage = name;
+  }
   setSpan(span) { this.span = span; this.model.scale.setScalar(span / this.modelSpan); }
   carry(preyMesh, material) {
     if (this.prey || !preyMesh) return;
@@ -162,8 +177,7 @@ export class GymBird {
     L.flare = ease(L.flare, mode === "land" ? 1 : air ? f.brake : 0, 6, dt);
     L.talons = ease(L.talons, talons, 10, dt);
     L.bank = ease(L.bank, air ? -f.phi : 0, 6, dt);
-    // (v2: its legs hang in the download's bind pose and follow the thigh rigidly: tucked further back in flight)
-    L.legs = ease(L.legs, air && !talons ? (this.which === "v2" ? 1.6 : 0.5) * (1 - L.flare) : 0, 4, dt);
+    L.legs = ease(L.legs, air && !talons ? 0.5 * (1 - L.flare) : 0, 4, dt);
     L.head = ease(L.head, air ? Math.max(0, -f.gamma) * 0.5 + look : look, 4, dt);
     const E = this.extra;
     const tk = this.actions.stoop ? 0.15 * L.tuck : L.tuck;     // (v2: the clip folds the wings)
