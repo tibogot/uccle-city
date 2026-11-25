@@ -175,6 +175,20 @@ Before / after (Cycles, OptiX): `C:\Users\tibog\Downloads\uccle-falcon-gym\v2pol
 
 To do: `meshopt_simplifyWithAttributes` per loose part, keeping each feather card's 4 corners. Cards cannot collapse into the body: they are rigid on one bone.
 
+## Orbit / inspect (O)
+
+O (or the panel's "Orbit / inspect" folder) pauses the flight. The camera orbits the falcon's body centre (the hips bone) with three's OrbitControls:
+
+- drag: rotate
+- wheel: zoom, 0.3-8 m
+- right-drag or Shift-drag: pan
+
+The "clip in place" picker has: auto (the paused flight pose), perch, glide, flap, stoop, talons, flare, walk, hop, takeoff, land. A clip the current model lacks is the glide plus its procedural layer.
+
+The folder also has a clip time scale, P to pause the clip, T for the turntable, an optional studio fill (the city lighting's own hemisphere light turned up: no light added), preset views (front / side / back / below / above) and a re-centre button. Model and plumage switch live.
+
+O again (or Esc) returns to the exact flight state. `?orbit=1` starts in it.
+
 ## Weak points / left
 
 - **The stoop push is a game compromise**, documented above. The owner decides: the panel slider, 0 = physics.

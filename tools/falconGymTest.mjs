@@ -5,8 +5,8 @@
 //   node tools/falconGymTest.mjs [--quiet]
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { GymFlight, GymControls, GYM } from "../viewer/falconGym/gymFlight.js";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { GymFlight, GymControls, GYM, fillGymControls, birdRoll, rigBank } from "../viewer/falconGym/gymFlight.js";
 import { makeGymWorld, Y0, LEDGES } from "../viewer/falconGym/gymLayout.js";
 import { v2PoseChecks } from "./falconV2pose.mjs";
 
@@ -14,6 +14,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const quiet = process.argv.includes("--quiet");
 const out = [], fails = [];
 const check = (ok, what, val) => { out.push(`${ok ? "ok  " : "FAIL"} ${what}${val != null ? `: ${val}` : ""}`); if (!ok) fails.push(what); };
+const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const kmh = (v) => (v * 3.6).toFixed(0) + " km/h";
 const world = makeGymWorld();
 const DT = 1 / 60;
@@ -94,6 +95,60 @@ for (const avoid of [false, true]) {
   run(f, C, 240, (f, C) => { C.aimYaw = f.heading + 0.3; });
   check(f.pos.y - Y0 > 600 && f.pos.y - Y0 < 1250, "climbs to several hundred metres, ceiling ~1200 m", `${(f.pos.y - Y0).toFixed(0)} m after 4 min of Space`);
   check(LEDGES.length > 60, "the greybox has ledges / sills / railings to perch on", LEDGES.length);
+}
+// 8b. BANK INTO THE TURN (rule falcon-gym "bank into the turn", 2026-11-25: "when I go right or left it's tilting the
+// wrong side"). The real input (viewer/falconFlight/falconInput.js, its key / mouse handlers fed fake events) -> the
+// lab's mapping (fillGymControls) -> the controller -> the bird's body roll (birdRoll: gymBird.js's root rotation,
+// three's Euler YXZ) and the rig's bank layer (rigBank). A right turn: the right wingtip lower than the left in world
+// space, the heading clockwise from above (the ground track's cross product < 0), the rig dips the right wing, the
+// chase camera's right side lower. Left mirrored. Keyboard (D / A, the arrows) and the mouse aim; both controllers.
+{
+  const T3 = await import(pathToFileURL(path.join(ROOT, "tools/worker/node_modules/three/build/three.core.js")).href);   // (three's maths, no renderer)
+  // the browser globals FalconInput touches (handlers collected, never a real DOM)
+  const H = {};
+  Object.assign(globalThis, { addEventListener: (t, fn) => (H[t] ??= []).push(fn), matchMedia: () => ({ matches: false }), location: { search: "" }, document: { addEventListener() {}, pointerLockElement: null } });
+  const { FalconInput } = await import("../viewer/falconFlight/falconInput.js");
+  const { FalconFlight } = await import("../viewer/falconFlight/flightModel.js");
+  const { FlightAssist } = await import("../viewer/falconFlight/flightAssist.js");
+  const fire = (t, e) => { for (const fn of H[t] || []) fn({ target: null, repeat: false, preventDefault() {}, ...e }); };
+  const still = { sample: (x, y, z, t, o) => { o.x = 0; o.y = 0; o.z = 0; return o; } };
+  const eu = new T3.Euler(), vR = new T3.Vector3(), vL = new T3.Vector3(), cam = new T3.Object3D(), cr = new T3.Vector3();
+  const camSrc = fs.readFileSync(path.join(ROOT, "viewer/falconFlight/falconCamera.js"), "utf8");
+  check(/cam\.rotateZ\(-this\.roll/.test(camSrc) && /this\.roll \+= \(\(o\.perched \? 0 : b\.phi \*/.test(camSrc), "bank: the chase camera rolls with +phi (rotateZ(-roll), roll from b.phi)");
+  for (const ctl of ["gym", "current"]) for (const dev of ["D / A", "arrows", "mouse"]) for (const side of [1, -1]) {
+    const inp = new FalconInput({ addEventListener() {}, requestPointerLock() {} });
+    const code = dev === "arrows" ? (side > 0 ? "ArrowRight" : "ArrowLeft") : side > 0 ? "KeyD" : "KeyA";
+    const h0 = Math.PI / 2;
+    let b, A = null;
+    if (ctl === "gym") { b = new GymFlight(world); b.launchAt(200, Y0 + 120, 150, h0, 20, 0); }
+    else { b = new FalconFlight(); b.launch(200, Y0 + 120, 150, h0, 18, 0); A = new FlightAssist(); b.assisted = true; }
+    inp.syncAim(h0, 0);
+    if (dev === "mouse") inp.mouse.locked = true; else fire("keydown", { code });
+    const C = new GymControls();
+    let vx0 = 0, vz0 = 0, cross = 0;
+    for (let i = 0; i < 90; i++) {
+      if (dev === "mouse") fire("mousemove", { movementX: side * 6, movementY: 0 });          // the mouse moved right / left
+      inp.update(DT, b);
+      if (ctl === "gym") { fillGymControls(C, inp.intent, inp.C); b.step(DT, C); }
+      else { A.apply(DT, b, inp.intent, inp.C, world); b.step(DT, inp.C, still, world); }
+      if (i === 30) { vx0 = b.vel.x; vz0 = b.vel.z; }
+    }
+    cross = vz0 * b.vel.x - vx0 * b.vel.z;                     // (v0 x v1).y: < 0 = clockwise seen from above
+    const dh = wrap(b.heading - h0);
+    // the bird as gymBird.pose sets its root: rotation (pitch, heading, birdRoll(phi), "YXZ"), nose -z, right wing +x
+    eu.set(b.gamma + b.alpha * 0.8, b.heading, birdRoll(b.phi), "YXZ");
+    vR.set(GYM.span / 2, 0, 0).applyEuler(eu); vL.set(-GYM.span / 2, 0, 0).applyEuler(eu);
+    // the chase camera: looking along the heading, rotateZ(-roll) with roll following phi (falconCamera.js)
+    cam.rotation.set(0, b.heading, 0, "YXZ"); cam.rotateZ(-b.phi * 0.33); cr.set(1, 0, 0).applyQuaternion(cam.quaternion);
+    const right = side > 0, lowR = vR.y < vL.y - 0.02, lowL = vL.y < vR.y - 0.02, bank = rigBank(b.phi);
+    const okWing = right ? lowR : lowL, okHead = right ? cross < 0 && dh < -0.05 : cross > 0 && dh > 0.05;
+    const okRig = right ? bank < -0.05 : bank > 0.05, okCam = right ? cr.y < -0.01 : cr.y > 0.01;
+    const what = `bank (${ctl} controller, ${dev}, ${right ? "right" : "left"} turn)`;
+    check(okWing && okRig, `${what}: the ${right ? "right" : "left"} wingtip lower, the rig dips it`, `bank ${(b.phi * 57.3).toFixed(0)} deg, tips R ${vR.y.toFixed(2)} L ${vL.y.toFixed(2)} m`);
+    check(okHead && okCam, `${what}: heading ${right ? "clockwise" : "anticlockwise"} from above, the camera rolls the same way`, `heading ${(dh * 57.3).toFixed(0)} deg in 1.5 s, camera right ${cr.y.toFixed(2)}`);
+    if (dev !== "mouse") fire("keyup", { code });
+  }
+  delete globalThis.location;
 }
 // 9. the files the lab needs
 for (const p of ["labs/falcon-gym.html", "labs/falcon-gym.js", "models/bird/peregrine.glb", "models/bird/juvenile.jpg"]) check(fs.existsSync(path.join(ROOT, p)), `file ${p}`);

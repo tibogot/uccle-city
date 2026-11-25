@@ -1,7 +1,7 @@
 ---
 status: provisional
 added: 2026-11-25
-check: `falcongym` (tools/falconGymTest.mjs: the gym controller headless in the gym's greybox: cruise, chase and stoop speeds, the pull-out, the alley take-off, the passage hop-out, the 15 deg wall graze, the landing flare and the edge launch, the ceiling; the lab's files; the v2 model's triangles and clips once built, and its poses: tools/falconV2pose.mjs) + browser row `falcongym` (the lab loads with no console error)
+check: `falcongym` (tools/falconGymTest.mjs: the gym controller headless in the gym's greybox: cruise, chase and stoop speeds, the pull-out, the alley take-off, the passage hop-out, the 15 deg wall graze, the landing flare and the edge launch, the ceiling, the bank into the turn for both controllers and every input path; the lab's files; the v2 model's triangles and clips once built, and its poses: tools/falconV2pose.mjs) + browser row `falcongym` (the lab loads with no console error)
 ---
 **Rule.** The falcon flies at a real peregrine's speeds and takes off like one, and small mistakes never stun it. Measured headless in the Falcon Gym (`labs/falcon-gym.html`, `viewer/falconGym/gymFlight.js`):
 
@@ -64,3 +64,24 @@ The fixes (all in the script):
 - the juvenile painted on v2's own UVs from the adult's lightness, with the bars swapped for vertical streaks
 
 **Check.** Gate row `falcongym` (`tools/falconGymTest.mjs` runs `tools/falconV2pose.mjs`). The first build fails 6 of these checks.
+
+## Bank into the turn (2026-11-25)
+
+**Rule.** One bank convention everywhere: `phi > 0` = the RIGHT wing down, a right turn (`flightModel.js`'s). Every controller writes it that way. The bird reads it through `birdRoll` / `rigBank` (`gymFlight.js`, used by `gymBird.js`), and the camera reads it as `falconCamera.js` does. A right turn (D, the right arrow, or the mouse moved right) drops the right wingtip below the left in world space. The heading turns clockwise seen from above, and the chase camera rolls the same way. A left turn is the mirror. The lab's input mapping is `fillGymControls`, one function shared by the lab and the test.
+
+**Why.** Owner, 2026-11-25: "when I go right or left it's tilting the wrong side". The cause was the gym controller's bank. It was computed as `atan2(aLat, aUp)`, with `aLat` positive to the LEFT (heading + = left), so its `phi` was positive in a LEFT turn. The bird (`root.rotation.z = -phi`, the rig's bank `-phi`) and the chase camera (`rotateZ(-roll)`) were written for `flightModel.js`'s convention (+ = right wing down). So in the gym controller the bird and the camera rolled against the turn, for every input: keys, arrows and mouse all go through the same `phi`. The city's ("current") controller was right all along. Nothing checked the sign: the speed and stoop checks only read the path.
+
+**Check.** Gate row `falcongym` (`tools/falconGymTest.mjs` 8b). Both controllers, with D / A, the arrows and the mouse aim, are fed through the real `FalconInput` key and mouse handlers. For each, the right turn and the left turn check:
+
+- the wingtips in world space (three's Euler YXZ with `birdRoll`)
+- the rig's bank layer
+- the heading's sense from above (the ground track's cross product)
+- the chase camera's roll
+
+The old sign fails 12 of these checks.
+
+## The orbit view (2026-11-25)
+
+**Rule.** The gym has an inspect mode (O, or the panel's "Orbit / inspect"). It pauses the flight without stepping it, so leaving it returns the exact flight state; the camera and the bird's clip weights and layers are saved and put back. It uses three's `OrbitControls` round the hips bone: drag rotates, the wheel zooms 0.3-8 m, right-drag or Shift-drag pans. It has a clip picker that plays in place, a time scale, a pause (P), a turntable (T) and preset views. Its studio fill makes no light: it turns up the intensity of the city Lighting's own hemisphere light (made at startup, kept at 0 under the firmament sky) and puts it back, so the light count never changes. Our own panel, no lil-gui.
+
+**Why.** Owner, 2026-11-25: "I need an orbit camera to see the look of the falcon in the lab".

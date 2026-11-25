@@ -19,7 +19,8 @@
 //            hops to the nearest spot it can launch from, then launches. Walking off an edge launches too.
 //   land     E with a ledge / top surface ahead (< 35 m, < 26 m/s): a final glide and the FLARE onto it; or fly slowly
 //            (< 11 m/s) onto any top face and it touches down
-// Frame: world metres, +y up; heading 0 = toward -z, positive = turning left (three.js yaw, as flightModel.js).
+// Frame: world metres, +y up; heading 0 = toward -z, positive = turning left (three.js yaw, as flightModel.js);
+// phi = bank, > 0 = right wing down (a right turn), as flightModel.js: the bird and the camera read it that way.
 
 export const G = 9.81, RHO = 1.2;
 export const GYM = {
@@ -55,6 +56,19 @@ const cfg = (fold, k) => (fold < 0.5 ? lerp(GYM[k].spread, GYM[k].half, fold / 0
 export class GymControls {
   constructor() { this.aimYaw = null; this.aimPitch = 0; this.turn = 0; this.vert = 0; this.power = 0; this.stoop = 0; this.half = 0; this.brake = 0; this.land = false; this.jump = false; this.talons = 0; }
 }
+/** FalconInput (viewer/falconFlight/falconInput.js) -> GymControls: its intent I (turn + = left, vert, aim) and raw
+ *  controls R (flap, fold, brake). The lab and tools/falconGymTest.mjs both go through this one mapping. */
+export function fillGymControls(C, I, R) {
+  if (I.aim) { C.aimYaw = I.aim.yaw; C.aimPitch = I.aim.pitch; } else C.aimYaw = null;
+  C.turn = I.turn; C.vert = I.vert;
+  C.power = R.flap; C.stoop = R.fold > 0.8 ? 1 : 0; C.half = R.fold > 0.3 && R.fold <= 0.8 ? 1 : 0; C.brake = R.brake;
+  return C;
+}
+/** the bird's body roll (three.js z of the root, YXZ order, nose -z, right wing +x) from phi (> 0 = right wing down):
+ *  a negative z rotation lowers +x. gymBird.js poses with it; the test checks the wingtips through it. */
+export const birdRoll = (phi) => -phi;
+/** viewer/birdRig.js's bank layer (> 0 = turning LEFT: the left wing dips) from phi */
+export const rigBank = (phi) => -phi;
 
 export class GymFlight {
   constructor(world, P = GYM) {
@@ -159,18 +173,21 @@ export class GymFlight {
     const aUp = kGam * dGam * V * 0.6 + G * Math.cos(this.gamma);          // m/s^2 along the lift's up
     let nAvail = (V / vs) ** 2 * (1 + 0.6 * this.brake) + (C.power > 0.5 || this.burstOn ? 0.35 : 0);
     nAvail = Math.min(nAvail, this.fold > 0.5 || this.guarding ? P.nMaxStoop : P.nMax);
-    // bank: toward the wanted lift direction, at the roll rate, capped
+    // bank: toward the wanted lift direction, at the roll rate, capped. phi > 0 = RIGHT wing down (a right turn), the
+    // convention of flightModel.js that the bird (birdRoll / rigBank below) and the camera (falconCamera.js) read; aLat
+    // is + to the LEFT (heading + = left), hence the minus (rule falcon-gym "bank into the turn")
     // (pushing over into a dive asks for less than 0 g along the lift's up: the wings unload, down to -1 g, wings level)
     const push0 = aUp < 0.5;
-    const phiT = push0 ? 0 : clamp(Math.atan2(aLat, aUp), -P.bankMax, P.bankMax);
+    const phiT = push0 ? 0 : clamp(-Math.atan2(aLat, aUp), -P.bankMax, P.bankMax);
     const rr = P.rollRate * (1 + 0.5 * smooth(this.fold, 0.5, 1));
     this.phi += clamp(phiT - this.phi, -rr * dt, rr * dt);
     let aL, aU;
     if (push0) { aU = Math.max(aUp, -G); aL = clamp(aLat, -0.3 * G, 0.3 * G); this.n = Math.abs(aU) / G; }
     else {
       const L = Math.min(Math.hypot(aLat, aUp), nAvail * G);
-      // the lift along the bank: the part that turns, the part that holds / changes the path angle
-      aL = L * Math.sin(this.phi); aU = L * Math.cos(this.phi);
+      // the lift along the bank: the part that turns (aL + = left, so a right bank, phi > 0, turns right), the part
+      // that holds / changes the path angle
+      aL = -L * Math.sin(this.phi); aU = L * Math.cos(this.phi);
       this.n = L / G;
     }
     // --- along the path: thrust, drag, gravity, the stoop's push

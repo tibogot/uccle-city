@@ -7,13 +7,17 @@
 // The greybox (gymLayout.js), the pigeons (viewer/falconFlight/pigeons.js), the air (air.js: thermals over the field,
 // slope lift off the blocks), the falcon (gymBird.js: the current model or v2), the chase camera (falconCamera.js).
 // No sound (the lab never makes any). ?time=midday|golden  ?ctl=gym|current  ?start=field|alley|passage|tower|high300|high800
+// ORBIT (O, the panel's "Orbit / inspect"): the flight pauses, three's OrbitControls round the falcon's body centre
+// (drag = rotate, wheel = zoom 0.3-8 m, right-drag / Shift-drag = pan), the clip picker plays in place; O again = back
+// to the exact flight state. ?orbit=1 starts in it.
 import * as THREE from "three/webgpu";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { Panel } from "../viewer/panelUI.js";
 import { Lighting, PRESETS } from "../viewer/lighting.js";
 import { createPipeline } from "../viewer/post.js";
 import { makeGymWorld, Y0, FIELD } from "../viewer/falconGym/gymLayout.js";
 import { buildGymScene } from "../viewer/falconGym/gymScene.js";
-import { GymFlight, GymControls, GYM } from "../viewer/falconGym/gymFlight.js";
+import { GymFlight, GymControls, GYM, fillGymControls } from "../viewer/falconGym/gymFlight.js";
 import { GymBird, v2Exists } from "../viewer/falconGym/gymBird.js";
 import { AirField } from "../viewer/falconFlight/air.js";
 import { Pigeons } from "../viewer/falconFlight/pigeons.js";
@@ -88,10 +92,12 @@ function fly(x, y, z, h, V) {
 game.reset = () => START[S.start]();
 
 // ------------------------------------------------------------------------------------------------ panel
+const CLIPS = ["perch", "glide", "flap", "stoop", "talons", "flare", "walk", "hop", "takeoff", "land"];
 const S = {
   ctl: qp.get("ctl") === "current" ? "current" : "gym", model: "current", plumage: "juvenile", compare: false, standPose: "perch", clip: "auto", start: "on the field", slowmo: 1,
   time: preset, hour: lighting.hour, post: true, pigeons: pigeons.count, readable: 2.0,
   readout: "", stats: "",
+  orbit: false, orbitClip: "auto", orbitSpeed: 1, orbitPause: false, turntable: false, studio: false,
   ...Object.fromEntries(["cruise", "stoopPush", "nMax", "nMaxStoop", "thrust0", "stunVn", "look", "rollRate"].map((k) => [k, GYM[k]])),
 };
 const ui = new Panel({ title: "Falcon Gym" });
@@ -101,7 +107,7 @@ f0.add(S, "model", HAS_V2 && birds.v2 ? ["current", "v2"] : ["current"]).name("m
 if (birds.v2?.plumages?.juvenile) f0.add(S, "plumage", ["juvenile", "adult"]).name("v2 plumage").onChange((v) => { for (const b of [birds.v2, ...(standBirds || [])]) b?.setPlumage?.(v); });
 f0.add(S, "compare").name("side by side (both models on the stand)").onChange((v) => setCompare(v));
 f0.add(S, "standPose", ["perch", "glide"]).name("stand pose").onChange((v) => placeStand());
-f0.add(S, "clip", ["auto", "perch", "flap", "glide", "walk", "hop", "takeoff", "land", "stoop"]).name("clip (preview)").onChange((v) => { for (const b of Object.values(birds)) if (b) b.forceClip = v === "auto" ? null : v; });
+f0.add(S, "clip", ["auto", ...CLIPS]).name("clip (preview)").onChange((v) => { for (const b of Object.values(birds)) if (b) b.forceClip = v === "auto" ? null : v; });
 f0.add(S, "slowmo", 0.05, 1, 0.05).name("time scale");
 f0.add(S, "readable", 1, 3, 0.05).name("drawn span in the air (m)").onChange((v) => { game.size.readable = v; });
 f0.add(S, "readout").name("speed / altitude").listen();
@@ -129,6 +135,15 @@ fl.add(S, "hour", 4, 21, 0.05).name("solar hour").onChange((v) => { lighting.hou
 fl.add(S, "post").name("post effects");
 fl.add(S, "pigeons", 0, 120, 1).name("pigeons").onChange((v) => pigeons.setCount(v));
 fl.close();
+const fo = ui.addFolder("Orbit / inspect (O)");
+fo.add(S, "orbit").name("orbit the falcon (O)").onChange((v) => setOrbit(v)).listen().hint("the flight pauses; drag = rotate, wheel = zoom, right-drag / Shift-drag = pan; O again = back to the flight");
+fo.add(S, "orbitClip", ["auto", ...CLIPS]).name("clip in place").onChange(() => orbitRecentre(true)).hint("auto = the pose it had when the flight paused");
+fo.add(S, "orbitSpeed", 0, 2, 0.05).name("clip time scale");
+fo.add(S, "orbitPause").name("pause the clip (P)").listen();
+fo.add(S, "turntable").name("turntable (T)").onChange((v) => { orbit.controls.autoRotate = v; }).listen();
+fo.add(S, "studio").name("studio fill light").hint("lifts the shadow side: the city lighting's own hemisphere light turned up (no light added)");
+for (const v of ["front", "side", "back", "below", "above"]) fo.add({ go: () => orbitView(v) }, "go").name(`view: ${v}`);
+fo.add({ go: () => orbitRecentre(true) }, "go").name("re-centre on the body");
 
 function switchCtl(v) {
   // hand the state over (position, heading, speed / perched)
@@ -186,12 +201,8 @@ function gymControls(dt) {
   input.update(dt, gf);                            // fills the intent + the raw controls (keys, mouse, pad, touch)
   const I = input.intent, R = input.C;
   // the aim: the mouse direction while pointer-locked; it relaxes to level when the mouse rests (auto-level)
-  if (I.aim) {
-    if (performance.now() - lastMouse > 600 && gf.mode === "fly") input.aim.pitch *= Math.exp(-1.2 * dt);
-    C.aimYaw = input.aim.yaw; C.aimPitch = input.aim.pitch;
-  } else C.aimYaw = null;
-  C.turn = I.turn; C.vert = I.vert;
-  C.power = R.flap; C.stoop = R.fold > 0.8 ? 1 : 0; C.half = R.fold > 0.3 && R.fold <= 0.8 ? 1 : 0; C.brake = R.brake;
+  if (I.aim && performance.now() - lastMouse > 600 && gf.mode === "fly") input.aim.pitch *= Math.exp(-1.2 * dt);
+  fillGymControls(C, I, R);                        // (gymFlight.js: the one mapping the test checks too)
   const space = R.flap > 0.5;
   if (space && !spaceWas) C.jump = true;
   spaceWas = space;
@@ -245,6 +256,94 @@ function messages(now) {
   $msg.innerHTML = msgs.map((m) => m.s).join("<br>");
 }
 
+// ------------------------------------------------------------------------------------------------ orbit / inspect
+// The flight pauses (gf / game are not stepped: leaving returns to the exact state); the camera's transform and the
+// bird's clip weights and layers are saved and put back. The studio fill makes NO light (fixed light count, rule
+// falcon-gym: no light made in the gym's files): it raises the intensity of the city Lighting's own hemisphere light
+// (made at startup, kept at 0 under the firmament sky) and puts the value back.
+const studio = { on: false, keep: 0 };
+function setStudio(on) {
+  if (on === studio.on) return;
+  // (a quarter of the key light: lighting.keyColor is the sun's colour x illuminance; the firmament's sun.intensity is 1)
+  const k = lighting.keyColor, key = Math.max(0.2126 * k.r + 0.7152 * k.g + 0.0722 * k.b, lighting.sun.intensity);
+  if (on) { studio.keep = lighting.hemi.intensity; lighting.hemi.intensity = studio.keep + 0.25 * key; }
+  else lighting.hemi.intensity = studio.keep;
+  studio.on = on;
+}
+const orbit = {
+  on: false, controls: new OrbitControls(camera, renderer.domElement), saved: null,
+  f: null, mode: "perch", talons: 0, perchYaw: 0,
+  NF: { heading: 0, gamma: 0, alpha: 0, phi: 0, fold: 0, flapLevel: 0, brake: 0, V: 15, walkV: 0 },
+};
+Object.assign(orbit.controls, { enabled: false, enableDamping: true, dampingFactor: 0.12, minDistance: 0.3, maxDistance: 8, autoRotateSpeed: 1.5, zoomSpeed: 0.8, screenSpacePanning: true });
+const _ov = new THREE.Vector3();
+function hipsOf(b) { return (b._hips ??= b.model.getObjectByName("hips") || b.root); }
+/** the bird's body centre (its hips bone), world */
+function bodyCentre(out) { bird.root.updateMatrixWorld(true); return hipsOf(bird).getWorldPosition(out); }
+/** the target back on the body (after a clip / model change), the camera keeping its direction and distance */
+function orbitRecentre(keep = true) {
+  if (!orbit.on) return;
+  const c = orbit.controls, d = Math.min(Math.max(camera.position.distanceTo(c.target), 0.3), 8);
+  _ov.copy(camera.position).sub(c.target).normalize();
+  orbitPose(0, 1 / 30); bodyCentre(c.target);
+  if (keep) camera.position.copy(c.target).addScaledVector(_ov, d);
+  c.update();
+}
+/** a preset view round the bird's facing (front = in front of its face) */
+function orbitView(v) {
+  if (!orbit.on) setOrbit(true);
+  const h = S.orbitClip !== "auto" ? orbit.perchYaw : orbit.f?.heading ?? orbit.perchYaw;
+  const fx = -Math.sin(h), fz = -Math.cos(h), d = 1.9;
+  const c = orbit.controls; bodyCentre(c.target);
+  const off = { front: [fx, 0.15, fz], back: [-fx, 0.25, -fz], side: [-fz, 0.1, fx], below: [fx * 0.2, -1, fz * 0.2], above: [fx * 0.3, 1, fz * 0.3], three: [fx - fz * 0.9, 0.35, fz + fx * 0.9] }[v] || [fx, 0.2, fz];
+  camera.position.copy(c.target).add(_ov.set(off[0], off[1], off[2]).normalize().multiplyScalar(d));
+  c.update();
+}
+function setOrbit(on) {
+  if (on === orbit.on) return;
+  if (on) {
+    orbit.saved = { bird, pos: camera.position.clone(), quat: camera.quaternion.clone(), up: camera.up.clone(), fov: camera.fov, forceClip: bird.forceClip, w: { ...bird.w }, lay: { ...bird.lay }, span: bird.span };
+    input.setEnabled(false);                       // (lets go of the keys and the pointer lock; clicks no longer lock)
+    orbit.on = true; S.orbit = true;
+    camera.up.set(0, 1, 0); camera.fov = 40; camera.updateProjectionMatrix();
+    bird.setSpan(GYM.span);                        // life size
+    orbit.controls.enabled = true; orbit.controls.autoRotate = S.turntable;
+    orbitPose(0, 1 / 30); orbitView("three");
+    log("orbit on");
+  } else {
+    const s = orbit.saved; orbit.on = false; S.orbit = false; orbit.controls.enabled = false; orbit.controls.autoRotate = false; setStudio(false);
+    camera.position.copy(s.pos); camera.quaternion.copy(s.quat); camera.up.copy(s.up); camera.fov = s.fov; camera.updateProjectionMatrix();
+    if (s.bird === bird) { bird.forceClip = s.forceClip; Object.assign(bird.w, s.w); Object.assign(bird.lay, s.lay); bird.setSpan(s.span); }
+    else bird.forceClip = S.clip === "auto" ? null : S.clip;
+    input.setEnabled(true); orbit.saved = null;
+    log("orbit off");
+  }
+}
+/** the bird in place (at pos: where the last flight step put it, also for a model switched in since): the paused
+ *  flight pose (auto) or the picked clip on a neutral, level body */
+function orbitPose(adt, wdt) {
+  const clip = S.orbitClip, NF = orbit.NF;
+  if (clip === "auto") {
+    bird.forceClip = orbit.saved?.forceClip ?? null;
+    bird.pose(adt, pos, orbit.f || NF, { mode: orbit.mode, talons: orbit.talons, perchYaw: orbit.perchYaw, wdt });
+    return;
+  }
+  // (a clip the model does not have: the current model's talons / flare / stoop are the glide + its procedural layer)
+  const has = !!bird.actions[clip], ground = clip === "perch" || clip === "walk" || clip === "hop" || clip === "takeoff" || clip === "land";
+  bird.forceClip = has ? clip : clip === "stoop" || clip === "talons" || clip === "flare" ? "glide" : null;
+  NF.heading = orbit.perchYaw; NF.fold = clip === "stoop" ? 1 : 0; NF.brake = clip === "flare" && !has ? 1 : 0; NF.flapLevel = clip === "flap" ? 0.5 : 0; NF.walkV = 1;
+  const a = bird.actions[clip];
+  if (a && a.loop === THREE.LoopOnce && adt > 0 && a.time >= a.getClip().duration - 1e-3) a.reset().play();   // (the one-shots loop in place)
+  bird.pose(adt, pos, NF, { mode: ground ? (clip === "walk" ? "walk" : clip === "hop" ? "hop" : "perch") : "fly", talons: clip === "talons" && !has ? 1 : 0, perchYaw: orbit.perchYaw, wdt });
+}
+function orbitStep(dtReal) {
+  if (orbit.saved.bird !== bird) { bird.setSpan(GYM.span); orbit.saved.bird = bird; orbitRecentre(true); }
+  orbitPose(S.orbitPause ? 0 : dtReal * S.orbitSpeed, dtReal);
+  orbit.controls.update(dtReal);
+  setStudio(S.studio);                             // (the shadow side lifted: the hemisphere light's intensity only)
+  if (standBirds) for (const b of standBirds) b.pose(dtReal, b.root.position, STAND_F, { mode: S.standPose === "perch" ? "perch" : "fly" });
+}
+
 // ------------------------------------------------------------------------------------------------ the loop
 await lighting.attach(camera);
 const pipe = createPipeline(renderer, scene, camera);
@@ -285,6 +384,8 @@ function step(dtReal) {
     camIn.va = f.va; camIn.V = game.mode === "fly" ? f.V : Math.max(f.V, 0.1); camIn.phi = f.phi; camIn.heading = f.heading; camIn.gamma = f.gamma; camIn.stun = f.stun; camIn.liftRate = f.lift;
     camOpt.perched = game.mode === "perch"; camOpt.perchYaw = game.perch?.yaw ?? 0;
   }
+  orbit.f = f; orbit.mode = birdMode; orbit.talons = S.ctl === "gym" ? (C.talons || (gf.mode === "land" ? 1 : 0)) : game.talonsOut ? 1 : 0;
+  orbit.perchYaw = S.ctl === "gym" ? gf.heading : game.perch?.yaw ?? f.heading;
   pigeons.update(dt, t, { x: pos.x, y: pos.y, z: pos.z, speed: st.V, stoop: (f.fold ?? 0) > 0.7 });
   if (input.take("camera")) fcam.mode = fcam.mode === "chase" ? "head" : "chase";
   if (input.take("help")) $("help").style.display = $("help").style.display === "block" ? "none" : "block";
@@ -299,7 +400,8 @@ lab.advance = (sec) => { const n = Math.round(sec * 60); for (let i = 0; i < n; 
 renderer.setAnimationLoop(() => {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now;
   fpsAcc += dt; fpsN++; if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
-  if (!lab.paused) step(dt);
+  if (orbit.on) orbitStep(dt);
+  else if (!lab.paused) step(dt);
   lighting.update(camera.position.y, Y0, pos, clamp(st.agl * 1.6 + 70, 70, 380), dt);
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
   pipe.setExposureFactor(lighting.adapt(dt));
@@ -317,7 +419,16 @@ if (qp.get("start")) { const k = { field: "on the field", alley: "in the alley (
 if (S.ctl === "current") game.start(0, Y0 + 40, 60, 0, 18);
 START[S.start]();
 $("loading").remove();
-Object.assign(lab, { renderer, scene, camera, world, gym, air, pigeons, input, fcam, game, gf, C, S, START, demo, birds, get bird() { return bird; }, setModel, setCompare, placeStand, switchCtl, lighting, step });
+addEventListener("keydown", (e) => {
+  if (e.repeat || e.target?.closest?.(".upanel") || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || "")) return;
+  if (e.code === "KeyO") setOrbit(!orbit.on);
+  else if (orbit.on && e.code === "KeyT") { S.turntable = !S.turntable; orbit.controls.autoRotate = S.turntable; }
+  else if (orbit.on && e.code === "KeyP") S.orbitPause = !S.orbitPause;
+  else if (orbit.on && e.code === "Escape") setOrbit(false);
+});
+if (qp.get("orbit") === "1") { step(1 / 60); setOrbit(true); }   // (one step first: the bird placed at the start)
+Object.assign(lab, { orbit, setOrbit, orbitView, orbitRecentre, renderer, scene, camera, world, gym, air, pigeons, input, fcam, game, gf, C, S, START, demo, birds, setModel, setCompare, placeStand, switchCtl, lighting, step });
 Object.defineProperty(lab, "standBirds", { get: () => standBirds });   // (live: Object.assign would copy null)
+Object.defineProperty(lab, "bird", { get: () => bird });               // (live too: Object.assign copied the first bird)
 window.lab = lab;
 log(`ready: ${world.boxes.length} boxes, ${world.ledges.length} ledges, v2 ${HAS_V2 ? "found" : "not built"}`);

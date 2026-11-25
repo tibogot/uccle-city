@@ -16,6 +16,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { loadFalconAssets } from "../falcons.js";
 import { BirdRig } from "../birdRig.js";
+import { birdRoll, rigBank } from "./gymFlight.js";
 
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
 const M2M = new URL("../../models/bird/v2/m2m/", import.meta.url);
@@ -23,7 +24,7 @@ const V2 = new URL("../../models/bird/v2/falcon_v2.glb", import.meta.url);
 const V2_JUV = new URL("../../models/bird/v2/falcon_v2_juvenile.ktx2", import.meta.url);
 const TRANSCODER = "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/libs/basis/";
 let ktx = null;
-const KEYS = ["perch", "flap", "glide", "walk", "hop", "takeoff", "land", "stoop"];
+const KEYS = ["perch", "flap", "glide", "walk", "hop", "takeoff", "land", "stoop", "talons", "flare"];   // (talons, flare: v2 only, the orbit view's clip picker)
 
 function applyBodyScale(root) {
   const S = (n, k) => { const b = root.getObjectByName(n); if (b) b.scale.multiplyScalar(k); };
@@ -90,7 +91,7 @@ export class GymBird {
     const find = (...names) => { for (const n of names) { const c = src.clips.find((x) => x.name === n) || (src.v2 ? null : A?.clips.find((x) => x.name === n)); if (c) return c; } return null; };
     const clips = {
       perch: find("Perch", "Idle"), flap: find("Flap"), glide: find("Glide"), walk: find("Walk"),
-      stoop: src.v2 ? find("Stoop") : null,
+      stoop: src.v2 ? find("Stoop") : null, talons: src.v2 ? find("Talons") : null, flare: src.v2 ? find("Flare") : null,
       hop: find("Hop") || (src.v2 ? null : M.hop), takeoff: find("TakeOff", "Take_Off") || (src.v2 ? null : M.takeoff), land: find("Land") || (src.v2 ? null : M.land),
     };
     this.clips = clips;
@@ -134,14 +135,14 @@ export class GymBird {
   drop() { if (!this.prey) return null; const p = this.prey; this.prey = null; p.removeFromParent(); return p; }
 
   /** f: { heading, gamma, alpha, phi, fold, flapLevel, brake, V, walkV? }; mode: fly | land | perch | walk | hop | launch */
-  pose(dt, pos, f, { mode = "fly", talons = 0, perchYaw = 0, look = 0 } = {}) {
+  pose(dt, pos, f, { mode = "fly", talons = 0, perchYaw = 0, look = 0, wdt = dt } = {}) {
     this.root.position.copy(pos);
     const L = this.lay;
     // the body's pitch: the path + the angle of attack in the air, upright in the launch, level on the ground
     const pitchT = mode === "fly" || mode === "land" ? f.gamma + f.alpha * 0.8 : mode === "launch" ? 0.95 : 0;
-    L.pitch = ease(L.pitch, pitchT, mode === "fly" ? 30 : 8, dt);
+    L.pitch = ease(L.pitch, pitchT, mode === "fly" ? 30 : 8, wdt);
     const yaw = mode === "perch" ? perchYaw : f.heading;
-    this.root.rotation.set(L.pitch, yaw, mode === "fly" || mode === "land" ? -f.phi : 0, "YXZ");
+    this.root.rotation.set(L.pitch, yaw, mode === "fly" || mode === "land" ? birdRoll(f.phi) : 0, "YXZ");   // (phi > 0 = right wing down)
     // the clip weights
     const T = this.tw; for (const k of KEYS) T[k] = 0;
     const flapping = f.flapLevel > 0.08;
@@ -162,7 +163,7 @@ export class GymBird {
     }
     let sum = 0;
     const rate = mode === "perch" || mode === "walk" ? 6 : 7;
-    for (const k in this.w) { this.w[k] = ease(this.w[k], T[k], rate, dt); sum += this.w[k]; }
+    for (const k in this.w) { this.w[k] = ease(this.w[k], T[k], rate, wdt); sum += this.w[k]; }   // (wdt: the orbit view eases even while paused)
     for (const k in this.w) this.actions[k].setEffectiveWeight(this.w[k] / Math.max(sum, 1e-4));
     this.actions.flap.timeScale = 0.9 + 1.0 * f.flapLevel + (mode === "land" || mode === "launch" ? 0.7 : 0);
     if (this.actions.walk) this.actions.walk.timeScale = mode === "hop" ? 1.8 : Math.max(0.4, Math.abs(f.walkV ?? 1) * 1.1);
@@ -172,13 +173,13 @@ export class GymBird {
     // the layers
     const air = mode === "fly";
     const tuck = air ? Math.max(0, (f.fold - 0.5) / 0.5) : 0;
-    L.fold = ease(L.fold, air ? Math.min(1, f.fold * 1.6) * (this.actions.stoop ? 0.3 : 1) : 0, 9, dt);
-    L.tuck = ease(L.tuck, tuck, 8, dt);
-    L.flare = ease(L.flare, mode === "land" ? 1 : air ? f.brake : 0, 6, dt);
-    L.talons = ease(L.talons, talons, 10, dt);
-    L.bank = ease(L.bank, air ? -f.phi : 0, 6, dt);
-    L.legs = ease(L.legs, air && !talons ? 0.5 * (1 - L.flare) : 0, 4, dt);
-    L.head = ease(L.head, air ? Math.max(0, -f.gamma) * 0.5 + look : look, 4, dt);
+    L.fold = ease(L.fold, air ? Math.min(1, f.fold * 1.6) * (this.actions.stoop ? 0.3 : 1) : 0, 9, wdt);
+    L.tuck = ease(L.tuck, tuck, 8, wdt);
+    L.flare = ease(L.flare, mode === "land" ? 1 : air ? f.brake : 0, 6, wdt);
+    L.talons = ease(L.talons, talons, 10, wdt);
+    L.bank = ease(L.bank, air ? rigBank(f.phi) : 0, 6, wdt);
+    L.legs = ease(L.legs, air && !talons ? 0.5 * (1 - L.flare) : 0, 4, wdt);
+    L.head = ease(L.head, air ? Math.max(0, -f.gamma) * 0.5 + look : look, 4, wdt);
     const E = this.extra;
     const tk = this.actions.stoop ? 0.15 * L.tuck : L.tuck;     // (v2: the clip folds the wings)
     E.handL = E.handR = 0.9 * tk; E.wristL = E.wristR = 0.45 * tk;
