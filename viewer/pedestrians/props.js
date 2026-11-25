@@ -315,7 +315,7 @@ export class Props {
         let dyw = a.dyaw - g.yaw; dyw -= Math.round(dyw / TAU) * TAU; g.yaw = a.dyaw;
         const v = moved / Math.max(dt, 1e-4);
         if (v > 0.05) { const target = Math.max(-1.3, Math.min(1.3, Math.atan2((dyw / Math.max(dt, 1e-4)) * 0.63 * S, v))); g.sw += (target - g.sw) * Math.min(1, dt * 8); }
-        if (PR.n < PR.max && vis > 0.001 && p.drawn) write(PR, [x, ground(x, z), z, a.dyaw, S, g.roll / S, vis, (p.seed * 3.7) % 1, g.sw, 0, 0, 0]);
+        if (PR.n < PR.max && vis > 0.001 && p.drawn) put(PR, x, ground(x, z), z, a.dyaw, S, g.roll / S, vis, (p.seed * 3.7) % 1, g.sw, 0, 0, 0);
       }
       if (p.dog) {
         // the dog walks ahead-left of its owner on a ~1.5 m lead; it stops to sniff now and then (head down) until the
@@ -324,7 +324,7 @@ export class Props {
         const rx = -fz, rz = fx;
         if (!g || g.gen !== p.gen) {
           const u = (p.seed * 5.3) % 1, breed = u < 0.45 ? 0 : u < 0.75 ? 1 : 2;
-          g = { x: a.dx + fx * 0.9, z: a.dz + fz * 0.9, yaw: a.dyaw, phase: 0, gen: p.gen, breed, size: 0.9 + ((p.seed * 9.7) % 1) * 0.2, sniff: 0, sniffT: 0, next: t + 4 + ((p.seed * 13.1) % 1) * 8, amp: 0, wag: 0 };
+          g = { x: a.dx + fx * 0.9, z: a.dz + fz * 0.9, yaw: a.dyaw, phase: 0, gen: p.gen, breed, size: 0.9 + ((p.seed * 9.7) % 1) * 0.2, sniff: 0, sniffT: 0, next: t + 4 + ((p.seed * 13.1) % 1) * 8, amp: 0, wag: 0, sag: undefined };
           this.dogState.set(p.id, g);
         }
         const tx = a.dx + fx * 0.9 - rx * 0.5, tz = a.dz + fz * 0.9 - rz * 0.5;
@@ -346,7 +346,7 @@ export class Props {
         g.wag = (g.wag + dt * (sniffing ? 1.2 : 2.2)) % 1;
         if (DG.n < DG.max && vis > 0.001 && p.drawn) {
           const y = ground(g.x, g.z);
-          write(DG, [g.x, y, g.z, g.yaw, g.size, g.phase, vis, g.breed, (p.seed * 9.1) % 1, g.sniff, g.amp, g.wag]);
+          put(DG, g.x, y, g.z, g.yaw, g.size, g.phase, vis, g.breed, (p.seed * 9.1) % 1, g.sniff, g.amp, g.wag);
           // the lead: from the owner's left hand (approx.) to the collar
           const hx = a.dx + fx * 0.12 - rx * 0.27 * p.scale, hz = a.dz + fz * 0.12 - rz * 0.27 * p.scale, hy = a.dy + 0.8 * p.scale;
           const cl = B.L / 2 + 0.02, cx = g.x + Math.sin(g.yaw) * cl * g.size, cz = g.z + Math.cos(g.yaw) * cl * g.size, cy = y + (B.h + 0.03) * g.size - g.sniff * 0.12 * g.size;
@@ -356,18 +356,20 @@ export class Props {
           const len = Math.hypot(cx - hx, cy - hy, cz - hz), rope = 1.6 * p.scale, slack = Math.max(0, rope - len);
           const want = Math.min(Math.max(Math.sqrt((3 * len * slack) / 8), slack * 0.5), (hy + cy) / 2 - y - 0.03);
           g.sag = (g.sag ?? want) + (Math.max(0, want) - (g.sag ?? want)) * Math.min(1, dt * 10);
-          if (LS.n < LS.max) write(LS, [hx, hy, hz, g.sag, cx, cy, cz, vis]);
+          if (LS.n < LS.max) put(LS, hx, hy, hz, g.sag, cx, cy, cz, vis, 0, 0, 0, 0);
         }
       }
     }
-    for (const B of [PR, DG, LS]) {
+    for (const B of (this._all ||= [PR, DG, LS])) {
       B.mesh.count = B.n; B.mesh.visible = B.n > 0;
       const attr = B.data.value; attr.clearUpdateRanges(); attr.addUpdateRange(0, Math.max(1, B.n) * B.nvec * 4); attr.needsUpdate = true;
     }
   }
 }
-function write(B, vals) {
+/** one instance's floats (up to 3 vec4), positional: no array a frame (claude/peds2, rule peds-no-alloc) */
+function put(B, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) {
   const A = B.data.value.array, o = B.n * B.nvec * 4;
-  for (let i = 0; i < vals.length; i++) A[o + i] = vals[i];
+  A[o] = a0; A[o + 1] = a1; A[o + 2] = a2; A[o + 3] = a3; A[o + 4] = a4; A[o + 5] = a5; A[o + 6] = a6; A[o + 7] = a7;
+  if (B.nvec > 2) { A[o + 8] = a8; A[o + 9] = a9; A[o + 10] = a10; A[o + 11] = a11; }
   B.n++;
 }

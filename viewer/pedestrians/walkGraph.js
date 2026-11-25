@@ -164,7 +164,7 @@ export function buildWalkGraph(o) {
   const PATHS = new Set(["footway", "path", "steps", "pedestrian", "track", "bridleway"]);
   const platformLines = [];
   for (const l of o.feats?.lines || []) {
-    if (l.kind === "platform" && (l.tags?.tram === "yes" || l.tags?.railway === "platform") && l.line?.length >= 2) { platformLines.push(l); continue; }
+    if (l.kind === "platform" && l.tags?.tram === "yes" && l.line?.length >= 2) { platformLines.push(l); continue; }
     if (!PATHS.has(l.kind) || !l.line || l.line.length < 2) continue;
     const ft = l.tags?.footway;
     if (ft === "sidewalk" || ft === "crossing" || l.tags?.access === "private" || l.tags?.access === "no") continue;
@@ -323,6 +323,7 @@ export function buildWalkGraph(o) {
   }
 
   // ---------------------------------------------------------------- 6. crossings (kerb to kerb, the drawn ones)
+  const islands = [];
   const phases = o.roads ? signalPhases(o.roads) : null;
   const sigNodes = phases ? [...phases.nodes.values()].filter((s) => !s.virtual || s.arms.length) : [];
   for (const c of o.crossings || []) {
@@ -340,6 +341,16 @@ export function buildWalkGraph(o) {
         const h = nearestOnEdges(ex, ez, SNAP_R, (e) => e.k !== EK.cross && e.k !== EK.zebra);
         if (h && clearSeg(ex, ez, h.x, h.z, true)) { got = { h, ex, ez }; break; }
       }
+      // (an end on a refuge island (median): an island node, shared with the other half of the crossing within 3 m)
+      if (!got) for (const extra of [0.3, 0.8]) {
+        const ex = cx + bx * (v + sg * extra), ez = cz + bz * (v + sg * extra);
+        if (cls(ex, ez) !== C.median || blocked(ex, ez)) continue;
+        let id = -1; for (const q of islands) if ((nx[q] - ex) ** 2 + (nz[q] - ez) ** 2 < 9) { id = q; break; }
+        if (id < 0) { id = node(ex, ez, NK.kerb); islands.push(id); }
+        got = { stub: id }; break;
+      }
+      // (an end over the tile's edge: a border stub there, joined to the neighbour's line on the main thread)
+      if (!got) { const ex = cx + bx * (v + sg * 0.8), ez = cz + bz * (v + sg * 0.8); if (!inTile(ex, ez) || ex - B.x0 < 1 || B.x1 - ex < 1 || ez - B.z0 < 1 || B.z1 - ez < 1) got = { stub: node(ex, ez, NK.border) }; }
       ends2.push(got);
     }
     if (!ends2[0] || !ends2[1]) { stats.crossingsUnlinked++; (stats.unlinked ||= []).push([Math.round(cx * 10) / 10, Math.round(cz * 10) / 10]); continue; }
@@ -354,9 +365,9 @@ export function buildWalkGraph(o) {
         if (arm) ph = phases.phaseAt(S.id, arm.road, ax, az);
       }
     }
-    const a = splitAt(ends2[0].h, NK.kerb), b = splitAt(ends2[1].h, NK.kerb);
+    const a = ends2[0].stub ?? splitAt(ends2[0].h, NK.kerb), b = ends2[1].stub ?? splitAt(ends2[1].h, NK.kerb);
     if (a === b) { stats.crossingsUnlinked++; continue; }
-    nk[a] = nk[a] === NK.board ? NK.board : NK.kerb; nk[b] = nk[b] === NK.board ? NK.board : NK.kerb;
+    if (nk[a] !== NK.board && nk[a] !== NK.border) nk[a] = NK.kerb; if (nk[b] !== NK.board && nk[b] !== NK.border) nk[b] = NK.kerb;
     const w = Math.max(2, Math.min(5, c.along || 3));
     // a tram platform the crossing passes over: two crossings, kerb -> platform -> kerb
     const mid = nearestOnEdges(cx, cz, 1.5, (e) => e.k === EK.platform);
@@ -365,6 +376,15 @@ export function buildWalkGraph(o) {
     stats.crossingsLinked++; if (ph >= 0) stats.crossingsSignal++;
   }
 
+  // island nodes on the same refuge (straight over the median within 14 m): joined, a crossing in two stages
+  for (let i = 0; i < islands.length; i++) for (let j = i + 1; j < islands.length; j++) {
+    const a = islands[i], b = islands[j], L = Math.hypot(nx[b] - nx[a], nz[b] - nz[a]);
+    if (L > 14 || L < 0.2) continue;
+    let ok = true; for (let k = 1, n = Math.ceil(L / 0.4); k < n && ok; k++) { const x = nx[a] + (nx[b] - nx[a]) * k / n, z = nz[a] + (nz[b] - nz[a]) * k / n; ok = cls(x, z) === C.median && !blocked(x, z); }
+    if (ok) edge(a, b, EK.link, 1.2);
+  }
+  // an island node only one crossing reaches is a dead end in the road: that crossing goes (the other half is missing)
+  for (const id of islands) { const live2 = adj[id].filter((q) => !E[q].dead); if (live2.length === 1) { E[live2[0]].dead = true; stats.crossingsLinked--; stats.crossingsUnlinked++; stats.islandDrop = (stats.islandDrop || 0) + 1; } }
   lap("rest");
   // ---------------------------------------------------------------- 7. clean: dead edges out, short pieces out, pack
   const alive = E.map((e) => !e.dead && e.a !== e.b);
