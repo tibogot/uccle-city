@@ -22,7 +22,7 @@ import * as THREE from "three/webgpu";
  *  shoulders, so at the default seat the spine's full bend left his shoulders 8 cm short of the grips and the body slid
  *  off the saddle toward the bars; the hips sit 4.5 cm further forward on the saddle (about 5 cm of slide left, spine 43 deg; 6 cm damped the landing wobble under the test's 5 cm).
  *  Applied by the lab for ?kid=a and by tools/kid/kidTest.mjs --model kidA. */
-export const RIDE_KIDA = { hipBack: -0.045 };
+export const RIDE_KIDA = { seatPost: 0.05, pelvisPitch: 0.6, ankling: 0.03, hipBack: -0.045 };
 export const RIDE = {
   hipUp: 0.075, hipBack: 0.0,                // seated: the pelvis joint above / behind the seat empty (m, frame axes)
   standUp: 0.16, standFwd: 0.12,             // standing (sprint, preload, air)
@@ -32,7 +32,7 @@ export const RIDE = {
   pelvisPitch: 0.18, standPitch: 0.22,       // rad forward
   leanExtra: 0.22,                           // the upper body leans this much more than the bike
   reachLeg: 0.965, reachArm: 0.86,           // fraction of the limb's length the targets are kept within
-  ankleUp: 0.075, ankleBack: 0.055,          // the ankle above / behind the pedal's centre (the ball on the pedal)
+  ankleUp: 0.075, ankleBack: 0.055, ankling: 0,          // the ankle above / behind the pedal's centre (the ball on the pedal)
   wristBack: 0.045,                          // the wrist behind the grip's centre (the fist round the bar)
   headDown: 0.10,                            // the gaze a little down the road
   spineMax: 0.75,                            // rad of forward bend at most (more reach: the body slides toward the bars)
@@ -223,8 +223,14 @@ export class RiderIK {
     const crank = Math.hypot(pl.y - bb.y, pl.z - bb.z) || 0.165;
     const cy = bb.y + P.ankleUp, cz = bb.z - P.ankleBack;
     let fitted = 0;
+    // (kid A polish: the fit used the hip joints' REST offset, but the pelvis is pitched forward / rolled right after:
+    // the real hip joints ended closer to the pedals and the seated legs never opened past 85-88 %: knees up at 41 deg
+    // at the top of the stroke. The offsets turned by the pelvis' coming pitch + roll first)
+    const rollF = -(s.lean || 0) * P.leanExtra - wob * P.wobbleRoll - bal * P.grindRoll;
+    const pitchF = P.pelvisPitch + stand * P.standPitch - manual * 0.15;
+    _q.setFromAxisAngle(_Z, rollF); _q2.setFromAxisAngle(_X, pitchF); _q.multiply(_q2);
     for (let k = 0; k < 2; k++) {
-      const off = this.hipOff[k], hx = hip.x + off.x, hy = hip.y + off.y, hz = hip.z + off.z;
+      const off = _e.copy(this.hipOff[k]).applyQuaternion(_q), hx = hip.x + off.x, hy = hip.y + off.y, hz = hip.z + off.z;
       const px = k === 0 ? pl.x : -pl.x;
       const reach = P.reachLeg * this.leg[k], dx = hx - px;
       const lim = Math.sqrt(Math.max(1e-6, reach * reach - dx * dx)) - crank;
@@ -300,7 +306,10 @@ export class RiderIK {
       const side = k === 0 ? 1 : -1;
       const th = k === 0 ? b.thigh_l : b.thigh_r, ca = k === 0 ? b.calf_l : b.calf_r, ft = k === 0 ? b.foot_l : b.foot_r;
       const pe = (k === 0 ? E.pedal_L : E.pedal_R).getWorldPosition(new THREE.Vector3());
-      const T = pe.clone().addScaledVector(_up, P.ankleUp).addScaledVector(_fwd, -P.ankleBack);
+      // ANKLING (kid A polish): the heel drops over the top of the stroke and lifts at the bottom (the ankle P.ankling
+      // lower / higher at the crank's top / bottom): the knee opens where it closes most
+      const bbW = E.bb.getWorldPosition(_e), hTop = Math.max(-1, Math.min(1, _c.copy(pe).sub(bbW).dot(_up) / 0.175));
+      const T = pe.clone().addScaledVector(_up, P.ankleUp - (P.ankling || 0) * hTop).addScaledVector(_fwd, -P.ankleBack);
       const fd = k === 0 ? Math.min(1, Math.max(0, ((s.footDown || 0) - 0.5) * 2)) : 0;
       if (fd > 0 && groundY !== null) {
         const hipW = th.getWorldPosition(_a);

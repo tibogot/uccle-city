@@ -21,6 +21,9 @@ const BASE = new URL("../../models/bike/", import.meta.url).href;
 export const BMX_EMPTY_MAP = { Grip_L: "grip_L", Grip_R: "grip_R", Foot_L: "pedal_L", Foot_R: "pedal_R", Seat: "seat", Crank: "bb",
   Peg_FL: "peg_FL", Peg_FR: "peg_FR", Peg_RL: "peg_RL", Peg_RR: "peg_RR" };
 export const BMX_LOD = [12, 40];
+/** the seat post's axis in the Body frame (glTF: y up, z forward): the 71 deg seat tube, up and back. A rider's
+ *  seat-post height (RIDE.seatPost, m along it: kid A rides with the post 5 cm up) moves the saddle + the Seat empty */
+export const SEAT_DIR = new THREE.Vector3(0, Math.sin(71 * Math.PI / 180), -Math.cos(71 * Math.PI / 180));
 const _q = new THREE.Quaternion(), _X = new THREE.Vector3(1, 0, 0), _Y = new THREE.Vector3(0, 1, 0);
 
 /**
@@ -53,8 +56,27 @@ export async function loadBmx(renderer, ph, { colourway = null } = {}) {
     for (const [slot, key] of [["bmx_paint", "paint"], ["bmx_pad", "pad"], ["bmx_grip", "grip"], ["bmx_saddle", "saddle"]]) if (mats[slot] && c[key]) mats[slot].color.setRGB(c[key][0], c[key][1], c[key][2]);
   };
   if (colourway) setColourway(colourway);
+  // the seat post: the saddle meshes + the Seat empty slide along SEAT_DIR; a chrome post piece fills the gap
+  const seatNode = root.getObjectByName("Seat"), seat0 = seatNode ? seatNode.position.clone() : null;
+  const saddles = [];
+  root.traverse((o) => { if (o.isMesh && [].concat(o.material).some((m) => m.name === "bmx_saddle")) saddles.push({ o, p: o.position.clone() }); });
+  const posts = saddles.map(({ o }) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.0111, 0.0111, 1, 12, 1, true), mats.bmx_chrome || new THREE.MeshStandardNodeMaterial({ color: 0xcccccc, metalness: 1, roughness: 0.25 }));
+    m.visible = false; m.castShadow = true; o.parent.add(m); return m;
+  });
+  const setSeatPost = (dh) => {
+    if (!seatNode) return;
+    seatNode.position.copy(seat0).addScaledVector(SEAT_DIR, dh);
+    saddles.forEach(({ o, p }) => o.position.copy(p).addScaledVector(SEAT_DIR, dh));
+    posts.forEach((m) => {
+      m.visible = dh > 0.003;
+      const a = seat0.clone().addScaledVector(SEAT_DIR, -0.07), len = dh + 0.05;        // from inside the old clamp up under the saddle
+      m.position.copy(a).addScaledVector(SEAT_DIR, len / 2); m.scale.set(1, len, 1);
+      m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), SEAT_DIR);
+    });
+  };
   return {
-    root, empties, meta, mats, setColourway, setLod,
+    root, empties, meta, mats, setColourway, setLod, setSeatPost,
     get lod() { return lod; },
     info: { tris: meta.lods?.triangles, colourways: Object.keys(meta.colourways || {}) },
     update(s, camDist = 0) {

@@ -268,7 +268,7 @@ function place(name) {
 const K = { on: false, tp: null, rider: null, kid: null, E: null, snap: null, crashYaw: 0, lod: 0, ik: "", bmx: null };
 // the BMX asset (claude/bmx: models/bike/bmx.glb) on the placeholder's pose (?bmx=0: the placeholder bike)
 if (qs.get("bmx") !== "0") {
-  try { K.bmx = await loadBmx(renderer, model, { colourway: qs.get("colourway") || null }); console.log("[bike lab] BMX", K.bmx.info); }
+  try { K.bmx = await loadBmx(renderer, model, { colourway: qs.get("colourway") || null }); K.bmx.setSeatPost?.(RIDE.seatPost || 0); console.log("[bike lab] BMX", K.bmx.info); }
   catch (e) { console.warn("[bike lab] the BMX failed, placeholder bike:", e); model.bikeFrame.traverse((o) => { if (o.isMesh) o.visible = true; }); }
 }
 const mount = createMount(qs.get("ride") === "1" ? "riding" : "foot");

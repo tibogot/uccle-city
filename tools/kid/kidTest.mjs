@@ -22,7 +22,14 @@ const quiet = process.argv.includes("--quiet");
 const MODEL = (() => { const i = process.argv.indexOf("--model"); return i > 0 ? process.argv[i + 1] : "kid"; })();
 const IS_A = MODEL !== "kid";
 const BUDGET = IS_A ? [22000, 8500, 2200] : [15000, 6000, 2000];
+// (the top-of-stroke knee: a 0.705 m leg on the BMX's real 175 mm cranks closes to ~55-60 deg at best: the stroke takes
+// 2 x 175 mm out of a reach capped at 96.5 % of the leg (docs/KIDCHAR.md phase 3). A: >= 50 with no slide off the saddle
+// (he sat 41 deg, sliding 7 cm forward); the old kid as it rides (39))
+const KNEE = process.env.KNEE_RANGE ? process.env.KNEE_RANGE.split(",").map(Number) : (IS_A ? [50, 85] : [35, 85]);
 if (IS_A) { const R = await import("../../viewer/kid/riderIK.js"); Object.assign(R.RIDE, R.RIDE_KIDA); }
+const { RIDE: RIDE_NOW } = await import("../../viewer/kid/riderIK.js");
+const SEAT_DIR_T = new (await import("three")).Vector3(0, Math.sin(71 * Math.PI / 180), -Math.cos(71 * Math.PI / 180));
+if (process.env.RIDE_OVERRIDE) { const R = await import("../../viewer/kid/riderIK.js"); Object.assign(R.RIDE, JSON.parse(process.env.RIDE_OVERRIDE)); }   // (tuning)
 const rows = [];
 let failed = 0;
 const check = (name, ok, got, want) => { rows.push([name, ok ? "PASS" : "FAIL", got, want]); if (!ok) failed++; };
@@ -240,6 +247,9 @@ else {
   function bmxTree() {
     const g = readGLB(path.join(ROOT, "models/bike/bmx.glb")), objs = g.nodes.map((n) => { const o = new THREE.Object3D(); o.name = n.name; o.position.fromArray(n.t); o.quaternion.fromArray(n.r); o.scale.fromArray(n.s); return o; });
     g.nodes.forEach((n, i) => { for (const c of n.children) objs[i].add(objs[c]); });
+    if (process.env.CRANK_SCALE) for (const nm of ["Pedal_L", "Pedal_R"]) { const o = objs.find((x) => x.name === nm); o.position.y *= +process.env.CRANK_SCALE; o.position.z *= +process.env.CRANK_SCALE; }   // (tuning)
+    if (process.env.SEAT_UP) { const o = objs.find((x) => x.name === "Seat"); o.position.y += +process.env.SEAT_UP; }   // (tuning)
+    if (RIDE_NOW.seatPost) { const o = objs.find((x) => x.name === "Seat"); o.position.addScaledVector(SEAT_DIR_T, RIDE_NOW.seatPost); }   // (the rider's seat post, as the lab sets it)
     return objs[g.nodes.findIndex((n) => n.name === "BMX")] || objs[g.json.scenes[0].nodes[0]];
   }
   let bm = null, E = null, rig = null;
@@ -250,7 +260,9 @@ else {
     rig = null;
     if (bike === "bmx") { rig = rigBmx(bmxTree(), JSON.parse(fs.readFileSync(path.join(ROOT, "models/bike/bmx.json"), "utf8")), bm); E = rig.empties; }
     else { E = findBikeEmpties(bm.root, bm.empties.frame); E.cg = BIKE.cgHeight; }
-    let legMax = 0, armMax = 0, legErr = 0, armErr = 0, nan = 0, n = 0, fitMax = 0, spineMax = 0, asym = 0;
+    let legMax = 0, armMax = 0, legErr = 0, armErr = 0, nan = 0, n = 0, fitMax = 0, spineMax = 0, asym = 0, kneeMin = 999, kneeMax = 0, elbowMax = 0, seatLeg = 0, seatFit = 0, seatSlid = 0;
+    const wp = (nm) => gltf.scene.getObjectByName(nm).getWorldPosition(new THREE.Vector3());
+    const angAt = (a, b, c) => { const A = wp(a), B = wp(b), Cc = wp(c); return A.sub(B).angleTo(Cc.sub(B)) * 57.2958; };
     for (const [mname, mo] of Object.entries(modes)) for (const steer of [-0.9, -0.45, 0, 0.45, 0.9]) for (let c = 0; c < 24; c++) {
       Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: 0, air: false, footDown: 0, wobbleNow: 0, wobbleW: 0, grindSeg: -1, grindBal: 0 }, mo);
       s.crank = c / 24 * Math.PI * 2; s.steerAngle = steer;
@@ -259,7 +271,15 @@ else {
       const M = rider.ride(E, s, holder, 0);
       legMax = Math.max(legMax, ...M.legRatio); armMax = Math.max(armMax, ...M.armRatio);
       legErr = Math.max(legErr, ...M.legErr); armErr = Math.max(armErr, ...M.armErr); fitMax = Math.max(fitMax, M.fitted); spineMax = Math.max(spineMax, M.spine);
-      if (mname === "seated" && steer === 0) asym = Math.max(asym, Math.abs(M.armRatio[0] - M.armRatio[1]));
+      if (mname === "seated" && steer === 0) {
+        asym = Math.max(asym, Math.abs(M.armRatio[0] - M.armRatio[1]));
+        seatLeg = Math.max(seatLeg, ...M.legRatio); seatFit = Math.max(seatFit, M.fitted); seatSlid = Math.max(seatSlid, M.slid || 0);
+        // the knee's INTERIOR angle (thigh to shin; 180 = straight) over the crank turn, the elbows'
+        for (const sd of ["l", "r"]) {
+          const k = angAt(`thigh_${sd}`, `calf_${sd}`, `foot_${sd}`); kneeMin = Math.min(kneeMin, k); kneeMax = Math.max(kneeMax, k);
+          elbowMax = Math.max(elbowMax, angAt(`upperarm_${sd}`, `lowerarm_${sd}`, `hand_${sd}`));
+        }
+      }
       gltf.scene.traverse((o) => { if (o.isBone && !o.matrixWorld.elements.every(Number.isFinite)) nan++; });
       n++;
     }
@@ -267,6 +287,10 @@ else {
     check(`rider (${bike}): arms reach with the elbows bent`, armMax <= 0.92, `max reach ${(armMax * 100).toFixed(1)} % of the arm (spine bent up to ${(spineMax * 57.3).toFixed(0)} deg)`, "<= 92 %");
     check(`rider (${bike}): feet on the pedals, hands on the grips`, legErr < 0.01 && armErr < 0.01, `feet ${(legErr * 1000).toFixed(1)} mm, hands ${(armErr * 1000).toFixed(1)} mm`, "< 10 mm");
     check(`rider (${bike}): no NaN in any bone`, nan === 0, `${nan}`, "0");
+    // (kid A polish: "knees too high on the BMX": a seated rider's knee closes to ~70-80 deg at the top of the stroke
+    // and opens to ~140-150 at the bottom; the hands reach the bars with the elbows bent)
+    if (bike === "bmx") check(`rider (bmx): seated pedalling: knee ${KNEE[0]}-${KNEE[1]} deg at the top, the elbows bent${IS_A ? ", on the saddle" : ""}`, kneeMin >= KNEE[0] && kneeMin <= KNEE[1] && elbowMax <= 172 && (!IS_A || seatSlid <= 0.01),
+      `knee ${kneeMin.toFixed(0)} (top) .. ${kneeMax.toFixed(0)} (bottom) deg (legs at most ${(seatLeg * 100).toFixed(0)} %, hips fitted ${(seatFit * 100).toFixed(1)} cm, slid ${(seatSlid * 100).toFixed(1)} cm), elbows at most ${elbowMax.toFixed(0)} deg`, `${KNEE[0]}-${KNEE[1]} at the top, elbows <= 172`);
     // (browser turn: the Idle clip's twisted spine put the arms at 32 / 76 % on a straight road)
     // (feel round 1) a foot down at a stop REACHES the ground: the bike leans toward it (bikePhysics footLean), the
     // hips drop off the saddle (RIDE.footHipDown); before: the target asked 102-104 % of the leg, the foot hung 1.5-2 cm up
