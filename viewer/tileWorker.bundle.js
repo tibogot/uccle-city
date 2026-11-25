@@ -1292,7 +1292,7 @@ function classify(doc, P, I2, legacyStyle) {
   const B = doc.buildings, n = B.length;
   const keyOf = (b) => String(b.attrs?.BU_ID ?? b.id);
   const cell = 25, grid = /* @__PURE__ */ new Map();
-  const box4 = B.map((b) => {
+  const box5 = B.map((b) => {
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
     for (const [x, z] of b.footprint[0]) {
       x0 = Math.min(x0, x);
@@ -1302,7 +1302,7 @@ function classify(doc, P, I2, legacyStyle) {
     }
     return [x0, z0, x1, z1];
   });
-  box4.forEach(([x0, z0, x1, z1], bi) => {
+  box5.forEach(([x0, z0, x1, z1], bi) => {
     for (let i = Math.floor(x0 / cell); i <= Math.floor(x1 / cell); i++) for (let j = Math.floor(z0 / cell); j <= Math.floor(z1 / cell); j++) {
       const k = i * 100003 + j;
       if (!grid.has(k)) grid.set(k, []);
@@ -1312,7 +1312,7 @@ function classify(doc, P, I2, legacyStyle) {
   const keys = B.map(keyOf);
   const otherAt = (x, z, key) => {
     for (const bi of grid.get(Math.floor(x / cell) * 100003 + Math.floor(z / cell)) || []) {
-      const [x0, z0, x1, z1] = box4[bi];
+      const [x0, z0, x1, z1] = box5[bi];
       if (keys[bi] !== key && x >= x0 && x <= x1 && z >= z0 && z <= z1 && pip(x, z, B[bi].footprint[0])) return true;
     }
     return false;
@@ -1350,8 +1350,8 @@ function classify(doc, P, I2, legacyStyle) {
       g.eaves = (b.eaves ?? b.top) - b.base;
     }
     g.h = Math.max(g.h, hh);
-    g.cx += (box4[bi][0] + box4[bi][2]) / 2 * Math.abs(a);
-    g.cz += (box4[bi][1] + box4[bi][3]) / 2 * Math.abs(a);
+    g.cx += (box5[bi][0] + box5[bi][2]) / 2 * Math.abs(a);
+    g.cz += (box5[bi][1] + box5[bi][3]) / 2 * Math.abs(a);
     g.w += Math.abs(a);
     if (P && I2) for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
       const ia = I2[t * 3] * 3, ib = I2[t * 3 + 1] * 3, ic = I2[t * 3 + 2] * 3;
@@ -2832,7 +2832,7 @@ function farBuildings(doc, P, I2, opts = {}) {
   const B = doc.buildings;
   const cls = opts.styles !== false ? classify(doc, P, I2, (b, key) => wallStyle(hash01(key + "s"), b.height)) : null;
   const cell = 25, grid = /* @__PURE__ */ new Map();
-  const box4 = B.map((b) => {
+  const box5 = B.map((b) => {
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
     for (const [x, z] of b.footprint[0]) {
       x0 = Math.min(x0, x);
@@ -2842,7 +2842,7 @@ function farBuildings(doc, P, I2, opts = {}) {
     }
     return [x0, z0, x1, z1];
   });
-  box4.forEach(([x0, z0, x1, z1], bi) => {
+  box5.forEach(([x0, z0, x1, z1], bi) => {
     for (let i = Math.floor(x0 / cell); i <= Math.floor(x1 / cell); i++) for (let j = Math.floor(z0 / cell); j <= Math.floor(z1 / cell); j++) {
       const k = i * 100003 + j;
       let a = grid.get(k);
@@ -2854,7 +2854,7 @@ function farBuildings(doc, P, I2, opts = {}) {
     let best = -1;
     for (const o of grid.get(Math.floor(x / cell) * 100003 + Math.floor(z / cell)) || []) {
       if (o === bi) continue;
-      const [x0, z0, x1, z1] = box4[o];
+      const [x0, z0, x1, z1] = box5[o];
       if (x >= x0 && x <= x1 && z >= z0 && z <= z1 && pip3(x, z, B[o].footprint[0]) && (best < 0 || B[o].top > B[best].top)) best = o;
     }
     return best;
@@ -6640,9 +6640,9 @@ function buildBlocks(nodes, roads, opts = {}) {
       if (!closed || poly.length < 3) continue;
       const clean = cleanPolygon(poly);
       if (clean.length < 3) continue;
-      const area4 = polygonArea(clean);
-      if (area4 < (opts.minBlockArea ?? 40)) continue;
-      blocks.push({ id: `b${blocks.length}`, poly: clean, area: area4, roads: [...roadIds], center: polygonCentroid(clean) });
+      const area5 = polygonArea(clean);
+      if (area5 < (opts.minBlockArea ?? 40)) continue;
+      blocks.push({ id: `b${blocks.length}`, poly: clean, area: area5, roads: [...roadIds], center: polygonCentroid(clean) });
     }
   }
   const kept = blocks.filter((b) => {
@@ -6681,10 +6681,10 @@ function subdivideBlock(poly, seed, o = {}) {
   const rand = rng(seed);
   const lots = [];
   const split = (pts, flags, depth) => {
-    const area4 = Math.abs(polygonArea(pts));
-    if (area4 < minArea * 0.25) return;
-    if (area4 <= target * 1.35 || depth >= maxDepth) {
-      lots.push({ poly: pts, area: area4, street: flags.some(Boolean) });
+    const area5 = Math.abs(polygonArea(pts));
+    if (area5 < minArea * 0.25) return;
+    if (area5 <= target * 1.35 || depth >= maxDepth) {
+      lots.push({ poly: pts, area: area5, street: flags.some(Boolean) });
       return;
     }
     let best = null;
@@ -6705,7 +6705,7 @@ function subdivideBlock(poly, seed, o = {}) {
       if (!best || a < best.a) best = { a, ux, uz, u0, u1, v0, v1 };
     }
     if (!best) {
-      lots.push({ poly: pts, area: area4, street: flags.some(Boolean) });
+      lots.push({ poly: pts, area: area5, street: flags.some(Boolean) });
       return;
     }
     const alongU = best.u1 - best.u0 >= best.v1 - best.v0;
@@ -6715,7 +6715,7 @@ function subdivideBlock(poly, seed, o = {}) {
     const A = clipHalfPlane(pts, flags, ax, az, c, false);
     const B = clipHalfPlane(pts, flags, -ax, -az, -c, false);
     if (A.pts.length < 3 || B.pts.length < 3) {
-      lots.push({ poly: pts, area: area4, street: flags.some(Boolean) });
+      lots.push({ poly: pts, area: area5, street: flags.some(Boolean) });
       return;
     }
     split(A.pts, A.flags, depth + 1);
@@ -8420,9 +8420,9 @@ function pack(regions, texel) {
     r.w = Math.ceil((r.bbox[2] - r.bbox[0]) / texel) + 2 * PAD_TEXELS;
     r.h = Math.ceil((r.bbox[3] - r.bbox[1]) / texel) + 2 * PAD_TEXELS;
   }
-  const area4 = regions.reduce((a, r) => a + r.w * r.h, 0);
+  const area5 = regions.reduce((a, r) => a + r.w * r.h, 0);
   const widest = Math.max(...regions.map((r) => r.w));
-  const W2 = Math.ceil(Math.max(widest, Math.sqrt(area4 * 1.15)) / 4) * 4;
+  const W2 = Math.ceil(Math.max(widest, Math.sqrt(area5 * 1.15)) / 4) * 4;
   const order = regions.slice().sort((a, b) => b.h - a.h);
   let x = 0, y = 0, shelf = 0;
   for (const r of order) {
@@ -8803,7 +8803,7 @@ function island(parts, poly, o, { yAt, height, base = 0, grass = false, kind = C
   return r;
 }
 function sameSense(a, b) {
-  const area4 = (pts) => {
+  const area5 = (pts) => {
     let s = 0;
     for (let i = 0; i < pts.length; i++) {
       const p = pts[i], q = pts[(i + 1) % pts.length];
@@ -8811,7 +8811,7 @@ function sameSense(a, b) {
     }
     return s;
   };
-  const A = area4(a), B = area4(b);
+  const A = area5(a), B = area5(b);
   return A * B > 0 && Math.abs(B) < Math.abs(A);
 }
 function asphaltRows(rr, extra) {
@@ -12276,7 +12276,7 @@ function laneOffsetProfile(need, cum, { gap = GAP_FILL, h = OFF_H, slope = OFF_S
     const ramp = Float64Array.from(dil);
     for (let k = 1; k < n; k++) ramp[k] = Math.max(ramp[k], ramp[k - 1] - slope * (cum[k] - cum[k - 1]));
     for (let k = n - 2; k >= 0; k--) ramp[k] = Math.max(ramp[k], ramp[k + 1] - slope * (cum[k + 1] - cum[k]));
-    const box4 = (v) => {
+    const box5 = (v) => {
       const o = new Float64Array(n);
       for (let k = 0, a = 0, b = 0; k < n; k++) {
         while (cum[k] - cum[a] > h) a++;
@@ -12291,7 +12291,7 @@ function laneOffsetProfile(need, cum, { gap = GAP_FILL, h = OFF_H, slope = OFF_S
       }
       return o;
     };
-    e = box4(box4(ramp));
+    e = box5(box5(ramp));
     for (let k = 0; k < n; k++) if (e[k] < Math.abs(need[k]) && need[k] * sg > 0) e[k] = Math.abs(need[k]);
     return e;
   };
@@ -17412,9 +17412,9 @@ function roofCollector(opts = {}) {
     }
     for (const g of groups.values()) {
       const n0 = g[0].n[1] < 0 ? g[0].n.map((v) => -v) : g[0].n;
-      let area4 = 0, y = 0;
+      let area5 = 0, y = 0;
       for (const t of g) {
-        area4 += t.area;
+        area5 += t.area;
         y += (t.p[0][1] + t.p[1][1] + t.p[2][1]) / 3 * t.area;
       }
       const inG = new Set(g);
@@ -17424,7 +17424,7 @@ function roofCollector(opts = {}) {
         const l = edgeOf.get(k);
         if (l.filter((q) => inG.has(q.t)).length === 1) bnd.push({ A, B, C: t.p[(e + 2) % 3], shared: l.length > 1 });
       }
-      planes.push({ tris: g, n: n0, area: area4, y: y / area4, flat: n0[1] > 0.97, bnd });
+      planes.push({ tris: g, n: n0, area: area5, y: y / area5, flat: n0[1] > 0.97, bnd });
     }
     const flats = planes.filter((p) => p.flat && p.area >= 6);
     const slopes = planes.filter((p) => !p.flat && p.area >= 4);
@@ -17550,9 +17550,9 @@ function roofCollector(opts = {}) {
       }
       const nv2 = Math.min(16, Math.max(2, Math.round(A / 60 * (0.6 + r() * 0.8))));
       for (let k = 0; k < nv2; k++) {
-        const box4 = r() < 0.3, s = pick2(box4 ? 1.2 : 0.8, box4 ? 0.5 : 0.25);
+        const box5 = r() < 0.3, s = pick2(box5 ? 1.2 : 0.8, box5 ? 0.5 : 0.25);
         if (!s) break;
-        if (box4) place("ventbox", s, 1, 0.8 + r() * 0.5, 1, 0.5, [r(), 0, 0, 0], true, 1);
+        if (box5) place("ventbox", s, 1, 0.8 + r() * 0.5, 1, 0.5, [r(), 0, 0, 0], true, 1);
         else place("vent", s, 1, 0.8 + r() * 0.9, 1, 0.25, [r(), 0, 0, 0], false, 1.2);
       }
       const nc = Math.floor(r() * (shed ? 5 : 3.5));
@@ -22104,8 +22104,8 @@ function footSoffitCap(fbs) {
   for (const fb of fbs || []) for (const p of fb.parts) if (p.kind === "deck") D.push({ p, F: frame2(p), box: fb.box });
   return (x, z) => {
     let cap2 = Infinity;
-    for (const { p, F, box: box4 } of D) {
-      if (!inBox(box4, x, z, 25)) continue;
+    for (const { p, F, box: box5 } of D) {
+      if (!inBox(box5, x, z, 25)) continue;
       const [u, v] = F.loc(x, z), uc = Math.max(0, Math.min(F.L, u));
       const out = Math.hypot(Math.max(0, Math.abs(v) - p.w / 2 - FB.girderT), u - uc);
       if (out > 25) continue;
@@ -22490,6 +22490,150 @@ function withoutLines(feats, ids) {
   return { ...feats, lines: feats.lines.filter((l) => !s.has(l.id)) };
 }
 
+// viewer/underground/underpass.js
+var UNDERPASS_WAYS = ["osm:w30235696", "osm:w640826544", "osm:w640826545"];
+var docP = null;
+var loadUnderpass = (base) => docP ??= fetch(new URL("../../models/underpass/calevoet.json", base)).then((r) => r.ok ? r.json() : null).catch(() => null);
+var box4 = (ring2) => {
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+  for (const [x, z] of ring2) {
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    z0 = Math.min(z0, z);
+    z1 = Math.max(z1, z);
+  }
+  return { x0, x1, z0, z1 };
+};
+var inRing5 = (r, x, z) => {
+  let c = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [xi, zi] = r[i], [xj, zj] = r[j];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c;
+  }
+  return c;
+};
+var area4 = (r) => {
+  let a = 0;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1];
+  return a / 2;
+};
+function wellRings(up) {
+  return (up?.wells || []).map((w) => {
+    const r = area4(w.ring) > 0 ? w.ring.slice() : w.ring.slice().reverse();
+    return { name: w.name, ring: r, box: box4(r) };
+  });
+}
+function underpassTerrain(up, terrain) {
+  const wells = wellRings(up);
+  if (!wells.length) return null;
+  const P = terrain.pos, Nn = terrain.nrm, I2 = terrain.idx;
+  const out = [], newPos = [], newNrm = [];
+  const vmap = /* @__PURE__ */ new Map();
+  let nv = P.length / 3, dropped = 0, clipped = 0, pieces = 0;
+  const vert = (k) => [P[k * 3], P[k * 3 + 1], P[k * 3 + 2], Nn[k * 3], Nn[k * 3 + 1], Nn[k * 3 + 2], k];
+  const lerp = (a, b, t) => {
+    const v = new Array(7);
+    for (let i = 0; i < 6; i++) v[i] = a[i] + (b[i] - a[i]) * t;
+    v[6] = -1;
+    return v;
+  };
+  const side = (r, e, p) => {
+    const [ax, az] = r[e], [bx, bz] = r[(e + 1) % r.length];
+    return -((bx - ax) * (p[2] - az) - (bz - az) * (p[0] - ax));
+  };
+  const clipPoly = (poly, r, e, keepOut) => {
+    const res = [];
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length], sa = side(r, e, a), sb = side(r, e, b);
+      const ina = keepOut ? sa > 0 : sa <= 0, inb = keepOut ? sb > 0 : sb <= 0;
+      if (ina) res.push(a);
+      if (ina !== inb) res.push(lerp(a, b, sa / (sa - sb)));
+    }
+    return res;
+  };
+  const index = (v) => {
+    if (v[6] >= 0) return v[6];
+    const key = `${Math.round(v[0] * 1e4)},${Math.round(v[2] * 1e4)}`;
+    let k = vmap.get(key);
+    if (k === void 0) {
+      k = nv++;
+      vmap.set(key, k);
+      newPos.push(v[0], v[1], v[2]);
+      const l = Math.hypot(v[3], v[4], v[5]) || 1;
+      newNrm.push(v[3] / l, v[4] / l, v[5] / l);
+    }
+    return k;
+  };
+  for (let t = 0; t < I2.length; t += 3) {
+    const a = I2[t], b = I2[t + 1], c = I2[t + 2];
+    const tx0 = Math.min(P[a * 3], P[b * 3], P[c * 3]), tx1 = Math.max(P[a * 3], P[b * 3], P[c * 3]);
+    const tz0 = Math.min(P[a * 3 + 2], P[b * 3 + 2], P[c * 3 + 2]), tz1 = Math.max(P[a * 3 + 2], P[b * 3 + 2], P[c * 3 + 2]);
+    const w = wells.find((q) => tx1 > q.box.x0 && tx0 < q.box.x1 && tz1 > q.box.z0 && tz0 < q.box.z1);
+    if (!w) {
+      out.push(a, b, c);
+      continue;
+    }
+    let rest = [vert(a), vert(b), vert(c)];
+    const parts = [];
+    for (let e = 0; e < w.ring.length && rest.length >= 3; e++) {
+      const o = clipPoly(rest, w.ring, e, true);
+      if (o.length >= 3) parts.push(o);
+      rest = clipPoly(rest, w.ring, e, false);
+    }
+    if (rest.length < 3) {
+      out.push(a, b, c);
+      continue;
+    }
+    if (!parts.length) {
+      dropped++;
+      continue;
+    }
+    clipped++;
+    for (const poly of parts) {
+      const ids = poly.map(index);
+      for (let i = 1; i + 1 < ids.length; i++) {
+        if (ids[0] === ids[i] || ids[i] === ids[i + 1] || ids[0] === ids[i + 1]) continue;
+        out.push(ids[0], ids[i], ids[i + 1]);
+        pieces++;
+      }
+    }
+  }
+  if (newPos.length) {
+    const p2 = new Float32Array(P.length + newPos.length);
+    p2.set(P);
+    p2.set(newPos, P.length);
+    const n2 = new Float32Array(Nn.length + newNrm.length);
+    n2.set(Nn);
+    n2.set(newNrm, Nn.length);
+    terrain.pos = p2;
+    terrain.nrm = n2;
+  }
+  terrain.idx = Uint32Array.from(out);
+  return { dropped, clipped, added: newPos.length / 3, pieces };
+}
+function underpassSurfaces(surf, up) {
+  const wells = wellRings(up), res = { holes: [], partial: [] };
+  if (!surf?.surfaces || !wells.length) return res;
+  for (const s of surf.surfaces) {
+    const outer = s.rings[0];
+    for (const w of wells) {
+      const inside3 = w.ring.map(([x, z]) => inRing5(outer, x, z) && !s.rings.slice(1).some((h) => inRing5(h, x, z)));
+      const anyIn = inside3.some(Boolean) || outer.some(([x, z]) => inRing5(w.ring, x, z));
+      if (!anyIn) continue;
+      if (inside3.every(Boolean) && !outer.some(([x, z]) => inRing5(w.ring, x, z))) {
+        s.rings = [...s.rings, area4(outer) > 0 === area4(w.ring) > 0 ? w.ring.slice().reverse() : w.ring.slice()];
+        res.holes.push({ surface: s.id, well: w.name });
+      } else res.partial.push({ surface: s.id, well: w.name });
+    }
+  }
+  return res;
+}
+function underpassLines(feats) {
+  if (!feats?.lines) return feats;
+  const s = new Set(UNDERPASS_WAYS);
+  return { ...feats, lines: feats.lines.filter((l) => !s.has(l.id)) };
+}
+
 // viewer/tileData.js
 var railP = null;
 var grassKindsP = null;
@@ -22776,7 +22920,7 @@ async function buildTileData(entry, base) {
   const tunnels = entry.tunnels !== false ? await step("tunnel fetch", () => loadTunnels(base)) : null;
   if (tunnels?.length && feats.trees?.length) feats.trees = tunnelTrees(tunnels, feats.trees);
   if (entry.fuelClear?.length && feats.trees?.length) {
-    const inRing5 = (r, x, z) => {
+    const inRing6 = (r, x, z) => {
       let k = false;
       for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
         const [xi, zi] = r[i], [xj, zj] = r[j];
@@ -22784,7 +22928,7 @@ async function buildTileData(entry, base) {
       }
       return k;
     };
-    feats.trees = feats.trees.filter((t) => t.source !== "urbis-chm" || !entry.fuelClear.some((r) => inRing5(r, t.x, t.z)));
+    feats.trees = feats.trees.filter((t) => t.source !== "urbis-chm" || !entry.fuelClear.some((r) => inRing6(r, t.x, t.z)));
   }
   const surfDoc = (entry.surface || entry.grass) && F.surfaces ? await step("fetch surfaces", () => get(F.surfaces)) : null;
   const surf = entry.surface ? surfDoc : null;
@@ -22797,6 +22941,8 @@ async function buildTileData(entry, base) {
       if (o?.surface) (r.meta ??= {}).surface = o.surface;
     }
   if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
+  const upass = entry.underpass && bounds.x0 <= -1150 && bounds.x1 >= -1250 && bounds.z0 <= 900 && bounds.z1 >= 830 ? await step("underpass fetch", () => loadUnderpass(base)) : null;
+  const upassSurf = upass && surf ? underpassSurfaces(surf, upass) : null;
   if (entry.cortenbosch !== false && ov.streetSurfaces) {
     const sOf = (o) => o.pattern === "herringbone" && o.surface === "paving_stones" && entry.cortenbosch2 !== false ? "paving_herringbone" : o.surface;
     if (surf) for (const s of surf.surfaces || []) {
@@ -23006,6 +23152,7 @@ async function buildTileData(entry, base) {
   }
   const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
+  if (upass) netInfo.underpass = { ...await step("underpass wells", () => underpassTerrain(upass, terrain)), surfaces: upassSurf };
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
     const [idx2] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
@@ -23075,7 +23222,7 @@ async function buildTileData(entry, base) {
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, wallEmpty: entry.wallEmpty !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
-  const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));
+  const cover = await step("land cover", () => landCoverData(withoutLines(upass ? underpassLines(feats) : feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));
   const streetTop = (x, z) => {
     const H = hm.h, dl = drive.ground.delta, c0 = Math.round((x - H.x0) / H.step), r0 = Math.round((z - H.z0) / H.step);
     let best = Infinity, y = null;
@@ -23669,4 +23816,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "156334046ab373a9";
+self.__TILE_CODE_HASH = "17052418de2147b0";
