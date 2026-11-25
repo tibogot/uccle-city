@@ -7,8 +7,8 @@
 //   materials the feathers' alpha BLEND -> MASK (cut-out at 0.5: no sorting, shadows that match); emission and the
 //             specular extensions dropped (a falcon does not glow: the far model's eyes / body had emissive maps)
 // The Sketchfab files stay untouched SOURCE files (C:\Users\tibog\Downloads\uccle-falcon-src\); everything here is
-// repeatable from them. No LODs inside: the near bird is one player falcon (25k triangles); the far / family birds are
-// the second, 7k model (--far build).
+// repeatable from them. No LODs inside: the near bird is one player falcon (25k triangles); the far LOD is its own file
+// (tools/falconV2far.mjs -> falcon_v2_far.glb: the same rig and clips, ~6k triangles, no textures of its own).
 //   node tools/falconV2pack.mjs <raw.glb> <out.glb> [--fast]
 // (+ <out>_juvenile.ktx2: the juvenile plumage, named in the glb's asset.extras.variants)
 import fs from "node:fs";
@@ -26,7 +26,8 @@ const [, , SRC, DST] = process.argv;
 const FAST = process.argv.includes("--fast");
 const glb = fs.readFileSync(SRC);
 const jl = glb.readUInt32LE(12), J = JSON.parse(glb.subarray(20, 20 + jl).toString());
-const binOff = 20 + jl + 8, BIN = glb.subarray(binOff, binOff + glb.readUInt32LE(20 + jl));
+const binOff = 20 + jl + 8;
+let BIN = glb.subarray(binOff, binOff + glb.readUInt32LE(20 + jl));
 const texMeta = JSON.parse(fs.readFileSync(SRC + ".tex/textures.json", "utf8"));
 
 // ------------------------------------------------------------------------------------------------ materials
@@ -61,6 +62,7 @@ for (const [i, im] of (J.images || []).entries()) {
 // the plumage variants (tools/blender/falconV2.py step 8: "juvenile", the player's young of the year) as their own
 // KTX2 beside the glb (<out>_juvenile.ktx2), the same encoding as the base colour they replace; the glb names them
 J.asset.extras = { ...(J.asset.extras || {}), variants: {} };
+if (!Object.values(texMeta).some((T) => T.variant_of)) delete J.asset.extras.variants;
 for (const [name, T] of Object.entries(texMeta)) {
   if (!T.variant_of) continue;
   const data = new Uint8Array(fs.readFileSync(path.join(SRC + ".tex", T.file)));
@@ -76,7 +78,32 @@ for (const [name, T] of Object.entries(texMeta)) {
   console.log(`  variant ${name}: ${T.width}x${T.height} -> ${file} ${(ktx.length / 1024).toFixed(0)} KB KTX2`);
 }
 for (const t of J.textures || []) { const s = t.source; t.extensions = { KHR_texture_basisu: { source: s } }; delete t.source; }
-J.extensionsUsed.push("KHR_texture_basisu"); J.extensionsRequired = [...new Set([...(J.extensionsRequired || []), "KHR_texture_basisu"])];
+if ((J.textures || []).length) { J.extensionsUsed.push("KHR_texture_basisu"); J.extensionsRequired = [...new Set([...(J.extensionsRequired || []), "KHR_texture_basisu"])]; }   // (the far LOD has none)
+
+// ------------------------------------------------------------------------------------------------ merge the small views
+// Blender writes one buffer view per animation sampler (1700+ for 11 clips x 65 bones): the JSON (~0.7 MB) and the
+// per-view meshopt overhead outweighed the key data. The views that are not vertex / index / image data (the clips'
+// keys, the skin's matrices) are merged by element size into one view each (accessor byteOffsets into it): lossless,
+// plain glTF, and meshopt compresses the long views better.
+{
+  const ES = (a) => ({ 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 }[a.componentType] * { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT4: 16 }[a.type]);
+  const imgV = new Set((J.images || []).map((im) => im.bufferView)), es = new Map();
+  for (const a of J.accessors) { if (a.bufferView == null) continue; const e = ES(a), o = es.get(a.bufferView); es.set(a.bufferView, o == null || o === e ? e : -1); }
+  const mergeable = (vi) => !J.bufferViews[vi].target && !J.bufferViews[vi].byteStride && !imgV.has(vi) && es.get(vi) > 0 && es.get(vi) % 4 === 0;
+  const parts = [], nViews = [], vmap = new Map(); let off = 0;
+  const put = (b) => { const o = off; parts.push(b); off += b.length; const pad = (4 - (b.length % 4)) % 4; if (pad) { parts.push(Buffer.alloc(pad)); off += pad; } return o; };
+  J.bufferViews.forEach((v, vi) => { if (!mergeable(vi)) { vmap.set(vi, [nViews.length, 0]); nViews.push({ ...v, byteOffset: put(Buffer.from(BIN.subarray(v.byteOffset || 0, (v.byteOffset || 0) + v.byteLength))) }); } });
+  const groups = new Map(); J.bufferViews.forEach((v, vi) => { if (mergeable(vi)) (groups.get(es.get(vi)) || groups.set(es.get(vi), []).get(es.get(vi))).push(vi); });
+  for (const [e, list] of groups) {
+    const start = off, ni = nViews.length;
+    for (const vi of list) { const v = J.bufferViews[vi]; const b = Buffer.from(BIN.subarray(v.byteOffset || 0, (v.byteOffset || 0) + v.byteLength)); const o = off; parts.push(b); off += b.length; vmap.set(vi, [ni, o - start]); }
+    nViews.push({ buffer: 0, byteOffset: start, byteLength: off - start }); const pad = (4 - (off % 4)) % 4; if (pad) { parts.push(Buffer.alloc(pad)); off += pad; }
+  }
+  for (const a of J.accessors) if (a.bufferView != null) { const [nv, o] = vmap.get(a.bufferView); a.bufferView = nv; a.byteOffset = (a.byteOffset || 0) + o; if (!a.byteOffset) delete a.byteOffset; }
+  for (const im of J.images || []) if (im.bufferView != null) im.bufferView = vmap.get(im.bufferView)[0];
+  console.log(`  views: ${J.bufferViews.length} -> ${nViews.length} (the clips' keys and the skin's matrices merged by element size)`);
+  J.bufferViews = nViews; BIN = Buffer.concat(parts);
+}
 
 // ------------------------------------------------------------------------------------------------ buffer views -> meshopt
 const viewUse = new Map();    // bufferView -> { kind: "index" | "attr", stride, count }
@@ -100,7 +127,7 @@ const views = J.bufferViews.map((v, vi) => {
   const u = viewUse.get(vi);
   let mode = null, stride = 0, count = 0;
   if (u && u.kind === "index" && (u.comp === 2 || u.comp === 4) && u.count % 3 === 0) { mode = "TRIANGLES"; stride = u.comp; count = u.count; }
-  else if (u && u.kind === "attr" && u.stride % 4 === 0 && u.stride <= 256 && raw.length === u.stride * u.count) { mode = "ATTRIBUTES"; stride = u.stride; count = u.count; }
+  else if (u && u.kind === "attr" && u.stride % 4 === 0 && u.stride <= 256 && raw.length % u.stride === 0) { mode = "ATTRIBUTES"; stride = u.stride; count = raw.length / u.stride; }
   if (!mode) { const o = mainLen; mainLen += push(main, Buffer.from(raw)); return { ...v, buffer: 0, byteOffset: o }; }
   const enc = Buffer.from(MeshoptEncoder.encodeGltfBuffer(new Uint8Array(raw), count, stride, mode));
   const o = mainLen; mainLen += push(main, enc);
@@ -112,6 +139,7 @@ const views = J.bufferViews.map((v, vi) => {
 });
 J.bufferViews = views;
 J.buffers = [{ byteLength: mainLen }, { byteLength: fallLen, extensions: { EXT_meshopt_compression: { fallback: true } } }];
+J.extensionsRequired ??= [];
 for (const e of ["EXT_meshopt_compression"]) { if (!J.extensionsUsed.includes(e)) J.extensionsUsed.push(e); if (!J.extensionsRequired.includes(e)) J.extensionsRequired.push(e); }
 J.asset.generator = "uccle-city tools/falconV2pack.mjs (from tools/blender/falconV2.py)";
 

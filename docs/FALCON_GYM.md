@@ -180,7 +180,7 @@ To do: `meshopt_simplifyWithAttributes` per loose part, keeping each feather car
 O (or the panel's "Orbit / inspect" folder) pauses the flight. The camera orbits the falcon's body centre (the hips bone) with three's OrbitControls:
 
 - drag: rotate
-- wheel: zoom, 0.3-8 m
+- wheel: zoom, 0.3-40 m (out to where the far LOD takes over)
 - right-drag or Shift-drag: pan
 
 The "clip in place" picker has: auto (the paused flight pose), perch, glide, flap, stoop, talons, flare, walk, hop, takeoff, land. A clip the current model lacks is the glide plus its procedural layer.

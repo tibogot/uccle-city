@@ -1088,6 +1088,11 @@ if JUV:
     underm = np.maximum(smooth(0.10, -0.30, n[..., 2]), smooth(-0.45, -0.80, n[..., 1]) * (1 - smooth(0.5, 0.8, headw)) * (1 - smooth(0.3, 0.6, wingsw)))
     underm = underm * (1 - cardw) * (1 - smooth(0.5, 0.8, tailw)) * (1 - smooth(0.2, 0.6, expo))
     col = mixc(upper, under, underm)
+    # the wing's covert sheets: their EDGE (the bind normal neither up nor down: the leading edge's thickness) and the
+    # faces that face outward when folded take a dark brown: the ramp of the adult's lightness, capped (the adult's
+    # leading edge is a lighter grey, which the ramp alone turned into a cream line down the folded wing's front)
+    edge_w = (1 - smooth(0.2, 0.6, np.abs(n[..., 2]))) * smooth(0.3, 0.6, wingsw) * (1 - cardw)
+    col = mixc(col, ramp(np.minimum(Y * 0.92, 0.30)), np.maximum(edge_w, smooth(0.2, 0.6, expo) * smooth(0.3, 0.6, wingsw)))
     # the flight feathers: the same ramp (dark brown above, barred buff and brown below: a juvenile's are barred too)
     col = mixc(col, ramp(Y * 0.95), cardw)
     # the head: hood and moustache dark brown, cheeks and throat buff (the ramp), the cere and eye ring bluish-grey

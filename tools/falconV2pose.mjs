@@ -219,7 +219,7 @@ export async function v2PoseChecks(file) {
   ok(okFile && baseImg && v.width >= 512 && v.height >= 512, "v2 juvenile plumage: KTX2 beside the glb, named in it (asset.extras.variants)", v ? `${v.file} ${v.width}x${v.height}` : "missing");
   // V2 FIX: the folded wing shows its dark upper side, no buff at the wrists. The wing's covert sheets' faces that
   // face OUTWARD in a folded pose (the posed normal against the body's axis), coloured by the shipped juvenile KTX2
-  // (three's Basis transcoder): the buff share of their area (luminance > 130 / 255; the upper side's brown ~ 65), the
+  // (three's Basis transcoder): the buff share of their area (luminance > 110 / 255, a cream edge counts; the upper side's brown ~ 65), the
   // wing proper (beyond 6 cm from the midline in the bind: the mantle's own buff fringes are the back's)
   if (okFile && B.UV) {
     const T = await decodeKTX2(fs.readFileSync(f)), UV = B.UV;
@@ -239,7 +239,7 @@ export async function v2PoseChecks(file) {
         const n = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]], ar = len(n) / 2; if (ar < 1e-12) continue;
         const m = [0, 1, 2].map((k) => (Xc[a * 3 + k] + Xc[b * 3 + k] + Xc[cc * 3 + k]) / 3 - h[k]), md = dot(m, u), o = m.map((x, k) => x - u[k] * md), ol = len(o) || 1;
         if (dot(n, o) / (2 * ar * ol) <= 0.2) continue;
-        A += ar; if (lum(t) > 130) buff += ar;
+        A += ar; if (lum(t) > 110) buff += ar;
       }
       res.push([c, buff / Math.max(A, 1e-12), buff]);
     }
@@ -249,7 +249,28 @@ export async function v2PoseChecks(file) {
   return out;
 }
 
+/** V2 FIX: the far LOD (tools/falconV2far.mjs -> falcon_v2_far.glb): 5-7k triangles, the near bird's joints in the same
+ *  order (the gym binds it to the near skeleton), the same clips, no textures of its own (it wears the near material),
+ *  small, and posed like the near bird (its box in Perch / Glide / Stoop within 1.5 cm a side: no card lost or caved) */
+export function v2FarChecks(nearFile, farFile) {
+  const out = [], ok = (c, what, val) => out.push([!!c, what, val]);
+  if (!fs.existsSync(farFile)) { ok(false, "v2 far LOD: models/bird/v2/falcon_v2_far.glb exists (tools/falconV2far.mjs)", "missing"); return out; }
+  const N = loadV2(nearFile), F = loadV2(farFile), tris = F.IDX.length / 3;
+  ok(tris >= 5000 && tris <= 7000, "v2 far LOD: 5k-7k triangles", `${tris} (near ${N.IDX.length / 3})`);
+  const jn = (B) => { const mi = B.J.nodes.findIndex((n) => n.skin != null && n.mesh != null); return B.J.skins[B.J.nodes[mi].skin].joints.map((j) => B.J.nodes[j].name).join(","); };
+  ok(jn(N) === jn(F), "v2 far LOD: the near bird's joints, in the same order (bound to its skeleton)", `${jn(F).split(",").length} joints`);
+  const cn = (B) => Object.keys(B.clips).sort().join(" ");
+  ok(cn(N) === cn(F), "v2 far LOD: the same clips", cn(F));
+  ok(!(F.J.images || []).length && F.J.asset?.extras?.sharesTexturesWith === "falcon_v2.glb" && fs.statSync(farFile).size < 1.0e6, "v2 far LOD: no textures of its own (wears falcon_v2.glb's), < 1 MB", `${(fs.statSync(farFile).size / 1e6).toFixed(2)} MB`);
+  const box = (B, c) => { const X = B.pose(c).X, mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity]; for (let v = 0; v < X.length / 3; v++) for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], X[v * 3 + k]); mx[k] = Math.max(mx[k], X[v * 3 + k]); } return [...mn, ...mx]; };
+  const dev = ["Perch", "Glide", "Stoop"].map((c) => { const a = box(N, c), b = box(F, c); return [c, Math.max(...a.map((x, i) => Math.abs(x - b[i])))]; });
+  ok(dev.every(([, d]) => d < 0.015), "v2 far LOD: posed like the near bird (its box within 1.5 cm a side, Perch / Glide / Stoop)", dev.map(([c, d]) => `${c} ${(d * 100).toFixed(1)} cm`).join(", "));
+  return out;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const r = await v2PoseChecks(process.argv[2] || path.join(here, "../models/bird/v2/falcon_v2.glb"));
+  const far = process.argv[3] || path.join(path.dirname(process.argv[2] || path.join(here, "../models/bird/v2/falcon_v2.glb")), "falcon_v2_far.glb");
+  if (fs.existsSync(far)) r.push(...v2FarChecks(process.argv[2] || path.join(here, "../models/bird/v2/falcon_v2.glb"), far));
   for (const [c, w, v] of r) console.log(`${c ? "ok  " : "FAIL"} ${w}: ${v}`);
 }

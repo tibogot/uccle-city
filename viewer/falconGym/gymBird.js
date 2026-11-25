@@ -24,6 +24,13 @@ const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
 const M2M = new URL("../../models/bird/v2/m2m/", import.meta.url);
 const V2 = new URL("../../models/bird/v2/falcon_v2.glb", import.meta.url);
 const V2_JUV = new URL("../../models/bird/v2/falcon_v2_juvenile.ktx2", import.meta.url);
+const V2_FAR = new URL("../../models/bird/v2/falcon_v2_far.glb", import.meta.url);
+// THE FAR LOD (v2, tools/falconV2far.mjs: ~6k triangles, the same rig, clips and UVs, no textures of its own): its
+// mesh is bound to the near bird's skeleton and wears its material, so one mixer drives both and the plumage switch
+// changes both. The switch is by the drawn wingspan on screen, with hysteresis, where the bird is small: the far one
+// below LOD_FAR_PX, the near one again above LOD_NEAR_PX (no flicker at the threshold)
+export const LOD_FAR_PX = 56, LOD_NEAR_PX = 68;
+const _lp = new THREE.Vector3();
 const TRANSCODER = "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/libs/basis/";
 let ktx = null;
 const KEYS = ["perch", "flap", "glide", "walk", "hop", "takeoff", "land", "stoop", "talons", "flare"];   // (talons, flare: v2 only, the orbit view's clip picker)
@@ -56,7 +63,8 @@ export class GymBird {
     if (which === "v2") {
       // (tools/falconV2pack.mjs: EXT_meshopt_compression + KTX2 textures)
       if (!ktx) { ktx = new KTX2Loader().setTranscoderPath(TRANSCODER); if (renderer) ktx.detectSupport(renderer); }
-      const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(ktx).loadAsync(V2.href);
+      const L = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(ktx);
+      const [g, gFar] = await Promise.all([L.loadAsync(V2.href), L.loadAsync(V2_FAR.href).catch(() => null)]);
       // the juvenile plumage: its own KTX2, the adult's sampler and colour space (missing file: the adult only)
       const juv = await ktx.loadAsync(V2_JUV.href).catch(() => null);
       // rotations only (+ v2's own root translation): the Mesh2Motion clips' translations were in its own units
@@ -64,6 +72,7 @@ export class GymBird {
       b.plumages = { adult: b.mesh.material.map, juvenile: juv };
       if (juv) { const m = b.plumages.adult; juv.colorSpace = THREE.SRGBColorSpace; juv.flipY = m.flipY; juv.wrapS = m.wrapS; juv.wrapT = m.wrapT; juv.channel = m.channel; }
       b.setPlumage(plumage);
+      if (gFar) b.attachFar(gFar);
       return b;
     }
     return new GymBird({ scene: A.bird.scene, clips: A.clips, v2: false }, M, span, A);
@@ -124,6 +133,29 @@ export class GymBird {
     this.setSpan(span);
   }
 
+  /** the far LOD's mesh on this bird's skeleton and material (v2: the same 65 joints in the same order) */
+  attachFar(g) {
+    let src = null; g.scene.traverse((o) => { if (o.isSkinnedMesh) src ??= o; });
+    const near = this.mesh;
+    if (!src || src.skeleton.bones.length !== near.skeleton.bones.length || src.skeleton.bones.some((b, i) => b.name !== near.skeleton.bones[i].name)) return;
+    const far = new THREE.SkinnedMesh(src.geometry, near.material);
+    far.name = `${near.name}-far`; far.position.copy(near.position); far.quaternion.copy(near.quaternion); far.scale.copy(near.scale);
+    far.castShadow = far.receiveShadow = true; far.frustumCulled = false; far.visible = false;
+    near.parent.add(far); far.updateMatrixWorld(true);
+    far.bind(near.skeleton, near.bindMatrix);
+    this.far = far; this.lod = "near"; this.lodMode = "auto";
+    this.lodTris = { near: near.geometry.index.count / 3, far: src.geometry.index.count / 3 };
+  }
+  /** the LOD by the drawn span on screen (px): call once a frame after pose(). mode: "auto" | "near" | "far" */
+  updateLod(camera, viewH) {
+    if (!this.far) return this.lod = "near";
+    this.root.getWorldPosition(_lp);
+    const d = Math.max(camera.position.distanceTo(_lp), 1e-3), px = (this.span / (2 * d * Math.tan((camera.fov * Math.PI) / 360))) * viewH;
+    this.lodPx = px;
+    const want = this.lodMode === "near" ? "near" : this.lodMode === "far" ? "far" : this.lod === "near" ? (px < LOD_FAR_PX ? "far" : "near") : (px > LOD_NEAR_PX ? "near" : "far");
+    if (want !== this.lod) { this.lod = want; this.mesh.visible = want === "near"; this.far.visible = want === "far"; }
+    return this.lod;
+  }
   /** "juvenile" (the player) | "adult" (the church family): v2 only */
   setPlumage(name) {
     const t = this.plumages?.[name];

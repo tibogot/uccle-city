@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { GymFlight, GymControls, GYM, fillGymControls, birdRoll, rigBank } from "../viewer/falconGym/gymFlight.js";
 import { makeGymWorld, Y0, LEDGES } from "../viewer/falconGym/gymLayout.js";
-import { v2PoseChecks } from "./falconV2pose.mjs";
+import { v2PoseChecks, v2FarChecks } from "./falconV2pose.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const quiet = process.argv.includes("--quiet");
@@ -169,6 +169,10 @@ if (fs.existsSync(v2)) {
   check(fs.statSync(v2).size < 4.5e6, "v2 falcon file < 4.5 MB", `${(fs.statSync(v2).size / 1e6).toFixed(2)} MB`);
   // the V2 POLISH (rule falcon-gym "the v2 model"): the perched pose, the folded wings' cards, the toes, the juvenile
   for (const [ok, what, val] of await v2PoseChecks(v2)) check(ok, what, val);
+  // V2 FIX: the far LOD (tools/falconV2far.mjs), and the lab switches to it by the drawn span on screen
+  for (const [ok, what, val] of v2FarChecks(v2, path.join(ROOT, "models/bird/v2/falcon_v2_far.glb"))) check(ok, what, val);
+  const gb = fs.readFileSync(path.join(ROOT, "viewer/falconGym/gymBird.js"), "utf8");
+  check(/LOD_FAR_PX\s*=\s*\d+,\s*LOD_NEAR_PX\s*=\s*\d+/.test(gb) && /far\.bind\(near\.skeleton/.test(gb) && /updateLod\(camera/.test(js), "v2 far LOD wired: bound to the near skeleton, switched by screen size with hysteresis (gymBird.updateLod, the lab calls it)");
 } else out.push("note models/bird/v2/falcon_v2.glb not built yet (the owner's Sketchfab files): v2 checks skipped");
 
 if (!quiet || fails.length) console.log(out.join("\n"));

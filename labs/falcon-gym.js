@@ -8,7 +8,7 @@
 // slope lift off the blocks), the falcon (gymBird.js: the current model or v2), the chase camera (falconCamera.js).
 // No sound (the lab never makes any). ?time=midday|golden  ?ctl=gym|current  ?start=field|alley|passage|tower|high300|high800
 // ORBIT (O, the panel's "Orbit / inspect"): the flight pauses, three's OrbitControls round the falcon's body centre
-// (drag = rotate, wheel = zoom 0.3-8 m, right-drag / Shift-drag = pan), the clip picker plays in place; O again = back
+// (drag = rotate, wheel = zoom 0.3-40 m (to see the far LOD switch), right-drag / Shift-drag = pan), the clip picker plays in place; O again = back
 // to the exact flight state. ?orbit=1 starts in it.
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -18,7 +18,7 @@ import { createPipeline } from "../viewer/post.js";
 import { makeGymWorld, Y0, FIELD } from "../viewer/falconGym/gymLayout.js";
 import { buildGymScene } from "../viewer/falconGym/gymScene.js";
 import { GymFlight, GymControls, GYM, fillGymControls } from "../viewer/falconGym/gymFlight.js";
-import { GymBird, v2Exists } from "../viewer/falconGym/gymBird.js";
+import { GymBird, v2Exists, LOD_FAR_PX, LOD_NEAR_PX } from "../viewer/falconGym/gymBird.js";
 import { AirField } from "../viewer/falconFlight/air.js";
 import { Pigeons } from "../viewer/falconFlight/pigeons.js";
 import { FalconInput } from "../viewer/falconFlight/falconInput.js";
@@ -97,7 +97,7 @@ const S = {
   ctl: qp.get("ctl") === "current" ? "current" : "gym", model: "current", plumage: "juvenile", compare: false, standPose: "perch", clip: "auto", start: "on the field", slowmo: 1,
   time: preset, hour: lighting.hour, post: true, pigeons: pigeons.count, readable: 2.0,
   readout: "", stats: "",
-  orbit: false, orbitClip: "auto", orbitSpeed: 1, orbitPause: false, turntable: false, studio: false,
+  orbit: false, orbitClip: "auto", orbitSpeed: 1, orbitPause: false, turntable: false, studio: false, lod: "auto", lodInfo: "",
   ...Object.fromEntries(["cruise", "stoopPush", "nMax", "nMaxStoop", "thrust0", "stunVn", "look", "rollRate"].map((k) => [k, GYM[k]])),
 };
 const ui = new Panel({ title: "Falcon Gym" });
@@ -105,6 +105,10 @@ const f0 = ui.addFolder("Falcon");
 f0.add(S, "ctl", ["gym", "current"]).name("controller").onChange((v) => switchCtl(v));
 f0.add(S, "model", HAS_V2 && birds.v2 ? ["current", "v2"] : ["current"]).name("model").onChange((v) => setModel(v)).hint(HAS_V2 ? "" : "v2: models/bird/v2/falcon_v2.glb not built yet");
 if (birds.v2?.plumages?.juvenile) f0.add(S, "plumage", ["juvenile", "adult"]).name("v2 plumage").onChange((v) => { for (const b of [birds.v2, ...(standBirds || [])]) b?.setPlumage?.(v); });
+if (birds.v2?.far) {
+  f0.add(S, "lod", ["auto", "near", "far"]).name("v2 LOD").hint(`auto: the far mesh (${birds.v2.lodTris.far} triangles) when the drawn span is under ${LOD_FAR_PX} px, the near (${birds.v2.lodTris.near}) again over ${LOD_NEAR_PX}`);
+  f0.add(S, "lodInfo").name("v2 LOD now").listen();
+}
 f0.add(S, "compare").name("side by side (both models on the stand)").onChange((v) => setCompare(v));
 f0.add(S, "standPose", ["perch", "glide"]).name("stand pose").onChange((v) => placeStand());
 f0.add(S, "clip", ["auto", ...CLIPS]).name("clip (preview)").onChange((v) => { for (const b of Object.values(birds)) if (b) b.forceClip = v === "auto" ? null : v; });
@@ -275,7 +279,7 @@ const orbit = {
   f: null, mode: "perch", talons: 0, perchYaw: 0,
   NF: { heading: 0, gamma: 0, alpha: 0, phi: 0, fold: 0, flapLevel: 0, brake: 0, V: 15, walkV: 0 },
 };
-Object.assign(orbit.controls, { enabled: false, enableDamping: true, dampingFactor: 0.12, minDistance: 0.3, maxDistance: 8, autoRotateSpeed: 1.5, zoomSpeed: 0.8, screenSpacePanning: true });
+Object.assign(orbit.controls, { enabled: false, enableDamping: true, dampingFactor: 0.12, minDistance: 0.3, maxDistance: 40, autoRotateSpeed: 1.5, zoomSpeed: 0.8, screenSpacePanning: true });
 const _ov = new THREE.Vector3();
 function hipsOf(b) { return (b._hips ??= b.model.getObjectByName("hips") || b.root); }
 /** the bird's body centre (its hips bone), world */
@@ -403,10 +407,13 @@ renderer.setAnimationLoop(() => {
   if (orbit.on) orbitStep(dt);
   else if (!lab.paused) step(dt);
   lighting.update(camera.position.y, Y0, pos, clamp(st.agl * 1.6 + 70, 70, 380), dt);
+  // the v2 far LOD by the drawn span on screen (gymBird.updateLod: hysteresis); the panel can force one
+  for (const b of [bird, ...(standBirds || [])]) if (b?.far) { b.lodMode = S.lod; b.updateLod(camera, renderer.domElement.clientHeight || innerHeight); }
   if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera);
   pipe.setExposureFactor(lighting.adapt(dt));
   if (++frames % 6 === 1) {
     hud(st); messages(now);
+    if (bird.far) S.lodInfo = `${bird.lod} (${bird.lodTris[bird.lod]} tris), span ${bird.lodPx.toFixed(0)} px`;
     screen(_q.copy(camera.position).addScaledVector(aimV, 50), $aim, !!camOpt.aim);
     if (S.ctl === "gym" && target >= 0 && gf.mode === "fly") { pigeons.pos(target, _d); screen(_q.set(_d.x, _d.y, _d.z), $tgt, true); } else $tgt.style.display = "none";
     const q = S.ctl === "gym" && gf.mode === "fly" ? gf.landingTarget() : null;
