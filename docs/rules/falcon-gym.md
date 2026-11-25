@@ -1,7 +1,7 @@
 ---
 status: provisional
 added: 2026-11-25
-check: `falcongym` (tools/falconGymTest.mjs: the gym controller headless in the gym's greybox: cruise, chase and stoop speeds, the pull-out, the alley take-off, the passage hop-out, the 15 deg wall graze, the landing flare and the edge launch, the ceiling, the bank into the turn for both controllers and every input path; the lab's files; the v2 model's triangles and clips once built, and its poses, holes, pads, plumage and far LOD, the folded tail's set, the strike and the walk's foot slide: tools/falconV2pose.mjs) + browser row `falcongym` (the lab loads with no console error)
+check: `falcongym` (tools/falconGymTest.mjs: the gym controller headless in the gym's greybox: cruise, chase and stoop speeds, the pull-out, the alley take-off, the passage hop-out, the 15 deg wall graze, the landing flare and the edge launch, the ceiling, the bank into the turn for both controllers and every input path; the lab's files; the v2 model's triangles and clips once built, and its poses, holes, pads, plumage and far LOD, the folded tail's set, the strike and the walk's foot slide: tools/falconV2pose.mjs) + browser row `falcongym` (the lab loads with no console error); the city switches: `falconcity` (tools/falconCityTest.mjs) + browser row `falconcity`
 ---
 **Rule.** The falcon flies at a real peregrine's speeds and takes off like one, and small mistakes never stun it. Measured headless in the Falcon Gym (`labs/falcon-gym.html`, `viewer/falconGym/gymFlight.js`):
 
@@ -186,3 +186,58 @@ The old sign fails 12 of these checks.
 **Rule.** The gym has an inspect mode (O, or the panel's "Orbit / inspect"). It pauses the flight without stepping it, so leaving it returns the exact flight state; the camera and the bird's clip weights and layers are saved and put back. It uses three's `OrbitControls` round the hips bone: drag rotates, the wheel zooms 0.3-40 m (out to the far LOD), right-drag or Shift-drag pans. It has a clip picker that plays in place, a time scale, a pause (P), a turntable (T) and preset views. Its studio fill makes no light: it turns up the intensity of the city Lighting's own hemisphere light (made at startup, kept at 0 under the firmament sky) and puts it back, so the light count never changes. Our own panel, no lil-gui.
 
 **Why.** Owner, 2026-11-25: "I need an orbit camera to see the look of the falcon in the lab".
+
+## The gym in the city (?falconctl=gym, 2026-11-25)
+
+**Rule.** `?falconctl=gym` flies the city falcon game (`?game=falcon`) with the gym controller; `current` (the default for now) keeps the city's. Everything else of the game stays the same: the lock-on, the auto-dive, the catch, the slow motion, the score, the eyrie. The gym controller asks its world what the greybox answered, and the city answers it from its own data:
+
+- **The world** (`viewer/falconFlight/cityGymWorld.js`, over `cityStream.js` CityFalconWorld):
+  - `column`: the DTM, the drawn roof grid, the church / landmark proxies, the bridges and the trees' crowns.
+  - `sphereHit`: the floor under the body, a ceiling over it, and the walls round it (8 directions at its radius, the depth by bisection). A centre inside a solid is pushed out sideways.
+  - `ray`: a march with bisection.
+  - `clearUp`: 5 points.
+- **The perches** are a fixed pool of 512 ledges round the falcon:
+  - the drawn roofs' edges and ridges (a 1.5 m scan of the roof grid)
+  - the façade kit's window sills and balcony / balconnet railings (the tiles' own kit placements; `viewer/main.js` keeps `tile.kit`)
+  - the street lamps, the ridge / church roosts, the crowns' tops and the family's perches (the eyrie's ledge)
+- **The pads.** The perches that are not in the height grid (sills, railings, lamps, church perches, ridges) are 0.35 m pads the falcon stands on.
+- **The cost.** The pool is rebuilt round the falcon in slices of at most ~400 samples a frame, nearest first, into two fixed pools that are swapped. Nothing is allocated per frame (`gymFlight.js`'s look-ahead and launch lost their per-frame arrays).
+- **The auto-dive.** Its aim (`falconFun.js dive`: the eased lead point over the solids) is handed to the gym's steering; in the last 14 m it aims at the bird itself.
+- **The launch off an edge** (`gymCity.js` CityGymFlight.edgeLaunch) takes the freest of five directions within 63 deg of the facing. A sill faces the street, and the house opposite is 10-15 m off.
+- **With prey, E** lands on the eyrie's ledge first, as `falconGameDef.js` does for the current controller.
+
+**Why.** The owner asked to compare the gym's flight in the real city. The city's world is a height grid (2.5D), not boxes:
+
+- A window sill or a railing is in no grid. Standing on one, the gym's ground step read the street 7 m under it and the falcon dropped off. The node self-test shows it on the raw grid.
+- Straight off a sill, the launch met the opposite façade at 4 m/s and slid down into the street.
+
+**Check.** Gate row `falconcity` (`tools/falconCityTest.mjs`, a test street as the city world answers it), through the game's own FalconGame:
+
+- the switches and their defaults
+- the gym: a take-off from the street; a nearly vertical take-off out of a 4 m alley (<= 2.5 m/s below the roofs); E onto a sill, standing 4 s, a launch along the street; a 300 m stoop over the town >= 300 km/h with no contact; the fun catch (the first <= 30 s, >= 3 in 90 s)
+- the current controller's stoop and catch as before; self-test: its street take-off touches down again
+- the pool's slices (<= 520 samples) and its two fixed pools
+- self-test: with no pads, the falcon drops off the sill
+
+Browser row `falconcity`.
+
+## The v2 in the city (?falconmodel=v2, 2026-11-25)
+
+**Rule.** `?falconmodel=v2` makes the v2 falcon (`viewer/falconGym/gymBird.js`, its far LOD by the drawn span, its plumages: the juvenile at the nest, the adult tiercel in the game) the player's bird; `current` (the default) keeps the current model. The Saint-Job family (`viewer/falcons.js`) keeps its model: its rig, instancing and baked Perch are its own, so no flag swaps it.
+
+- **The catch is falconBird.js's own.** It uses the same carry / grip / holdPrey / gripCheck on v2's foot bones, which keep our names (Toes_L / Toes_tip_L ...), with the grip layers calibrated in the Glide.
+- **The strike pose** is v2's Talons clip (pose's `strike`). It comes in over the last 14 m of a strike with the talons out, and is held for 0.7 real s through the catch. During the dive itself the stoop stays tucked.
+- **Carrying** (`CARRY` in gymBird.js):
+  - the tail base raised (0.5 rad)
+  - the Stoop clip at a third
+  - the held bird 0.3 rad nose-up and 1 % of the span forward
+  - in the landing's second half, it is laid at the feet
+
+**Why.** v2 flies with its feet tucked up against the tail's coverts. Its toe tips are 1 cm under the tail's underside. With the current bird's hold, the held pigeon went into v2's tail: 699 body vertices inside it over the 7 s carry. In the stoop, the Stoop clip folded the wings and the feet round it.
+
+**Check.** Gate row `falconcity`:
+
+- The real v2 rig (the glb, its clips, the KTX2 stubbed) through the falconfun row's 7 s carry: belly to the grip <= 4 cm (3.7), no v2 body vertex inside the held bird (the falcon's toes excluded), no blend step over 0.35 m.
+- The Talons clip's weight >= 0.8 with strike on.
+- The far LOD on the same skeleton: far at 200 m, near at 4 m.
+

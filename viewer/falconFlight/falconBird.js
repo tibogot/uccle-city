@@ -17,7 +17,7 @@ import { HeldPrey } from "./heldPrey.js";
 const MODEL_SPAN = 6.44;   // peregrine.glb wingspan in model units (viewer/falcons.js)
 /** (falcon fun round 3) the grip: the toes curled (rad) round the held pigeon, sunk this share of its depth into its
  *  plumage (the closed toes, no gap), blended in from where it was struck over FUN.strike.grip s of game time */
-const GRIP = { curl: 0.85, sink: 0.12, blend: FUN.strike.grip, talons: 0.45, from: 1.6 };
+export const GRIP = { curl: 0.85, sink: 0.12, blend: FUN.strike.grip, talons: 0.45, from: 1.6 };
 /** held: rolled belly-up against the feet, head forward (prey_carry's head is its -z end, the narrow round one; its
  *  +z end the flat tail fan: the root's forward is -z too, so no turn; the old carry's half turn held it tail first), a
  *  little nose-down; laid (perched): belly-down on the ledge, head forward */
@@ -136,8 +136,9 @@ export class FalconBird {
    *  (where the closed toes meet the pigeon); out (Vector3) */
   gripPoint(out, world = false) {
     const T = this.toes;
-    T.l.getWorldPosition(_a); T.lt.getWorldPosition(_b); _a.lerp(_b, 0.35);
-    T.r.getWorldPosition(_b); T.rt.getWorldPosition(_c); _b.lerp(_c, 0.35);
+    const k = this.gripAlong ?? 0.35;                  // (a bird's own: v2's toes, gymBird.js)
+    T.l.getWorldPosition(_a); T.lt.getWorldPosition(_b); _a.lerp(_b, k);
+    T.r.getWorldPosition(_b); T.rt.getWorldPosition(_c); _b.lerp(_c, k);
     out.copy(_a).add(_b).multiplyScalar(0.5);
     return world ? out : this.root.worldToLocal(out);
   }
@@ -150,11 +151,13 @@ export class FalconBird {
     this.gripPoint(_g);
     H.perch = ease(H.perch, mode === "perch" ? 1 : 0, 6, dt);
     // held: the belly up (rolled over), the head forward (-z), a little nose-down along the falcon's body
-    p.quaternion.copy(Q_HOLD).slerp(Q_LAID, H.perch);
+    p.quaternion.copy(this.gripQ ?? Q_HOLD).slerp(Q_LAID, H.perch);   // (gripQ: a bird's own hold, gymBird.js v2)
     p.scale.setScalar(s);
     _o.copy(H.belly).multiplyScalar(s).applyQuaternion(p.quaternion);
     _t.copy(_g).sub(_o);
     _t.y += GRIP.sink * H.depth * s * (1 - H.perch);
+    // (gripFwd: a bird whose tail base hangs low behind its feet (v2, gymBird.js) holds it this share of its span forward)
+    if (this.gripFwd) _t.z -= this.gripFwd * this.span * (1 - H.perch);
     // perched: laid belly-down on the surface the feet stand on (the root's height), just ahead of the feet, the toes on it
     if (H.perch > 0) {
       _c.copy(H.belly).multiplyScalar(s).applyQuaternion(Q_LAID);

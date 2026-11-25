@@ -269,6 +269,8 @@ function flockMarkers(kit, fl) {
 /** the player as the tiercel: the adult plumage on the player's bird, the family's own male out of the way */
 function tiercel(fl, on) {
   const fam = window.__falcons;
+  // (?falconmodel=v2: its own plumages, gymBird.js)
+  if (fl.bird?.setPlumage) fl.bird.setPlumage(on ? "adult" : "juvenile");
   const mat = fl.bird?.mesh?.material;
   let n = mat?.colorNode;
   for (let k = 0; k < 4 && n && !n.isTextureNode; k++) n = n.node;

@@ -15,6 +15,8 @@
 // (the pigeon nearest the view centre), the AUTO-DIVE while the strike button is held, an automatic grab within 5.5 m
 // with speed / angle as bonus points, a slow motion just before contact, the arcade stoop and the flap sprint, combos,
 // the run goal (5 in 2:00), hunting on with prey in the talons (the eyrie a bonus), the tame first pigeon.
+// ?falconctl=gym (gymCity.js, rule falcon-gym "the gym in the city"): the Falcon Gym's controller flies instead
+// (CityGymFlight against cityGymWorld.js), the lock-on, the auto-dive's aim, the catch and the rest stay as above.
 // Traces: every 0.1 s, time / airspeed / height above the floor / altitude / stamina / specific energy (h + V^2/2g) /
 // the air's vertical speed / mode, for the lab's graph and the verification records.
 import * as THREE from "three/webgpu";
@@ -22,6 +24,9 @@ import { FalconFlight, FlightControls, G } from "./flightModel.js";
 import { FlightAssist, ASSIST } from "./flightAssist.js";
 import { FUN, FUN_OLD, FunState, flockOf, localOf } from "./falconFun.js";
 import { CTL_OLD } from "./falconInput.js";
+import { GymControls, fillGymControls } from "../falconGym/gymFlight.js";
+import { CityGymFlight, FALCON_CTL } from "./gymCity.js";
+import { CityGymWorld } from "./cityGymWorld.js";
 /** ?falconcol=old also keeps round 1's take-off (a drop forward from the perch's own height: from the ground or a flat
  *  roof it touched down again at once) */
 const COL_OLD = typeof location !== "undefined" && /[?&]falcon(col|hit)=old(&|$)/.test(location.search);
@@ -31,13 +36,21 @@ const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export class FalconGame {
-  constructor({ world, air, bird, pigeons, fam, audio = null, input }) {
+  constructor({ world, air, bird, pigeons, fam, audio = null, input, ctl = FALCON_CTL, gymWorld = null }) {
     Object.assign(this, { world, air, bird, pigeons, fam, audio, input });
-    this.f = new FalconFlight();
+    this.ctl = ctl === "gym" ? "gym" : "current";
+    if (this.ctl === "gym") {
+      // (the gym controller: its world over the city's, the family's perches among its ledges)
+      this.gw = gymWorld || new CityGymWorld(world, { perches: () => this.perches });
+      this.f = new CityGymFlight(this.gw); this.f.air = air;
+      this.f.prefer = () => this.eyrieAhead();
+      this.GC = new GymControls(); this._gp = { name: "ground", pos: new THREE.Vector3(), yaw: 0, roof: false, gym: true };
+      this._spaceWas = false; this._gymMode = "fly"; this._pr = { pos: new THREE.Vector3(), yaw: 0, name: "" };
+    } else this.f = new FalconFlight();
     // the flight assist (falconfix: the player says where, the assist flies; ?falconctl=old = the raw controls)
     this.fun = FUN_OLD ? null : new FunState();
-    this.assist = CTL_OLD ? null : new FlightAssist(this.fun ? { ...ASSIST, chase: FUN.chase } : ASSIST);
-    if (this.fun) { this.f.arcade = FUN.arcade; this.f.P = { ...this.f.P, nMax: FUN.nMax }; }
+    this.assist = CTL_OLD || this.gw ? null : new FlightAssist(this.fun ? { ...ASSIST, chase: FUN.chase } : ASSIST);
+    if (this.fun && !this.gw) { this.f.arcade = FUN.arcade; this.f.P = { ...this.f.P, nMax: FUN.nMax }; }
     this._cam = new THREE.Vector3();
     if (this.assist && typeof location !== "undefined" && /[?&]falconavoid=0(&|$)/.test(location.search)) this.assist.avoid = false;
     this.steerT = -1; this._ov = { psi: 0, gamma: 0 };
@@ -91,11 +104,13 @@ export class FalconGame {
   /** free flight from a point (heading rad, speed m/s, path angle rad) */
   start(x, y, z, heading, speed = 14, gamma = 0) {
     this.f.launch(x, y, z, heading, speed, gamma, this.air);
-    this.mode = "fly"; this.perch = null; this.landing = null;
+    this.mode = "fly"; this.perch = null; this.landing = null; this._gymMode = "fly";
     this.input.syncAim(heading, gamma);
     this.assist?.reset();
   }
   perchOn(p) {
+    // (gym: standing there, its own ground mode)
+    if (this.gw) { this.f.placeOnGround(p.pos.x, p.pos.y, p.pos.z, p.yaw); this._gymMode = "ground"; this.mode = "perch"; this.perch = p; this.landing = null; if (p.eyrie && this.bird.prey) this.deliver(); return; }
     this.mode = "perch"; this.perch = p; this.landing = null;
     this.f.vel.x = this.f.vel.y = this.f.vel.z = 0; this.f.V = 0;
     // (falconfix, owner: "when it lands everything is shaking") the flight's live state is frozen on a perch (sub() does
@@ -117,6 +132,7 @@ export class FalconGame {
 
   /** the perch in reach for a landing: ahead (within 70 deg of the path), < 28 m, the bird slower than 24 m/s */
   perchInReach() {
+    if (this.gw) { const q = this.f.mode === "fly" ? this.f.landingTarget() : null, R = this._pr; if (!q) return null; R.pos.set(q.x, q.y, q.z); R.yaw = q.yaw; R.name = q.name; return R; }
     const f = this.f, p = f.pos;
     if (f.V > 24) return null;
     let best = null, bd = 28;
@@ -184,6 +200,17 @@ export class FalconGame {
     this.say("take-off: a drop and three wingbeats");
   }
 
+  /** (gym) with prey in the talons, the eyrie's ledge as the landing (as falconGameDef.js's perchInReach for the current
+   *  controller): within 40 m, any side but behind, under 26 m/s */
+  eyrieAhead() {
+    if (!this.bird.prey) return null;
+    const f = this.f, q = this.perches.find((x) => x.eyrie);
+    if (!q) return null;
+    const dx = q.pos.x - f.pos.x, dy = q.pos.y - f.pos.y, dz = q.pos.z - f.pos.z, d = Math.hypot(dx, dy, dz);
+    const ahead = (dx * -Math.sin(f.heading) + dz * -Math.cos(f.heading)) / Math.max(Math.hypot(dx, dz), 0.1);
+    return d < 40 && d > 1.5 && f.V < 26 && ahead > -0.2 && dy < 12 && dy > -25 ? q : null;
+  }
+
   update(dtReal, cam) {
     const t0 = performance.now();
     // the hit-stop after a catch (the game-feel pause), slow motion option
@@ -191,6 +218,7 @@ export class FalconGame {
     if (this.hitStop > 0) { this.hitStop -= dtReal; dt *= 0.15; }
     if (this.fun) { dt *= this.fun.slowK; this.fun.realT += dtReal; }   // (falcon fun) the slow motion just before contact
     this.t += dt;
+    if (this.gw) return this.updateGym(dt, dtReal, cam, t0);
     const f = this.f, inp = this.input;
     const C = inp.update(dt, f);
     if (inp.take("reset")) { this.reset?.(); }
@@ -269,14 +297,24 @@ export class FalconGame {
     }
     inp.take("strike"); if (this.fun) inp.take("sprint");
     if (this.fun && this.mode !== "fly") { this.fun.slowK = 1; this.fun.release(dt, f); }
+    this.after(dt, dtReal, t0, this.mode === "perch" ? "perch" : this.mode === "land" ? "land" : "fly", this.perch?.yaw ?? 0);
+  }
+
+  /** the bird, the traces (both controllers): bm the bird's mode, py its yaw on the ground */
+  after(dt, dtReal, t0, bm, py) {
+    const f = this.f;
     // ---- the bird (size: the readable size in the air, life size near the perches and the ground)
     const fl = this.world.floorAt ? this.world.floorAt(f.pos.x, f.pos.z, f.pos.y) : this.world.floor(f.pos.x, f.pos.z), agl = f.pos.y - fl;
     const wantSpan = this.mode === "fly" ? this.size.life + (this.size.readable - this.size.life) * smooth(agl, 6, 30) : this.size.life;
     this.span += (wantSpan - this.span) * (1 - Math.exp(-2.5 * dtReal));
     this.bird.setSpan(this.span);
-    this.pos.set(f.pos.x, f.pos.y, f.pos.z);
+    if (this.gw && (f.mode === "ground" || f.mode === "hop")) this.pos.set(f.pos.x, f.feetY, f.pos.z);
+    else this.pos.set(f.pos.x, f.pos.y, f.pos.z);
     // (round 3: with prey the feet stay down round it, the grip; falconBird.js holds it at the talons)
-    this.bird.pose(dt, this.pos, f, { mode: this.mode === "perch" ? "perch" : this.mode === "land" ? "land" : "fly", talons: this.talonsOut ? 1 : this.fun && this.bird.prey ? 0.45 : 0, perchYaw: this.perch?.yaw ?? 0 });
+    // (the v2's own ground clips: walk / hop / launch; the current bird stands for walk / hop and flares for the launch;
+    // strike: v2's Talons clip, the strike pose, in the last metres before contact and through the catch)
+    const own = !!this.bird.groundClips, mode = own ? bm : bm === "walk" || bm === "hop" ? "perch" : bm === "launch" ? "land" : bm;
+    this.bird.pose(dt, this.pos, f, { mode, talons: this.talonsOut ? 1 : this.fun && this.bird.prey ? 0.45 : 0, strike: this.strikeW(dtReal), perchYaw: py });
     // ---- traces
     this.traceT += dt;
     if (this.traceT >= 0.1) {
@@ -286,6 +324,95 @@ export class FalconGame {
     }
     this.agl = agl;
     this.cpu.game = this.cpu.game * 0.95 + (performance.now() - t0) * 0.05;
+  }
+
+  /** v2's strike pose (its Talons clip, gymBird.js): 0..1, in the last 14 m of a strike with the talons out, and held
+   *  0.7 real s through the catch (the slow motion) */
+  strikeW() {
+    const W = this.window, F = this.fun;
+    let k = 0;
+    if (W && this.mode === "fly" && this.talonsOut && W.d < 14 && W.closing > 2) k = smooth(14 - W.d, 0, 8);
+    if (F && F.banner?.kind === "caught" && F.realT - F.banner.t < 0.7) k = 1;
+    return k;
+  }
+
+  /**
+   * THE GYM CONTROLLER (?falconctl=gym, gymCity.js): the input to the gym's controls (gymFlight.js fillGymControls, as
+   * the lab: Space = power and its press the take-off, Shift = the stoop, E = land / take off, the mouse aim a
+   * direction), the fun's auto-dive aim as the gym's steering (its eased lead point; within the homing distance the bird
+   * itself), the gym flight step, its modes as the game's (ground / hop = perch, land = land, launch / fly = fly), the
+   * lock-on / catch as before. No allocation (the controls, the perch and the target objects are kept).
+   */
+  updateGym(dt, dtReal, cam, t0) {
+    const f = this.f, inp = this.input, C = this.GC;
+    inp.update(dt, f);
+    if (inp.take("reset")) { this.reset?.(); }
+    const I = inp.intent, R = inp.C;
+    fillGymControls(C, I, R);
+    const space = R.flap > 0.5;
+    if (space && !this._spaceWas) C.jump = true;
+    this._spaceWas = space;
+    const ground = f.mode === "ground" || f.mode === "hop";
+    if (inp.take("land")) { if (ground) C.jump = true; else if (f.mode === "fly") C.land = true; }
+    inp.take("sprint");
+    C.talons = inp.talons ? 1 : 0;
+    const F = this.fun, P = this.pigeons;
+    // ---- the auto-dive: the fun's aim (falconFun.js dive: the eased lead point, over the solids) flown by the gym
+    if (F && f.mode === "fly") {
+      this.funSteer(dt, inp);
+      if (F.diving) {
+        const O = F.ov, FI = F.I;
+        C.aimYaw = O.psi; C.aimPitch = O.gamma;
+        C.stoop = FI.stoop ? 1 : 0; C.half = FI.half ? 1 : 0;
+        C.power = FI.climb || (!FI.stoop && f.V < FUN.chase) ? 1 : 0;
+        // the homing (the last FUN.homeD m): straight at the bird (2 m over one sitting on a solid), the gym's own turn rates
+        const i = this.target;
+        if (i >= 0 && P && P.state[i] !== 3) {
+          P.pos(i, this._v);
+          const dx = this._v.x - f.pos.x, dz = this._v.z - f.pos.z, dy = (P.state[i] === 0 ? this._v.y + 1.2 : this._v.y) - f.pos.y, d = Math.hypot(dx, dy, dz);
+          if (d < FUN.homeD) { C.aimYaw = Math.atan2(-dx, -dz); C.aimPitch = clamp(Math.atan2(dy, Math.hypot(dx, dz)), -1.4, 0.8); }
+        }
+        // (the mouse aim follows, no jerk when the button is let go)
+        if (inp.aim) { inp.aim.yaw = C.aimYaw; inp.aim.pitch = clamp(C.aimPitch, -1.45, 0.6); }
+      }
+    } else if (F) F.release(dt, f);
+    // ---- the flight
+    const t1 = performance.now();
+    const was = this._gymMode;
+    f.step(dt, C);
+    this.cpu.flight = this.cpu.flight * 0.95 + (performance.now() - t1) * 0.05;
+    // the gym's own messages (one-shots): the ones a player needs
+    const E = f.events;
+    for (let k = 0; k < E.length; k++) { const e = E[k]; if (e.kind === "tumble" || e.kind === "noland" || e.kind === "boxed" || e.kind === "hop" || e.kind === "land") this.say(e.s); }
+    E.length = 0;
+    // ---- the modes
+    const gm = f.mode;
+    this._gymMode = gm;
+    if (gm === "ground" || gm === "hop") {
+      const p = this._gp;
+      p.pos.set(f.pos.x, f.feetY, f.pos.z); p.yaw = f.heading; p.roof = f.feetY > this.world.ground(f.pos.x, f.pos.z) + 1.5;
+      if (was !== "ground" && was !== "hop") p.name = was === "land" && f._land ? f._land.q.name : p.roof ? "roof" : "ground";
+      this.mode = "perch"; this.perch = p; this.landing = null;
+      // landed on the eyrie's ledge with prey: delivered
+      if (was === "land" && this.bird.prey) { const q = this.perches.find((x) => x.eyrie); if (q && q.pos.distanceTo(p.pos) < 2) this.deliver(); }
+      f.stamina = Math.min(1, f.stamina);
+      // the POUNCE (as the current controller): standing within reach of the locked bird
+      if (F && this.target >= 0 && P && P.state[this.target] !== 3) {
+        P.pos(this.target, this._v);
+        if (Math.hypot(this._v.x - f.pos.x, this._v.y - f.pos.y, this._v.z - f.pos.z) < FUN.reach + 1) this.funCatch(this.target, 0.5, flockOf(P, this.target)?.kindName(localOf(P, this.target)) ?? "");
+      }
+    } else {
+      this.perch = null;
+      this.mode = gm === "land" ? "land" : "fly";
+    }
+    if (this.mode === "fly") {
+      this.score.maxSpeed = Math.max(this.score.maxSpeed, f.V);
+      if (F) this.strikeFun(dt, dtReal, inp, cam); else this.strike(dt, inp);
+    }
+    inp.take("strike");
+    if (F && this.mode !== "fly") { F.slowK = 1; F.release(dt, f); }
+    const bm = gm === "ground" ? (Math.abs(f.walkV) > 0.08 ? "walk" : "perch") : gm === "hop" ? (f.hopT?.walk ? "walk" : "hop") : gm;
+    this.after(dt, dtReal, t0, bm, f.heading);
   }
 
   /** (falcon fun) the strike button held with a lock = the auto-dive: the intent copy the assist flies (falconFun.js

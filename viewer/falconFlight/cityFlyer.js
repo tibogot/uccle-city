@@ -11,6 +11,9 @@
 //             replayed with the new bird; at the end of the launch the flight model takes over at the launch's speed
 //   HUD       our own style (viewer/panelUI.js colours): airspeed / height / air / stamina / target / score, the aim, target
 //             and perch rings, messages; a "Falcon flight" panel (viewer/panelUI.js) while flying
+// SWITCHES (rule falcon-gym "the gym in the city" / "the v2 in the city"): ?falconctl=gym|current (the Falcon Gym's
+// controller, gymCity.js, against cityGymWorld.js), ?falconmodel=v2|current (the v2 falcon, viewer/falconGym/gymBird.js,
+// its far LOD by the drawn size); both default to current.
 // Nothing here adds a light. Every material is compiled before it shows (warm(): the page's precompile + one parked draw
 // of the bird for its shadow pass inside a parallel-pipeline window).
 import * as THREE from "three/webgpu";
@@ -22,6 +25,7 @@ import { AirField } from "./air.js";
 import { Pigeons } from "./pigeons.js";
 import { ThermalHints } from "./hints.js";
 import { FalconBird } from "./falconBird.js";
+import { FALCON_CTL, FALCON_MODEL } from "./gymCity.js";
 import { FalconInput } from "./falconInput.js";
 import { FalconCamera } from "./falconCamera.js";
 import { FalconAudio } from "./falconAudio.js";
@@ -109,7 +113,13 @@ export class CityFlyer {
     const slots = Array.from({ length: 12 }, () => ({ x: 1e6, z: 1e6, heat: 0, radius: 18, ground: 0 }));
     this.air = new AirField({ grid: null, floor: (x, z) => w.floor(x, z), sources: slots });
     this.air.setWind(+(P.get("wind") ?? 4), +(P.get("windfrom") ?? 240));
-    this.bird = await FalconBird.create(LIFE);
+    // (?falconmodel=v2: the v2 falcon, its juvenile plumage, its far LOD; the current one if it fails to load)
+    this.model = FALCON_MODEL;
+    if (FALCON_MODEL === "v2") {
+      try { const { GymBird } = await import("../falconGym/gymBird.js"); this.bird = await GymBird.create("v2", LIFE, this.opts.renderer || null); }
+      catch (e) { this.log(`falcon flight: the v2 falcon failed (${e.message}): the current one`); this.model = "current"; }
+    }
+    this.bird ??= await FalconBird.create(LIFE);
     this.bird.root.visible = false;
     this.scene.add(this.bird.root);
     this.input = new FalconInput(this.dom, { invert: P.get("invert") === "1", enabled: false, skip: ["KeyM", "KeyH"] });
@@ -119,13 +129,13 @@ export class CityFlyer {
     this.hints = new ThermalHints(this.air, { scale: 1.4 });
     this.hints.group.visible = false;
     this.scene.add(this.hints.group);
-    this.game = new FalconGame({ world: w, air: this.air, bird: this.bird, pigeons: null, fam: null, audio: null, input: this.input });
+    this.game = new FalconGame({ world: w, air: this.air, bird: this.bird, pigeons: null, fam: null, audio: null, input: this.input, ctl: FALCON_CTL });
     this.game.size.readable = this.size;
     this.game.reset = () => { this.input.script = null; this.start(PLACE.x + 120, PLACE.z + 80, Math.atan2(120, 80), w.ground(PLACE.x, PLACE.z) + 60); };
     // (falcon fun round 3) the catch's feather puff: a fixed pool, one draw only while feathers fly (hunt.js caught())
     this.puff = FUN_OLD ? null : new FeatherPuff(this.scene);
     this.buildHud();
-    this.log(`falcon flight: the new flight (viewer/falconFlight/, ?falcon=old: the old one), bird + air + camera in ${(performance.now() - t0).toFixed(0)} ms`);
+    this.log(`falcon flight: the new flight (viewer/falconFlight/, ?falcon=old: the old one), controller ${this.game.ctl}, model ${this.model}, bird + air + camera in ${(performance.now() - t0).toFixed(0)} ms`);
     // the church, the roosts, the pigeons, the landmarks' proxies: in the background
     this.background();
     // (the puff's material compiled now, all its cards at scale 0: no compile hitch at the first catch)
@@ -134,9 +144,12 @@ export class CityFlyer {
     // species: heldPrey.js shapes share their attributes)
     const held = this.bird.held?.mesh;
     if (held) held.visible = true;
+    // (v2: its far LOD's meshes compiled too, then the near ones shown again)
+    for (const m of this.bird.far || []) m.visible = true;
     await this.warm(this.puff ? [this.bird.root, this.hints.group, this.fcam.streaks, this.puff.mesh] : [this.bird.root, this.hints.group, this.fcam.streaks]);
     if (this.puff && !this.puff.alive) this.puff.mesh.visible = false;
     if (held && this.bird.prey !== held) held.visible = false;
+    if (this.bird.far) { for (const m of this.bird.far) m.visible = false; for (const m of this.bird.meshes) m.visible = true; this.bird.lod = "near"; }
   }
 
   /** the shaders of `roots` before they show: the page's precompile (scene pass target + MRT), then the bird drawn once
@@ -421,6 +434,9 @@ export class CityFlyer {
       return;
     }
     g.update(dt, this.camera);
+    // (gym: its ledge pool round the falcon, a slice a frame; v2: the far LOD by the drawn span)
+    g.gw?.update(f.pos.x, f.pos.z, f.V, g.t, 400);
+    this.bird.updateLod?.(this.camera, this.dom?.clientHeight || innerHeight);
     this.debug.update(w, f);
     this.highFog();
     const t3 = performance.now();
@@ -436,7 +452,7 @@ export class CityFlyer {
     const aim = inp.mouseAim && inp.mouse.locked && g.mode === "fly" ? (this._aim ??= new THREE.Vector3()).set(-Math.sin(inp.aim.yaw) * Math.cos(inp.aim.pitch), Math.sin(inp.aim.pitch), -Math.cos(inp.aim.yaw) * Math.cos(inp.aim.pitch)) : null;
     this.fovCity ??= this.camera.fov;
     this.fcam.update(dt, { pos: g.pos, va: f.va, V: g.mode === "fly" ? f.V : Math.max(f.V, 0.1), phi: f.phi, heading: f.heading, gamma: f.gamma, span: g.span, stun: f.stun, liftRate: f.lift, fold: f.fold, n: f.n },
-      { aim, sun: this.opts.lighting?.sunDir ?? null, steady: !!g.assist && f.assisted, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z), col: (this._colFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true)), sight: (this._sightFn ??= (x, z) => w.column(x, z, this.game.f.pos.y).floor), sightWhole: (this._sightWFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true).floor) });
+      { aim, sun: this.opts.lighting?.sunDir ?? null, steady: (!!g.assist || !!g.gw) && f.assisted, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z), col: (this._colFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true)), sight: (this._sightFn ??= (x, z) => w.column(x, z, this.game.f.pos.y).floor), sightWhole: (this._sightWFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true).floor) });
     this.audio?.update(dt, { V: g.mode === "fly" ? f.V : 0, phi: f.phi, fold: f.fold, lift: f.lift, downstroke: this.bird.downstroke, flapLevel: f.flapLevel }, this.camera);
     const t6 = performance.now();
     c.game = t3 - t2; c.hints = t5 - t4; c.camera = t6 - t5;
@@ -516,7 +532,9 @@ export class CityFlyer {
 <span class="k">stamina</span> ${bar(f.stamina, f.stamina < 0.15 ? "#e0705a" : "#7fd18b")}
 <span class="k">target </span> ${win ? `${win.d.toFixed(0)} m, closing ${win.closing.toFixed(0)} m/s${win.ok ? "  <b>WINDOW</b>" : ""}${g.talonsOut ? " · talons" : ""}` : "-"}
 <span class="k">score  </span> ${sc.points} · caught ${sc.catches} · delivered ${sc.delivered} · best ${sc.bestStrike} m/s${this.bird.prey ? "\n<b>CARRYING</b>: to the eyrie's ledge (E near it)" : ""}
-${g.assist ? `<span class="k">assist </span> ${ASSIST_NAMES[g.assist.mode] ?? g.assist.mode}${g.assist.hT != null && g.assist.mode === "hold" ? ` (${(g.assist.hT - f.pos.y + (g.agl ?? 0)).toFixed(0)} m)` : ""}${g.assist.avoid ? "" : " · avoid off"}
+${g.gw ? `<span class="k">gym controller (?falconctl=gym)${g.f.mode === "ground" || g.f.mode === "hop" ? "  W walk · Shift+W hop · Space / E take off" : ""}
+mouse aim = where to fly · Space power · Shift stoop · E land
+F hold = auto-dive on the ring · V camera · Esc out</span>` : g.assist ? `<span class="k">assist </span> ${ASSIST_NAMES[g.assist.mode] ?? g.assist.mode}${g.assist.hT != null && g.assist.mode === "hold" ? ` (${(g.assist.hT - f.pos.y + (g.agl ?? 0)).toFixed(0)} m)` : ""}${g.assist.avoid ? "" : " · avoid off"}
 <span class="k">mouse / A D steer · W S down / up · Space climb · Shift stoop
 E land · F talons · Q brake · V camera · click: mouse aim · Esc out</span>` : `<span class="k">W/S A/D fly · Space flap · Shift stoop · C half · Q flare
 F talons · E land · V camera · click: mouse aim · Esc out</span>`}`;

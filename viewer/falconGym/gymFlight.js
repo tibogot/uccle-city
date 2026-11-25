@@ -246,16 +246,17 @@ export class GymFlight {
    *  side and climb if the obstacle's top is near, fading as the way clears (soft, never a snap) */
   lookAhead(V) {
     const w = this.world, P = this.P, L = clamp(V * P.look, 8, 70), p = this.pos, c = Math.cos(this.gamma), sg = Math.sin(this.gamma);
-    const dir = (dy) => { const a = this.heading + dy; return [-Math.sin(a) * c, sg, -Math.cos(a) * c]; };
-    const d0 = dir(0), dl = dir(0.5), dr = dir(-0.5);
-    const f0 = w.ray(p.x, p.y, p.z, d0[0], d0[1], d0[2], L), fl = w.ray(p.x, p.y, p.z, dl[0], dl[1], dl[2], L), fr = w.ray(p.x, p.y, p.z, dr[0], dr[1], dr[2], L);
+    // (the three directions inline: no array / closure a frame, rule falcon-gym "the gym in the city")
+    const h = this.heading, d0x = -Math.sin(h) * c, d0z = -Math.cos(h) * c;
+    const f0 = w.ray(p.x, p.y, p.z, d0x, sg, d0z, L);
+    const fl = w.ray(p.x, p.y, p.z, -Math.sin(h + 0.5) * c, sg, -Math.cos(h + 0.5) * c, L), fr = w.ray(p.x, p.y, p.z, -Math.sin(h - 0.5) * c, sg, -Math.cos(h - 0.5) * c, L);
     const A = this.avoid;
     let yaw = 0, pitch = 0;
     if (this.landT == null && (f0 < L || Math.min(fl, fr) < L * 0.5)) {
       const k = f0 < L ? 1 - f0 / L : 0.5 * (1 - Math.min(fl, fr) / (L * 0.5));
       yaw = (fl > fr ? 1 : -1) * 1.1 * k;
       // a low obstacle (its top within ~12 m over the bird): over it instead
-      const top = w.column(p.x + d0[0] * Math.min(f0, L) * 1.02, p.z + d0[2] * Math.min(f0, L) * 1.02, p.y + 50).floor;
+      const top = w.column(p.x + d0x * Math.min(f0, L) * 1.02, p.z + d0z * Math.min(f0, L) * 1.02, p.y + 50).floor;
       if (f0 < L && top - p.y < 12 && top - p.y > -2) { pitch = 0.6 * k; yaw *= 0.4; }
     }
     A.yaw = ease(A.yaw, yaw, 6, 1 / 60); A.pitch = ease(A.pitch, pitch, 6, 1 / 60); A.d = f0;
@@ -312,7 +313,7 @@ export class GymFlight {
       if (p.y - f < 1 || p.y - f > 30) continue;
       let flat = true;
       for (const [a, b] of [[0.8, 0], [-0.8, 0], [0, 0.8], [0, -0.8]]) if (Math.abs(w.column(x + a, z + b, p.y).floor - f) > 0.3) flat = false;
-      if (flat && this.clearLine(p, { x, y: f, z })) return { x, y: f, z, yaw: this.heading, name: f > w.Y0 + 1 ? "roof" : "ground" };
+      if (flat && this.clearLine(p, { x, y: f, z })) return { x, y: f, z, yaw: this.heading, name: f > (w.ground ? w.ground(x, z) : w.Y0) + 1 ? "roof" : "ground" };
     }
     return null;
   }
@@ -458,7 +459,7 @@ export class GymFlight {
     // boxed in: walls near ahead / beside and the bird below their tops -> climb slowly almost straight up
     const ahead = w.ray(p.x, p.y, p.z, hx, 0.25, hz, 12), up = w.column(p.x, p.z, p.y).ceil;
     let side = Infinity;
-    for (const a of [Math.PI / 2, -Math.PI / 2]) side = Math.min(side, w.ray(p.x, p.y, p.z, -Math.sin(this.heading + a), 0, -Math.cos(this.heading + a), 6));
+    for (let k = 0; k < 2; k++) { const a = k ? -Math.PI / 2 : Math.PI / 2; side = Math.min(side, w.ray(p.x, p.y, p.z, -Math.sin(this.heading + a), 0, -Math.cos(this.heading + a), 6)); }
     const boxed = ahead < 12 || side < 4;
     const vhT = boxed ? 1.2 : clamp(2 + L.t * 4, 2, 11), vyT = boxed ? 3.6 : 2.2;
     L.vh = ease(L.vh, vhT, 1.6, dt); L.vy = ease(L.vy, up - p.y < 2 ? 0 : vyT, 3, dt);

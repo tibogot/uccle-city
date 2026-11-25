@@ -8,6 +8,10 @@
 //             plumage (falcon_v2_juvenile.ktx2: the player is the young of the year) or the adult (the glb's own)
 // Modes: fly | land | perch (= standing) | walk | hop | launch. One mixer, the clip weights eased (sum 1), then the
 // layers (fold, tuck, flare, talons, bank) as falconBird.js. No per-frame allocation.
+// IN THE CITY GAME (?falconmodel=v2, viewer/falconFlight/cityFlyer.js; rule falcon-gym "the v2 in the city"): the
+// player's bird with falconBird.js's catch: the caught bird held in the talons (heldPrey.js, the same carry / grip /
+// holdPrey / gripCheck, on v2's own foot bones: its rig keeps our names Toes_L / Toes_tip_L ...; the grip layers gripL /
+// gripR calibrated in the Glide as the others), the strike pose from v2's Talons clip (pose's `strike`), the far LOD.
 import * as THREE from "three/webgpu";
 import { texture, uv } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -17,6 +21,8 @@ import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { loadFalconAssets } from "../falcons.js";
 import { BirdRig } from "../birdRig.js";
 import { birdRoll, rigBank, V2_WALK_MPS } from "./gymFlight.js";
+import { FalconBird, GRIP } from "../falconFlight/falconBird.js";
+import { HeldPrey } from "../falconFlight/heldPrey.js";
 
 const _I = new THREE.Quaternion();
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
@@ -30,6 +36,8 @@ const V2_FAR = new URL(V2.pathname.replace(/\.glb$/, "_far.glb"), V2);
 // one mixer drives both and the plumage switch changes both. The switch is by the drawn wingspan on screen, with hysteresis, where the bird is small: the far one
 // below LOD_FAR_PX, the near one again above LOD_NEAR_PX (no flicker at the threshold)
 export const LOD_FAR_PX = 56, LOD_NEAR_PX = 68;
+/** the carry on v2 (rule falcon-gym "the v2 in the city"): the legs let down (rad at the hip, half at the knee) */
+export const CARRY = { hip: 0, knee: 0, tail: 0.5, stoop: 0.3, pitch: 0.3, fwd: 0.01 };
 const _lp = new THREE.Vector3();
 const TRANSCODER = "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/libs/basis/";
 let ktx = null;
@@ -58,10 +66,12 @@ export async function v2Exists() { try { const r = await fetch(V2, { method: "HE
 
 export class GymBird {
   /** which: "current" | "v2" */
-  static async create(which = "current", span = 1.05, renderer = null, plumage = "juvenile") {
+  /** opts.ktx2: a KTX2 loader to use (node tests: a stub) */
+  static async create(which = "current", span = 1.05, renderer = null, plumage = "juvenile", opts = {}) {
     const [A, M] = await Promise.all([loadFalconAssets(), loadM2MClips()]);
     if (which === "v2") {
       // (tools/falconV2pack.mjs: EXT_meshopt_compression + KTX2 textures)
+      if (opts.ktx2) ktx = opts.ktx2;
       if (!ktx) { ktx = new KTX2Loader().setTranscoderPath(TRANSCODER); if (renderer) ktx.detectSupport(renderer); }
       const L = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(ktx);
       const [g, gFar] = await Promise.all([L.loadAsync(V2.href), L.loadAsync(V2_FAR.href).catch(() => null)]);
@@ -138,6 +148,13 @@ export class GymBird {
     this.rig.addLayer("raiseL", "wing_1_L", "wing_tip_L", [0, 1, 0]); this.rig.addLayer("raiseR", "wing_1_R", "wing_tip_R", [0, 1, 0]);
     this.rig.addLayer("talonL", "UpperLeg_L", "Toes_tip_L", [0, -0.4, -1]); this.rig.addLayer("talonR", "UpperLeg_R", "Toes_tip_R", [0, -0.4, -1]);
     this.rig.addLayer("headDown", "head", "mouth_upper_tip", [0, -1, 0]);
+    // (the city's catch, falconBird.js: the toes closed round the held bird)
+    this.rig.addLayer("gripL", "Toes_L", "Toes_tip_L", [0, -1, 0.5]); this.rig.addLayer("gripR", "Toes_R", "Toes_tip_R", [0, -1, 0.5]);
+    // (the carry: the legs let DOWN under the body with the bird in the feet; v2 flies with its feet tucked up to the
+    // tail's coverts, so a held pigeon went into its tail: node check, tools/falconCityTest.mjs)
+    this.rig.addLayer("carryL", "UpperLeg_L", "Toes_tip_L", [0, -1, 0.2]); this.rig.addLayer("carryR", "UpperLeg_R", "Toes_tip_R", [0, -1, 0.2]);
+    this.rig.addLayer("carryKL", "LowerLeg_L", "Toes_tip_L", [0, -1, 0.2]); this.rig.addLayer("carryKR", "LowerLeg_R", "Toes_tip_R", [0, -1, 0.2]);
+    this.rig.addLayer("carryT", "tail_1", "tail_tip", [0, 1, 0]);
     if (src.v2 && this.actions.glide) this.actions.glide.setEffectiveWeight(0);
     // (v2) the tail's own feather bones (tail_fan_*, tools/blender/falconV2.py "the tail closes"): every clip keys their
     // fold; the flare / brake layer opens the fan on top (the bind is the full fan: identity). The mixer rewrites them
@@ -145,11 +162,19 @@ export class GymBird {
     this.fan = []; model.traverse((o) => { if (o.isBone && o.name.startsWith("tail_fan_")) this.fan.push(o); });
     // (the open fan: the Flare clip's first key for each; the bind's otherwise)
     this.fanOpen = this.fan.map((bn) => { const t = clips.flare?.tracks.find((k) => k.name === `${bn.name}.quaternion`); return t ? new THREE.Quaternion().fromArray(t.values, 0) : bn.quaternion.clone(); });
-    this.lay = { fold: 0, tuck: 0, flare: 0, talons: 0, bank: 0, legs: 0.4, head: 0, pitch: 0 };
-    this.extra = { spreadL: 0, spreadR: 0, handL: 0, handR: 0, wristL: 0, wristR: 0, raiseL: 0, raiseR: 0, talonL: 0, talonR: 0, headDown: 0 };
+    this.lay = { fold: 0, tuck: 0, flare: 0, talons: 0, strike: 0, bank: 0, legs: 0.4, head: 0, pitch: 0 };
+    this.extra = { spreadL: 0, spreadR: 0, handL: 0, handR: 0, wristL: 0, wristR: 0, raiseL: 0, raiseR: 0, talonL: 0, talonR: 0, headDown: 0, gripL: 0, gripR: 0, carryL: 0, carryR: 0, carryKL: 0, carryKR: 0, carryT: 0 };
+    this.carryPose = { ...CARRY }; this.lay.carry = 0;
+    // (v2's hold, falconBird.js holdPrey: the held bird a little nose-UP and 1 % of the span forward, clear of the vent)
+    if (src.v2) { this.gripQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(CARRY.pitch, 0, Math.PI, "YXZ")); this.gripFwd = CARRY.fwd; }
     this.tw = Object.fromEntries(KEYS.map((k) => [k, 0]));
     this.lastFlapPhase = 0; this.downstroke = false; this.prevMode = "perch";
     this.prey = null; this.forceClip = null;       // the panel's clip preview: one clip at weight 1
+    // (the city's catch: falconBird.js's toes, the held bird's pooled mesh; the ground clips the game can ask for)
+    const Bn = (n) => this.model.getObjectByName(n);
+    this.toes = Bn("Toes_L") && Bn("Toes_R") && Bn("Toes_tip_L") && Bn("Toes_tip_R") ? { l: Bn("Toes_L"), r: Bn("Toes_R"), lt: Bn("Toes_tip_L"), rt: Bn("Toes_tip_R") } : null;
+    this.held = new HeldPrey(); this.root.add(this.held.mesh);
+    this.groundClips = true;
     this.setSpan(span);
   }
 
@@ -193,17 +218,11 @@ export class GymBird {
     this.plumage = name;
   }
   setSpan(span) { this.span = span; this.model.scale.setScalar(span / this.modelSpan); }
-  carry(preyMesh, material) {
-    if (this.prey || !preyMesh) return;
-    const p = preyMesh.clone(); if (material) p.material = material;
-    const k = this.span / 1.10;
-    p.position.set(0, -0.13 * k, 0.04 * k); p.rotation.set(0.15, Math.PI, 0); p.scale.setScalar(0.95 * k);
-    this.root.add(p); this.prey = p;
-  }
-  drop() { if (!this.prey) return null; const p = this.prey; this.prey = null; p.removeFromParent(); return p; }
+  // carry (preyMesh, material, from, look) / drop / gripPoint / holdPrey / gripCheck: falconBird.js's (below the class)
 
   /** f: { heading, gamma, alpha, phi, fold, flapLevel, brake, V, walkV? }; mode: fly | land | perch | walk | hop | launch */
-  pose(dt, pos, f, { mode = "fly", talons = 0, perchYaw = 0, look = 0, wdt = dt } = {}) {
+  /** strike: v2's Talons clip weight (the city game: the last metres of a strike and the catch); omitted = the talons */
+  pose(dt, pos, f, { mode = "fly", talons = 0, strike = null, perchYaw = 0, look = 0, wdt = dt } = {}) {
     this.root.position.copy(pos);
     const L = this.lay;
     // the body's pitch: the path + the angle of attack in the air, upright in the launch, level on the ground
@@ -222,9 +241,12 @@ export class GymBird {
     else if (mode === "land") { if (this.actions.land) { T.land = 0.6; T.flap = 0.4; } else { T.perch = 0.25; T.flap = 0.55; T.glide = 0.2; } }
     else if (flapping) T.flap = 1; else T.glide = 1;
     // (v2) its own Stoop clip (the Mesh2Motion folded wings in flight) takes over with the tuck
-    if (mode === "fly" && this.actions.stoop && !this.forceClip) { const k = Math.max(0, (f.fold - 0.5) / 0.5); T.stoop = k; T.flap *= 1 - k; T.glide *= 1 - k; }
+    // (with a bird in the feet the Stoop clip only a third: its folded wings and tucked feet closed round the held bird,
+    // node check tools/falconCityTest.mjs; the fold layers do the rest)
+    if (mode === "fly" && this.actions.stoop && !this.forceClip) { const k = Math.max(0, (f.fold - 0.5) / 0.5) * (this.prey ? CARRY.stoop : 1); T.stoop = k; T.flap *= 1 - k; T.glide *= 1 - k; }
     // (v2) its Talons clip, the strike (legs thrown forward, wings up and back, tail fanned), takes over with the talons
-    if (mode === "fly" && this.actions.talons && !this.forceClip && this.lay.talons > 0.01) { const k = this.lay.talons; for (const c of KEYS) T[c] *= 1 - k; T.talons = k; }
+    L.strike = ease(L.strike, strike ?? talons, 10, wdt);
+    if (mode === "fly" && this.actions.talons && !this.forceClip && L.strike > 0.01) { const k = L.strike; for (const c of KEYS) T[c] *= 1 - k; T.talons = k; }
     // the one-shot clips restart when their mode begins
     if (mode !== this.prevMode) {
       if (mode === "launch" && this.actions.takeoff) this.actions.takeoff.reset().play();
@@ -265,9 +287,21 @@ export class GymBird {
     E.raiseL = E.raiseR = 0.35 * L.flare;
     E.talonL = E.talonR = 1.1 * Math.max(L.talons, L.flare * 0.8) * ownLegs;
     E.headDown = L.head;
+    // (the city's catch: the toes close round the held bird as it reaches them, falconBird.js)
+    const H = this.prey && this.hold ? this.hold : null;
+    E.gripL = E.gripR = H ? GRIP.curl * H.k * H.k * (1 - 0.4 * H.perch) : 0;
+    L.carry = ease(L.carry, H && (mode === "fly" || mode === "land") ? 1 : 0, 6, wdt);
+    const CP = this.carryPose;
+    E.carryL = E.carryR = CP.hip * L.carry; E.carryKL = E.carryKR = CP.knee * L.carry; E.carryT = CP.tail * L.carry;
     this.rig.restore();
     this.mixer.update(dt);
-    if (L.flare > 1e-3) this.fan.forEach((b, i) => b.quaternion.slerp(this.fanOpen[i], L.flare));
+    if (L.flare > 1e-3) for (let i = 0; i < this.fan.length; i++) this.fan[i].quaternion.slerp(this.fanOpen[i], L.flare);
     this.rig.apply({ fold: L.fold, bank: L.bank, legs: L.legs, brake: L.flare, extra: E });
+    // (the landing's second half: the held bird is laid at the feet already, the Land clip's upright touchdown sits on it)
+    const la = this.actions.land, laid = mode === "land" && la && la.time > 0.2 * la.getClip().duration;
+    if (H && this.toes) this.holdPrey(dt, mode === "walk" || mode === "hop" || laid ? "perch" : mode);
   }
 }
+// the city's catch on v2: falconBird.js's own (they read root, span, toes, held, prey, hold; rule falcon-gym "the v2 in
+// the city": one grip for both birds)
+for (const k of ["carry", "drop", "gripPoint", "holdPrey", "gripCheck"]) GymBird.prototype[k] = FalconBird.prototype[k];
