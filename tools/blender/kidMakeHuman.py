@@ -325,15 +325,22 @@ def tris_of(o):
 KEEP = ("head", "neck_01", "hand_", "thumb_", "index_", "middle_", "ring_", "pinky_")
 def reduce(o, eb):
     """the triangle budget (<= ~25k): the body and the shoes decimated (collapse), the head, neck, hands kept full"""
-    ratio = (0.5 if o == eb else 0.6 if "shoes" in o.name else C.get("hair_ratio", 1.0) if o.name.endswith(C["hair"] + "_export")
+    ratio = (0.68 if o == eb else 0.6 if "shoes" in o.name else C.get("hair_ratio", 1.0) if o.name.endswith(C["hair"] + "_export")
              else 0.75 if C["shirt"] in o.name and tris_of(o) > 3000 else 1.0)
-    if ratio >= 1: return
+    if ratio >= 1 or "--nobudget" in argv: return
     bpy.ops.object.select_all(action="DESELECT")
     o.select_set(True); bpy.context.view_layer.objects.active = o
     if o.data.shape_keys:
         bpy.ops.object.shape_key_remove(all=True, apply_mix=True)
+    # the masks (helpers, the skin under the clothes) applied FIRST: a decimate under a mask spreads the delete groups'
+    # weights by its collapses (the shins vanished) and folds the hidden helper geometry into wings (hips -> wrists)
+    print("modifiers before the budget:", o.name, [(m.type, getattr(m, "vertex_group", "")) for m in o.modifiers])
+    for m in [m for m in o.modifiers if m.type == "MASK"]:
+        while o.modifiers.find(m.name) > 0: bpy.ops.object.modifier_move_up(modifier=m.name)
+        bpy.ops.object.modifier_apply(modifier=m.name)
     mod = o.modifiers.new("budget", "DECIMATE"); mod.ratio = ratio
-    if o == eb:
+    mod.use_symmetry = True; mod.symmetry_axis = "X"
+    if o == eb and "--keepgroup" in argv:
         keep = o.vertex_groups.new(name="_keep")
         idx = {g.index for g in o.vertex_groups if g.name.startswith(KEEP)}
         keep.add([v.index for v in o.data.vertices if any(e.group in idx and e.weight > 0.2 for e in v.groups)], 1.0, "REPLACE")
@@ -341,7 +348,7 @@ def reduce(o, eb):
     # (the armature modifier stays first: move the decimate to the top so it applies on the rest mesh)
     while o.modifiers.find("budget") > 0: bpy.ops.object.modifier_move_up(modifier="budget")
     bpy.ops.object.modifier_apply(modifier="budget")
-    if o == eb: o.vertex_groups.remove(o.vertex_groups["_keep"])
+    if "_keep" in o.vertex_groups: o.vertex_groups.remove(o.vertex_groups["_keep"])
 
 def export():
     for img in bpy.data.images:
@@ -372,8 +379,10 @@ def export():
                        "brows": C["brows"], "hair": C["hair"], "shirt": C["shirt"], "shorts": SHORTS, "shoes": C["shoes"]},
             "bones": [b.name for b in rig.data.bones]}
     json.dump(info, open(os.path.join(OUT, f"kid_{CAND}.json"), "w"), indent=1)
-    # hide the export copy from the renders
-    for o in objs: o.hide_render = True; o.hide_set(True)
+    # the renders show what was exported (the decimated copy): the original hidden
+    orig = ObjectService.find_object_of_type_amongst_nearest_relatives(basemesh, "Skeleton") or basemesh
+    for o in [orig] + ObjectService.get_list_of_children(orig):
+        if o not in objs: o.hide_render = True; o.hide_set(True)
     return info
 
 # ------------------------------------------------------------------------------------------------ renders

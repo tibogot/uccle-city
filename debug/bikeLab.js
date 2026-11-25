@@ -331,6 +331,42 @@ const ui = new Panel({ title: "Bike Lab", persist: "bikelab", search: true });
   for (const [k, a, b, st] of [["near", 0.5, 3, 0.05], ["mountTime", 0.1, 1.5, 0.05], ["dismountTime", 0.1, 1.5, 0.05], ["dismountMax", 0.5, 6, 0.1], ["standStill", 0, 2, 0.05]])
     fk.add(MOUNT, k, a, b, st).name(`mount ${k}`);
 }
+// ---------------------------------------------------------------- kid candidates (docs/KIDCHAR.md phase 1: the MPFB boys vs the current kid)
+const KCs = { api: null, loading: false, show: qs.get("cands") === "1", state: "not loaded" };
+async function kidCandidates(on) {
+  if (on && !KCs.api && !KCs.loading) {
+    KCs.loading = true; KCs.state = "loading…";
+    try {
+      const { loadKidCandidates } = await import("../viewer/kid/kidCandidates.js");
+      KCs.api = await loadKidCandidates(renderer, scene);
+      KCs.state = KCs.api.items.map((it) => `${it.id}: ${it.info ? it.info.tris : it.kid.tris[0]} tris`).join(" · ");
+    } catch (e) { console.warn("[bike lab] kid candidates failed:", e); KCs.state = `failed: ${e.message}`; }
+    KCs.loading = false;
+  }
+  if (!KCs.api) return;
+  if (on) { // a line-up 6 m to the side of the bike, facing the sun (the lab's sun sits at +10 x, +6 z of the player)
+    const sd = s.heading + Math.PI / 2, x = s.x + Math.sin(sd) * 6, z = s.z + Math.cos(sd) * 6;
+    KCs.api.place(x, z, Math.atan2(10, 6) - 0.5, (px, pz) => W.height(px, pz));
+  }
+  KCs.api.setActive(on);
+}
+{
+  const fkc = ui.addFolder("Kid candidates", { id: "bike-kidcands", open: KCs.show });
+  fkc.add(KCs, "show").name("show the line-up (orbit cam)").onChange((v) => kidCandidates(v));
+  fkc.add(KCs, "state").name("loaded").listen();
+  import("../viewer/kid/kidCandidates.js").then(({ KC }) => {
+    fkc.add(KC, "idle").name("current kid: Idle (off = bind pose)");
+    fkc.add(KC, "labels").name("labels");
+    fkc.add(KC, "spacing", 0.7, 2.5, 0.05).name("spacing (m)").onChange(() => KCs.show && kidCandidates(true));
+    fkc.add(KC, "dist", 0.6, 12, 0.05).name("camera distance").listen();
+    fkc.add(KC, "pitch", -0.2, 1.2, 0.01).name("camera pitch").listen();
+    fkc.add(KC, "yaw", -3.15, 3.15, 0.01).name("camera yaw").listen();
+    const view = (i, yaw, d) => () => { if (!KCs.api) return; KC.yaw = yaw; KC.pitch = i < 0 ? 0.12 : 0.05; KCs.api.focus(i, d); };
+    fkc.buttons([["all: front", view(-1, 0)], ["all: 3/4", view(-1, 0.7)], ["all: side", view(-1, Math.PI / 2, 5.5)], ["all: back", view(-1, Math.PI)],
+      ["face A", view(0, 0.35)], ["face B", view(1, 0.35)], ["face C", view(2, 0.35)], ["face now", view(3, 0.35)]], 4);
+  });
+  if (KCs.show) kidCandidates(true);
+}
 const fr = ui.addFolder("Ride");
 fr.add(P, "pause").name("pause (P)");
 fr.add(P, "slow", 0.05, 1, 0.05).name("time scale");
@@ -448,6 +484,7 @@ renderer.setAnimationLoop(() => {
     const w = ease(camBlend.t);
     camera.position.lerpVectors(camBlend.p, camera.position.clone(), w); camera.quaternion.slerpQuaternions(camBlend.q, camera.quaternion.clone(), w);
   }
+  if (KCs.api?.active) KCs.api.update(dt, camera);
   if (K.on) K.kid.autoLod(camera.position.distanceTo(K.tp.body.root.position));
   const fx = onFoot ? K.tp.x : pose.x, fy = onFoot ? K.tp.y : pose.y, fz = onFoot ? K.tp.z : pose.z;
   sun.position.set(fx + 10, fy + 24, fz + 6); sun.target.position.set(fx, fy, fz);
