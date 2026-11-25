@@ -23,3 +23,16 @@ UrbIS church solid that the Saint-Pierre model hides (the hide lists were never 
 was computed in xmasCity.js from site.json's own slot (capped 6.5 m) while claude/carrefour taught the shop kit a
 curated width and shift: two copies of one rule drifted, and the Carrefour's 18 m front would have had a 6.5 m swag
 11.8 m off its glazing. Nothing checked the baked data against the data it came from.
+
+**Extended (claude/xmasreview, 2026-11-26).** Every market chalet's footprint (roof overhang + propped shutter) stands
+>= 0.5 m clear of the drawn street furniture (tools/christmas/siteFit.mjs `streetFurniture`: street-name plate posts,
+sign poles, postboxes, stops, Villo pieces, bins, hoops, benches, bike parkings; build_site.py `street_furniture` mirrors
+it), each fir's crown (2.95 m x scale) is clear of it, and the customers' strip (1.5 m) in front of each hatch is clear of
+the fir's crown + 0.3 m. Each fir stands on the LOWEST drawn ground under its planter (viewer/christmas/xmasCity.js
+`treeFootY`: the octagon's rim at 1.4 m x scale and the centre; rule joins: sunk, never floating).
+**Why.** The game review found a chalet's roof pierced by the Place de Saint-Job street-name post (1117.7, 538.3): the
+generator knew trees, walls, shops and the fir, not the street furniture; two hatches opened 1.3 m from the fir's lowest
+branches (the clearance was measured to the planter, not to the crown); and the Saint-Job planter floated 1.7 cm on its
+downhill side (the fir was set on the ground at its centre only). Checks: gate row `xmas` "street furniture" (site fit;
+the pre-review site.json fails it) and row `xmastest` "fir foot".
+

@@ -57,6 +57,26 @@ for (const s of [...slots, ...EXTRA]) for (const uvs of [true, false]) for (cons
 ok(built === (slots.size + EXTRA.length) * 4, `${built} materials built for ${slots.size} slots + ${EXTRA.join(", ")}: ${[...slots].join(", ")}`);
 const emissive = ["bulb_warm", "led_rope", "star_glow"].every((s) => kit.slotMaterial(s, { instanced: true }).emissiveNode);
 ok(emissive, "LEDs, LED rope and the star glow (emissive only: no light added)");
+// (claude/xmasreview, rule xmas-night-glow) the LEDs' glow on the foliage and baubles: an emissive term x env.uNight
+// (0 by day) on the needle cards' LIT pass (single and colour), the solid fronds and the baubles; never on the depth twin
+{
+  const { FIR_GLOW, xmasLook: LK } = await import("../../viewer/christmas/xmasKit.js");
+  const { env } = await import("../../viewer/lighting.js");
+  const uses = (node, target, seen = new Set(), depth = 0) => {
+    if (!node || typeof node !== "object" || seen.has(node) || depth > 40) return false;
+    if (node === target) return true;
+    seen.add(node);
+    for (const v of Object.values(node)) if (v && typeof v === "object" && (v.isNode || Array.isArray(v)) && uses(v, target, seen, depth + 1)) return true;
+    return false;
+  };
+  const glowM = [kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false, pass: "colour" }), kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: true }),
+    kit.slotMaterial("fir_needles", { uvs: true, instanced: true }), kit.slotMaterial("fir_needles", { uvs: false, instanced: true }), kit.slotMaterial("bauble", { instanced: true })];
+  ok(FIR_GLOW && glowM.every((m) => m.userData.ledGlow && m.emissiveNode && uses(m.emissiveNode, env.uNight) && (uses(m.emissiveNode, LK.glow) || uses(m.emissiveNode, LK.glint))),
+    "LED glow: the needle cards (lit passes), the solid fronds (near + far) and the baubles take albedo x LED warm x glow / glint x env.uNight");
+  ok(!kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false, pass: "depth" }).emissiveNode, "LED glow: never on the cards' depth twin");
+  ok(/export const FIR_GLOW = QS\.get\("firglow"\) !== "0";/.test(fs.readFileSync(new URL("../../viewer/christmas/xmasKit.js", import.meta.url), "utf8")) && /on\("firglow"/.test(fs.readFileSync(new URL("../../viewer/features.js", import.meta.url), "utf8")),
+    "LED glow: ?firglow=0 = the shader of before (xmasKit.js FIR_GLOW, features row firglow)");
+}
 
 // ---- RULE 19 (needle cards): the fir's near level is alpha-tested needle cards with CANOPY normals; the far levels
 // have none. Why: the first fir was solid lumpy sleeves with a stroke pattern: lit by their own surface, they read as
