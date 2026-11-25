@@ -51,13 +51,15 @@ scn = bpy.context.scene
 # (name, kind, linear rgb). Paint entries hold a SHADE (the viewer multiplies the per-instance paint colour).
 PAL = [
     ("paint", 1, (1, 1, 1)),
-    ("paint_seam", 1, (0.16, 0.16, 0.16)),        # shut lines: a dark line in the paint colour
+    ("paint_seam", 12, (0.05, 0.05, 0.05)),       # shut lines: a dark gap in the paint colour (kind 12: paint colour, NO
+                                                  # clear coat: the gap stays dark under the reflections, claude/cars1)
     ("trim", 0, (0.020, 0.020, 0.022)),            # black textured plastic
     ("rubber", 6, (0.012, 0.012, 0.013)),          # window seals
     ("glass", 4, (0.020, 0.024, 0.028)),
     ("glass_dark", 4, (0.006, 0.007, 0.008)),      # privacy glass (estates, SUVs, vans: rear)
     ("chrome", 5, (0.60, 0.61, 0.62)),
-    ("gloss", 0, (0.012, 0.012, 0.013)),           # piano black: B pillars, grilles, lamp housings (kind 0: no mirror look)
+    ("gloss", 10, (0.012, 0.012, 0.013)),          # piano black: B pillars, grilles, lamp housings (kind 10: clear coat,
+                                                  # the black trim mirror of the NTE look, claude/cars1)
     ("head", 2, (0.86, 0.87, 0.90)),               # head lamp lens / DRL
     ("head_in", 2, (0.26, 0.27, 0.29)),            # inside the lens: the reflector (smoked)
     ("tail", 3, (0.33, 0.012, 0.010)),
@@ -74,7 +76,7 @@ PAL = [
     ("under", 0, (0.016, 0.016, 0.017)),
     ("tyre", 6, (0.020, 0.020, 0.021)),
     ("tyre_side", 6, (0.030, 0.030, 0.031)),
-    ("rim", 0, (0.34, 0.35, 0.37)),
+    ("rim", 11, (0.50, 0.51, 0.53)),               # alloy (kind 11: metal, claude/cars1)
     ("rim_dark", 0, (0.030, 0.030, 0.032)),
     ("disc", 5, (0.22, 0.22, 0.22)),
     ("white", 0, (0.78, 0.78, 0.76)),
@@ -84,6 +86,10 @@ PAL = [
     ("pol_blue", 0, (0.010, 0.040, 0.30)),         # Belgian police: blue
     ("pol_yellow", 0, (0.72, 0.80, 0.0)),          # fluorescent yellow (lime)
     ("pol_white", 0, (0.80, 0.80, 0.79)),          # the police estate's white (keepPaint: drawn as fixed colour)
+    # claude/cars1 (CARS LOOK round 1): LOD0 wheel detail
+    ("rim_lip", 11, (0.78, 0.78, 0.79)),           # the machined / polished outer lip and spoke faces
+    ("tread", 6, (0.008, 0.008, 0.009)),           # the tread blocks' grooves (darker rubber)
+    ("lug", 5, (0.45, 0.45, 0.46)),                # wheel nuts
 ]
 M = {n: i for i, (n, _, _) in enumerate(PAL)}
 MATS = [bpy.data.materials.new(n) for n, _, _ in PAL]
@@ -135,26 +141,30 @@ def S(**k): return k
 HATCH_C = S(
     label="compact hatchback", type="hatchback", paint=(0.025, 0.07, 0.17),
     zFront=2.19, zRear=-2.10, wheelZ=1.32, wheelR=0.325, rimR=0.216, tyreW=0.225, wheelX=0.79, rim="5",
-    archGap=0.028, archFlare=0.018, archFlareR=0.034, archPow=2.2, tuck=0.07, spoiler=True,
-    halfWidth=[[2.19, 0.86], [1.32, 0.892], [0, 0.897], [-1.32, 0.895], [-2.10, 0.875]],
+    # (claude/cars1 round 2, BODY SHAPES: rounder designed volumes at the same sizes) arch flares 18 / 34 -> 28 / 44 mm
+    # with the half widths 5 mm in (the size's width unchanged), a deeper tuck under the sill, more tumblehome over the
+    # shoulder (tumble +25 mm), softer nose / tail roundings, a narrower, tapered, more crowned glasshouse set on a
+    # visible shoulder ledge (inset 35 -> 50 mm), and the lamps + grille as one face band
+    archGap=0.028, archFlare=0.028, archFlareR=0.044, archPow=2.2, tuck=0.09, spoiler=True, waist=0.018,
+    halfWidth=[[2.19, 0.855], [1.32, 0.887], [0, 0.892], [-1.32, 0.890], [-2.10, 0.870]],
     sill=[[2.19, 0.26], [1.1, 0.235], [-1.1, 0.235], [-2.10, 0.30]],
-    shoulder=[[2.19, 0.60], [1.6, 0.69], [1.32, 0.71], [0, 0.73], [-1.32, 0.77], [-2.10, 0.79]],
-    edge=[[2.06, 0.79], [1.75, 0.86], [1.35, 0.92], [0.95, 0.965], [0.5, 0.985], [-0.5, 1.0], [-1.3, 1.03], [-1.75, 1.04], [-2.0, 1.03]],
+    shoulder=[[2.19, 0.62], [1.6, 0.715], [1.32, 0.74], [0, 0.76], [-1.32, 0.80], [-2.10, 0.815]],
+    edge=[[2.06, 0.79], [1.75, 0.86], [1.35, 0.92], [0.95, 0.965], [0.5, 0.985], [-0.5, 1.005], [-1.3, 1.045], [-1.75, 1.06], [-2.0, 1.045]],   # (round 2: the belt kicks up to the rear)
     crown=[[2.06, 0.032], [1.05, 0.028], [0.90, 0.002], [-2.1, 0.002]],
-    tumble=[[2.19, 0.09], [1.0, 0.085], [-1.3, 0.10], [-2.1, 0.10]],
-    nose=dict(halfWidth=[0.34, 0.66, 2.6], edge=[0.13, 0.745, 2.4], crown=[0.13, 0.008, 2], sill=[0.2, 0.22, 2], shoulder=[0.24, 0.55, 2.4]),
-    tail=dict(halfWidth=[0.26, 0.72, 2.8], edge=[0.07, 0.985, 3], crown=[0.07, 0.0, 2], sill=[0.18, 0.33, 2], shoulder=[0.2, 0.76, 2.6]),
+    tumble=[[2.19, 0.115], [1.0, 0.11], [-1.3, 0.125], [-2.1, 0.125]],
+    nose=dict(halfWidth=[0.34, 0.66, 2.2], edge=[0.13, 0.745, 2.1], crown=[0.13, 0.008, 2], sill=[0.2, 0.22, 2], shoulder=[0.24, 0.55, 2.1]),
+    tail=dict(halfWidth=[0.26, 0.72, 2.3], edge=[0.07, 0.985, 2.6], crown=[0.07, 0.0, 2], sill=[0.18, 0.33, 2], shoulder=[0.2, 0.76, 2.3]),
     noseRake=dict(length=0.56, y=[[0.22, 0.05], [0.32, 0.0], [0.50, 0.0], [0.60, 0.03], [0.70, 0.09], [0.76, 0.15]], plan=0.08),
     tailRake=dict(length=0.40, y=[[0.33, 0.06], [0.46, 0.0], [0.62, 0.0], [0.80, 0.01], [0.98, 0.035]], plan=0.06),
-    cabin=dict(cowl=0.92, roofFront=0.08, roofRear=-1.56, deck=-1.97, roofY=[[0.08, 1.425], [-0.6, 1.45], [-1.56, 1.415]],
-               rail=[0.63, 0.59], inset=0.035, bulge=0.012, roofEdge=0.05, roofCrown=0.03, roofRound=4.0, sail=0.15,
+    cabin=dict(cowl=0.92, roofFront=0.08, roofRear=-1.56, deck=-1.97, roofY=[[0.08, 1.405], [-0.6, 1.45], [-1.56, 1.39]],   # (round 2: an arched roof)
+               rail=[0.585, 0.54], inset=0.05, bulge=0.018, roofEdge=0.05, roofCrown=0.045, roofRound=3.0, sail=0.15,
                pillars=[(-0.30, -0.21, "gloss")], glassEnd=-1.30, backGlass="glass_dark", sideRearGlass="glass"),
     back="hatch", doors=[0.905, -0.255, -1.10], handles=[-0.10, -0.95], handleY=0.92,
     front=[("chin", "trim", (0.0, 0.26), (0, 1), 4, None),
-           ("intake", "gloss", (0.31, 0.44), (0, 0.66), 0, "intake"),
+           ("intake", "gloss", (0.29, 0.45), (0, 0.72), 0, "intake"),
            ("bumper", "paint_seam", (0.552, 0.558), (0, 1), 4, None),
-           ("grille", "gloss", (0.605, 0.70), (0, 0.46), 0, "grille"),
-           ("head", "gloss", (0.605, 0.70), (0.50, 1), 0.22, "head"),
+           ("grille", "gloss", (0.595, 0.705), (0, 0.46), 0, "grille"),
+           ("head", "gloss", (0.595, 0.705), (0.50, 1), 0.22, "head"),
            ("bonnet", "paint_seam", (0.722, 0.728), (0, 1), 9, None)],
     rear=[("diff", "trim", (0.0, 0.38), (0, 1), 4, None),
           ("refl", "tail", (0.43, 0.47), (0.72, 0.90), 0, "refl"),
@@ -216,10 +226,10 @@ HATCH_S = remap(BASE, zmap=[(-2.10, -1.98), (-1.32, -1.28), (1.32, 1.28), (2.19,
 HATCH_S["nose"]["halfWidth"] = [0.36, 0.64, 2.4]
 HATCH_S["cabin"]["roofRear"] = -1.58; HATCH_S["cabin"]["deck"] = -1.88
 HATCH_S["front"] = [("chin", "trim", (0.0, 0.25), (0, 1), 4, None),
-                    ("intake", "gloss", (0.30, 0.45), (0, 0.66), 0, "intake"),
+                    ("intake", "gloss", (0.28, 0.46), (0, 0.72), 0, "intake"),
                     ("bumper", "paint_seam", (0.535, 0.541), (0, 1), 0.36, None),
-                    ("grille", "gloss", (0.57, 0.67), (0, 0.42), 0, "grille"),
-                    ("head", "gloss", (0.585, 0.69), (0.46, 1), 0.26, "head"),
+                    ("grille", "gloss", (0.575, 0.69), (0, 0.42), 0, "grille"),
+                    ("head", "gloss", (0.575, 0.69), (0.46, 1), 0.26, "head"),
                     ("bonnet", "paint_seam", (0.712, 0.718), (0, 1), 9, None)]
 HATCH_S["rear"] = [("diff", "trim", (0.0, 0.43), (0, 1), 0.28, None),
                    ("refl", "tail", (0.45, 0.48), (0.76, 0.93), 0, "refl"),
@@ -230,11 +240,11 @@ HATCH_S["rear"] = [("diff", "trim", (0.0, 0.43), (0, 1), 0.28, None),
 ESTATE = remap(BASE, zmap=[(-2.10, -2.44), (-1.32, -1.345), (1.32, 1.345), (2.19, 2.225)], xs=1.02,
                ymap=[(0, 0), (1.0, 1.005), (1.456, 1.47)],
                label="estate", type="estate", paint=(0.30, 0.31, 0.32), rails=True, spoiler=True, wheelX=0.80, rim="multi")
-ESTATE["edge"] = [[2.10, 0.80], [1.78, 0.87], [1.38, 0.925], [0.96, 0.965], [0.4, 0.985], [-0.6, 1.0], [-1.6, 1.025], [-2.1, 1.035], [-2.35, 1.03]]
-ESTATE["shoulder"] = [[2.225, 0.60], [1.345, 0.71], [0, 0.73], [-1.345, 0.77], [-2.44, 0.79]]
+ESTATE["edge"] = [[2.10, 0.80], [1.78, 0.87], [1.38, 0.925], [0.96, 0.965], [0.4, 0.985], [-0.6, 1.005], [-1.6, 1.04], [-2.1, 1.055], [-2.35, 1.05]]
+ESTATE["shoulder"] = [[2.225, 0.62], [1.345, 0.74], [0, 0.76], [-1.345, 0.80], [-2.44, 0.815]]
 ESTATE["crown"] = [[2.10, 0.032], [1.1, 0.028], [0.93, 0.002], [-2.44, 0.002]]
-ESTATE["cabin"].update(cowl=0.94, roofFront=0.10, roofRear=-2.22, deck=-2.38, roofY=[[0.10, 1.44], [-1.0, 1.465], [-2.22, 1.445]],
-                       rail=[0.65, 0.62], pillars=[[-0.33, -0.24, "gloss"], [-1.36, -1.42, "gloss"]], glassEnd=-2.08, sideRearGlass="glass_dark")
+ESTATE["cabin"].update(cowl=0.94, roofFront=0.10, roofRear=-2.22, deck=-2.38, roofY=[[0.10, 1.425], [-0.9, 1.465], [-2.22, 1.43]],
+                       rail=[0.60, 0.56], pillars=[[-0.33, -0.24, "gloss"], [-1.36, -1.42, "gloss"]], glassEnd=-2.08, sideRearGlass="glass_dark")
 ESTATE["doors"] = [0.925, -0.285, -1.30]; ESTATE["handles"] = [-0.11, -1.10]
 ESTATE["rear"] = [("diff", "trim", (0.0, 0.46), (0, 1), 0.28, None),
                   ("refl", "tail", (0.48, 0.51), (0.76, 0.93), 0, "refl"),
@@ -250,12 +260,12 @@ SALOON = remap(BASE, zmap=[(-2.10, -2.48), (-1.32, -1.425), (1.32, 1.425), (2.19
                label="saloon", type="sedan", paint=(0.012, 0.013, 0.015), back="notch", wheelR=0.33, rimR=0.229, tyreW=0.225, wheelX=0.80,
                rim="multi", spoiler=False)
 SALOON["edge"] = [[2.09, 0.78], [1.75, 0.855], [1.3, 0.915], [0.9, 0.945], [0.3, 0.965], [-0.6, 0.985], [-1.3, 1.005], [-1.62, 1.01], [-2.2, 1.0], [-2.42, 0.985]]
-SALOON["shoulder"] = [[2.215, 0.60], [1.425, 0.71], [0, 0.73], [-1.425, 0.76], [-2.48, 0.77]]
+SALOON["shoulder"] = [[2.215, 0.62], [1.425, 0.74], [0, 0.76], [-1.425, 0.79], [-2.48, 0.795]]
 SALOON["crown"] = [[2.08, 0.034], [1.0, 0.03], [0.88, 0.002], [-1.58, 0.002], [-1.70, 0.016], [-2.40, 0.012]]
-SALOON["tail"] = dict(halfWidth=[0.30, 0.74, 2.8], edge=[0.09, 0.965, 3], crown=[0.09, 0.0, 2], sill=[0.18, 0.36, 2], shoulder=[0.22, 0.74, 2.6])
+SALOON["tail"] = dict(halfWidth=[0.30, 0.74, 2.3], edge=[0.09, 0.965, 2.6], crown=[0.09, 0.0, 2], sill=[0.18, 0.36, 2], shoulder=[0.22, 0.74, 2.3])
 SALOON["tailRake"] = dict(length=0.42, y=[[0.36, 0.06], [0.48, 0.0], [0.66, 0.0], [0.82, 0.012], [0.965, 0.045]], plan=0.07)
-SALOON["cabin"].update(cowl=0.90, roofFront=0.05, roofRear=-0.98, deck=-1.62, roofY=[[0.05, 1.41], [-0.45, 1.44], [-0.98, 1.41]],
-                       rail=[0.66, 0.62], pillars=[[-0.36, -0.27, "gloss"]], glassEnd=-1.24, sideRearGlass="glass", backGlass="glass")
+SALOON["cabin"].update(cowl=0.90, roofFront=0.05, roofRear=-0.98, deck=-1.62, roofY=[[0.05, 1.395], [-0.45, 1.44], [-0.98, 1.395]],
+                       rail=[0.61, 0.56], pillars=[[-0.36, -0.27, "gloss"]], glassEnd=-1.24, sideRearGlass="glass", backGlass="glass")
 SALOON["doors"] = [0.885, -0.31, -1.22]; SALOON["handles"] = [-0.16, -1.05]
 SALOON["rear"] = [("diff", "trim", (0.0, 0.42), (0, 1), 0.30, None),
                   ("refl", "tail", (0.45, 0.48), (0.76, 0.93), 0, "refl"),
@@ -269,14 +279,14 @@ SALOON["rearSeamZ"] = 0.0
 SUV = remap(BASE, zmap=[(-2.10, -2.13), (-1.32, -1.32), (1.32, 1.32), (2.19, 2.16)], xs=1.006,
             ymap=[(0, 0), (0.22, 0.32), (0.6, 0.73), (1.0, 1.10), (1.456, 1.57)],
             label="small SUV", type="suv", paint=(0.06, 0.12, 0.10), wheelR=0.35, rimR=0.229, tyreW=0.225, wheelX=0.80,
-            archGap=0.035, archFlare=0.03, archFlareR=0.042, clad=0.50, rails=True, skid=True, rim="5")
-SUV["cabin"].update(sideRearGlass="glass_dark", rail=[0.63, 0.60])
+            archGap=0.035, archFlare=0.04, archFlareR=0.052, clad=0.50, rails=True, skid=True, rim="5", waist=0.022)
+SUV["cabin"].update(sideRearGlass="glass_dark", rail=[0.60, 0.56])
 SUV["front"] = [("chin", "skid", (0.0, 0.40), (0, 0.55), 0, None),
                 ("chin2", "trim", (0.0, 0.40), (0.55, 1), 0.3, None),
-                ("intake", "gloss", (0.42, 0.58), (0, 0.62), 0, "intake"),
+                ("intake", "gloss", (0.41, 0.59), (0, 0.70), 0, "intake"),
                 ("bumper", "paint_seam", (0.645, 0.651), (0, 1), 0.36, None),
-                ("grille", "gloss", (0.68, 0.79), (0, 0.50), 0, "grille"),
-                ("head", "gloss", (0.70, 0.80), (0.52, 1), 0.22, "head"),
+                ("grille", "gloss", (0.68, 0.80), (0, 0.50), 0, "grille"),
+                ("head", "gloss", (0.69, 0.80), (0.51, 1), 0.22, "head"),
                 ("bonnet", "paint_seam", (0.822, 0.828), (0, 1), 9, None)]
 SUV["rear"] = [("diff", "skid", (0.0, 0.50), (0, 0.5), 0, None),
                ("diff2", "trim", (0.0, 0.50), (0.5, 1), 0.28, None),
@@ -289,19 +299,19 @@ SUV["rear"] = [("diff", "skid", (0.0, 0.50), (0, 0.5), 0, None),
 VAN_C = S(
     label="compact van", type="van", paint=(0.62, 0.62, 0.60), clad=0.42,
     zFront=2.27, zRear=-2.22, wheelZ=1.36, wheelR=0.32, rimR=0.203, tyreW=0.205, wheelX=0.80, rim="cover",
-    archGap=0.035, archFlare=0.02, archPow=2.2, tuck=0.06,
-    halfWidth=[[2.27, 0.88], [1.36, 0.92], [0, 0.93], [-1.36, 0.93], [-2.22, 0.92]],
+    archGap=0.035, archFlare=0.026, archPow=2.2, tuck=0.07, upperN=3.0, lowerN=2.7, waist=0.008,
+    halfWidth=[[2.27, 0.877], [1.36, 0.917], [0, 0.927], [-1.36, 0.927], [-2.22, 0.917]],
     sill=[[2.27, 0.33], [1.1, 0.30], [-1.1, 0.30], [-2.22, 0.36]],
     shoulder=[[2.27, 0.66], [1.36, 0.76], [0, 0.80], [-1.36, 0.84], [-2.22, 0.86]],
     edge=[[2.14, 0.89], [1.85, 0.97], [1.45, 1.04], [1.12, 1.075], [0.5, 1.085], [-1.0, 1.10], [-2.1, 1.11]],
     crown=[[2.14, 0.03], [1.2, 0.025], [1.08, 0.002], [-2.22, 0.002]],
-    tumble=[[2.27, 0.08], [1.0, 0.06], [-2.22, 0.05]],
-    nose=dict(halfWidth=[0.34, 0.70, 2.6], edge=[0.12, 0.86, 2.4], crown=[0.12, 0.008, 2], sill=[0.2, 0.28, 2], shoulder=[0.24, 0.62, 2.4]),
+    tumble=[[2.27, 0.095], [1.0, 0.075], [-2.22, 0.065]],
+    nose=dict(halfWidth=[0.34, 0.70, 2.3], edge=[0.12, 0.86, 2.2], crown=[0.12, 0.008, 2], sill=[0.2, 0.28, 2], shoulder=[0.24, 0.62, 2.4]),
     tail=dict(halfWidth=[0.12, 0.84, 3.2], edge=[0.04, 1.09, 3], crown=[0.04, 0.0, 2], sill=[0.12, 0.38, 2], shoulder=[0.1, 0.84, 3]),
     noseRake=dict(length=0.56, y=[[0.28, 0.05], [0.40, 0.0], [0.58, 0.0], [0.70, 0.04], [0.80, 0.10], [0.86, 0.15]], plan=0.08),
     tailRake=dict(length=0.25, y=[[0.38, 0.04], [0.50, 0.0], [0.80, 0.0], [1.09, 0.008]], plan=0.03),
     cabin=dict(cowl=1.13, roofFront=0.30, roofRear=-2.13, deck=-2.20, roofY=[[0.30, 1.80], [-0.6, 1.84], [-2.13, 1.83]],
-               rail=[0.80, 0.82], inset=0.03, bulge=0.008, roofEdge=0.06, roofCrown=0.03, roofRound=5.0, sail=0.16,
+               rail=[0.77, 0.78], inset=0.04, bulge=0.012, roofEdge=0.06, roofCrown=0.04, roofRound=4.0, sail=0.16,
                pillars=[[-0.18, -0.08, "gloss"], [-1.30, -1.40, "paint"]], glassEnd=-2.02, backGlass="glass_dark", sideRearGlass="glass_dark"),
     back="box", doors=[1.12, -0.13, -1.36], slide=True, handles=[0.0, -0.30], handleY=0.98,
     front=[("chin", "trim", (0.0, 0.48), (0, 1), 0.34, None),
@@ -323,17 +333,49 @@ VAN_P["cabin"].update(cowl=1.48, roofFront=0.88, roofRear=-2.44, deck=-2.50, roo
                       rail=[0.86, 0.90], pillars=[], glassEnd=0.30, roofRound=7.0)
 VAN_P["doors"] = [1.47, 0.32, -0.62]; VAN_P["handles"] = [0.48, -0.50]
 
+# (claude/cars1 round 2) BOXY 4x4 (generic: the tall square off-roader of the leafy streets: Defender / G / Land Cruiser
+# class, no brand): 4.45 x 1.88 x 1.86, WB 2.74, ground clearance, upright screen, flat bonnet, vertical tail with the
+# SPARE WHEEL on the tailgate, square flared arches with black cladding, roof rails; boxy section (upper / lower n 4.2 / 3.6)
+X4 = remap(VAN_C, zmap=[(-2.22, -2.10), (-1.36, -1.37), (1.36, 1.37), (2.27, 2.12)], xs=1.0,
+           ymap=[(0, 0), (0.30, 0.40), (0.86, 0.95), (1.1, 1.20), (1.84, 1.86)],
+           label="boxy 4x4", type="x4", paint=(0.11, 0.13, 0.10), wheelR=0.375, rimR=0.229, tyreW=0.245, wheelX=0.82, rim="5",
+           archGap=0.04, archFlare=0.03, archPow=3.2, tuck=0.05, upperN=4.2, lowerN=3.6, waist=0.004, clad=0.62, rails=True,
+           spare=True, slide=False)
+X4["halfWidth"] = [[z, v - 0.022] for z, v in X4["halfWidth"]]   # (1.84 m: not a "wide" body for the traffic, trafficSim TP_PASS)
+X4["tumble"] = [[2.12, 0.05], [1.0, 0.045], [-2.10, 0.045]]
+X4["nose"] = dict(halfWidth=[0.22, 0.80, 3.6], edge=[0.06, 1.05, 3.4], crown=[0.06, 0.004, 2], sill=[0.2, 0.40, 2], shoulder=[0.16, 0.80, 3.4])
+X4["tail"] = dict(halfWidth=[0.10, 0.86, 3.6], edge=[0.04, 1.20, 3], crown=[0.04, 0.0, 2], sill=[0.12, 0.46, 2], shoulder=[0.08, 0.92, 3.2])
+X4["edge"] = [[2.06, 1.05], [1.75, 1.10], [1.45, 1.12], [1.12, 1.13], [0.5, 1.14], [-1.0, 1.16], [-2.0, 1.18]]
+X4["crown"] = [[2.06, 0.012], [1.2, 0.01], [1.06, 0.002], [-2.10, 0.002]]
+X4["noseRake"] = dict(length=0.30, y=[[0.40, 0.03], [0.55, 0.0], [0.80, 0.0], [0.95, 0.02], [1.05, 0.05]], plan=0.04)
+X4["tailRake"] = dict(length=0.15, y=[[0.46, 0.02], [0.60, 0.0], [1.0, 0.0], [1.20, 0.004]], plan=0.02)
+X4["cabin"].update(cowl=1.02, roofFront=0.62, roofRear=-1.98, deck=-2.06, roofY=[[0.62, 1.83], [-0.6, 1.86], [-1.98, 1.85]],
+                   rail=[0.80, 0.80], inset=0.035, bulge=0.004, roofEdge=0.04, roofCrown=0.012, roofRound=6.0, sail=0.10,
+                   pillars=[[-0.24, -0.15, "gloss"], [-1.24, -1.36, "paint"]], glassEnd=-1.92, backGlass="glass_dark", sideRearGlass="glass_dark")
+X4["doors"] = [1.03, -0.20, -1.28]; X4["handles"] = [-0.05, -1.10]; X4["handleY"] = 1.06
+X4["front"] = [("chin", "skid", (0.0, 0.46), (0, 0.6), 0, None),
+               ("chin2", "trim", (0.0, 0.46), (0.6, 1), 0.3, None),
+               ("intake", "gloss", (0.48, 0.62), (0, 0.70), 0, "intake"),
+               ("bumper", "paint_seam", (0.66, 0.666), (0, 1), 0.3, None),
+               ("grille", "gloss", (0.74, 0.92), (0, 0.56), 0, "grille"),
+               ("head", "gloss", (0.76, 0.92), (0.60, 1), 0.10, "head"),
+               ("bonnet", "paint_seam", (0.99, 0.996), (0, 1), 9, None)]
+X4["rear"] = [("diff", "skid", (0.0, 0.52), (0, 0.5), 0, None),
+              ("diff2", "trim", (0.0, 0.52), (0.5, 1), 0.2, None),
+              ("tail", "gloss", (0.74, 1.06), (0.84, 1), 0.04, "tail")]
+X4["plateF"] = 0.54; X4["plateR"] = 0.55; X4["rearSeamZ"] = 0.0; X4["rearSeamY"] = 0.6
+
 # Brussels taxi: the saloon in black, yellow chequer line, amber TAXI roof sign; keeps its livery
 TAXI = json.loads(json.dumps(SALOON)); TAXI.update(label="Brussels taxi", type="taxi", paint=(0.010, 0.010, 0.011), keepPaint=True, taxi=True, rim="6")
 # Belgian police estate (federal / local police): white, a blue + fluorescent yellow Battenburg band along the sides
 # and across the tailgate, POLICE lettering; keeps its livery
 POLICE = json.loads(json.dumps(ESTATE)); POLICE.update(label="police estate", type="police", paint=(0.80, 0.80, 0.79), keepPaint=True, police=True, rails=False, plateR=0.50, rim="5")
 
-TYPES = {"hatch_s": HATCH_S, "hatch_c": HATCH_C, "estate": ESTATE, "saloon": SALOON, "suv": SUV, "van_c": VAN_C,
+TYPES = {"hatch_s": HATCH_S, "hatch_c": HATCH_C, "estate": ESTATE, "saloon": SALOON, "suv": SUV, "x4": X4, "van_c": VAN_C,
          "van_p": VAN_P, "taxi": TAXI, "police": POLICE}
 
 # ------------------------------------------------------------------------------------------------ body profile
-LOWER_N, UPPER_N = 2.8, 3.2
+LOWER_N, UPPER_N = 2.5, 2.7          # (round 2: 2.8 / 3.2 -> rounder; per type: sp upperN / lowerN, the vans and the 4x4 boxier)
 
 def body_fn(sp):
     W0, B0, S0, E0, C0, T0 = (smooth_curve(sp[k]) for k in ("halfWidth", "sill", "shoulder", "edge", "crown", "tumble"))
@@ -350,6 +392,13 @@ def body_fn(sp):
             d = (z - a) / (archR + 0.4)
             amp = sp["archFlare"] if a > 0 else sp.get("archFlareR", sp["archFlare"])
             if abs(d) < 1: flare = max(flare, amp * (1 - d * d) ** 2)
+        # (round 2) the WAIST: the doors drawn in between the arches (a bump, 0 at the arches): the flared haunches read
+        # in plan and in the light without widening the car (the arches keep their width, the size's width unchanged)
+        wz = sp.get("waist", 0.0)
+        if wz:
+            span = sp["wheelZ"] - archR * 0.6
+            u = z / span
+            if abs(u) < 1: flare -= wz * (1 - u * u) ** 2
         W = rounded(z, W0(z) + flare, "halfWidth")
         ySill = rounded(z, B0(z), "sill")
         yB = ySill
@@ -362,21 +411,22 @@ def body_fn(sp):
         yT = yE + max(0.0, rounded(z, C0(z), "crown"))
         yS = min(max(rounded(z, S0(z), "shoulder"), yB + 0.035), yE - 0.035)
         xE = max(W - T0(z), W * 0.55)
-        return dict(z=z, W=W, yB=yB, ySill=ySill, yS=yS, yE=yE, yT=yT, xE=xE, xB=W - sp["tuck"])
+        return dict(z=z, W=W, yB=yB, ySill=ySill, yS=yS, yE=yE, yT=yT, xE=xE, xB=W - sp["tuck"], nL=sp.get("lowerN", LOWER_N), nU=sp.get("upperN", UPPER_N))
     return body
 
 def prof_pt(b, s):
     """Right-half section point at parameter s: [0,1] lower corner, [1,2] upper corner, [2,3] crown (3 = centre)."""
     if s <= 1:
         a = s * math.pi / 2
-        y = b["yS"] - (b["yS"] - b["yB"]) * math.cos(a) ** (2 / LOWER_N)
+        nL = b["nL"]
+        y = b["yS"] - (b["yS"] - b["yB"]) * math.cos(a) ** (2 / nL)
         u = clamp((b["yS"] - y) / max(b["yS"] - b["ySill"], 1e-4), 0, 1)
-        x = b["xB"] + (b["W"] - b["xB"]) * max(0.0, 1 - u ** LOWER_N) ** (1 / LOWER_N)
+        x = b["xB"] + (b["W"] - b["xB"]) * max(0.0, 1 - u ** nL) ** (1 / nL)
         return x, y
     if s <= 2:
         a = (s - 1) * math.pi / 2
-        return (b["xE"] + (b["W"] - b["xE"]) * max(math.cos(a), 0) ** (2 / UPPER_N),
-                b["yS"] + (b["yE"] - b["yS"]) * math.sin(a) ** (2 / UPPER_N))
+        return (b["xE"] + (b["W"] - b["xE"]) * max(math.cos(a), 0) ** (2 / b["nU"]),
+                b["yS"] + (b["yE"] - b["yS"]) * math.sin(a) ** (2 / b["nU"]))
     f = 3 - s
     return b["xE"] * f, b["yE"] + (b["yT"] - b["yE"]) * (1 - f * f)
 
@@ -798,12 +848,28 @@ def build_car(cid, sp, detail):
         if in_mat is not None:
             for f in fs: f.material_index = M[in_mat]
         return band, fs
+    proj = []                                                       # (claude/cars1) head lamp frames: projectors
+    def lamp_frame(fs):
+        """a lamp region's centre, outward normal, long axis and half sizes (car coords), from its faces' vertices"""
+        fs = [f for f in fs if f.is_valid]
+        if not fs: return None
+        P = np.array([[v.co.x, v.co.z, -v.co.y] for f in fs for v in f.verts])
+        nv = sum((f.normal * f.calc_area() for f in fs), Vector((0, 0, 0)))
+        n = np.array([nv.x, nv.z, -nv.y]); n /= (np.linalg.norm(n) or 1)
+        c = P.mean(axis=0); Q = P - c; Q -= np.outer(Q @ n, n)
+        _, _, Vt = np.linalg.svd(Q, full_matrices=False)
+        ax = Vt[0]; ay = np.cross(n, ax)
+        # (the lamp wraps round the corner: its centroid is inside the body; projectors sit on a FACE of it, below)
+        fc = np.array([[f.calc_center_median().x, f.calc_center_median().z, -f.calc_center_median().y] for f in fs])
+        fn = np.array([[f.normal.x, f.normal.z, -f.normal.y] for f in fs])
+        return dict(c=c, n=n, ax=ax, ay=ay, hx=float(np.abs(Q @ ax).max()), hy=float(np.abs(Q @ ay).max()), fc=fc, fn=fn, hv=float(P[:, 1].max() - P[:, 1].min()) / 2)
     if detail == 0:
         for sd in "LR":
             fs = tags.get("head" + sd, [])
             inset(fs, 0.006, -0.004, "trim")                      # thin dark surround
             _, inner = inset(fs, 0.004, -0.018, "gloss", "gloss")  # housing
             _, inner = inset(inner, 0.012, 0.008, "gloss", "head")  # the lens (DRL band round it)
+            proj.append(lamp_frame(inner))                          # (claude/cars1) its projector lenses, below
             inset(inner, 0.014, -0.004, "head", "head_in")          # reflector inside
             fs = tags.get("tail" + sd, [])
             inset(fs, 0.005, -0.003, "trim")
@@ -955,10 +1021,29 @@ def build_car(cid, sp, detail):
             # plates
             plate(dt, (0, sp["plateF"], rake(0, sp["plateF"], zF) + 0.006), 0.05, 1, rng, 0)
             plate(dt, (0, sp["plateR"], rake(0, sp["plateR"], zR) - 0.004), -0.08, -1, rng, 0)
-            # grille bars: two thin horizontal bars across the recessed grille
+            # (claude/cars1) head lamp PROJECTORS: two lenses in bright bezels on each reflector, along the lamp
+            for L in proj:
+
+                if not L or L["hv"] < 0.015: continue
+                rr = min(0.028, 0.55 * L["hv"])
+                for t in (-0.42, 0.18):
+                    if abs(t) * L["hx"] + rr > L["hx"]: continue
+                    u_ = (L["fc"] - L["c"]) @ L["ax"]; v_ = (L["fc"] - L["c"]) @ L["ay"]
+                    j = int(np.argmin(np.abs(u_ - t * L["hx"]) + 0.3 * np.abs(v_)))
+                    nrm = L["fn"][j] / (np.linalg.norm(L["fn"][j]) or 1)
+                    c0 = L["fc"][j] + nrm * 0.001
+                    up = np.array([0.0, 1.0, 0.0]); ex = np.cross(up, nrm); ex /= (np.linalg.norm(ex) or 1); ey = np.cross(nrm, ex)
+                    ring = lambda r_, d_: [dt.v(tuple(c0 + nrm * d_ + r_ * (math.cos(a_) * ex + math.sin(a_) * ey))) for a_ in (2 * math.pi * q / 14 for q in range(14))]
+                    r0, r1, r2 = ring(rr, 0.0), ring(rr, 0.006), ring(rr * 0.72, 0.004)
+                    for q in range(14):
+                        q1 = (q + 1) % 14
+                        dt.quad([r0[q], r0[q1], r1[q1], r1[q]], M["chrome"])
+                        dt.quad([r1[q], r1[q1], r2[q1], r2[q]], M["chrome"])
+                    dt.quad(r2, M["head"])                         # (CCW round n: faces out of the lamp)
+            # grille bars: thin horizontal slats across the recessed grille (claude/cars1: five, was two)
             for r in [r for r in sp["front"] if r[0] == "grille"]:
                 y0, y1 = r[2]; f1 = r[3][1]
-                for t in (0.36, 0.68):
+                for t in (0.2, 0.36, 0.52, 0.68, 0.84):
                     yy = lerp(y0, y1, t); b = body(zF); xr = prof_pt(b, s_of_y(b, yy))[0] * f1 - 0.03
                     zz = rake(xr * 0.5, yy, zF) - 0.014
                     rbox(dt, (0, yy, zz), (2 * xr, 0.008, 0.012), M["chrome"] if sp["type"] in ("sedan", "estate") else M["gloss"],
@@ -1008,6 +1093,33 @@ def build_car(cid, sp, detail):
                 for zf_ in (za - 0.05, zb + 0.05):
                     c = cabin(zf_)
                     rbox(dt, (sd * c["rx"] * 0.92, c["ry"] + c["h"] * 0.55 + 0.012, zf_), (0.04, 0.03, 0.07), M["gloss"])
+        # (round 2) the 4x4's SPARE WHEEL on the tailgate: a tyre ring with its sidewalls, a body-colour hard cover with a
+        # dark centre, a bracket; axis along the car, all three LODs (LOD2 a 6-sided drum)
+        if sp.get("spare"):
+            yc = 1.0; Rs = sp["wheelR"] * 0.95; Ws = 0.22
+            z0 = rake(0, yc, zR) - 0.035; z1 = z0 - Ws
+            Ns = 28 if detail == 0 else 12 if detail == 1 else 6
+            ring = lambda r_, z_: [dt.v((r_ * math.cos(2 * math.pi * q / Ns), yc + r_ * math.sin(2 * math.pi * q / Ns), z_)) for q in range(Ns)]
+            if detail == 0:
+                prof = [(0.62, z0 - 0.006), (0.90, z0 - 0.002), (1.0, z0 - 0.03), (1.0, z1 + 0.03), (0.90, z1 + 0.004), (0.62, z1)]
+                rings_ = [ring(Rs * f, z) for f, z in prof]
+                for k in range(len(rings_) - 1):
+                    for q in range(Ns):
+                        q1 = (q + 1) % Ns
+                        dt.quad([rings_[k][q], rings_[k][q1], rings_[k + 1][q1], rings_[k + 1][q]], M["tread"] if k == 2 and q % 2 else M["tyre"])
+                cov = ring(Rs * 0.63, z1 - 0.015); cen = ring(Rs * 0.22, z1 - 0.022)
+                for q in range(Ns):
+                    q1 = (q + 1) % Ns
+                    dt.quad([rings_[-1][q], rings_[-1][q1], cov[q1], cov[q]], M["paint"])
+                    dt.quad([cov[q], cov[q1], cen[q1], cen[q]], M["paint"])
+                dt.quad(cen, M["trim"])
+            else:
+                a, b = ring(Rs, z0), ring(Rs, z1)
+                for q in range(Ns):
+                    q1 = (q + 1) % Ns
+                    dt.quad([a[q], a[q1], b[q1], b[q]], M["tyre"])
+                dt.quad(b, M["paint"] if detail == 1 else M["tyre"])
+            if detail < 2: rbox(dt, (0, yc, (rake(0, yc, zR) + z0) / 2), (0.16, 0.10, max(0.02, rake(0, yc, zR) - z0 + 0.01)), M["trim"])
         # taxi roof sign
         if taxi:
             zt = lerp(cab["roofFront"], cab["roofRear"], 0.4); c = cabin(zt); yt = c["ry"] + c["h"]
@@ -1072,29 +1184,54 @@ def build_wheel(sp, detail):
     style = sp.get("rim", "6")
     # LOD0: 32-40 segments (a round tyre / rim silhouette; spokes 2 segments wide), LOD1: 8
     N = {"5": 40, "6": 36, "multi": 40, "cover": 32}[style] if detail == 0 else 12   # (LOD1 from 30 m: 12, not an octagon)
+    # (claude/cars1, CARS LOOK round 1) LOD0 rims on their own segment count: the twin 5-spoke needs 60 (a spoke pair =
+    # 2 + 1 gap + 2 segments); the tyre keeps N
+    Nr = {"5": 60, "6": 36, "multi": 40, "cover": 32}[style] if detail == 0 else N
     if detail == 0:
-        # bead, bulged sidewall, rounded shoulder (two points), tread, inner shoulder, inner bead
-        prof = [(RR + 0.004, h * 0.80), (lerp(RR, RW, 0.45), h * 1.02), (RW - 0.022, h * 0.93), (RW - 0.006, h * 0.75),
-                (RW, h * 0.45), (RW, -h * 0.55), (RW - 0.02, -h * 0.95), (RR, -h * 0.8)]
+        # (claude/cars1) a real tyre: bead, rim protector rib, sidewall bulge with a lettering band ridge, rounded
+        # shoulder with TREAD BLOCKS (the shoulder bands alternate rubber / dark groove per segment), two V tread
+        # grooves round the crown, inner shoulder, inner bead
+        g = 0.007
+        prof = [(RR + 0.004, h * 0.80), (RR + 0.013, h * 0.90), (RR + 0.019, h * 0.97), (RR + 0.028, h * 0.93),
+                (lerp(RR, RW, 0.45), h * 1.02), (lerp(RR, RW, 0.62), h * 1.005), (lerp(RR, RW, 0.67), h * 0.985),
+                (RW - 0.022, h * 0.93), (RW - 0.006, h * 0.75), (RW, h * 0.45),
+                (RW, h * 0.30), (RW - g, h * 0.24), (RW, h * 0.18),
+                (RW, -h * 0.10), (RW - g, -h * 0.16), (RW, -h * 0.22),
+                (RW, -h * 0.55), (RW - 0.02, -h * 0.95), (RR, -h * 0.8)]
+        side_k = {0, 1, 2, 3, 4, 5, 6}                     # sidewall bands (one smooth rubber, the ribs shade it)
+        groove_k = {10, 11, 13, 14}                         # the V grooves' walls
+        block_k = {7, 8, 16}                                # shoulder bands: blocks
+        def tyre_mat(k, s_):
+            if k in groove_k: return M["tread"]
+            if k in block_k and s_ % 2: return M["tread"]
+            return M["tyre_side"] if k in side_k else M["tyre"]
+        lathe(w, prof, N, tyre_mat)
     else:
         prof = [(RR, h * 0.85), (RW, h * 0.75), (RW, -h * 0.75), (RR, -h * 0.85)]
-    side_bands = (0,)                     # (one tyre material over sidewall and shoulder: no hard edge, a smooth roll)
-    lathe(w, prof, N, lambda k, s: M["tyre_side"] if k in side_bands else M["tyre"])
+        side_bands = (0,)                     # (one tyre material over sidewall and shoulder: no hard edge, a smooth roll)
+        lathe(w, prof, N, lambda k, s: M["tyre_side"] if k in side_bands else M["tyre"])
     # rim: lip ring (proud), then the face
     xf = h * 0.62
-    lip = [(RR + 0.004, h * 0.80), (RR - 0.018, xf)] if detail == 0 else [(RR, h * 0.85), (RR - 0.01, xf)]
-    rings = lathe(w, lip, N, lambda k, s: M["rim"], phase=0)
     if detail == 0:
+        # (claude/cars1) a polished flat lip, a step down to the barrel, then the face (two-tone: machined spoke faces)
+        lip = [(RR + 0.004, h * 0.80), (RR - 0.006, h * 0.83), (RR - 0.012, h * 0.74), (RR - 0.018, xf)]
+        rings = lathe(w, lip, Nr, lambda k, s: M["rim_lip"] if k == 0 else M["rim"], phase=0)
+    else:
+        lip = [(RR, h * 0.85), (RR - 0.01, xf)]
+        rings = lathe(w, lip, N, lambda k, s: M["rim"], phase=0)
+    if detail == 0:
+        N = Nr
         # face: hub ring .. spoke ring; 5 spokes (1 of 3 segments), the openings (2 of 3) set back 4 cm with walls
         r_hub, r_mid, r_out = 0.06, 0.095, RR - 0.018
         outer = rings[-1]
         ang = lambda q: 2 * math.pi * q / N
         ring_hub = [w.v((xf + 0.014, r_hub * math.cos(ang(q)), r_hub * math.sin(ang(q)))) for q in range(N)]
         ring_mid = [w.v((xf + 0.008, r_mid * math.cos(ang(q)), r_mid * math.sin(ang(q)))) for q in range(N)]
-        # 5-spoke: 1 of 4 segments a spoke; 6-spoke: 1 of 3; multi-spoke: every other; cover (vans): a plastic wheel
-        # cover with 8 shallow slots
+        # twin 5-spoke (claude/cars1): pairs of 2-segment spokes with a 1-segment slot, 7 open of 12; 6-spoke: 1 of 3;
+        # multi-spoke: every other; cover (vans): a plastic wheel cover with 8 shallow slots
         dep = 0.012 if style == "cover" else 0.045
-        opening = {"5": lambda q: q % 8 > 1, "6": lambda q: q % 6 > 1, "multi": lambda q: q % 4 > 1, "cover": lambda q: q % 4 == 2}[style]
+        opening = {"5": lambda q: q % 12 not in (0, 1, 3, 4), "6": lambda q: q % 6 > 1, "multi": lambda q: q % 4 > 1, "cover": lambda q: q % 4 == 2}[style]
+        face_mat = M["rim"] if style in ("6", "cover") else M["rim_lip"]     # machined spoke faces: twin 5 and multi
         # DRAFTED walls (the back of an opening is narrower than its mouth, 40 % of a segment each side, and 1.2 cm in
         # radially): with the wheel's smooth angle the spoke edges shade as a bevel, not a flat-shaded block
         def back_ang(q):
@@ -1115,9 +1252,15 @@ def build_wheel(sp, detail):
                 if not opening((q - 1) % N): w.quad([ring_mid[q], bk_mid[q], bk_out[q], outer[q]], M["rim"])
                 if not opening(q1): w.quad([ring_mid[q1], outer[q1], bk_out[q1], bk_mid[q1]], M["rim"])
             else:
-                w.quad([ring_mid[q], ring_mid[q1], outer[q1], outer[q]], M["rim"])
+                w.quad([ring_mid[q], ring_mid[q1], outer[q1], outer[q]], face_mat)
         cap = w.v((xf + 0.018, 0, 0))
         for q in range(N): w.quad([ring_hub[q], ring_hub[(q + 1) % N], cap], M["rim_dark"])      # a dark centre cap
+        # (claude/cars1) five wheel nuts on the hub and a small bright centre badge disc (no logo)
+        for q in range(5):
+            a = 2 * math.pi * q / 5 + math.pi / 10
+            rbox(w, (xf + 0.021, 0.042 * math.cos(a), 0.042 * math.sin(a)), (0.012, 0.015, 0.015), M["lug"])
+        badge = [w.v((xf + 0.0215, 0.022 * math.cos(2 * math.pi * q / 12), 0.022 * math.sin(2 * math.pi * q / 12))) for q in range(12)]
+        w.quad(badge, M["rim_lip"])
         # brake disc + caliper behind the face
         dsc = [w.v((xf - 0.07, 0.8 * RR * math.cos(2 * math.pi * q / 10), 0.8 * RR * math.sin(2 * math.pi * q / 10))) for q in range(10)]
         w.quad(dsc, M["disc"])

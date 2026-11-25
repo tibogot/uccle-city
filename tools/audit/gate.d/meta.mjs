@@ -4,6 +4,6 @@ export default {
   name: "meta",
   script: "tools/audit/metaGate.mjs",
   args: ["--quiet"],
-  guards: "the text checks the rows declare in `meta` (a features.js row per switch, main.js wiring, no light made, no DynamicDrawUsage: rules 7, 8), viewer/features.js one row a line and no key twice (merge=union), every viewer/ debug/ tools/ .js / .mjs module parses and its imports link (esbuild; claude/speed1)",
+  guards: "the text checks the rows declare in `meta` (a features.js row per switch, main.js wiring, no light made, no DynamicDrawUsage: rules 7, 8), viewer/features.js one row a line and no key twice (merge=union), every viewer/ debug/ tools/ .js / .mjs module parses and its imports link (esbuild; claude/speed1), no module calls a name it never declares, imports or has as a global (tools/audit/undefRefs.mjs; claude/tramfix, rule no-undefined-refs)",
   timeout: 120,
 };

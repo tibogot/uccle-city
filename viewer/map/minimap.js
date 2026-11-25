@@ -251,10 +251,10 @@ export class Minimap {
     // landmarks
     const reach2 = (R - 9) * (R - 9);
     for (const lm of this.landmarks) {
-      if (lm.kind !== 'hero' && lm.kind !== 'station' && s < 0.25) continue;
+      if (lm.kind !== 'hero' && lm.kind !== 'enter' && lm.kind !== 'station' && s < 0.25) continue;
       const [X, Y] = toScreen(lm.x, lm.z);
       if (X * X + Y * Y > reach2) continue;
-      ctx.save(); ctx.translate(X, Y); drawGlyph(ctx, lm.kind, lm.kind === 'hero' ? 6 : 5); ctx.restore();
+      ctx.save(); ctx.translate(X, Y); drawGlyph(ctx, lm.kind, lm.kind === 'hero' || lm.kind === 'enter' ? 6 : 5); ctx.restore();
     }
     // the game kit's overlay (viewer/game/mapMarkers.js: route + waypoints, under the arrow); set redraw() when it changes
     if (this.overlay) { ctx.save(); this.overlay(ctx, toScreen, s, R, p); ctx.restore(); }

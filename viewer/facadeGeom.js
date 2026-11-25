@@ -516,7 +516,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     if (opts.wallFix !== false && all.length) {
       const roofTris = [];                       // (holes: the recess test sees the soffits / the roof's inside)
       for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) { const o = triOf(P, I, t); if (o) roofTris.push(o); }
-      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0, roofs: roofTris });
+      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0, roofs: roofTris, empty: opts.wallEmpty !== false });   // (claude/walls2: empty UrbIS edges too; ?wallempty=old: skipped)
       const n = r.edges.filter((e) => e.rebuilt).length;
       if (n) { all = r.tris; stats.wallsRebuilt = (stats.wallsRebuilt || 0) + n; }
     }

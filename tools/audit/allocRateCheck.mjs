@@ -335,7 +335,10 @@ const fresh = async (rel, search) => { globalThis.location.search = search; try 
   {
     const tl = src("viewer/tramline.js");
     ok(/export const TRAM_ALLOC = .*get\("tramalloc"\) !== "old";/.test(tl), "tramline: TRAM_ALLOC (?tramalloc=old)");
-    ok(/if \(TRAM_ALLOC\) \{ await snapShapeFlat\(s, snap, loaded\); s\.snapNext = snap; continue; \}/.test(tl) && !/const \[|for \(const \[/.test(tl.slice(tl.indexOf("const snapShapeFlat"), tl.indexOf("const snapTileNow"))), "tramline snap: snapShapeFlat by index reads (no destructuring)");
+    // (claude/tramfix) the snap lives in viewer/tramSched.js createTrackSnap (shared with the tramsnap row): tramline
+    // passes alloc: TRAM_ALLOC, and snapFlat reads by index (no destructuring)
+    const ts = src("viewer/tramSched.js"), f0 = ts.indexOf("const snapFlat"), f1 = ts.indexOf("const snapOld");
+    ok(/createTrackSnap\(shapes, \{ alloc: TRAM_ALLOC/.test(tl) && /await \(alloc \? snapFlat : snapOld\)/.test(ts) && f0 > 0 && f1 > f0 && !/const \[|for \(const \[/.test(ts.slice(f0, f1)), "tramline snap: snapFlat by index reads (no destructuring)");
     ok(/const yAlong = TRAM_ALLOC\s*\? \(shape, q\) => \{ let s = 0; for \(let k = 0; k < 5; k\+\+\) \{ atInto\(shape, q \+ TAP_O\[k\], yA\);/.test(tl), "tramline yAlong: index taps into a scratch (atInto)");
     ok(/if \(TRAM_ALLOC\) \{ atInto\(shapes\[t\.shape\], d, uA\); x = uA\[0\]; z = uA\[1\]; \}/.test(tl), "tramline update: the trip's point into a scratch");
     ok(/if \(FLEET_OPT && !jobs\) \{/.test(src("viewer/carFleet.js")), "carFleet: the car loop in placeCars (?fleetopt=old)");

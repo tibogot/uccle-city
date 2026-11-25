@@ -1,0 +1,38 @@
+{
+  "about": "ENTERABLE PLACES (claude/villamark, rule enterable-places-findable): every place of the city you can walk INTO (a streamed interior cell on by default). Each one: a places entry (viewer/places.js, same id), a map marker (the 'enter' glyph: viewer/map/mapData.js merges this file into the map's landmarks), a Walk in prompt near its door (viewer/enterPrompt.js) and a share link ?place=<id>&view=third (viewer/main.js). City metres (x east, z south); heading = degrees clockwise from north (-z), the way the character faces at the entry spot. door = the opening you walk through; entry = the spot outside it (street / forecourt, outside every building footprint); mark = where the map marker sits. Checked by tools/audit/enterableCheck.mjs (gate row enterable).",
+  "places": [
+    {
+      "id": "villa",
+      "fr": "Villa Prince d'Orange",
+      "nl": "Villa Prins van Oranje",
+      "what": "the modern villa on Avenue du Prince d'Orange (docs/VILLA.md): gate, garage, pool, a streamed interior with the stair to the first floor",
+      "tile": "H9",
+      "switch": "villa",
+      "door": [891.42, 2024.4],
+      "doorWhat": "the swing gate (models/villa/villa.json gate: frame u 9.75, w 20.2); the front door is 13 m further in (parts.door)",
+      "entry": [895.55, 2022.06],
+      "entryWhat": "Avenue du Prince d'Orange, the villa's side of the road, on the sidewalk, 4.8 m in front of the gate (frame u 5, w 20.2)",
+      "heading": 240.4,
+      "mark": [885.53, 2050.98],
+      "radius": 40,
+      "source": "models/villa/site.json frame (origin 909.874, 2037.15; rotation_y -2.624850)"
+    },
+    {
+      "id": "stalle",
+      "fr": "Chapelle de Stalle",
+      "nl": "Kapel van Stalle",
+      "what": "the Chapelle de Stalle and its interior cell (viewer/stalleInterior.js, viewer/stalleCity.js): the west door opens as you come near",
+      "tile": "D5",
+      "switch": "stalle",
+      "landmark": "osmw243989500",
+      "door": [-1149.95, 56.49],
+      "doorWhat": "the west door (models/stalle/interior.json doors DoorL / DoorR: frame u 0.2, w 0.1)",
+      "entry": [-1154.1, 58.71],
+      "entryWhat": "the forecourt west of the door (frame u -4.5, w 0.1; interior.json spawn.outside is u -3.2)",
+      "heading": 61.9,
+      "mark": [-1143.07, 52.82],
+      "radius": 40,
+      "source": "models/stalle/stalle.json placement (-1150.175, 56.5; rotation_y 0.489863)"
+    }
+  ]
+}

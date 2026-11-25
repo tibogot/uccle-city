@@ -38,6 +38,115 @@ export function densifyShapes(doc) {
   }
   return shapes;
 }
+/** THE TRACK SNAP (claude/tramfix: out of tramline.js, so the tramsnap gate row runs the city's own code; rule
+ *  no-undefined-refs). The shape points inside the added tiles snapped onto their tram tracks (within 3 m), two
+ *  [1 2 1]/4 passes along them (no kink where two tiles' tracks meet), then each shape's pts / cum / tan swapped in
+ *  together, so a tram never reads a half-snapped line.
+ *    addTracks(tracks, box)  one tile's tram tracks ([[x, z], ...] lines) into ONE 4 m grid of segments with global
+ *                            line ids (a shape snaps across tile seams in one pass, its track continuity carried over)
+ *    snapAll()               re-snaps every shape (points outside every added box keep their last snap)
+ *  alloc: the by-index loop (claude/allocrate2, rule alloc-rate), false = ?tramalloc=old (the destructuring loop);
+ *  slice(): awaited every 256 points and per shape (tramline.js: yield to the next frame after 3 ms); hits: keep
+ *  s.hit per point (1 = on a track, 0 = no track within 3 m) for the audit. */
+export function createTrackSnap(shapes, { alloc = true, slice = null, hits = false } = {}) {
+  const grid = new Map(), gk = (i, j) => i * 100003 + j, boxes = [];
+  let lineCount = 0;
+  const loaded = (x, z) => boxes.some((q) => x >= q.x0 && x <= q.x1 && z >= q.z0 && z <= q.z1);
+  function addTracks(tracks, b) {
+    boxes.push(b);
+    tracks.forEach((l) => { const li = lineCount++; for (let k = 1; k < l.length; k++) {
+      const [ax, az] = l[k - 1], [cx, cz] = l[k];
+      for (let i = Math.floor((Math.min(ax, cx) - 3) / 4); i <= Math.floor((Math.max(ax, cx) + 3) / 4); i++)
+        for (let j = Math.floor((Math.min(az, cz) - 3) / 4); j <= Math.floor((Math.max(az, cz) + 3) / 4); j++) {
+          const key = gk(i, j);
+          if (!grid.has(key)) grid.set(key, []);
+          grid.get(key).push([ax, az, cx, cz, li]);
+        }
+    } });
+  }
+  // A GTFS shape runs between the two tracks of a street (~0.6-1.5 m off), so "nearest segment" flips from one
+  // track to the other and the tram wiggles across the street. Stay on the track of the previous point until it
+  // leaves its 3 m reach (a junction), and prefer a track running the shape's way.
+  // (claude/allocrate2) by index reads: no destructuring of the grid's segment tuples or of the shape's points, the
+  // previous snapped point in two numbers (21 KB a frame flying)
+  const snapFlat = async (s, snap, hit) => {
+    let prevLine = -1, hasPrev = false, ppx = 0, ppz = 0;
+    const o = s.orig;
+    for (let i = 0; i < o.length; i++) {
+      if (slice && (i & 255) === 0) await slice();
+      const x = o[i][0], z = o[i][1];
+      if (!loaded(x, z)) { prevLine = -1; hasPrev = false; continue; }
+      const a0 = o[Math.max(0, i - 1)], a1 = o[Math.min(o.length - 1, i + 1)];
+      const sx = a1[0] - a0[0], sz = a1[1] - a0[1], sl = Math.hypot(sx, sz) || 1;
+      let best = Infinity, bx = x, bz = z, bl = -1;
+      const cell = grid.get(gk(Math.floor(x / 4), Math.floor(z / 4)));
+      if (cell) for (let c = 0; c < cell.length; c++) {
+        const sg = cell[c], ax = sg[0], az = sg[1], cx = sg[2], cz = sg[3], li = sg[4];
+        const dx = cx - ax, dz = cz - az, L2 = dx * dx + dz * dz || 1e-9;
+        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), px = ax + dx * t, pz = az + dz * t;
+        const d2 = (px - x) ** 2 + (pz - z) ** 2;
+        if (d2 > 9) continue;
+        const back = (dx * sx + dz * sz) / (Math.sqrt(L2) * sl) < 0 ? 1 : 0;
+        const cont = li === prevLine || (hasPrev && (px - ppx) ** 2 + (pz - ppz) ** 2 < 2.25 && Math.abs(Math.hypot(px - ppx, pz - ppz) - Math.hypot(x - o[Math.max(0, i - 1)][0], z - o[Math.max(0, i - 1)][1])) < 0.5);
+        const cost = d2 + (prevLine >= 0 && !cont ? 100 : 0) + back;
+        if (cost < best) { best = cost; bx = px; bz = pz; bl = li; }
+      }
+      snap[i] = [bx, bz];
+      if (hit) hit[i] = bl >= 0 ? 1 : 0;
+      prevLine = bl; hasPrev = true; ppx = bx; ppz = bz;
+    }
+  };
+  // ?tramalloc=old: the same snap as before claude/allocrate2
+  const snapOld = async (s, snap, hit) => {
+    let prevLine = -1, prevPt = null;
+    for (let i = 0; i < s.orig.length; i++) {
+      if (slice && (i & 255) === 0) await slice();
+      const [x, z] = s.orig[i];
+      if (!loaded(x, z)) { prevLine = -1; prevPt = null; continue; }
+      const o = s.orig, a0 = o[Math.max(0, i - 1)], a1 = o[Math.min(o.length - 1, i + 1)];
+      const sx = a1[0] - a0[0], sz = a1[1] - a0[1], sl = Math.hypot(sx, sz) || 1;
+      let best = Infinity, bx = x, bz = z, bl = -1;
+      for (const [ax, az, cx, cz, li] of grid.get(gk(Math.floor(x / 4), Math.floor(z / 4))) || []) {
+        const dx = cx - ax, dz = cz - az, L2 = dx * dx + dz * dz || 1e-9;
+        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), px = ax + dx * t, pz = az + dz * t;
+        const d2 = (px - x) ** 2 + (pz - z) ** 2;
+        if (d2 > 9) continue;
+        const back = (dx * sx + dz * sz) / (Math.sqrt(L2) * sl) < 0 ? 1 : 0;
+        // same line, or the next tile's piece of it (its point is within 1.5 m of the previous snapped point)
+        const cont = li === prevLine || (prevPt && (px - prevPt[0]) ** 2 + (pz - prevPt[1]) ** 2 < 2.25 && Math.abs(Math.hypot(px - prevPt[0], pz - prevPt[1]) - Math.hypot(x - o[Math.max(0, i - 1)][0], z - o[Math.max(0, i - 1)][1])) < 0.5);
+        const cost = d2 + (prevLine >= 0 && !cont ? 100 : 0) + back;     // switch only when the track left the 3 m reach
+        if (cost < best) { best = cost; bx = px; bz = pz; bl = li; }
+      }
+      snap[i] = [bx, bz];
+      if (hit) hit[i] = bl >= 0 ? 1 : 0;
+      prevLine = bl; prevPt = [bx, bz];
+    }
+  };
+  async function snapAll() {
+    for (const s of Object.values(shapes)) {
+      const snap = s.snap.slice(), hit = hits ? (s.hit ? s.hit.slice() : new Uint8Array(s.orig.length)) : null;
+      await (alloc ? snapFlat : snapOld)(s, snap, hit);
+      s.snapNext = snap; s.hitNext = hit;
+    }
+    // two passes of a [1 2 1]/4 filter along the snapped points: no kink where two tiles' tracks meet (on a 25 m
+    // curve it moves the line by under 1 cm)
+    for (const s of Object.values(shapes)) {
+      if (slice) await slice();
+      let p = s.snapNext;
+      for (let pass = 0; pass < 2; pass++) {
+        const q = p.map((v) => v.slice());
+        for (let i = 1; i + 1 < p.length; i++) { q[i][0] = (p[i - 1][0] + 2 * p[i][0] + p[i + 1][0]) / 4; q[i][1] = (p[i - 1][1] + 2 * p[i][1] + p[i + 1][1]) / 4; }
+        p = q;
+      }
+      // swapped in together (pts, its arc length and tangents), in one task
+      const t = finishShape({ pts: p });
+      s.snap = s.snapNext; delete s.snapNext;
+      if (s.hitNext) s.hit = s.hitNext; delete s.hitNext;
+      s.pts = t.pts; s.cum = t.cum; s.tan = t.tan;
+    }
+  }
+  return { addTracks, snapAll, loaded, grid, boxes };
+}
 /** point + heading at distance d along a shape (heading from the interpolated tangent): [x, z, h] */
 export function shapeAt(s, d) {
   const { pts, cum, tan } = s, n = pts.length;
