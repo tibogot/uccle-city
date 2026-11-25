@@ -181,7 +181,7 @@ const solidMat = { [KIND.building]: new THREE.MeshStandardNodeMaterial({ color: 
     return P;
   };
   const benchMat = new THREE.MeshStandardNodeMaterial({ color: 0x8a5a33, roughness: 0.8 }), legMat = new THREE.MeshStandardNodeMaterial({ color: 0x3b3f44, roughness: 0.5, metalness: 0.5 });
-  const railMatP = new THREE.MeshStandardNodeMaterial({ color: 0x9aa3ab, roughness: 0.35, metalness: 0.8 }), parkMat = {};
+  const railMatP = new THREE.MeshStandardNodeMaterial({ color: 0xa7adb3, roughness: 0.45, metalness: 0.25 }), parkMat = {};   // (no env map: a metal one drew black)
   for (const p of CL.polys) {
     if (p.kind === KIND.island || p.kind === KIND.hedge && W.city) continue;
     const r = p.rings[0], cx = r.reduce((a, q) => a + q[0], 0) / r.length, cz = r.reduce((a, q) => a + q[1], 0) / r.length, gy = W.drawH(cx, cz);

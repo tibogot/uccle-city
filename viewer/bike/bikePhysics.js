@@ -1211,10 +1211,12 @@ function wallStep(s, input, env, B) {
   s.vy -= B.gravity * PK.wallGrav * dt;
   s.park.wallU += s.park.wallDir * s.park.wallV * dt;
   s.y += s.vy * dt;
-  // the pose: laid over away from the wall (eased in), level, the CoM out from the wall by its height x sin(lean)
+  // the pose: laid over away from the wall (eased in), level. The bike's x / z / y while on the wall are its WHEELS'
+  // line on the wall (+ cgHeight in y): the model leans the bike about that line, so the wheels touch the wall and the
+  // kid hangs out over the ground (browser check: with the CoM placed out from the wall the wheels floated 0.9 m off it)
   s.lean += (s.park.wallSide * PK.wallLean - s.lean) * (1 - Math.exp(-22 * dt)); s.leanTarget = s.lean;
   s.pitch += (0 - s.pitch) * (1 - Math.exp(-10 * dt)); s.pitchVel = 0; s.yawVel = 0;
-  const d = B.cgHeight * Math.abs(Math.sin(s.lean));
+  const d = 0.12;
   s.x = Wl.x0 + tx * s.park.wallU + Wl.nx * d; s.z = Wl.z0 + tz * s.park.wallU + Wl.nz * d;
   s.vx = tx * s.park.wallDir * s.park.wallV; s.vz = tz * s.park.wallDir * s.park.wallV;
   if (hop) s.preload = Math.min(1, s.preload + dt / B.preloadTime);
@@ -1222,7 +1224,7 @@ function wallStep(s, input, env, B) {
   s.cadence *= Math.exp(-6 * dt); s.pedalling = 0; s.footDown = 0; s.manual = 0; s.trick = 0;
   s.contact[0] = s.contact[1] = false; s.air = false; s.airT = 0; s.sinceContact = 0;
   GP.x = s.x; GP.z = s.z;
-  const g0 = groundAt(env, QS).h, low = s.y - B.cgHeight * Math.cos(s.lean);       // the wheels' line on the wall
+  const g0 = groundAt(env, QS).h, low = s.y - B.cgHeight;       // the wheels' line on the wall
   s.yLow = Math.max(g0, low - 0.3); s.wheelBot[0] = s.wheelBot[1] = s.yLow;
   // leaving: a hop (released), low on the wall, its end, too slow, too long
   let why = "";
@@ -1234,6 +1236,7 @@ function wallStep(s, input, env, B) {
   s.hopHeld = hop;
   if (why) {
     const up = why === "hop" ? B.popVel + B.popPreload * s.preload * 0.6 : 0;
+    s.x = Wl.x0 + tx * s.park.wallU + Wl.nx * 0.45; s.z = Wl.z0 + tz * s.park.wallU + Wl.nz * 0.45;     // (clear of the wall's collider)
     s.vx = tx * s.park.wallDir * s.park.wallV + Wl.nx * PK.wallPush; s.vz = tz * s.park.wallDir * s.park.wallV + Wl.nz * PK.wallPush; s.vy += up;
     s.park.wallIdx = -1; s.park.wallExit = why; s.preload = 0; s.spinArm = false; s.park.unleanT = 0.6; s.lean *= 0.5;
     s.air = true; s.airT = 0.13; s.airMax = s.y; s.sinceContact = 1; s.safe.t = 0;

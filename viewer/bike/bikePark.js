@@ -87,7 +87,10 @@ function stadium(T, x, z, rollers) {
 }
 
 /** add the park's features to the lab's ground: feature(name, x0, x1, z0, z1, surf, h, res, opt) */
-export function addParkFeatures(feature, SURF) {
+export function addParkFeatures(feature0, SURF) {
+  // (each rectangle rounded out to whole metres: the lab's base ground is a 1 m grid with the cells under a feature cut
+  // out - a feature edge inside a cell left a strip of sky between them; outside its shape every height here is 0)
+  const feature = (name, x0, x1, z0, z1, ...rest) => feature0(name, Math.floor(x0), Math.ceil(x1), Math.floor(z0), Math.ceil(z1), ...rest);
   const C = P.colors;
   // ---- wooden kickers to landing ramps (gap jumps)
   for (const k of P.kickers) {

@@ -75,7 +75,7 @@ Kid numbers (a ~11 year old, 40 kg + an 11 kg BMX): flat 25 km/h seated, 30.6 km
 | crouch + hop (back slope: pump) | Space hold / release | A |
 | pump | C | B |
 | trick (air) | F | X |
-| reset / get up / camera / pause / spots | R / G / V / P / 1-9 (start, kicker, table, pump, roots, bowl, kerb, sand, slope) | Back / - / Y |
+| reset / get up / camera / pause / spots | R / G / V / P / 1-9 (start, kicker, table, pump, roots, bowl, kerb, sand, ...); 0 / N / B the BMX park (the Park folder) | Back / - / Y |
 | get on / off the bike (claude/kid) | E (walk up to it; off when slow: stopped = it stands, rolling = it falls) | - |
 | on foot (claude/kid) | W A S D / arrows walk, Shift run, Space jump, C crouch, mouse drag camera | - |
 The arrows do exactly what W / A / S / D do and both sets always work (the owner rides with the arrows); one key table
@@ -505,6 +505,77 @@ judged).
 **For the owner to feel**: the kerb roll-up (a thump + a wobble: enough feedback, or too soft?), the air heading drawn to
 the path (too much "help"?), the auto-save on Shift wheelies. Known: riding off the SIDE of the table can leave the bike
 hanging on its 1.2 m side face (no crash, it stops: R / G).
+
+## The BMX park (2026-11-25, rule bike-park-rideable, gate row `bikepark`)
+Owner: "the lab should have ramps and other fun things to test the BMX". `viewer/bike/bikePark.js` (pure JS: features for
+the lab's ground, colliders, edge lines, wall-ride walls, spots), south of the old lab (z 116-232):
+
+| feature | where | what | spot speed |
+|---|---|---|---|
+| wooden kickers small / medium / big | x -62 / -56 / -50 | 0.45 / 0.8 / 1.2 m kickers (30 / 34 / 38 deg) over a 1.0 / 1.8 / 2.7 m gap to a landing (deck + a long gentle down ramp) | 6 / 7 / 8 m/s |
+| dirt doubles | x -37.5 | 4 doubles (0.5 m, 24 deg lips, 0.8 m gaps, 20 deg backsides), rhythm 7.9 m | 7 m/s |
+| whoops | x -26.5 | dirt rollers 2.4 m apart, 22 cm | 5 m/s |
+| pump track loop | (-14..10, 208) | a dirt stadium: rollers on the straights, two concave berms | 4 m/s |
+| berm loop | (34..60, 208) | a concrete stadium with two big berms (2 m at the outside edge) | 5 m/s |
+| quarter pipe | x 32-40 | R 2.4 m to 80 deg, 2 m tall, a deck, a steel coping | 7.5 m/s |
+| mini half-pipe | x 44-50 | two 70 deg quarters (1.3 m), 4 m flat bottom | 4.5 m/s from the bottom |
+| spine | x 54-60 | two 55 deg quarters back to back, a coping on the peak | 6.5 m/s |
+| funbox + rail | x 64-72 | 25 deg up / 4 m table at 0.6 m / down, a flat rail on the table | 5 m/s |
+| stair set + handrail | x 76-82 | a 10 % ramp up to a 0.75 m platform, 5 stairs down (a ramp for the wheels), a grindable handrail | 0 |
+| long rail / ledge | x 87 / 94 | a 12 m flat bar at 0.35 m; a 10 m 0.45 m concrete ledge (a garden wall + coping, as the city's) | 4 m/s |
+| wall ride | x 102-105 | a 3 m wall and a small wooden kicker angled 22 deg toward it | 7 m/s |
+| drop-in tower | x 89-95, z 160 | a 3 m platform with railings, a roll-in (convex 1.5 m, 45 deg, concave 4 m) | 0.5 m/s |
+
+The lab: the park's ground is ONE merged mesh (wood / concrete / dirt colours), the rails, their posts and the coping
+one merged tube set, the wall and the railings as collider prisms (one per material); every feature rectangle rounded to
+whole metres (the base ground is a 1 m grid with the feature cells cut out: a fractional edge left a strip of sky).
+**Spots**: the panel's **Park** folder (a "go to" list + a button per feature; each spawns at the feature with its
+speed), keys **0** (the park) and **N / B** (next / previous feature), `?spot=quarter%20pipe` in the URL.
+
+**The physics it needed** (viewer/bike/bikePhysics.js; constants in `BIKE_PARK`, the panel's "Bike: park" folder):
+1. **Faces vs transitions**: a face is an ABRUPT rise (a 2 cm rise steeper than faceSlope AND `faceAbrupt` 2.5 x the
+   2 cm before it); a quarter pipe's wall is steep but smooth (the face scans read the height alone, `heightAt`).
+2. **The wheel's radius on slopes**: a wheel touches a slope R / cos(slope) under its hub (`s.rk`, eased).
+3. **ATTACHED transitions** (`attachPhase`): on a smooth slope steeper than `transSlope` 0.25 with both wheels on it (each
+   wheel's slope within 25 deg of the chord between them, faster than 1.2 m/s) the pitch IS the chord (slewed 0.04 rad
+   a step) and the speed is carried along it (gravity, drive, brakes, rolling) - the springs alone pitched the bike over
+   on a 70 deg wall. REAR-LED: once the front is over a crest, the bike follows the rear's ramp until the rear leaves it,
+   so it leaves at the lip's angle (every jump came up short before). Faces never attach; neither does a slow push.
+4. **Vert air**: leaving a climb steeper than `vertSlope` 50 deg toward a DECK (not a spine's far side, not a landing),
+   the speed out of the pipe goes (`vertBack` 0.4 m/s back in) and the kid turns the bike 180 deg about its own up axis
+   over the flight (nose up -> laid on its side at the top -> nose down: `vertPose`, the model's Euler order solved),
+   landing back on the wall; the side from the steer, else the carve. **Kick turn**: out of speed on a > 42 deg wall,
+   the same turn from a small hop (a half-pipe too tall for the speed: back and forth, never a stall on the coping).
+5. **Berms**: the ground's sideways normal pushes the bike (`aL`: a bank into its turn, a cross slope down itself); a
+   bank leaned into raises the lean limit (`bankLean` 0.6 x the bank) and the grip's yaw cap.
+6. **Wall ride** (`trySnapWall` / `wallStep`): airborne beside a wall-ride wall, along it within 40 deg, > 3 m/s: the
+   bike lies over 72 deg with its wheels on the wall, `wallGrav` 0.35 g, a little lift on (`wallLift`), off at the end /
+   low / slow / 1.6 s / a hop, pushed off 1.2 m/s and stood up fast before the wheels land.
+7. Also: an endo needs momentum (> 2 m/s) or the front brake (rolling into the small kicker's landing at 1.6 m/s threw
+   the kid over the bars); no foot down on a > 31 deg wall.
+8. **BIKE under 128 properties**: the park's 15 constants in BIKE made V8 allocate on every step (flat ground 0 -> 16
+   young collections a million steps); they live in `BIKE_PARK`; the bike's park state in `s.park`.
+9. **Zero garbage, again**: the D6 check's ride now rolls kerbs and meets walls all the time (343 collections at first).
+   Removed: Math.hypot in the shared polyBoxContact / circleBoxContact (`hyp2`), their closures, `itemContactB` /
+   `heightClearP` / `bikeHitC` (no doubles across a call, the impact record reused), the stair ramps' `blendRampP`,
+   settlePhase's helpers past V8's inline budget. Now 10-13 (budget 14: ~1 scavenge every 10 min of riding); left: the
+   face scans' ground calls in a two-ground process. tools/collide/wallTest.mjs and tools/moto/physicsTest.mjs print
+   identical output. The check's D6 ride resets when stuck pedalling into a house corner.
+
+**Checks** (`node tools/bike/parkTest.mjs`, gate row `bikepark`, 17 checks, < 1 s): every spot level and clear; the
+kickers at 6 / 7 / 8 m/s over the gap, clean, ridden out; the doubles at pump speed (pedal the flats, pump the backsides,
+crouch the landings, sprinting): 4 airs, no bail; the whoops; a lap of the pump track (pumped, steered) and of the berm
+loop (max lean 52 deg vs the flat 37); the quarter pipe at 27 km/h: 1 vert air (0.97 s), clean, riding back out at 5 m/s
+turned 180; the mini half-pipe: 3 turns at the top in 10 s; the spine at 23 km/h: over, forward; the funbox and its rail
+ground; the stairs ridden down and the handrail ground; the long rail (> 3 m) and the ledge ground; the wall ride
+(0.6-0.75 s on the wall, a clean landing); the drop-in at > 4 m/s on the flat.
+
+**Browser** (2026-11-25, one tab, silent): 0 console errors; screenshots in `Downloads/uccle-bmx/` (the overview, the big
+kicker's air, a doubles air, the pump track, the berm loop, the quarter pipe's vert air laid over the coping, the
+skatepark row, the spine transfer, the mini, the wall ride, the drop-in). **Known / next**: the wall-ride pose is the
+bike laid flat (no path pitch on the wall); the kick turn and the vert turn are automatic (a trick button later); the
+park's rails have no collider on their posts; riding off the SIDE of a raised feature (the table, the decks) stops the bike
+on its face (the ledge rule) instead of a drop; the casual rider does not yet ride the park's features.
 
 ## Into the city (next jobs, not done here)
 - Ground: `ground(x, z, out)` from the drive surface (viewer/drive/colliders.js `driveHeight` + central differences:
