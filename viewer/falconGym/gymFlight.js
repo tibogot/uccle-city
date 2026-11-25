@@ -23,6 +23,9 @@
 // phi = bank, > 0 = right wing down (a right turn), as flightModel.js: the bird and the camera read it that way.
 
 export const G = 9.81, RHO = 1.2;
+/** v2's Walk clip (tools/blender/falconV2b.py WALK_*: a 0.10 m stance sweep, 60 % stance, 12 frames at 24 fps): the
+ *  speed its stance feet stay planted at, played at rate 1 (0.33 m/s). The gym's walk is this speed (GYM.walk) */
+export const V2_WALK_MPS = 0.10 / (0.6 * 12 / 24);
 export const GYM = {
   mass: 1.0,                      // kg (a juvenile female)
   cruise: 21,                     // m/s: level hands-off speed (flap-glide)
@@ -40,7 +43,8 @@ export const GYM = {
   stunVn: 13,                     // m/s of normal speed into a wall for a tumble (a 15 deg graze at 31 m/s is 8)
   radius: 0.35,                   // m: the body's collision sphere
   span: 1.05,                     // m: the life-size wingspan (room for a vertical take-off: 0.7 m each side)
-  walk: 1.0, hop: 2.6,            // m/s on the ground
+  walk: V2_WALK_MPS, hop: 2.6,    // m/s on the ground (the walk: a peregrine's slow waddle, ~0.3-0.5 m/s, 0.33 here:
+                                  // v2's Walk plants its feet at V2_WALK_MPS, above; rule falcon-gym "the v2 round C")
   look: 1.25,                     // s of flight the wall look-ahead covers
 };
 

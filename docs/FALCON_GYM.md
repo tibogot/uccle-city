@@ -53,7 +53,7 @@ Each layer fixed something real. Together they make it hard to predict what one 
 | Shift (right button) held | **the stoop**: the wings tuck and it dives where you point (at least ~35 deg down). Speed comes from gravity plus a stoop push (below), terminal ~107 m/s. Let go: the wings half open and it pulls out. A **ground guard** starts the pull-out itself when the height left is what the pull-out needs (radius `V^2 / (g (n - 1))` + 0.35 s + 3 m) | 300+ km/h from height, never into the ground |
 | F held | **the chase**: aims at the lead point of the pigeon in the ring (the same turn rates, so smooth), and tucks when it is well below | a smooth pigeon chase, no snapping. The catch itself is the other job's (claude/falconfun) |
 | walls | a **look-ahead** (3 rays, 1.25 s of flight) banks toward the freer side, or climbs when the obstacle's top is within 12 m. A touch **slides**: the normal part of the speed goes, the rest stays, with a little scrape. A tumble only for a head-on hit over 13 m/s into a big solid. Sills, railings, low walls and trunks only deflect | the owner: "stuck between buildings looks buggy", "no stun from small mistakes" |
-| on the ground | stands on anything (the ground, roofs, sills, the railing, the spire). W walks (1 m/s), Shift + W hops (2.6 m/s), A/D or the mouse turn. Walking off an edge launches | a bird on a roof walks, it does not sit frozen |
+| on the ground | stands on anything (the ground, roofs, sills, the railing, the spire). W walks (0.33 m/s: a peregrine's waddle, the v2 Walk's planted speed), Shift + W hops (2.6 m/s), A/D or the mouse turn. Walking off an edge launches | a bird on a roof walks, it does not sit frozen |
 | Space on the ground | see the take-off rules below | |
 | E | lands on the ledge or flat top surface ahead (< 35 m, < 26 m/s): a Hermite final, then the **flare**. Or fly slowly (< 11 m/s) onto any top face and it touches down | landing on ledges with a flare |
 
@@ -120,10 +120,10 @@ The build takes ~20 s; the pack ~80 s.
   - Flap: its own 12-frame beat f216-228, which loops exactly
   - Glide: f256 held, the toes closed
 - **Ours, from its poses:**
-  - Stoop: the idle's folded wings and tail, the body level, the feet tucked under the tail's base, the toes closed
-  - Talons: the glide, the legs forward, the toes spread
+  - Stoop: the idle's folded wings and tail as they lie on the body (the wing tips on the tail), the body pitched so beak to tail tip is level (a teardrop), the feet tucked under the tail's base, the toes closed
+  - Talons: the strike: the body reared 55 deg, the wings raised and back with their undersides forward (a brake), the tail down and fanned, the legs thrown forward ahead of the breast, the toes open and splayed, the beak at the feet. The gym blends it in with the talons in flight
   - Flare: the glide, the wings forward and up, the tail down and fanned, the legs forward
-  - Walk: 10 frames, 12 cm steps, 60 % stance, planted at 0.48 m/s, a waddle, the body 28 deg, the hips 9 cm
+  - Walk: 12 frames, 10 cm steps, 60 % stance, planted at 0.33 m/s (`V2_WALK_MPS` = `GYM.walk`), a 2 deg waddle, the body 28 deg, the hips 9 cm
   - Hop: 20 frames: a crouch, a push, the feet tucked up, a landing
   - In both Walk and Hop the legs go by IK, the feet flat as perched, and the toe PADS are put on the floor (not a claw tip).
 - **The look.**
@@ -254,8 +254,8 @@ O again (or Esc) returns to the exact flight state. `?orbit=1` starts in it.
 - **The vertical take-off's "boxed" test is geometric** (rays): a bird boxed by trees does not count them.
 - **Not in the city yet.** Adopting it means routing `viewer/falconGame/` through `GymFlight` against the city's `column` / roof grid: a `sphereHit` / `ray` / `clearUp` over the tile data, and `ledges` from the roof ridges plus the church perches.
 - **v2 (base B)**:
-  - The gym's walk is 1 m/s (`GYM.walk`); a peregrine walks at ~0.3-0.5. The Walk plants its feet at 0.48 m/s and plays at most 2.5x, so at 1 m/s the feet slide a little.
+  - Walking out from under the passage (the `hop` mode's walk-out, 2.6 m/s) still plays the Walk at its 2.5x cap: the feet slide there. A run of hops would fit it better (not done).
   - The wing tips are ~3 cm off the tail line when perched, as the download has them.
   - The download's own wing-covert fringe shows as a dark serrated edge at the folded wing's front (as on Sketchfab).
-  - From above in the Walk there is a 0.5 cm² opening between the folded wing's edge and the back (the hole check's limit is 0.5).
+  - In the Stoop the tucked feet still show under the belly from the side.
   - The bind is a folded pose. A layer added to `birdRig.js` has to be calibrated in the Glide, as `gymBird.js` does.

@@ -16,10 +16,9 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 import { loadFalconAssets } from "../falcons.js";
 import { BirdRig } from "../birdRig.js";
-import { birdRoll, rigBank } from "./gymFlight.js";
+import { birdRoll, rigBank, V2_WALK_MPS } from "./gymFlight.js";
 
 const _I = new THREE.Quaternion();
-const V2_WALK_MPS = 0.12 / (0.6 * 10 / 24);          // v2's Walk: the speed its stance feet stay planted at (0.48 m/s)
 const ease = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
 const M2M = new URL("../../models/bird/v2/m2m/", import.meta.url);
 // (?v2src=<url>: another build of the v2 to look at in the lab, e.g. a candidate before it replaces the shipped one)
@@ -224,6 +223,8 @@ export class GymBird {
     else if (flapping) T.flap = 1; else T.glide = 1;
     // (v2) its own Stoop clip (the Mesh2Motion folded wings in flight) takes over with the tuck
     if (mode === "fly" && this.actions.stoop && !this.forceClip) { const k = Math.max(0, (f.fold - 0.5) / 0.5); T.stoop = k; T.flap *= 1 - k; T.glide *= 1 - k; }
+    // (v2) its Talons clip, the strike (legs thrown forward, wings up and back, tail fanned), takes over with the talons
+    if (mode === "fly" && this.actions.talons && !this.forceClip && this.lay.talons > 0.01) { const k = this.lay.talons; for (const c of KEYS) T[c] *= 1 - k; T.talons = k; }
     // the one-shot clips restart when their mode begins
     if (mode !== this.prevMode) {
       if (mode === "launch" && this.actions.takeoff) this.actions.takeoff.reset().play();
@@ -237,6 +238,9 @@ export class GymBird {
     // (v2: its Stoop clip folds the wings itself, so the fold / tuck / spread layers fade out with that clip's weight:
     // on top of the folded clip they folded a second time and stood the wing up above the back)
     const unfolded = this.actions.stoop ? 1 - (this.w.stoop || 0) / Math.max(sum, 1e-4) : 1;
+    // (v2: its Stoop and Talons clips set the legs themselves (tucked under the tail / thrown forward), so the legs and
+    // talon layers fade out with those clips' weights: on top of the Stoop clip the legs layer swung the feet out behind)
+    const ownLegs = this.actions.stoop ? 1 - ((this.w.stoop || 0) + (this.w.talons || 0)) / Math.max(sum, 1e-4) : 1;
     this.actions.flap.timeScale = 0.9 + 1.0 * f.flapLevel + (mode === "land" || mode === "launch" ? 0.7 : 0);
     // (v2's Walk plants its feet at V2_WALK_MPS (tools/blender/falconV2.py WALK_*: 0.12 m stance sweep, 60 % stance,
     // 10 frames): played at the ground speed's rate, capped, so a fast walk does not turn into a blur of steps)
@@ -252,14 +256,14 @@ export class GymBird {
     L.flare = ease(L.flare, mode === "land" ? 1 : air ? f.brake : 0, 6, wdt);
     L.talons = ease(L.talons, talons, 10, wdt);
     L.bank = ease(L.bank, air ? rigBank(f.phi) : 0, 6, wdt);
-    L.legs = ease(L.legs, air && !talons ? 0.5 * (1 - L.flare) : 0, 4, wdt);
+    L.legs = ease(L.legs, air && !talons ? 0.5 * (1 - L.flare) * ownLegs : 0, 4, wdt);
     L.head = ease(L.head, air ? Math.max(0, -f.gamma) * 0.5 + look : look, 4, wdt);
     const E = this.extra;
     const tk = this.actions.stoop ? 0.15 * L.tuck * unfolded : L.tuck;     // (v2: the clip folds the wings)
     E.handL = E.handR = 0.9 * tk; E.wristL = E.wristR = 0.45 * tk;
     E.spreadL = E.spreadR = 0.15 * L.flare - 0.1 * L.tuck * unfolded;
     E.raiseL = E.raiseR = 0.35 * L.flare;
-    E.talonL = E.talonR = 1.1 * Math.max(L.talons, L.flare * 0.8);
+    E.talonL = E.talonR = 1.1 * Math.max(L.talons, L.flare * 0.8) * ownLegs;
     E.headDown = L.head;
     this.rig.restore();
     this.mixer.update(dt);
