@@ -1,0 +1,10 @@
+// gate row `falcongym` (docs/WORKFLOW.md: one file per row; mergeGate.mjs runs it)
+export default {
+  name: "falcongym",
+  script: "tools/falconGymTest.mjs",
+  args: ["--quiet"],
+  guards: "the Falcon Gym (rule falcon-gym, claude/falconlab): headless, the gym controller (viewer/falconGym/gymFlight.js) in the gym's greybox at 60 Hz: level cruise hands-off 65-90 km/h holding its height, Space level ~110 km/h, a stoop from 300 m >= 300 km/h pulled out with no ground contact and from 1000 m <= 389 km/h, a ground take-off in the 4 m alley nearly vertical (<= 2.5 m/s) over the 22 m roofs, under the covered passage a hop / walk out then a launch, a 15 deg wall graze at 30 m/s with no tumble (look-ahead off and on), the landing flare on the tower and the launch off its ledge, the ceiling ~1200 m; the lab's files, our own UI (no lil-gui); models/bird/v2/falcon_v2.glb (base B, tools/blender/falconV2b.py): 5k-30k triangles, its clips, packed (meshopt + KTX2), < 4.5 MB; its poses (tools/falconV2pose.mjs, the skin of every primitive evaluated in Node): our rig's bone names, Perch upright 35-65 deg, the toe PADS 0-5 mm over the floor in Perch / Walk / Hop (not a claw tip: the first v2's check passed while they floated), short legs under the belly, the folded wings' tips by the tail, the toes spread on the ground and closed in flight, the Walk / Hop crouched, the tail closed when folded and fanned in flight, NO see-through holes in the body and no 'finger' slits when folded (six views, the cut-out alpha decoded from the KTX2), the underwing not showing when folded, the juvenile KTX2 per painted material; the far LOD falcon_v2_far.glb: 2-3k triangles, the same joints / clips / materials, no textures, posed like the near bird, and the lab's screen-size switch wired",
+  meta: {
+    clean: ["tools/falconV2pose.mjs", "tools/ktx2Decode.mjs", "tools/falconV2far.mjs", "viewer/falconGym/gymFlight.js", "viewer/falconGym/gymLayout.js", "viewer/falconGym/gymBird.js", "viewer/falconGym/gymScene.js", "labs/falcon-gym.js"],
+  },
+};
