@@ -168,7 +168,7 @@ if (fs.existsSync(v2)) {
   check((j.materials || []).every((m) => m.alphaMode !== "BLEND" && !m.emissiveTexture), "v2 falcon materials: cut-out feathers (no BLEND), no emission");
   check(fs.statSync(v2).size < 4.5e6, "v2 falcon file < 4.5 MB", `${(fs.statSync(v2).size / 1e6).toFixed(2)} MB`);
   // the V2 POLISH (rule falcon-gym "the v2 model"): the perched pose, the folded wings' cards, the toes, the juvenile
-  for (const [ok, what, val] of v2PoseChecks(v2)) check(ok, what, val);
+  for (const [ok, what, val] of await v2PoseChecks(v2)) check(ok, what, val);
 } else out.push("note models/bird/v2/falcon_v2.glb not built yet (the owner's Sketchfab files): v2 checks skipped");
 
 if (!quiet || fails.length) console.log(out.join("\n"));

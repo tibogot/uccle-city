@@ -12,6 +12,8 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { decodeKTX2 } from "./ktx2Decode.mjs";
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const req = createRequire(path.join(here, "worker/package.json"));
 const { MeshoptDecoder } = await import(pathToFileURL(req.resolve("meshoptimizer/decoder")).href);
@@ -111,7 +113,8 @@ export function loadV2(file) {
   // per vertex: its main joint's name and weight
   const main = new Array(NV), mainW = new Float64Array(NV);
   for (let v = 0; v < NV; v++) { let b = 0; for (let c = 1; c < 4; c++) if (WT[v * 4 + c] > WT[v * 4 + b]) b = c; main[v] = J.nodes[joints[JN[v * 4 + b]]].name; mainW[v] = WT[v * 4 + b]; }
-  return { J, NV, IDX, P, main, mainW, clips, pose, byName, acc };
+  const UV = prim.attributes.TEXCOORD_0 != null ? acc(prim.attributes.TEXCOORD_0) : null;
+  return { J, NV, IDX, P, UV, main, mainW, clips, pose, byName, acc };
 }
 
 /** the tail's feather cards: small loose parts (<= 80 vertices) mainly on a tail bone */
@@ -125,7 +128,7 @@ export function tailTipWidth(B, parts, p) {
   for (const v of vs) if (dot(sub([X[v * 3], X[v * 3 + 1], X[v * 3 + 2]], a), u) > 0.6 * smax) { mn = Math.min(mn, X[v * 3]); mx = Math.max(mx, X[v * 3]); }
   return mx - mn;
 }
-export function v2PoseChecks(file) {
+export async function v2PoseChecks(file) {
   const out = [], ok = (c, what, val) => out.push([!!c, what, val]);
   const B = loadV2(file), { NV, IDX, main, mainW } = B;
   const has = (...cs) => cs.every((c) => B.clips[c]);
@@ -214,10 +217,39 @@ export function v2PoseChecks(file) {
   const okFile = f && fs.existsSync(f) && fs.readFileSync(f).subarray(0, 12).toString("latin1").includes("KTX 20");
   const baseImg = B.J.materials?.[0]?.pbrMetallicRoughness?.baseColorTexture != null;
   ok(okFile && baseImg && v.width >= 512 && v.height >= 512, "v2 juvenile plumage: KTX2 beside the glb, named in it (asset.extras.variants)", v ? `${v.file} ${v.width}x${v.height}` : "missing");
+  // V2 FIX: the folded wing shows its dark upper side, no buff at the wrists. The wing's covert sheets' faces that
+  // face OUTWARD in a folded pose (the posed normal against the body's axis), coloured by the shipped juvenile KTX2
+  // (three's Basis transcoder): the buff share of their area (luminance > 130 / 255; the upper side's brown ~ 65), the
+  // wing proper (beyond 6 cm from the midline in the bind: the mantle's own buff fringes are the back's)
+  if (okFile && B.UV) {
+    const T = await decodeKTX2(fs.readFileSync(f)), UV = B.UV;
+    const lum = (t) => {
+      const u = (UV[IDX[t] * 2] + UV[IDX[t + 1] * 2] + UV[IDX[t + 2] * 2]) / 3, w = (UV[IDX[t] * 2 + 1] + UV[IDX[t + 1] * 2 + 1] + UV[IDX[t + 2] * 2 + 1]) / 3;
+      const x = Math.min(T.width - 1, Math.max(0, Math.floor((u - Math.floor(u)) * T.width))), y = Math.min(T.height - 1, Math.max(0, Math.floor((w - Math.floor(w)) * T.height))), o = (y * T.width + x) * 4;
+      return 0.3 * T.data[o] + 0.59 * T.data[o + 1] + 0.11 * T.data[o + 2];
+    };
+    const res = [];
+    for (const c of ["Perch", "Walk", "Stoop"]) {
+      const p = B.pose(c), Xc = p.X, h = p.at("hips"), ax = sub(p.at("spine_1"), h), L = len(ax), u = ax.map((x) => x / L);
+      let A = 0, buff = 0;
+      for (let t = 0; t < IDX.length; t += 3) {
+        const a = IDX[t], b = IDX[t + 1], cc = IDX[t + 2];
+        if (cardV[a] || !/^wing_[1-4]_/.test(main[a]) || Math.abs(rest[a * 3]) < 0.06) continue;   // (the wing proper: not the mantle at its root)
+        const e1 = [Xc[b * 3] - Xc[a * 3], Xc[b * 3 + 1] - Xc[a * 3 + 1], Xc[b * 3 + 2] - Xc[a * 3 + 2]], e2 = [Xc[cc * 3] - Xc[a * 3], Xc[cc * 3 + 1] - Xc[a * 3 + 1], Xc[cc * 3 + 2] - Xc[a * 3 + 2]];
+        const n = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]], ar = len(n) / 2; if (ar < 1e-12) continue;
+        const m = [0, 1, 2].map((k) => (Xc[a * 3 + k] + Xc[b * 3 + k] + Xc[cc * 3 + k]) / 3 - h[k]), md = dot(m, u), o = m.map((x, k) => x - u[k] * md), ol = len(o) || 1;
+        if (dot(n, o) / (2 * ar * ol) <= 0.2) continue;
+        A += ar; if (lum(t) > 130) buff += ar;
+      }
+      res.push([c, buff / Math.max(A, 1e-12), buff]);
+    }
+    const worst = Math.max(...res.map((r) => r[1]));
+    ok(worst < 0.01, "v2 folded wing shows its upper side (juvenile: < 1 % of the outward-facing covert area buff, Perch / Walk / Stoop; the wing beyond 6 cm from the midline)", res.map(([c, sh, a]) => `${c} ${(sh * 100).toFixed(1)} % (${(a * 1e4).toFixed(1)} cm2)`).join(", "));
+  }
   return out;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const r = v2PoseChecks(process.argv[2] || path.join(here, "../models/bird/v2/falcon_v2.glb"));
+  const r = await v2PoseChecks(process.argv[2] || path.join(here, "../models/bird/v2/falcon_v2.glb"));
   for (const [c, w, v] of r) console.log(`${c ? "ok  " : "FAIL"} ${w}: ${v}`);
 }

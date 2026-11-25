@@ -83,6 +83,14 @@ The fixes (all in the script):
 
 **Check.** Gate row `falcongym` (`tools/falconV2pose.mjs`, poses sampled through the clip). The first build fails both.
 
+### The folded wing shows its upper side
+
+**Rule.** A folded wing shows its dark upper side. The wing's covert sheets that face outward in Perch, Walk and Stoop are < 1 % buff in the shipped juvenile plumage. Measured on the wing proper, beyond 6 cm from the midline (the mantle's buff fringes are the back's): luminance > 130 / 255, the upper side's brown is ~65. The underwing stays buff and barred for flight. `falconV2.py` step 8: the wing's sheets take no "breast" term, and their faces that face outward in a folded pose keep the upperparts' colour.
+
+**Why.** Coordinator's review: "the underwing shows buff at the folded wrists". The juvenile paint picked the buff underparts by the bind normal: down, or toward the nose for the breast. The wing's covert sheets matched too: their underside and their leading edge, which faces the nose in the spread bind. Folded, the leading edge and the elbow / wrist crease face outward, so buff strips showed down the front of the folded wing. The adult texture has them dark. Rolling the forearm or the hand does not help: the crease exposes ~6 cm2 a wing in any roll (measured from -30 to +30 deg). The fault was in the paint, not the pose.
+
+**Check.** Gate row `falcongym` (`tools/falconV2pose.mjs`). It decodes the shipped KTX2 with three's own Basis transcoder (`tools/ktx2Decode.mjs`). The first build fails it (10-13 % buff).
+
 ## Bank into the turn (2026-11-25)
 
 **Rule.** One bank convention everywhere: `phi > 0` = the RIGHT wing down, a right turn (`flightModel.js`'s). Every controller writes it that way. The bird reads it through `birdRoll` / `rigBank` (`gymFlight.js`, used by `gymBird.js`), and the camera reads it as `falconCamera.js` does. A right turn (D, the right arrow, or the mouse moved right) drops the right wingtip below the left in world space. The heading turns clockwise seen from above, and the chase camera rolls the same way. A left turn is the mirror. The lab's input mapping is `fillGymControls`, one function shared by the lab and the test.

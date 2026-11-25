@@ -1003,7 +1003,31 @@ if JUV:
         return out
     HEADW = wsum(("head", "mouth", "spine_3")); LEGW = wsum(("UpperLeg", "LowerLeg", "AnkleLeg", "Foot", "Toes"))
     TAILW = wsum(("tail",))
-    ATTR = np.concatenate([CO, NRM, HEADW[:, None], LEGW[:, None], CARD[:, None].astype(float), TAILW[:, None]], 1)
+    # THE FOLDED WING SHOWS ITS UPPER SIDE (V2 FIX, rule falcon-gym "the v2 fixes"): the underparts' buff below is
+    # chosen by the bind normal (down, or toward the nose for the breast), and the wing's covert sheets were caught
+    # too: their underside and their LEADING EDGE (it faces the nose in the spread bind) went buff. Folded, the
+    # leading edge and the crease at the elbow and the wrist face outward: buff strips at the folded wrists (the
+    # adult texture has them dark). So the sheets take no breast term, and their faces that face OUTWARD in a folded
+    # pose (Perch, Walk, Stoop: the posed normal against the body's axis) keep the upperparts' colour.
+    WINGSW = wsum(("wing",)) * (1 - CARD)
+    def posed_normals(clip):
+        set_action(arm, actions[clip]); scene.frame_set(0); upd()
+        ev = tgt.evaluated_get(bpy.context.evaluated_depsgraph_get()); m = ev.to_mesh()
+        X_ = np.empty(len(m.vertices) * 3); m.vertices.foreach_get("co", X_); N_ = np.empty(len(m.vertices) * 3); m.vertices.foreach_get("normal", N_)
+        ev.to_mesh_clear(); h_ = np.array(arm.pose.bones["hips"].head); s_ = np.array(arm.pose.bones["spine_1"].head); set_action(arm, None)
+        X_ = X_.reshape(-1, 3); N_ = N_.reshape(-1, 3); u_ = (s_ - h_) / np.linalg.norm(s_ - h_)
+        d_ = X_ - h_; o_ = d_ - np.outer(d_ @ u_, u_); o_ /= np.maximum(np.linalg.norm(o_, axis=1, keepdims=True), 1e-9)
+        return (N_ * o_).sum(1)
+    EXPO = np.zeros(NV)
+    for c_ in ("Perch", "Walk", "Stoop"):
+        if c_ in actions: EXPO = np.maximum(EXPO, (posed_normals(c_) > 0.1).astype(float))
+    EXPO *= (NRM[:, 2] < 0.3) * (WINGSW > 0.5)            # the sheets' underside and edges only (their top is dark anyway)
+    deg_ = np.zeros(NV); np.add.at(deg_, E[:, 0], 1); np.add.at(deg_, E[:, 1], 1)
+    for it in range(2):                                    # a little wider (the filtering, the crease's neighbours)
+        acc_ = np.zeros(NV); np.add.at(acc_, E[:, 0], EXPO[E[:, 1]]); np.add.at(acc_, E[:, 1], EXPO[E[:, 0]])
+        EXPO = np.maximum(EXPO, np.minimum(1.0, 2 * acc_ / np.maximum(deg_, 1))) * (WINGSW > 0.3)
+    print(f"[falconV2] the folded wing's outward faces: {int((EXPO > 0.5).sum())} underside / edge vertices keep the upperparts' colour")
+    ATTR = np.concatenate([CO, NRM, HEADW[:, None], LEGW[:, None], CARD[:, None].astype(float), TAILW[:, None], WINGSW[:, None], EXPO[:, None]], 1)
     NA = ATTR.shape[1]
     # raster every UV triangle: the attributes interpolated per texel
     me.calc_loop_triangles()
@@ -1032,7 +1056,7 @@ if JUV:
     for it in range(3):
         nb = box(G, COV, 1); grow = (~COV) & (box(COV.astype(float), np.ones_like(COV), 1) > 0)
         G[grow] = nb[grow]; COV = COV | grow
-    p = G[..., 0:3]; n = G[..., 3:6]; headw, legw, cardw, tailw = G[..., 6], G[..., 7], G[..., 8], G[..., 9]
+    p = G[..., 0:3]; n = G[..., 3:6]; headw, legw, cardw, tailw, wingsw, expo = G[..., 6], G[..., 7], G[..., 8], G[..., 9], G[..., 10], G[..., 11]
     rgb = A[..., :3]
     Y = rgb @ np.array([0.30, 0.59, 0.11], np.float32)
     Yb = box(Y, COV, 10)
@@ -1061,8 +1085,8 @@ if JUV:
     hz_ = np.array([tuple(arm.data.bones["head"].head_local)])[0]
     dthroat = np.linalg.norm(p - hz_, axis=-1)
     under = mixc(under, STREAK, 0.85 * streak * smooth(0.06, 0.11, dthroat))
-    underm = np.maximum(smooth(0.10, -0.30, n[..., 2]), smooth(-0.45, -0.80, n[..., 1]) * (1 - smooth(0.5, 0.8, headw)))
-    underm = underm * (1 - cardw) * (1 - smooth(0.5, 0.8, tailw))
+    underm = np.maximum(smooth(0.10, -0.30, n[..., 2]), smooth(-0.45, -0.80, n[..., 1]) * (1 - smooth(0.5, 0.8, headw)) * (1 - smooth(0.3, 0.6, wingsw)))
+    underm = underm * (1 - cardw) * (1 - smooth(0.5, 0.8, tailw)) * (1 - smooth(0.2, 0.6, expo))
     col = mixc(upper, under, underm)
     # the flight feathers: the same ramp (dark brown above, barred buff and brown below: a juvenile's are barred too)
     col = mixc(col, ramp(Y * 0.95), cardw)
