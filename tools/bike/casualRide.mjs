@@ -69,9 +69,9 @@ export function rideCasual(run, seed, { env = labEnv(), B = BIKE, onStep = null,
     if (t >= nextLook) {
       nextLook = t + react;
       const dx = s.x - run.x, dz = s.z - run.z, along = dx * fx0 + dz * fz0, cross = dx * fz0 - dz * fx0;   // cross > 0 = left of the line
-      let want = h0 - Math.max(-0.5, Math.min(0.5, cross * 0.25));
-      if (run.weave) { if (t > nextWeave) { weaveDir = -weaveDir; nextWeave = t + 1 + r() * 2; } want += weaveDir * 0.5; }
-      let err = want - s.heading; err -= Math.round(err / (2 * Math.PI)) * 2 * Math.PI;
+      let want = h0 - Math.max(-0.6, Math.min(0.6, cross * 0.35));
+      if (run.weave) { if (t > nextWeave) { weaveDir = -weaveDir; nextWeave = t + 1 + r() * 2; } want += weaveDir * 0.3; }
+      let err = want - (s.heading + s.yawVel * 0.35); err -= Math.round(err / (2 * Math.PI)) * 2 * Math.PI;
       steerKey = s.crashed ? 0 : err > dead ? 1 : err < -dead ? -1 : 0;
       void along;
     }

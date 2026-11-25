@@ -43,10 +43,10 @@ const gradeEnv = (G, surf = SURF.asphalt) => createBikeEnv({ ground: groundQuery
 const spawn = (env, x, z, h) => { const q = {}; env.ground(x, z, q); return createBikeState(x, z, h, q.h); };
 const settle = (s, env, n = 120) => { for (let i = 0; i < n; i++) stepBike(s, {}, env); return s; };
 /** run with input(s, t) for secs; onStep(s) per step; stops early if stop(s) */
-function ride(s, env, input, secs, onStep = null, stop = null) {
+function ride(s, env, input, secs, onStep = null, stop = null, B = BIKE) {
   const n = Math.round(secs / DT);
   for (let i = 0; i < n; i++) {
-    stepBike(s, input(s, i * DT), env);
+    stepBike(s, input(s, i * DT), env, B);
     if (onStep) onStep(s);
     if (stop && stop(s)) break;
   }
@@ -156,10 +156,16 @@ function randomInputs(seed, n) {
   s2.vz = 2.5;
   ride(s2, env, () => ({}), 4);
   check("no hop: the front wheel stops at the kerb (2.5 m/s)", s2.blocked > 0 && s2.z < KERB.z0, `z ${f2(s2.z)} blocked ${s2.blocked} crashes ${s2.crashes}`, "stopped before the face");
+  // (forgiving falls, 2026-11-25: a kerb up to stepClimb ridden at speed is ROLLED UP - a thump, speed lost, a wobble;
+  // the hop stays the clean way. Before: over the bars at 22 km/h. A face the wheel cannot climb still is: 30 cm)
   const s3 = spawn(env, 15, 12, 0);
   s3.vz = 6;
-  ride(s3, env, () => ({}), 3);
-  check("no hop at 22 km/h: over the bars", s3.crashes > 0 && /kerb/.test(s3.crashCause), `"${s3.crashCause}"`, "a crash");
+  let v3a = 0; ride(s3, env, (q) => { if (q.z < KERB.z0 - 1) v3a = q.vz; return {}; }, 3);
+  const loss3 = 1 - s3.vz / v3a;
+  check("no hop at 22 km/h: rolled up (a thump, not a crash)", s3.crashes === 0 && s3.z > KERB.z0 + 3 && loss3 > 0.05 && loss3 < 0.35, `crashes ${s3.crashes}, z ${f1(s3.z)}, speed lost ${(loss3 * 100).toFixed(0)} %`, "on the pavement, 5-35 % slower, no crash");
+  const e3 = createBikeEnv({ ground: groundQuery((x, z) => (z > 5 ? 0.30 : 0), () => SURF.asphalt) }), s3b = spawn(e3, 0, 0, 0); s3b.vz = 6;
+  ride(s3b, e3, () => ({}), 3);
+  check("no hop at 22 km/h into a 30 cm face: over the bars", s3b.crashes > 0 && /kerb/.test(s3b.crashCause), `"${s3b.crashCause}"`, "a crash");
   // a 6 cm lowered kerb rolls
   const e4 = createBikeEnv({ ground: groundQuery((x, z) => (z > 5 ? 0.06 : 0), () => SURF.asphalt) }), s4 = spawn(e4, 0, 0, 0);
   s4.vz = 3;
@@ -512,11 +518,13 @@ function randomInputs(seed, n) {
     return { ok: s.z > KERB.z0 + 1 && Math.abs(s.yLow - KERB.h) < 0.06 && !s.crashes && !s.blocked, delay: (s.popStep - relStep) * DT, s };
   };
   const windowOf = (Bx) => { let lo = Infinity, hi = -Infinity; for (let k = 0; k <= 30; k++) { const L = k * 0.02; if (kerbTry(L, Bx).ok) { lo = Math.min(lo, L); hi = Math.max(hi, L); } } return [lo, hi]; };
-  const B0 = { ...BIKE, hopBuffer: 0, kerbCatch: 0 }, wOff = windowOf(B0), wOn = windowOf(BIKE);
+  // (forgiving falls: these hop checks are on a kerb that must be HOPPED: the wheel's roll-up off, stepClimb 0)
+  const BH = { ...BIKE, stepClimb: 0 };
+  const B0 = { ...BH, hopBuffer: 0, kerbCatch: 0 }, wOff = windowOf(B0), wOn = windowOf(BH);
   check("hop buffer: the kerb window (tap hop, 15 cm kerb, 15 km/h)", wOn[1] >= wOff[1] + 0.1 && wOn[0] <= wOff[0], `released ${f2(wOn[0])}-${f2(wOn[1])} s before the face (without buffer + catch: ${f2(wOff[0])}-${f2(wOff[1])} s)`, "early edge >= +0.10 s, late edge kept");
-  const early = Math.round((wOff[1] + 0.1) * 50) / 50, eOff = kerbTry(early, B0), eOn = kerbTry(early, BIKE);
+  const early = Math.round((wOff[1] + 0.1) * 50) / 50, eOff = kerbTry(early, B0), eOn = kerbTry(early, BH);
   check("hop buffer: released 0.1 s before the window: held, pops at the edge, clears", !eOff.ok && eOn.ok && Math.abs(eOn.delay - (early - BIKE.hopLead)) < 0.02, `released ${f2(early)} s before: without ${eOff.ok ? "ok" : `"${eOff.s.crashCause}" blocked ${eOff.s.blocked}`}; with: ${eOn.ok ? "ok" : "fail"}, held ${f2(eOn.delay)} s (pops ${BIKE.hopLead} s before the face)`, "fails without, clears with");
-  const far = kerbTry(0.6, BIKE), flatHop = (() => { const s = spawn(flat, 0, 0, 0); s.vz = 4; ride(s, flat, () => ({ hop: true }), 0.2); const n = s.steps + 1; stepBike(s, {}, flat); return s.popStep - n; })();
+  const far = kerbTry(0.6, BH), flatHop = (() => { const s = spawn(flat, 0, 0, 0); s.vz = 4; ride(s, flat, () => ({ hop: true }), 0.2); const n = s.steps + 1; stepBike(s, {}, flat); return s.popStep - n; })();
   check("hop buffer: no face ahead / far too early = no hold", far.delay === 0 && flatHop === 0, `0.6 s early: held ${f2(far.delay)} s; flat ground: popped ${flatHop} steps after the release`, "0, 0");
   // the coyote hop: a release just after rolling off a ledge still pops; long after does not
   const coy = (after) => {
@@ -541,19 +549,22 @@ function randomInputs(seed, n) {
     return { ok: s.z > 11 && !s.crashes && !s.blocked && Math.abs(s.yLow - h) < 0.06, catches: s.catches };
   };
   const maxH = (Bx) => { let m = 0, c = 0; for (let k = 0; k <= 30; k++) { const h = 0.10 + k * 0.01, r = kerbH(h, Bx); if (r.ok) { m = h; c = r.catches; } } return [m, c]; };
-  const [hOff] = maxH({ ...BIKE, kerbCatch: 0, hopBuffer: 0 }), [hOn, cOn] = maxH({ ...BIKE, hopBuffer: 0 });
+  const [hOff] = maxH({ ...BH, kerbCatch: 0, hopBuffer: 0 }), [hOn, cOn] = maxH({ ...BH, hopBuffer: 0 });
   const gain = hOn - hOff;
   check("kerb catch: a wheel just short of the top is lifted on", gain >= 0.02 - 1e-9 && gain <= BIKE.kerbCatch + 0.02 && cOn > 0, `a tap hop rides kerbs up to ${(hOn * 100).toFixed(0)} cm (without the catch ${(hOff * 100).toFixed(0)} cm: +${(gain * 100).toFixed(0)} cm, ${cOn} catch)`, `+2..${((BIKE.kerbCatch + 0.02) * 100).toFixed(1)} cm`);
 
   // ---- 14c. landings in three bands: clean / sketchy (wobble + speed lost, the kid stays on) / bail
   const D = Math.PI / 180;
+  // (forgiving falls: the bands are judged at touch-down; the air assists - the level, the heading drawn to the path -
+  // are off here so the attitude set is the attitude judged)
+  const BA = { ...BIKE, airLevel: 0, airLevelDamp: 0, airAlign: 0 };
   const drop2 = (opt = {}) => {
     const s = spawn(flat, 0, 0, 0);
     s.y += opt.h ?? 1; s.vz = 5; s.pitch = opt.pitch || 0; s.lean = opt.lean || 0; s.vy = 0;
     s.air = true; s.airT = 0.5; s.contact[0] = s.contact[1] = false; s.sinceContact = 1;
     if (opt.yaw) s.heading = opt.yaw;
     let wob = 0, v1 = NaN;
-    ride(s, flat, () => ({}), 2.5, (q) => { wob = Math.max(wob, Math.abs(q.wobbleNow)); if (!(v1 === v1) && q.lastLanding && q.t - q.lastLanding.t > 0.5) v1 = Math.hypot(q.vx, q.vz); });
+    ride(s, flat, () => ({}), 2.5, (q) => { wob = Math.max(wob, Math.abs(q.wobbleNow)); if (!(v1 === v1) && q.lastLanding && q.t - q.lastLanding.t > 0.5) v1 = Math.hypot(q.vx, q.vz); }, null, BA);
     return { s, L: s.lastLanding, wob, v1 };
   };
   const bands = [
