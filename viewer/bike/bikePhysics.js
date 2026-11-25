@@ -251,11 +251,11 @@ export function createBikeState(x, z, heading, groundY = 0, B = BIKE) {
     wobble: 0, wobbleT: 0, wobbleDur: 0, wobbleNow: 0, wobbleW: 0, sketchy: 0, saveKind: 0, _catchT: 0, _bonkT: 0,
     grindSeg: -1, grindDir: 1, grindU: 0, grindV: 0, grindT: 0, grindBal: 0, grindStall: 0, grindCD: 0, grinds: 0, stalls: 0,
     grindType: -1, grindExit: "", grindExits: 0, grindDist: 0, grindSide: 1, _g0: [0, 0, 0, 0, 0], _go: [0, 0, 0, 0, 0],
-    air: false, airT: 0, airMax: 0, lastLanding: null, landings: 0, spinArm: true, climbs: 0, glances: 0, rk: new Float64Array([1, 1]),
+    air: false, airT: 0, airMax: 0, lastLanding: null, landings: 0, spinArm: true, climbs: 0, glances: 0, rk: new Float64Array([1, 1]), faceAt: new Uint8Array(2),
     // (the park's state in its own object: the bike's object stays under V8's 128 fast properties - past them it went
     // to dictionary mode and every number stored allocated: the zero-garbage check's flat ground 0 -> 16)
     park: { vertT: -1.5, vertDur: 0.5, vertH: 0.5, vertP: 0.5, vertDir: 1, verts: 0, wallIdx: -1, wallT: 0.5, wallV: 0.5, wallDir: 1, wallSide: 1, wallU: 0.5, wallrides: 0, wallExit: "",
-      attached: 0, attV: 0.5, attMax: 0.5, attLast: -9.5 },
+      attached: 0, attV: 0.5, attMax: 0.5, attLast: -9.5, unleanT: 0 },
     skid: false, wheelspin: false, frontLock: false, slip: 0, slipAngle: 0, washT: 0, buzz: 0,
     manual: 0, pushing: false, pushT: 0, footDown: 1, grade: 0, walkPhase: 0, trick: 0,
     crashed: false, crashT: 0, crashCause: "", crashes: 0, rider: { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 },
@@ -282,6 +282,7 @@ export function groundQuery(height, surface = () => SURF.asphalt, eps = 0.04) {
     if (sP) { HP.x = x; HP.z = z; out.surf = sP(HP); } else out.surf = surface(x, z);
     return out;
   };
+  g.hP = hP;                      // (the height alone, object form: the face scans need no normal / surface)
   g.P = (pt, out) => {
     const x = pt.x, z = pt.z;
     if (hP) for (let k = 0; k < 5; k++) { HP.x = x + DX[k]; HP.z = z + DZ[k]; hP(HP); H5[k] = HP.h; }
@@ -333,6 +334,10 @@ function slopeOf(q, fx, fz) { return clamp(-(q.nx * fx + q.nz * fz) / Math.max(0
  *  objects only. Same for the face tests: their inputs in FP, their results in FP / FA. */
 const GP = { x: 0.5, z: 0.5 };
 function groundAt(env, out) { const gp = env.groundP; return gp ? gp(GP, out) : env.ground(GP.x, GP.z, out); }
+/** the ground's HEIGHT at (GP.x, GP.z) alone (the face scans: 2 cm steps, a dozen a step - no normal, no surface; the
+ *  height's object form when the ground has one) */
+const HT = { x: 0.5, z: 0.5, h: 0.5 };
+function heightAt(env) { const hp = env.heightP; if (hp) { HT.x = GP.x; HT.z = GP.z; hp(HT); return HT.h; } return groundAt(env, QS).h; }
 const FP = { x: 0.5, z: 0.5, x1: 0.5, z1: 0.5, fx: 0.5, fz: 0.5, maxD: 0.5, r: 0.5 };
 
 /** the steepest 2 cm rise of the ground from (FP.x, FP.z) to (FP.x1, FP.z1) (a face test) -> FP.r */
@@ -342,13 +347,13 @@ function faceRiseP(env, B) {
   // (the park: only an ABRUPT rise is a face - steeper than the 2 cm before it by faceAbrupt; a quarter pipe's wall is
   // steep but smooth. The rise before the first sample from one sample behind the start)
   GP.x = x0 - (x1 - x0) / n; GP.z = z0 - (z1 - z0) / n;
-  const hb = groundAt(env, QS).h;
+  const hb = heightAt(env);
   GP.x = x0; GP.z = z0;
-  let prev = groundAt(env, QS).h, worst = 0, rPrev = (prev - hb) / st;
+  let prev = heightAt(env), worst = 0, rPrev = (prev - hb) / st;
   for (let k = 1; k <= n; k++) {
     const t = k / n;
     GP.x = x0 + (x1 - x0) * t; GP.z = z0 + (z1 - z0) * t;
-    const h = groundAt(env, QS).h;
+    const h = heightAt(env);
     const r = (h - prev) / st;
     if (r > worst && r > PK.faceAbrupt * (rPrev > 0.2 ? rPrev : 0.2)) worst = r;
     prev = h; rPrev = r;
@@ -363,19 +368,19 @@ const FA = { d: -1, top: 0 };
 function faceAheadP(env, B) {
   const x = FP.x, z = FP.z, fx = FP.fx, fz = FP.fz, st = 0.02, n = Math.ceil(FP.maxD / st);
   GP.x = x; GP.z = z;
-  let prev = groundAt(env, QS).h;
+  let prev = heightAt(env);
   GP.x = x - fx * st; GP.z = z - fz * st;
-  let rPrev = (prev - groundAt(env, QS).h) / st;
+  let rPrev = (prev - heightAt(env)) / st;
   FA.d = -1;
   for (let k = 1; k <= n; k++) {
     GP.x = x + fx * st * k; GP.z = z + fz * st * k;
-    const h = groundAt(env, QS).h, r = (h - prev) / st;
+    const h = heightAt(env), r = (h - prev) / st;
     const abrupt = r > PK.faceAbrupt * (rPrev > 0.2 ? rPrev : 0.2);
     rPrev = r;
     if (r > B.faceSlope && abrupt) {
       // the face: climb it while it stays steep (10 cm at most)
       const base = prev; let top = h;
-      for (let j = k + 1; j <= k + 5; j++) { GP.x = x + fx * st * j; GP.z = z + fz * st * j; const hj = groundAt(env, QS).h; if ((hj - top) / st > B.faceSlope) top = hj; else break; }
+      for (let j = k + 1; j <= k + 5; j++) { GP.x = x + fx * st * j; GP.z = z + fz * st * j; const hj = heightAt(env); if ((hj - top) / st > B.faceSlope) top = hj; else break; }
       if (top - base > B.stepRoll) { FA.d = st * (k - 1); FA.top = top; return; }
     }
     prev = h;
@@ -396,8 +401,8 @@ const JP = { x: 0.5, z: 0.5, fx: 0.5, fz: 0.5, sl: 0.5, r: 0.5 };
 function judgeSlopeP(env) {
   const sl = JP.sl;
   if (sl < 0.6 && sl > -0.6) { JP.r = sl; return; }
-  GP.x = JP.x + JP.fx * 0.25; GP.z = JP.z + JP.fz * 0.25; const hA = groundAt(env, QS).h;
-  GP.x = JP.x - JP.fx * 0.25; GP.z = JP.z - JP.fz * 0.25; const hB = groundAt(env, QS).h;
+  GP.x = JP.x + JP.fx * 0.25; GP.z = JP.z + JP.fz * 0.25; const hA = heightAt(env);
+  GP.x = JP.x - JP.fx * 0.25; GP.z = JP.z - JP.fz * 0.25; const hB = heightAt(env);
   const lg = (hA - hB) / 0.5, a = lg < 0 ? -lg : lg, b = sl < 0 ? -sl : sl;
   if (lg * sl <= 0) JP.r = sl > 1 ? 1 : sl < -1 ? -1 : sl;
   else if (a >= 0.6 * b) JP.r = lg > 4 ? 4 : lg < -4 ? -4 : lg;
@@ -450,8 +455,26 @@ export function bikeHit(s, nx, nz, kind, B = BIKE) {
   const fx = Math.sin(s.heading), fz = Math.cos(s.heading), into = -(fx * nx + fz * nz);
   if (into > 0.2 && !s.crashed) s.yawVel += (fx * tz - fz * tx >= 0 ? -1 : 1) * Math.min(2, vn * 0.4) * (1 - into);
   s.hits++;
-  if (vn > 1) s.lastHit = { x: s.x, z: s.z, nx, nz, speed: vn, kind, t: s.t };
+  if (vn > 1) { const h = s._hit || (s._hit = { x: 0.5, z: 0.5, nx: 0.5, nz: 0.5, speed: 0.5, kind: 0, t: 0.5 }); h.x = s.x; h.z = s.z; h.nx = nx; h.nz = nz; h.speed = vn; h.kind = kind; h.t = s.t; s.lastHit = h; }
   return vn;
+}
+/** bikeHit with the contact as one object { nx, nz, kind } (the bike's env: a call with doubles that V8 does not inline
+ *  boxes them - every wall contact; the impact record reused, not a new object a hit) */
+export function bikeHitC(s, c, B = BIKE) { CH.nx = c.nx; CH.nz = c.nz; bikeHitP(s, c.kind, B); }
+const CH = { nx: 0.5, nz: 0.5 };
+function bikeHitP(s, kind, B) {
+  const nx = CH.nx, nz = CH.nz;
+  const vn = -(s.vx * nx + s.vz * nz);
+  if (vn <= 0.02) return;
+  if (vn > B.crashSpeed && vn > B.crashSquare * hyp(s.vx, s.vz) && !s.crashed) crash(s, kind === 2 || kind === 3 || kind === 4 ? "hit a post" : kind === 6 ? "hit a car" : "hit a wall");
+  const e = vn > 1.5 ? 0.12 : 0;
+  s.vx += nx * vn * (1 + e); s.vz += nz * vn * (1 + e);
+  const tx = -nz, tz = nx, vt = s.vx * tx + s.vz * tz, cut = Math.min(Math.abs(vt), 0.3 * vn);
+  s.vx -= tx * cut * sgn(vt); s.vz -= tz * cut * sgn(vt);
+  const fx = Math.sin(s.heading), fz = Math.cos(s.heading), into = -(fx * nx + fz * nz);
+  if (into > 0.2 && !s.crashed) s.yawVel += (fx * tz - fz * tx >= 0 ? -1 : 1) * Math.min(2, vn * 0.4) * (1 - into);
+  s.hits++;
+  if (vn > 1) { const h = s._hit || (s._hit = { x: 0.5, z: 0.5, nx: 0.5, nz: 0.5, speed: 0.5, kind: 0, t: 0.5 }); h.x = s.x; h.z = s.z; h.nx = nx; h.nz = nz; h.speed = vn; h.kind = kind; h.t = s.t; s.lastHit = h; }
 }
 
 function savePrev(s) { const p = s.prev; p.x = s.x; p.y = s.y; p.z = s.z; p.heading = s.heading; p.lean = s.lean; p.pitch = s.pitch; }
@@ -536,7 +559,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   // scratch object; the phases are called with objects only)
   const w = W;
   w.vF = vF; w.vL = vL; w.fx = fx; w.fz = fz; w.lx = lx; w.lz = lz; w.steer = steer; w.pedal = pedal; w.leanIn = leanIn;
-  w.bF = bF; w.bR = bR; w.sprint = sprint; w.grounded = grounded;
+  w.bF = bF; w.bR = bR; w.sprint = sprint; w.grounded = grounded; w.blocked0 = s.blocked;
   if (facePhase(s, w, env, B)) return s;
   if (contactPhase(s, w, env, B, S)) return s;
   motionPhase(s, w, B);
@@ -546,7 +569,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
 
 /** the step's shared values (doubles initialised as doubles: V8 keeps them unboxed in place) */
 const W = { vF: 0.5, vL: 0.5, fx: 0.5, fz: 0.5, lx: 0.5, lz: 0.5, aF: 0.5, aY: 0.5, alpha: 0.5, retard: 0.5, brakes: 0.5, aL: 0.5, drive: 0.5, fnF: 0.5, fnR: 0.5, muF: 0.5, muR: 0.5,
-  v: 0.5, steer: 0.5, pedal: 0.5, leanIn: 0.5, bF: 0.5, bR: 0.5, up: 0.5, contactNow: false, footHold: false, sprint: false, grounded: false, landCheck: false };
+  v: 0.5, steer: 0.5, pedal: 0.5, leanIn: 0.5, bF: 0.5, bR: 0.5, up: 0.5, contactNow: false, footHold: false, sprint: false, grounded: false, landCheck: false, blocked0: 0 };
 
 /** stepBike, part 1: the ground under the wheels and where they go (the face test: kerbs, the kerb catch, bonks).
  *  true = the step ended (a crash) */
@@ -586,7 +609,7 @@ function facePhase(s, w, env, B) {
     if (i === 0 && !airborne && vF > B.climbV && B.stepClimb > 0 && !(s._catchT > 0)) {
       const look = vF * 0.09 + 0.03;
       GP.x = wx + fx * look; GP.z = wz + fz * look;
-      if (groundAt(env, QS).h - Q[0].h > B.stepRoll) {
+      if (heightAt(env) - Q[0].h > B.stepRoll) {
         FP.x = wx; FP.z = wz; FP.fx = fx; FP.fz = fz; FP.maxD = look; faceAheadP(env, B);
         const up = FA.top - Q[0].h;
         if (FA.d >= 0 && up <= B.stepClimb && FA.d / vF > 2 * dt) {
@@ -675,7 +698,12 @@ function contactPhase(s, w, env, B, S) {
     const q = Q[i], pen = q.h - s.wheelY[i];
     s.surf[i] = q.surf; s.ground[i] = q.h;
     let sl = slopeOf(q, fx, fz);
-    if (sl >= 0.6 || sl <= -0.6) { JP.x = s.x + fx * RF[i]; JP.z = s.z + fz * RF[i]; JP.fx = fx; JP.fz = fz; JP.sl = sl; judgeSlopeP(env); sl = JP.r; }
+    s.faceAt[i] = 0;
+    if (sl >= 0.6 || sl <= -0.6) {
+      JP.x = s.x + fx * RF[i]; JP.z = s.z + fz * RF[i]; JP.fx = fx; JP.fz = fz; JP.sl = sl; judgeSlopeP(env);
+      const dj = JP.r - sl; if (dj > 0.35 * (sl < 0 ? -sl : sl) || dj < -0.35 * (sl < 0 ? -sl : sl)) s.faceAt[i] = 1;     // (a face / a crest, not a transition)
+      sl = JP.r;
+    }
     s.slope[i] = sl;
     // (the park) the wheel's touch on a slope: R / cos(slope) under the hub, eased (the step's own contacts keep this
     // step's value: wheelOffsets is re-run by the next step)
@@ -882,7 +910,8 @@ function motionPhase(s, w, B) {
     }
     s.yawVel += ay * dt;
     s.leanTarget = steer * 0.25;
-    s.lean += (s.leanTarget - s.lean) * (1 - Math.exp(-(Math.abs(s.lean) > 0.4 ? 9 : 3) * dt));
+    s.park.unleanT -= dt;
+    s.lean += (s.leanTarget - s.lean) * (1 - Math.exp(-(s.park.unleanT > 0 ? 9 : 3) * dt));       // (fast back up off a wall ride)
   }
   // momentum stays in world space; the heading turns
   s.vx = fx * vF + lx * vL; s.vz = fz * vF + lz * vL;
@@ -997,7 +1026,7 @@ function settlePhase(s, w, env, B, S) {
     yLow = Math.min(yLow, s.wheelBot[i]);
   }
   s.yLow = yLow;
-  if (PK.transFollow > 0 && !s.crashed) attachPhase(s, w, B);
+  if (PK.transFollow > 0 && !s.crashed && !s.pushing) attachPhase(s, w, B);
   // ---- (the park) a WALL RIDE: airborne beside a wall-ride wall, along it (wallStep from the next step)
   if (env.wallrides && (s.air || !anyContactNow(s)) && s.park.wallIdx < 0 && trySnapWall(s, env, B)) return;
   // ---- colliders (walls, posts, cars)
@@ -1066,13 +1095,18 @@ function attachPhase(s, w, B) {
   // curve - it climbed the wall at 45 deg and flew onto the deck. It lets go where the ground stops matching (the lip, a
   // crest): from there the ordinary air (a vert air off a near-vertical wall)
     const sF = s.slope[0], sR = s.slope[1], aF0 = sF < 0 ? -sF : sF, aR0 = sR < 0 ? -sR : sR;
-    if ((aF0 > PK.transSlope || aR0 > PK.transSlope) && Q[0].h - s.wheelY[0] > -0.1 && Q[1].h - s.wheelY[1] > -0.1) {
+    if ((aF0 > PK.transSlope || aR0 > PK.transSlope) && !s.faceAt[0] && !s.faceAt[1] && s.blocked === w.blocked0 && Q[0].h - s.wheelY[0] > -0.1 && Q[1].h - s.wheelY[1] > -0.1) {
       const chord = Math.atan2(Q[0].h - Q[1].h, Math.max(0.3, RF[0] - RF[1])), dF = Math.atan(sF) - chord, dR = Math.atan(sR) - chord;
-      if (dF < 0.45 && dF > -0.45 && dR < 0.45 && dR > -0.45) {
+      const vAlong = (s.vx * fx + s.vz * fz) * Math.cos(chord) + s.vy * Math.sin(chord);
+      // (slow - pedalling up a stair ramp, about to push - the ordinary contacts: the push rule needs them)
+      if (dF < 0.45 && dF > -0.45 && dR < 0.45 && dR > -0.45 && (vAlong > 1.2 || vAlong < -1.2 || (s.park.attached > 0 && aF0 + aR0 > 1.8))) {
         // the pitch is the chord; the speed along it carried from step to step (gravity along it, the tyres' drive /
         // brakes / rolling): the springs' forces never reach it (they fought the curve and ate the speed); the CoM held
         // at the springs' sag over the two contacts
-        const prevP = s.pitch; s.pitch = chord; s.pitchVel = (chord - prevP) / dt * 0.5;
+        // (slewed: at most 0.04 rad a step, and the rate it leaves behind with it - a chord that jumped as a wheel met
+        // something left the bike spinning at 9 rad/s when it let go: a loop-out in the D6 ride)
+        let dp = chord - s.pitch; dp = dp > 0.04 ? 0.04 : dp < -0.04 ? -0.04 : dp;
+        s.pitch += dp; s.pitchVel = dp / dt * 0.5;
         const ca = Math.cos(chord), sa = Math.sin(chord), vF0 = s.vx * fx + s.vz * fz;
         if (!(s.park.attached > 0)) { s.park.attV = vF0 * ca + s.vy * sa; s.park.attMax = 0; }
         else s.park.attV += (-g * sa + w.drive - (s.park.attV > 0 ? 1 : -1) * w.retard) * dt;
@@ -1177,7 +1211,7 @@ function wallStep(s, input, env, B) {
   if (why) {
     const up = why === "hop" ? B.popVel + B.popPreload * s.preload * 0.6 : 0;
     s.vx = tx * s.park.wallDir * s.park.wallV + Wl.nx * PK.wallPush; s.vz = tz * s.park.wallDir * s.park.wallV + Wl.nz * PK.wallPush; s.vy += up;
-    s.park.wallIdx = -1; s.park.wallExit = why; s.preload = 0; s.spinArm = false;
+    s.park.wallIdx = -1; s.park.wallExit = why; s.preload = 0; s.spinArm = false; s.park.unleanT = 0.6;
     s.air = true; s.airT = 0.13; s.airMax = s.y; s.sinceContact = 1; s.safe.t = 0;
     if (why === "hop") { s.hops++; s.hopT = 0; s.popStep = s.steps; }
   }

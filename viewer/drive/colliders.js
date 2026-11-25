@@ -206,6 +206,9 @@ function polyBoxOverlaps(col, p, ob) {
 // (claude/kid, forgiving falls 2026-11-25: no closures and no double crossing a call - the bike's zero-garbage step met
 // this function's three closures and their boxed arguments on every wall contact. The scratch PB carries the state and
 // the arguments; the arithmetic and the order of the candidates are exactly the old ones)
+/** sqrt(a^2 + b^2) (Math.hypot is not inlined by V8: it boxes its result - an allocation every call, on every wall
+ *  contact of the bike's zero-garbage step) */
+const hyp2 = (a, b) => Math.sqrt(a * a + b * b);
 const PB = { col: null, p: 0, x: 0.5, z: 0.5, hx: 0.5, hz: 0.5, cs: 0.5, sn: 0.5, best: 0.5, onx: 0.5, onz: 0.5, ux: 0.5, uz: 0.5, d: 0.5 };
 function pbTry() {
   const ux = PB.ux, uz = PB.uz, dist = PB.d;
@@ -223,11 +226,13 @@ function pbSigned() {
 }
 /** tryVec(dx, dz) with the arguments in PB.ux, PB.uz */
 function pbVec() {
-  const dx = PB.ux, dz = PB.uz, L = Math.hypot(dx, dz);
+  const dx = PB.ux, dz = PB.uz, L = hyp2(dx, dz);
   if (L > 0) { PB.ux = dx / L; PB.uz = dz / L; PB.d = L; pbTry(); }
 }
-function polyBoxContact(col, p, x, z, body, contact) {
-  const hx = body.hx, hz = body.hz, cs = body.cos, sn = body.sin;
+function polyBoxContact(col, p, x, z, body, contact) { PB.x = x; PB.z = z; return polyBoxCore(col, p, body, contact); }
+/** (the box's position in PB.x / PB.z: no double crosses the call - itemContactB, the bike) */
+function polyBoxCore(col, p, body, contact) {
+  const x = PB.x, z = PB.z, hx = body.hx, hz = body.hz, cs = body.cos, sn = body.sin;
   OB.x = x; OB.z = z; OB.hx = hx; OB.hz = hz; OB.cs = cs; OB.sn = sn;
   if (!polyBoxOverlaps(col, p, OB)) return false;
   const pts = col.pts, ringStart = col.ringStart, polyRing = col.polyRing;
@@ -240,12 +245,12 @@ function polyBoxContact(col, p, x, z, body, contact) {
     let pnx = 0, pnz = 0, psup = 0, hasPrev = false;
     {
       const ax = pts[(e - 1) * 2], az = pts[(e - 1) * 2 + 1], bx = pts[s * 2], bz = pts[s * 2 + 1];
-      const L = Math.hypot(bx - ax, bz - az);
+      const L = hyp2(bx - ax, bz - az);
       if (L > 0) { pnx = -(bz - az) / L; pnz = (bx - ax) / L; psup = Math.abs(pnx * cs - pnz * sn) * hx + Math.abs(pnx * sn + pnz * cs) * hz; hasPrev = true; }
     }
     for (let i = s, j = e - 1; i < e; j = i++) {
       const Ax = pts[j * 2], Az = pts[j * 2 + 1], Bx = pts[i * 2], Bz = pts[i * 2 + 1];
-      const dx = Ax - x, dz = Az - z, ex = Bx - Ax, ez = Bz - Az, L = Math.hypot(ex, ez);
+      const dx = Ax - x, dz = Az - z, ex = Bx - Ax, ez = Bz - Az, L = hyp2(ex, ez);
       if (L > 0) {
         const nx = -ez / L, nz = ex / L, d = dx * nx + dz * nz, sup = Math.abs(nx * cs - nz * sn) * hx + Math.abs(nx * sn + nz * cs) * hz;
         PB.ux = nx; PB.uz = nz; PB.d = d + sup; pbSigned(); PB.ux = nx; PB.uz = nz; PB.d = d - sup; pbSigned();
@@ -265,7 +270,7 @@ function polyBoxContact(col, p, x, z, body, contact) {
       PB.ux = cs; PB.uz = -sn; PB.d = u + hx; pbSigned(); PB.ux = cs; PB.uz = -sn; PB.d = u - hx; pbSigned();
       PB.ux = sn; PB.uz = cs; PB.d = v + hz; pbSigned(); PB.ux = sn; PB.uz = cs; PB.d = v - hz; pbSigned();
       for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) { const du = u + (a ? hx : -hx), dv = v + (b ? hz : -hz); PB.ux = du * cs + dv * sn; PB.uz = -du * sn + dv * cs; pbVec(); }
-      const D = Math.hypot(dx, dz);
+      const D = hyp2(dx, dz);
       if (D > 0) { const sup2 = (Math.abs(u) * hx + Math.abs(v) * hz) / D; PB.ux = dx / D; PB.uz = dz / D; PB.d = D + sup2; pbSigned(); PB.ux = dx / D; PB.uz = dz / D; PB.d = D - sup2; pbSigned(); }
     }
   }
@@ -281,13 +286,14 @@ function polyBoxContact(col, p, x, z, body, contact) {
 }
 
 /** Box against circle c (a trunk, a post). */
-function circleBoxContact(col, c, x, z, body, contact) {
-  const q = c * 3, cx = col.circ[q], cz = col.circ[q + 1], r = col.circ[q + 2];
-  const { hx, hz, cos: cs, sin: sn } = body;
+function circleBoxContact(col, c, x, z, body, contact) { PB.x = x; PB.z = z; return circleBoxCore(col, c, body, contact); }
+function circleBoxCore(col, c, body, contact) {
+  const x = PB.x, z = PB.z, q = c * 3, cx = col.circ[q], cz = col.circ[q + 1], r = col.circ[q + 2];
+  const hx = body.hx, hz = body.hz, cs = body.cos, sn = body.sin;
   // circle centre in the box frame
   const dx = cx - x, dz = cz - z, u = dx * cs - dz * sn, v = dx * sn + dz * cs;
   const qu = Math.max(-hx, Math.min(hx, u)), qv = Math.max(-hz, Math.min(hz, v));
-  const du = u - qu, dv = v - qv, d = Math.hypot(du, dv);
+  const du = u - qu, dv = v - qv, d = hyp2(du, dv);
   if (d >= r) return false;
   let nu, nv, depth;
   if (d > 1e-9) { nu = -du / d; nv = -dv / d; depth = r - d; }          // push the box away from the centre
@@ -314,6 +320,22 @@ export function heightClear(col, id, y) {
   return (k === KIND.wall || ((k === KIND.furniture || k === KIND.hedge) && !FURN_HEIGHT_OLD)) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
 }
 const FURN_HEIGHT_OLD = typeof location !== "undefined" && /[?&]furnheight=old(&|$)/.test(location.search);
+
+/** itemContact with the box's centre in body.x / body.z (claude/kid: the bike's colliders - a call with doubles that V8
+ *  does not inline boxes them, on every contact) */
+export function itemContactB(col, id, body, contact) {
+  contact.kind = id < col.P ? col.pkind[id] : col.ckind[id - col.P];
+  PB.x = body.x; PB.z = body.z;
+  return id < col.P ? polyBoxCore(col, id, body, contact) : circleBoxCore(col, id - col.P, body, contact);
+}
+/** heightClear with the height in HC.y (the same: no double across the call) */
+export const HC = { y: 0.5 };
+export function heightClearP(col, id) {
+  const y = HC.y;
+  if (id >= col.P || !Number.isFinite(y)) return false;
+  const k = col.pkind[id];
+  return (k === KIND.wall || ((k === KIND.furniture || k === KIND.hedge) && !FURN_HEIGHT_OLD)) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
+}
 
 /** Contact of the car body with item `id` of `col`. body = { hx, hz, cos, sin }. */
 export function itemContact(col, id, x, z, body, contact) {

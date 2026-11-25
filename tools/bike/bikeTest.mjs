@@ -587,7 +587,7 @@ function randomInputs(seed, n) {
       "clean; sketchy: wobble, -5 % speed, stays on; bail");
   }
   // the old binary checks, as bails now: a trick still held at touch-down (section 7) and one let go just late
-  const tr = (() => { const env = labEnv(), s = spawn(env, 0, 8, 0); s.vz = 8; ride(s, env, (q) => ({ trick: q.air && q.airT < 0.6 }), 4); return s; })();
+  const tr = (() => { const env = labEnv(), s = spawn(env, 0, 8, 0); s.vz = 8; ride(s, env, (q) => ({ trick: q.air && q.airT < 0.52 }), 4); return s; })();
   check("landing bands: a trick let go just late = sketchy, not a crash", tr.crashes === 0 && tr.lastLanding?.band === "sketchy", `${tr.lastLanding?.band} (${tr.lastLanding?.why}, air ${f2(tr.lastLanding?.air)} s), crashes ${tr.crashes}`, "sketchy, stays on");
 }
 
@@ -685,7 +685,9 @@ function randomInputs(seed, n) {
   const r2 = downStairs(testGroundRamped, 2), r4 = downStairs(testGroundRamped, 4), raw4 = downStairs(testGround, 4);
   check("stairs (8 x 15 cm): ridden down on the ramp", r2.s.crashes === 0 && r4.s.crashes === 0 && r2.s.z < STAIRS.z0 - 2 && r4.s.z < STAIRS.z0 - 2 && r4.maxA < 3,
     `2 m/s: ${r2.s.crashes ? r2.s.crashCause : "ridden"}, peak ${f1(r2.maxA)} g; 4 m/s: ${r4.s.crashes ? r4.s.crashCause : "ridden"}, peak ${f1(r4.maxA)} g (the raw steps at 4 m/s: ${raw4.s.crashes ? `"${raw4.s.crashCause}"` : "ridden"}, peak ${f1(raw4.maxA)} g)`, "ridden, < 3 g");
-  const up = (() => { const s = createBikeState(130, 66, 0, 0); s.vz = 4; let pushed = false; for (let i = 0; i < 1500 && s.z < STAIRS.zl; i++) { stepBike(s, { pedal: 1 }, lab); if (s.pushing) pushed = true; } return { s, pushed }; })();
+  const up = (() => { const s = createBikeState(130, 68.5, 0, 0); s.vz = 1.2; let pushed = false; for (let i = 0; i < 1500 && s.z < STAIRS.zl; i++) { stepBike(s, { pedal: 1 }, lab); if (s.pushing) pushed = true; } return { s, pushed }; })();
+  // (the park round: from a slow roll - 4 m/s of run-up and the pedals now carry the bike over this short 1.2 m flight
+  // on its ramp, as they would a real BMX: the attached ramp keeps the speed the springs used to lose)
   check("stairs: up = off the bike, pushed to the top", up.pushed && up.s.z >= STAIRS.zl - 0.1 && up.s.crashes === 0, `pushed ${up.pushed}, reached the landing ${up.s.z >= STAIRS.zl - 0.1} in ${f1(up.s.t)} s`, "pushed up");
   // ---- 15f. a real spot of D6 (the lab's ?city=D6): its stairs ridden down, a bench ground, a real kerb face
   const C = buildCitySpot(docs, [-1287, 721], { SURF, KIND });

@@ -208,11 +208,18 @@ export function withStairRamps(height, E, { blend = 0.35, round = 0.6 } = {}) {
     const i = Math.floor((x - E.bounds.x0) / E.cell), j = Math.floor((z - E.bounds.z0) / E.cell);
     return i < 0 || j < 0 || i >= E.nx || j >= E.nz ? null : cells[j * E.nx + i];
   };
-  const blendRamp = (base, x, z, list) => {
+  // (garbage-free, claude/kid 2026-11-25: the point in / the height out through pt, the segment's nearest point written
+  // out here - blendRamp(base, x, z) and segNearest(.., x, z, ..) boxed their doubles on every ground sample near a
+  // flight: the zero-garbage check's D6 ride, now rolling kerbs to the stairs)
+  const blendRampP = (pt, list) => {
+    const x = pt.x, z = pt.z, base = pt.h;
     let best = base, wBest = 0;
-    for (const s of list) {
+    for (let li = 0; li < list.length; li++) {
+      const s = list[li];
       const half = E.lineW[E.segLine[s]] / 2;
-      segNearest(E, s, x, z, q);
+      { const o = s * 6, x0 = E.seg[o], z0 = E.seg[o + 2], dx = E.seg[o + 3] - x0, dz = E.seg[o + 5] - z0;
+        const len = Math.sqrt(dx * dx + dz * dz) || 1e-6, tx = dx / len, tz = dz / len, px = x - x0, pz = z - z0;
+        q.u = px * tx + pz * tz; q.len = len; q.d = tx * pz - tz * px; }
       const ad = Math.abs(q.d);
       if (ad > half + blend) continue;
       // the profile along the flight: straight, its two ends ROUNDED over +-round m (C1: no corner at the bottom or the
@@ -226,9 +233,10 @@ export function withStairRamps(height, E, { blend = 0.35, round = 0.6 } = {}) {
       const w = Math.min(fadeA, fadeB) * smooth01((half + blend - ad) / blend);
       if (w > wBest) { wBest = w; best = base + (ramp - base) * w; }
     }
-    return best;
+    pt.h = best;
   };
-  const h = (x, z) => { const base = height(x, z), list = listAt(x, z); return list ? blendRamp(base, x, z, list) : base; };
+  const TP = { x: 0.5, z: 0.5, h: 0.5 };
+  const h = (x, z) => { const base = height(x, z), list = listAt(x, z); if (!list) return base; TP.x = x; TP.z = z; TP.h = base; blendRampP(TP, list); return TP.h; };
   // the object form (pt.x, pt.z -> pt.h: no doubles across calls; groundQuery uses it): the base's own object form when
   // it has one; the stair cells read inline (only near a stair does the blend run)
   const bP = height.P || null, nx = E.nx, nz = E.nz, x0 = E.bounds.x0, z0 = E.bounds.z0, cs = E.cell;
@@ -236,7 +244,7 @@ export function withStairRamps(height, E, { blend = 0.35, round = 0.6 } = {}) {
     if (bP) bP(pt); else pt.h = height(pt.x, pt.z);
     const i = Math.floor((pt.x - x0) / cs), j = Math.floor((pt.z - z0) / cs);
     const list = i < 0 || j < 0 || i >= nx || j >= nz ? null : cells[j * nx + i];
-    if (list) pt.h = blendRamp(pt.h, pt.x, pt.z, list);
+    if (list) blendRampP(pt, list);
   };
   h.stairAt = (x, z) => {
     const list = listAt(x, z);

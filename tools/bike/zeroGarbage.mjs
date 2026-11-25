@@ -15,9 +15,15 @@ const obs = new PerformanceObserver((l) => { gcs += l.getEntries().length; });
 obs.observe({ entryTypes: ["gc"] });
 const tick = () => new Promise((r) => setTimeout(r, 30));
 async function count(env, s, inp, home, N = 1e6) {
+  // (claude/kid, the park: a reset also when the bike is STUCK - pedalling into a house corner at 0 m/s, the steer does
+  // nothing at a standstill - for 3 s: that is not riding; a rider backs off. The ride before never happened to get
+  // stuck; with the kerbs rolled and the transitions it did, at -1289, 754, and every step there met the colliders'
+  // generic paths in this two-ground process: 1 593 collections)
+  const K = new Float64Array(3);       // (t, x, z: a typed array - a mutable double in a closure is boxed every write)
   const run = () => {
     stepBike(s, inp, env);
-    if (Math.abs(s.x - home[0]) > 40 || Math.abs(s.z - home[1]) > 40 || s.crashed) { s.x = home[0]; s.z = home[1]; s.y = home[2] + 0.9; s.crashed = false; s.vx = 0; s.vz = 4; s._prepX = NaN; }
+    if ((K[0] += 1 / 120) > 3) { const moved = Math.abs(s.x - K[1]) + Math.abs(s.z - K[2]) > 0.3; K[0] = 0; K[1] = s.x; K[2] = s.z; if (!moved) s.crashed = true; }
+    if (Math.abs(s.x - home[0]) > 40 || Math.abs(s.z - home[1]) > 40 || s.crashed) { s.x = home[0]; s.z = home[1]; s.y = home[2] + 0.9; s.crashed = false; s.vx = 0; s.vz = 4; s.pitch = 0; s.pitchVel = 0; s.vy = 0; s._prepX = NaN; }
   };
   for (let i = 0; i < 3e5; i++) run();              // (warm: optimised)
   await tick(); gcs = 0;

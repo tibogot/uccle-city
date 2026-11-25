@@ -7,8 +7,8 @@
 //     the wheels are over their top: a hop over a log / a low wall works
 //   - hedges are soft (drag), everything else is hard: bikeHit slides along it or crashes over crashSpeed
 // Pure JS (no three).
-import { gather, itemContact, heightClear, KIND } from "../drive/colliders.js";
-import { BIKE_BODY, bikeHit } from "./bikePhysics.js";
+import { gather, itemContact, heightClear, itemContactB, heightClearP, HC, KIND } from "../drive/colliders.js";
+import { BIKE_BODY, bikeHit, bikeHitC } from "./bikePhysics.js";
 
 /**
  * sets(x, z, r) -> collider sets that may hold items within r of (x, z) (one per tile; the lab: one)
@@ -19,12 +19,13 @@ const hyp = (a, b) => Math.sqrt(a * a + b * b);
 export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit = bikeHit, edges = null, wallrides = null }) {
   const near = [];
   const contact = { nx: 0, nz: 0, depth: 0, kind: 0 };
-  const body = { hx: dims.hx, hz: dims.hz, cos: 1, sin: 0 };
-  const wheel = { hx: 0.1, hz: 0.15, cos: 1, sin: 0 };   // the low part of one wheel (for the low pieces)
+  const body = { hx: dims.hx, hz: dims.hz, cos: 0.5, sin: 0.5, x: 0.5, z: 0.5 };
+  const wheel = { hx: 0.1, hz: 0.15, cos: 0.5, sin: 0.5, x: 0.5, z: 0.5 };   // the low part of one wheel (for the low pieces)
   const camNear = [], camBox = { hx: 0.12, hz: 0.12, cos: 1, sin: 0 }, camHit = { nx: 0, nz: 0, depth: 0, kind: 0 };   // (solidAt)
   const env = {
     ground,
-    groundP: ground.P || null,   // (the object form of the ground query: groundQuery's g.P - no doubles across calls)
+    groundP: ground.P || null,
+    heightP: ground.hP || null,  // (the height alone, object form: the face scans)   // (the object form of the ground query: groundQuery's g.P - no doubles across calls)
     edges,             // the edge layer (bikeEdges.js: grinds, stalls; feel round 2) or null
     wallrides,         // wall-ride walls (the lab's park: bikePark.js PARK_WALLRIDES) or null
     near,
@@ -36,7 +37,7 @@ export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit
       env.tested = near.length / 2;
     },
     collide(s, B) {
-      body.cos = Math.cos(s.heading); body.sin = Math.sin(s.heading);
+      body.cos = Math.cos(s.heading); body.sin = Math.sin(s.heading); body.x = s.x; body.z = s.z;
       const rb = Math.sqrt(dims.hx * dims.hx + dims.hz * dims.hz) + 0.05;
       for (let pass = 0; pass < 2; pass++) {
         let any = false;
@@ -55,14 +56,17 @@ export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit
             if (s.grindCD > 0) continue;
             let hitW = false;
             for (let w = 0; w < 2 && !hitW; w++) {
-              if (heightClear(col, id, s.wheelBot[w])) continue;
-              wheel.cos = body.cos; wheel.sin = body.sin;
-              hitW = itemContact(col, id, s.wheelPos[w * 2], s.wheelPos[w * 2 + 1], wheel, contact);
+              HC.y = s.wheelBot[w];
+              if (heightClearP(col, id)) continue;
+              wheel.cos = body.cos; wheel.sin = body.sin; wheel.x = s.wheelPos[w * 2]; wheel.z = s.wheelPos[w * 2 + 1];
+              hitW = itemContactB(col, id, wheel, contact);
             }
             if (!hitW) continue;
           } else {
-            if (heightClear(col, id, s.yLow)) continue;
-            if (!itemContact(col, id, s.x, s.z, body, contact)) continue;
+            HC.y = s.yLow;
+            if (heightClearP(col, id)) continue;
+            body.x = s.x; body.z = s.z;
+            if (!itemContactB(col, id, body, contact)) continue;
           }
           if (contact.kind === KIND.hedge) {
             if (pass === 0) { const k2 = Math.exp(-2.2 * 1 / 120); s.vx *= k2; s.vz *= k2; }
@@ -70,7 +74,7 @@ export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit
           }
           const d = Math.min(contact.depth, 0.5);
           s.x += contact.nx * d; s.z += contact.nz * d;
-          onHit(s, contact.nx, contact.nz, contact.kind, B);
+          if (onHit === bikeHit) bikeHitC(s, contact, B); else onHit(s, contact.nx, contact.nz, contact.kind, B);
           s.envContacts++; any = true;
         }
         if (!any) break;
