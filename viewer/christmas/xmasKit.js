@@ -22,7 +22,7 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, vec2, vec3, vec4, float, mix, smoothstep, clamp, max, fract, sin, abs, pow, time, select, positionWorld, uniform, Fn, normalWorld,
-  texture, frontFacing, normalViewGeometry, normalView, positionView, context,
+  texture, frontFacing, normalViewGeometry, normalView, positionView, context, normalLocal,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
@@ -78,8 +78,9 @@ export const xmasLook = {
   flash: uniform(1.0),          // the flash bulbs' sparkle
   rope: uniform(0.75),          // LED rope (motifs) vs bulbs
   star: uniform(0.7),
-  glow: uniform(0.35),          // (claude/xmasreview) the LEDs' warm light on the fir's needles at night (x albedo)
-  glint: uniform(0.6),          // ... in the baubles (x their colour)
+  glow: uniform(0.8),           // (claude/xmasreview) the LEDs' warm light on the fir's needles at night (x albedo)
+  glint: uniform(0.08),         // ... in the baubles (x their colour; more reads as coloured bulbs)
+  stall: uniform(0.5),          // ... on a market chalet's FRONT (its 16 eave LEDs + the lit hatch: boards, counter, sign)
   cards: uniform(0.78),         // the needle cards' albedo gain: 0.78 matches the far fronds' green at the 45 m switch (browser, 2026-11-17)
   under: uniform(0.55),         // the cards' back faces (the silvery undersides seen from below; 0.55: the switch)
 };
@@ -156,6 +157,10 @@ const level = () => mix(xmasLook.day, xmasLook.night, env.uNight);
 /** (claude/xmasreview) the LEDs' warm glow on the fir at night (FIR_GLOW): albedo x LED warm white x gain x night */
 const LED_WARM = 0xffc27e;
 const ledGlow = (albedo, gain) => albedo.mul(lin(LED_WARM)).mul(gain).mul(env.uNight);
+/** a chalet's front faces (glTF +Z: the hatch side): the boards, posts and sign that face the front, where its eave LEDs
+ *  shine (by the normal: the packed GLB's positions are quantized, its normals keep their direction) */
+const stallFront = () => smoothstep(0.35, 0.9, normalLocal.z);
+const stallGlow = (m) => { if (FIR_GLOW) { m.emissiveNode = ledGlow(m.colorNode, xmasLook.stall.mul(stallFront())); m.userData.ledGlow = true; } };
 /** a per-element phase in [0, 1): the element's own random (COLOR_0.r) + the instance's id hash */
 const phaseOf = (instanced) => (instanced ? fract(COL().x.add(attribute("xlod", "vec4").z)) : COL().x);
 
@@ -275,13 +280,14 @@ function make(slot, uvs, instanced, mask = instanced, pass = null) {
       const tone = instanced ? attribute("xlod", "vec4").w : float(0.5);
       const stain = mix(lin(0x3b2416), lin(0x8a6440), tone);
       m.colorNode = stain.mul(mix(float(0.78), float(1.08), c.x)).mul(ao);
+      stallGlow(m);
       wxMat(m, { porosity: 0.5 });
       break;
     }
-    case "chalet_trim": std({ roughness: 0.7 }); m.colorNode = lin(0x231610).mul(ao); wxMat(m, { porosity: 0.4 }); break;
+    case "chalet_trim": std({ roughness: 0.7 }); m.colorNode = lin(0x231610).mul(ao); stallGlow(m); wxMat(m, { porosity: 0.4 }); break;
     case "roof_felt": std({ roughness: 0.92 }); m.colorNode = lin(0x1f2a20).mul(ao); wxMat(m, { porosity: 0.3 }); break;
     case "snow_fake": std({ roughness: 0.85 }); m.colorNode = lin(0xe8ecf0).mul(ao); break;
-    case "sign_board": std({ roughness: 0.65 }); m.colorNode = lin(0xd9cdb0).mul(ao); wxMat(m, { porosity: 0.2 }); break;
+    case "sign_board": std({ roughness: 0.65 }); m.colorNode = lin(0xd9cdb0).mul(ao); stallGlow(m); wxMat(m, { porosity: 0.2 }); break;
     case "chalet_interior": {
       // the inside (seen through the hatch): goods in many colours (r: hue pick, g: brightness), lit warm at night
       std({ roughness: 0.75 });

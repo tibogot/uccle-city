@@ -34,7 +34,7 @@ ok(xmasActive(P("day=350"), new Date(2026, 6, 1)) === true && xmasActive(P("day=
   const t = { x: 0, z: 0, scale: 1 }, y = treeFootY(t, slope);
   let lo = Infinity; for (let k = 0; k < 64; k++) { const a = (k * Math.PI) / 32; lo = Math.min(lo, slope(Math.cos(a) * PLANTER_R, Math.sin(a) * PLANTER_R)); }
   ok(y <= lo + 0.002 && y < slope(0, 0), `fir foot: the planter's lowest rim point on a slope (${y.toFixed(3)} vs rim min ${lo.toFixed(3)}, centre ${slope(0, 0).toFixed(3)})`);
-  ok(/t\.y = treeFootY\(t, world\.walkY\) - 0\.02/.test(fs.readFileSync(new URL("../../viewer/christmas/xmasCity.js", import.meta.url), "utf8")), "the city sets each fir on treeFootY (the planter's lowest ground)");
+  ok(/t\.y = treeFootY\(t, \(x, z\) => world\.walkY\(x, z\)\) - 0\.02/.test(fs.readFileSync(new URL("../../viewer/christmas/xmasCity.js", import.meta.url), "utf8")), "the city sets each fir on treeFootY (the planter's lowest ground)");
 }
 
 // ---- the kit

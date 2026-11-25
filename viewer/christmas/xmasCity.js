@@ -407,7 +407,7 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
     let changed = placeChalets();
     for (const t of trees) {
       if (t.placed || !world.tiles.some((T) => T.name === t.tile)) continue;
-      t.y = treeFootY(t, world.walkY) - 0.02; t.placed = true; changed = true;
+      t.y = treeFootY(t, (x, z) => world.walkY(x, z)) - 0.02; t.placed = true; changed = true;
       field.add("tree", place(t.x, t.y, t.z, t.yaw, t.scale, t.scale, t.scale), `tree ${t.id}`);
       // the octagonal planter (1.38 m) blocks the car (drive colliders, viewer/drive/driveMode.js addStatic)
       const ring = Array.from({ length: 8 }, (_, k) => { const a = Math.PI / 8 + (k * Math.PI) / 4, r = 1.4 * t.scale; return [t.x + Math.cos(a) * r, t.z + Math.sin(a) * r]; });

@@ -245,6 +245,10 @@ def street_furniture(tiles):
 
 FURNITURE_CLEAR = 0.5                                 # m: a chalet's footprint (roof + propped shutter) to any furniture
 CUSTOMER_DEPTH = 1.5                                  # m: the customers' strip in front of the hatch
+# the fir seen whole from the square's main approach: the default boot / tour spot (viewer/places.js stjob-street, the
+# Place de Saint-Job street view): no chalet within 0.5 m of the sightline to the fir's foot (the furniture fix first
+# put one right in front of it from there)
+FIR_VIEWS = [(1102.0, 542.0)]
 FIR_CROWN = 2.95                                      # m: the fir's lowest branches' reach (5.9 m wide, x the scale)
 
 
@@ -304,6 +308,7 @@ def chalets_on_square():
                 lx = (px - x) * ux + (pz - z) * uz; ly = (px - x) * fx + (pz - z) * fz
                 return math.hypot(max(abs(lx) - HW, 0), max(ly - (FR + CUSTOMER_DEPTH), FR - ly, 0))
             if front_d(fir["x"], fir["z"]) < FIR_CROWN * fir["scale"] + 0.3: continue
+            if any(rect_d(vx_ + (fir["x"] - vx_) * k / 60, vz_ + (fir["z"] - vz_) * k / 60) < 0.5 for vx_, vz_ in FIR_VIEWS for k in range(61)): continue
             if any(rect_d(q["x"], q["z"]) < 4.0 for q in fronts): continue
             picks.append((math.hypot(x - fir["x"], z - fir["z"]), x, z, fx, fz, oo))
     picks.sort()

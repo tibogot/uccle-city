@@ -1,5 +1,44 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
+## ART-DIRECTOR REVIEW IN GAME (claude/xmasreview, 2026-11-26, five days before 1 December)
+
+Looked at with `?quick=1&xmas=1` day and `&time=night`: Place Saint-Job (the fir at 8 / 20 / 46 m, the 45 m switch
+zoomed, from 60 m above, walking the market, car height on the Chaussée de Saint-Job), the Parvis Saint-Pierre (fir,
+planter) and Rue Xavier De Bue (garlands, car height). Shots and the owner's sheet: `C:/Users/tibog/Downloads/uccle-xmas/`
+(`review_sheet.png`).
+
+**Defects found and fixed** (each: why, rule, check):
+1. **A chalet's roof pierced by a street-name post** (Place de Saint-Job plate post 1117.7, 538.3, inside the west
+   chalet's footprint). Why: build_site.py placed the market clear of trees, walls, shops and the fir, never of the
+   street furniture. Fix: `street_furniture` in the build (plate posts, sign poles, postboxes, stops, Villo, bins, hoops,
+   benches, bike parkings) 0.5 m clear of each footprint; site.json rebuilt (only `chalets` changed). Rule
+   xmas-fit-current-city (extended); check: gate row `xmas` "street furniture" (siteFit.mjs; the old site.json fails).
+2. **Two serving hatches 1.3 m from the fir's lowest branches** (the north row opened into the crown: no room for a
+   customer). Why: the clearance was measured to the planter (1.4 m), not to the crown (2.95 m). Fix: the customers'
+   strip (1.5 m in front of each hatch) clear of the crown + 0.3 m; the market now has the fir standing in the south row
+   with the aisle free. Same rule / row.
+3. **The Saint-Job planter floated 1.7 cm on its downhill side** (centre 70.483, rim min 70.446, foot 70.463). Why: the
+   fir was set on the ground at its centre only (the chalets already used their lowest corner). Fix: xmasCity.js
+   `treeFootY` (lowest of the rim and centre). Rule xmas-fit-current-city (joins); check `xmastest` "fir foot".
+4. **At night each fir read as LED dots floating in a black void** (crown, baubles, planter invisible). Why: the 654 LEDs
+   are emissive only (fixed light count) and lit nothing. Fix (`?firglow=0` = before): the foliage of every level, the
+   baubles and the garlands' greenery take albedo x LED warm x `xmas.look.glow` (0.35) / `.glint` (0.6) x env.uNight.
+   Rule xmas-night-glow; check `xmastest` "LED glow".
+5. **The season followed the visitor's clock** (Montreal 6 h late, Tokyo a day early). Fix: xmasDate.js `brusselsDate`
+   (Intl, Europe/Brussels). Rule xmas-season-date; check `xmastest` (UTC instants round the Brussels midnights).
+6. **The layer's code was fetched on every boot all year** (main.js imported xmasCity.js statically: the kit, the
+   GLTF / meshopt loaders before the cover). Fix: a dynamic import after `whenXmasNeeded()`, only when the layer is on.
+   Rule xmas-low-priority (extended); check `xmas` "boot: no static import ...".
+
+**Date logic checked:** on from 1 December 00:00 to 6 January 23:59 Brussels time; `?xmas=1` / `?xmas=0` force it;
+`?day=` (day of the year: 335-365 or 1-6) decides when given (note: the dev panel's "day of year" slider writes `?day=`,
+so a December visitor who moved it to summer gets no Christmas: intended, it is a simulation). Outside the season the boot
+loads xmasDate.js + xmasWindows.js only (~3 KB, the date switch and the windows' uniform), no Christmas data.
+
+**Seen and fine:** the fir from 20 m day and night (needles, baubles, star), Saint-Pierre's fir at night, the pole
+garlands on the Saint-Job lamps (5.5 m, well over a car), the De Bue garlands with their stars, the December windows,
+the 43 -> 47 m switch at street FOV (no pop), no z-fight specks in the cards, 0 console errors of ours.
+
 ## FIR ROUND 3: the cards' cost and the middle level (claude/xmasfir3, 2026-11-18 offline, browser turn 2026-11-20)
 
 - **Browser turn (2026-11-20, fast lane, preflight RED: Chrome 6.2 GB, GPU 52 % busy before start, power cap):**

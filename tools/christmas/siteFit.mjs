@@ -69,6 +69,7 @@ export function streetFurniture(T) {
 }
 /** a chalet's oriented rectangles (build_site.py chalets_on_square: half width 1.8, front reach 1.45 with the shutter,
  *  back 1.35): the distance from (px, pz) to its footprint, and to the customers' strip (1.5 m) in front of the hatch */
+export const FIR_VIEWS = [[1102, 542]];       // (build_site.py FIR_VIEWS: viewer/places.js stjob-street)
 export function chaletDist(c, px, pz) {
   const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), ux = fz, uz = -fx;
   const lx = (px - c.x) * ux + (pz - c.z) * uz, ly = (px - c.x) * fx + (pz - c.z) * fz, ax = Math.max(Math.abs(lx) - 1.8, 0);
@@ -252,10 +253,13 @@ export async function siteFit(site, { lamps = true } = {}) {
     for (const [i, c] of (site.chalets ?? []).entries()) {
       for (const [x, z, r, k] of F) { const d = chaletDist(c, x, z).foot - r; if (d < 0.5) bad.push(`chalet ${i}: ${d.toFixed(2)} m from a ${k} at (${x.toFixed(1)}, ${z.toFixed(1)}) (< 0.5)`); }
       for (const t of site.trees) { const d = chaletDist(c, t.x, t.z).front - 2.95 * t.scale; if (d < 0.3) bad.push(`chalet ${i}: the customers' strip ${d.toFixed(2)} m from the ${t.id} fir's crown (< 0.3)`); }
+      // the fir seen whole from the square's main approach (viewer/places.js stjob-street: the default boot / tour spot)
+      const t0 = site.trees.find((t) => t.id === "stjob");
+      for (const [vx, vz] of FIR_VIEWS) if (t0) { let d = Infinity; for (let k = 0; k <= 60; k++) d = Math.min(d, chaletDist(c, vx + ((t0.x - vx) * k) / 60, vz + ((t0.z - vz) * k) / 60).foot); if (d < 0.5) bad.push(`chalet ${i}: ${d.toFixed(2)} m from the sightline (${vx}, ${vz}) -> the Saint-Job fir (< 0.5)`); }
     }
     for (const t of site.trees) for (const [x, z, r, k] of F) { const d = Math.hypot(x - t.x, z - t.z) - r - 2.95 * t.scale; if (d < 0) bad.push(`fir ${t.id}: a ${k} at (${x.toFixed(1)}, ${z.toFixed(1)}) inside its crown`); }
     counts.furniture = { tiles, items: F.length, bad: bad.length };
-    row(!bad.length, `street furniture: ${(site.chalets ?? []).length} chalets >= 0.5 m from the ${F.length} furniture pieces of tiles ${tiles.join(" ")} (plate posts, sign poles, postboxes, stops, Villo, bins, hoops, bike parkings), the firs' crowns clear of them, every hatch's customers' strip clear of the fir's crown${bad.length ? " :: " + bad.join("; ") : ""}`);
+    row(!bad.length, `street furniture: ${(site.chalets ?? []).length} chalets >= 0.5 m from the ${F.length} furniture pieces of tiles ${tiles.join(" ")} (plate posts, sign poles, postboxes, stops, Villo, bins, hoops, bike parkings), the firs' crowns clear of them, every hatch's customers' strip clear of the fir's crown, no chalet in the sightline from the square's main approach to the fir${bad.length ? " :: " + bad.join("; ") : ""}`);
   }
   return { rows, counts };
 }
