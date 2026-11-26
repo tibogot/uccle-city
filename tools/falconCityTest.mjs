@@ -67,6 +67,7 @@ const W = {
     o.floor = h; return o;
   },
   floorAt(x, z, y) { return this.column(x, z, y).floor; },
+  inBuilding(x, z) { return roof(x, z) > 0; }, roofNear(x, z) { return roof(x, z); },
   _tp: [],
   treePerches(x, z, R) { const o = this._tp; o.length = 0; if (Math.hypot(TREE.x - x, TREE.z - z) < R) o.push(this._tq ??= { name: "tree", pos: new THREE.Vector3(TREE.x, TREE.cy + TREE.Rv * 0.85, TREE.z), yaw: 0, tree: true }); return o; },
 };
@@ -320,7 +321,7 @@ const SL = sill();
 check("gym: E by the façade lands on a window sill (the façade kit's) and stands there 4 s, Space launches off it", SL.landed >= 0 && SL.dS < 0.15 && SL.kind === "sill" && SL.stays && SL.launched && SL.flyAgl > 2, `landed at ${SL.landed.toFixed(2)} s on a ${SL.kind || "?"} ${SL.dS.toFixed(2)} m from the sill's perch point (${SL.on ? `${SL.on.y.toFixed(2)} m up` : "-"}), stays ${SL.stays}, launched ${SL.launched}, ${SL.flyAgl.toFixed(1)} m up after`);
 // self-test: the raw city world (no pads): the falcon cannot stand on a sill
 const raw = new CityGymWorld(W);
-raw.column = function (x, z, y) { const b = this.w.column(x, z, y), o = this._c; o.floor = b.floor; o.ceil = b.ceil; o.brush = b.brush; o.tree = b.tree; o.pad = -1; return o; };
+raw.column = function (x, z, y) { const b = this.w.column(x, z, y), o = this._c; o.floor = b.floor; o.ceil = b.ceil; o.brush = b.brush; o.tree = b.tree; o.pad = -1; o.furn = -1; return o; };
 const SR = sill(raw);
 check("self-test: without the pads (the raw height grid) the falcon cannot stand on the sill (it drops off)", !SR.stays, `landed ${SR.landed >= 0 ? SR.landed.toFixed(2) + " s" : "never"}, stays ${SR.stays}${SR.after ? `, ${SR.after.mode} at ${SR.after.y.toFixed(2)} m after 4 s (the sill at ${SR.on?.y.toFixed(2)} m)` : ""}`);
 const DG = stoop("gym"), DC = stoop("current");

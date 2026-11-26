@@ -340,7 +340,8 @@ export class CityFlyer {
     const now = performance.now(), dt = Math.min((now - (this._tickT ?? now)) / 1000, 0.05);
     this._tickT = now;
     // the loaded tiles' tree crowns (a worker job per new tile), ready before a flight
-    if (this.w && now - (this._treeT ?? 0) > 2000) { this._treeT = now; this.w.syncTrees(); this.syncSquares(camPos); }
+    if (this.w && now - (this._treeT ?? 0) > 2000) { this._treeT = now; this.w.syncTrees(); this.w.syncFurniture(); this.syncSquares(camPos); }
+    if (this.w && !this.on) this.w.furnStep(300);
     if (!this.on && this.game) this.ambient(camPos, dt);
   }
   /** the other squares' flocks: built (the ridges in the worker, the roosts, the mesh warmed) once the camera is within
@@ -435,7 +436,8 @@ export class CityFlyer {
     }
     g.update(dt, this.camera);
     // (gym: its ledge pool round the falcon, a slice a frame; v2: the far LOD by the drawn span)
-    g.gw?.update(f.pos.x, f.pos.z, f.V, g.t, 400);
+    g.lw?.update(f.pos.x, f.pos.z, f.V, g.t, 400);
+    w.furnStep(300);                                   // (round 5: the furniture stand-ins into the falcon's world, sliced)
     this.bird.updateLod?.(this.camera, this.dom?.clientHeight || innerHeight);
     this.debug.update(w, f);
     this.highFog();

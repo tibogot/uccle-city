@@ -17,6 +17,8 @@ import { HeldPrey, loadHeldPigeon, heldLifeRatio } from "./heldPrey.js";
 const MODEL_SPAN = 6.44;   // peregrine.glb wingspan in model units (viewer/falcons.js)
 /** (falcon fun round 3) the grip: the toes curled (rad) round the held pigeon, sunk this share of its depth into its
  *  plumage (the closed toes, no gap), blended in from where it was struck over FUN.strike.grip s of game time */
+/** (round 5) the current falcon perched: its tail / folded wing tips lifted (rad) off what it stands on */
+export const PERCH_LIFT = { tail: 0.22, wing: 0.1 };
 export const GRIP = { curl: 0.85, sink: 0.12, blend: FUN.strike.grip, talons: 0.45, from: 1.6 };
 /** held: rolled belly-up against the feet, head forward (prey_carry's head is its -z end, the narrow round one; its
  *  +z end the flat tail fan: the root's forward is -z too, so no turn; the old carry's half turn held it tail first), a
@@ -73,10 +75,14 @@ export class FalconBird {
     // (round 3) the grip: the toes closed (their tips down and back, round the pigeon under the feet)
     this.rig.addLayer("gripL", "Toes_L", "Toes_tip_L", [0, -1, 0.5]);
     this.rig.addLayer("gripR", "Toes_R", "Toes_tip_R", [0, -1, 0.5]);
+    // (round 5) perched: the tail and the folded primaries' tips lifted off the surface (the baked Perch held them 2 cm
+    // under the toes: into a flat roof, a sill; tools/falconPerchTest.mjs)
+    this.rig.addLayer("perchTail", "tail_1", "tail_tip", [0, 1, 0]);
+    this.rig.addLayer("perchWingL", "wing_1_L", "wing_tip_L", [0, 1, 0]); this.rig.addLayer("perchWingR", "wing_1_R", "wing_tip_R", [0, 1, 0]);
     const Bn = (n) => this.root.getObjectByName(n);
     this.toes = Bn("Toes_L") && Bn("Toes_R") && Bn("Toes_tip_L") && Bn("Toes_tip_R") ? { l: Bn("Toes_L"), r: Bn("Toes_R"), lt: Bn("Toes_tip_L"), rt: Bn("Toes_tip_R") } : null;
     this.lay = { fold: 0, tuck: 0, flare: 0, talons: 0, bank: 0, legs: 0.4, head: 0 };
-    this.extra = { spreadL: 0, spreadR: 0, handL: 0, handR: 0, wristL: 0, wristR: 0, raiseL: 0, raiseR: 0, talonL: 0, talonR: 0, headDown: 0, gripL: 0, gripR: 0 };
+    this.extra = { spreadL: 0, spreadR: 0, handL: 0, handR: 0, wristL: 0, wristR: 0, raiseL: 0, raiseR: 0, talonL: 0, talonR: 0, headDown: 0, gripL: 0, gripR: 0, perchTail: 0, perchWingL: 0, perchWingR: 0 };
     this.flapPhase = 0; this.lastFlapPhase = 0; this.downstroke = false;
     this.setSpan(span);
     this.prey = null;
@@ -247,6 +253,8 @@ export class FalconBird {
     // (round 3) the toes close round the held pigeon as it reaches them
     const H = this.prey && this.hold && !FUN_OLD ? this.hold : null;
     E.gripL = E.gripR = H ? GRIP.curl * H.k * H.k * (1 - 0.4 * H.perch) : 0;
+    L.perched = ease(L.perched ?? 0, mode === "perch" ? 1 : 0, 6, dt);
+    E.perchTail = PERCH_LIFT.tail * L.perched; E.perchWingL = E.perchWingR = PERCH_LIFT.wing * L.perched;
     this.rig.restore();
     this.mixer.update(dt);
     this.rig.apply({ fold: L.fold, bank: L.bank, legs: L.legs, brake: L.flare, extra: E });

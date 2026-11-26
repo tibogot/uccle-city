@@ -26,14 +26,19 @@ const EDGE_STEP = 1.5;
 const PAD_R = 0.35;              // m: a pad's radius
 const CELL = 2, GRID = 72;       // the pads' bucket grid: 2 m cells, 72 x 72 (+- 72 m)
 const MOVE = 15, EVERY = 3;      // rebuild when the falcon is 15 m from the last centre, or every 3 s
-export const LEDGE_KINDS = ["roof edge", "ridge", "sill", "railing", "lamp", "church", "eyrie", "tree"];
-const PAD_KIND = [false, true, true, true, true, true, true, false];
+export const LEDGE_KINDS = ["roof edge", "ridge", "sill", "railing", "lamp", "church", "eyrie", "tree", "chimney", "wall", "pillar", "hedge", "furniture"];
+const PAD_KIND = [false, true, true, true, true, true, true, false, false, false, false, false, false];
+/** (round 5) the perched body's check points: along the facing (+ ahead), to the side, height over the feet (m) */
+const BODY = [0.12, 0, 0.15, 0.1, 0, 0.35, 0, 0.13, 0.2, 0, -0.13, 0.2, 0, 0, 0.45, -0.15, 0, 0.15, -0.24, 0, 0.06, -0.3, 0, 0.03, -0.15, 0.1, 0.12, -0.15, -0.1, 0.12, -0.19, 0.1, 0.02, -0.19, -0.1, 0.02];
+const FURN_LEDGE = [9, 10, -1, -1, 12];  // (a hedge's top: leaves, no perch)       // cityStream.js FURN_KINDS (wall, pillar, gate, hedge, furniture) -> ledge kind (a gate: none)
 // the façade kit's pieces (viewer/facadeKit/placement.js, STRIDE floats: x, y, z = the opening's bottom middle on the
-// wall plane, nx, nz = the wall's outward normal; tools/blender/facadeKit.py): where a falcon stands on each
-//   sill       the blue-stone sill's top (y = the opening line), 6 cm out (it is 7 cm proud, the reveal 22 cm deep)
-//   balcony    the cast-iron railing's handrail: 0.95 m over the slab (6 cm under the sill line), 0.43 m out
-//   balconnet  the same railing 0.17 m out (its slab 0.24 m deep)
-const KIT = [["sill", 0.06, 0.0, 2], ["balcony", 0.43, 0.89, 3], ["balconyP", 0.43, 0.89, 3], ["balconnet", 0.17, 0.91, 3], ["balconnetP", 0.17, 0.91, 3]];
+// wall plane, nx, nz = the wall's outward normal; tools/blender/facadeKit.py): where a falcon stands on each (round 5:
+// the DRAWN tops, tools/blender/facadeKit.py's own profiles; round 4 had the handrail 6 cm low, the bird inside it)
+//   sill       the blue-stone sill on its rounded nose, 6.8 cm out (7 cm proud): its top there 7 mm under the opening line; the
+//              body then clear of the wall plane (the bird faces out, its back over the sill)
+//   balcony    the handrail's top: railing(y0 -0.06, rh 0.95) -> yb + rh + 0.034 = 0.954 over the opening line, 0.43 m out
+//   balconnet  railing(y0 -0.04): 0.974, 0.17 m out
+const KIT = [["sill", 0.068, -0.007, 2], ["balcony", 0.43, 0.954, 3], ["balconyP", 0.43, 0.954, 3], ["balconnet", 0.17, 0.974, 3], ["balconnetP", 0.17, 0.974, 3]];
 
 function pool(n) { const a = new Array(n); for (let i = 0; i < n; i++) a[i] = { x: 1e9, y: -1e9, z: 1e9, yaw: 0, drop: 0, kind: "", k: -1 }; return a; }
 function grid() { return { heads: new Int32Array(GRID * GRID).fill(-1), next: new Int32Array(CAP * 4), pad: new Int32Array(CAP * 4), n: 0, x0: 0, z0: 0 }; }
@@ -51,7 +56,9 @@ export class CityGymWorld {
     this.edgeH = new Float32Array(Math.pow(Math.ceil(2 * R_EDGE / EDGE_STEP) + 1, 2));
     this.stats = { builds: 0, ledges: 0, pads: 0, maxWork: 0, slices: 0, byKind: new Int32Array(LEDGE_KINDS.length) };
     this.Y0 = 0;
-    this.boxes = true;           // the city's window boxes are on (cityPlants.js): their sills are no perches
+    this.boxes = true;
+    this._cc = { x: 0, z: 0 };
+    this.ridgePts = null; this.ridgeAt = { x: 1e9, z: 1e9 }; this._rq = false;           // the city's window boxes are on (cityPlants.js): their sills are no perches
   }
   floor(x, z) { return this.w.floor(x, z); }
   ground(x, z) { return this.w.ground(x, z); }
@@ -61,7 +68,7 @@ export class CityGymWorld {
   /** the world's column at height y, the pads standing in it; one shared object */
   column(x, z, y) {
     const b = this.w.column(x, z, y), o = this._c;
-    o.floor = b.floor; o.ceil = b.ceil ?? Infinity; o.brush = b.brush ?? 0; o.tree = b.tree ?? null; o.pad = -1;
+    o.floor = b.floor; o.ceil = b.ceil ?? Infinity; o.brush = b.brush ?? 0; o.tree = b.tree ?? null; o.pad = -1; o.furn = b.furn ?? -1;
     const G = this.grid, i = Math.floor((x - G.x0) / CELL), j = Math.floor((z - G.z0) / CELL);
     if (i >= 0 && j >= 0 && i < GRID && j < GRID) {
       const L = this.ledges;
@@ -167,7 +174,9 @@ export class CityGymWorld {
       if (J.phase === 0) { n += this.collectPoints(J); J.phase = 1; }
       else if (J.phase === 1) { const d = this.collectKit(J, work - n); n += d; if (d === 0) { J.phase = 2; J.j = 0; } }
       else if (J.phase === 2) { if (!this.scanRow(J)) { J.phase = 3; J.j = 0; } n += Math.ceil(2 * R_EDGE / EDGE_STEP) + 1; }
-      else if (J.phase === 3) { const d = this.edgeRow(J); n += d + 8; if (d < 0) J.phase = 4; }
+      else if (J.phase === 3) { const d = this.edgeRow(J); n += d + 8; if (d < 0) { J.phase = 4; J.f = 0; J.fk = 0; } }
+      else if (J.phase === 4) { const d = this.collectFurn(J, work - n); n += d; if (d === 0) { J.phase = 5; this.sortCands(J); } }
+      else if (J.phase === 5) { const d = this.validate(J, work - n); n += d; if (J.q >= this.nCand || J.m >= CAP) J.phase = 6; }
       else { this.finish(J); n++; break; }
     }
     this.stats.maxWork = Math.max(this.stats.maxWork, n); this.stats.slices++;
@@ -191,6 +200,13 @@ export class CityGymWorld {
       this.add(r.x, r.y - 0.02, r.z, r.yaw + Math.PI / 2, r.kind === "church" ? 5 : r.kind === "lamp" ? 4 : 1, cx, cz);
     }
     if (w.treePerches) for (const q of w.treePerches(cx, cz, R_LEDGE)) { n++; this.add(q.pos.x, q.pos.y, q.pos.z, 0, 7, cx, cz); }
+    // (round 5) the ridge lines round here (a worker job, asked again when the falcon is 60 m from the last centre)
+    if (w.ridgesNear && !this._rq && Math.hypot(cx - this.ridgeAt.x, cz - this.ridgeAt.z) > 60) {
+      this._rq = true; const at = { x: cx, z: cz };
+      w.ridgesNear(cx, cz, R_LEDGE + 20).then((f) => { this.ridgePts = f; this.ridgeAt = at; this._rq = false; this.at.t = -1e9; }).catch(() => { this._rq = false; });
+    }
+    const RP = this.ridgePts;
+    for (let k = 0; RP && k < RP.length; k += 4, n++) if ((RP[k] - cx) ** 2 + (RP[k + 2] - cz) ** 2 < R2) this.add(RP[k], RP[k + 1], RP[k + 2], RP[k + 3] + Math.PI / 2, 1, cx, cz);
     const L = w.lampTop;
     if (L) for (const t of w.tiles || []) {
       const b = t.bounds;
@@ -199,7 +215,8 @@ export class CityGymWorld {
         n++;
         if (s.y == null || (s.x - cx) ** 2 + (s.z - cz) ** 2 > R2) continue;
         const c = Math.cos(s.yaw || 0), sn = Math.sin(s.yaw || 0);
-        this.add(s.x + L.x * c + L.z * sn, s.y + L.y, s.z - L.x * sn + L.z * c, (s.yaw || 0) + Math.PI / 2, 4, cx, cz);
+        // (round 5: on the lantern's cap ON its axis, L.cap; L.y is the pigeons' (the crown's top + 5 mm))
+        this.add(s.x + L.x * c + L.z * sn, s.y + (L.cap ?? L.y), s.z - L.x * sn + L.z * c, (s.yaw || 0) + Math.PI / 2, 4, cx, cz);
       }
     }
     return n;
@@ -219,8 +236,14 @@ export class CityGymWorld {
           const x = A[J.at], z = A[J.at + 2];
           if ((x - cx) ** 2 + (z - cz) ** 2 > R2) continue;
           if (kind === 2 && this.boxes && sillHasBox(A, J.at)) continue;      // (a window box on it: geraniums, no perch)
+          if (kind === 2 && A[J.at + 5] < 0.7) continue;                       // (a narrow window: the bird along its sill reaches its jambs)
+          // (a sill / a railing at the pavement's height (a shop window, a basement light): the ground's, not a perch)
+          if (this.w.drawnGround && A[J.at + 1] + up - this.w.drawnGround(x + A[J.at + 3] * 0.6, z + A[J.at + 4] * 0.6) < 0.5) continue;
           const nx = A[J.at + 3], nz = A[J.at + 4];
-          this.add(x + nx * out, A[J.at + 1] + up, z + nz * out, Math.atan2(-nx, -nz), kind, cx, cz);
+          if (this.nearCol(x + nx * out, z + nz * out, 0.3)) continue;           // (a dormer's: in the roof kit's box)
+          // (a sill: the bird stands ALONG it, its tail along the stone: facing out, the tail hung back into the wall
+          // under the window; a railing: facing out over it)
+          this.add(x + nx * out, A[J.at + 1] + up, z + nz * out, kind === 2 ? Math.atan2(-nz, nx) : Math.atan2(-nx, -nz), kind, cx, cz);
         }
         if (J.at >= A.length) { J.kit++; J.at = 0; }
       }
@@ -252,34 +275,137 @@ export class CityGymWorld {
       for (let a = 0; a < 4; a++) {
         const di = a === 0 ? 1 : a === 1 ? -1 : 0, dj = a === 2 ? 1 : a === 3 ? -1 : 0;
         const hn = H[(j + dj) * N + i + di], hb = H[(j - dj) * N + i - di];
-        if (h - hn < 2.5 || Math.abs(h - hb) > 0.6) continue;
+        if (h - hn < 2.5 || Math.abs(h - hb) > 0.08) continue;          // (round 5: a FLAT roof's edge / a parapet: a pitched
+                                                                          // eave tilts the bird's tail into the slope)
         // the edge between this cell and the low one
         let lo = 0, hi = EDGE_STEP;
         for (let s = 0; s < 3; s++) { const m = (lo + hi) / 2; if (w.floor(x + di * m, z + dj * m) > h - 1.2) lo = m; else hi = m; }
         n += 4;
-        const e = Math.max(0, lo - 0.3), lx = x + di * e, lz = z + dj * e;
-        this.add(lx, w.floor(lx, lz), lz, Math.atan2(-di, -dj), 0, J.cx, J.cz);
+        const e = Math.max(0, lo - 0.3), C = this._cc;
+        C.x = x + di * e; C.z = z + dj * e;
+        // (round 5) on the drawn roof grid's sample (a cell's centre: the drawn triangle's own height there), the edge
+        // cell's (the sample is 0-0.5 m in from the edge); else 0.3 m in, its height
+        if (w.roofCell) w.roofCell(C.x, C.z, C, di, dj);
+        this.add(C.x, w.floor(C.x, C.z), C.z, Math.atan2(-di, -dj), 0, J.cx, J.cz);
       }
       // a ridge along x or z: over both neighbours across it by >= 0.4 m, a roof (>= 3 m over the ground)
       const hx1 = H[j * N + i + 1], hx0 = H[j * N + i - 1], hz1 = H[(j + 1) * N + i], hz0 = H[(j - 1) * N + i];
       const rx = h > hx1 + 0.4 && h > hx0 + 0.4 && Math.abs(hz1 - h) < 0.3, rz = h > hz1 + 0.4 && h > hz0 + 0.4 && Math.abs(hx1 - h) < 0.3;
-      if ((rx || rz) && (i + j) % 2 === 0) { n++; if (h > w.ground(x, z) + 3) this.add(x, h, z, rx ? Math.PI / 2 : 0, 1, J.cx, J.cz); }
+      // (round 5: on the drawn roof grid's sample beside the ridge line: the drawn triangle's height there; the scan's value
+      // between the samples was interpolated across the ridge, 17 cm under it)
+      // (round 5: the ridges are the buildings' own ridge lines, ridgesNear / the roosts: from the grid a ridge perch stood
+      // beside the line on the slope, its tail in the roof)
+      if (!w.ridgesNear && (rx || rz) && (i + j) % 2 === 0) { n++; if (h > w.ground(x, z) + 3) this.add(x, h, z, rx ? Math.PI / 2 : 0, 1, J.cx, J.cz); }
+      // (round 5) a chimney stack / a peak: over all four neighbours by >= 0.4 m, on a roof; on its cell's sample
+      if (!this.hasCols && !rx && !rz && h > hx1 + 0.4 && h > hx0 + 0.4 && h > hz1 + 0.4 && h > hz0 + 0.4 && h > w.ground(x, z) + 3) {
+        const C = this._cc; C.x = x; C.z = z; if (w.roofCell) w.roofCell(x, z, C, 0, 0);
+        n++; this.add(C.x, w.floor(C.x, C.z), C.z, 0, 8, J.cx, J.cz);
+      }
     }
     J.j++;
     return n;
   }
-  /** the nearest CAP candidates into the back pool + its pad grid, then swapped in */
+  /** (round 5) the furniture's tops (cityStream.js furnList: the garden walls' copings every 1.5 m, the pillars' caps,
+   *  the hedges' tops every 2 m, a bench / bin / shelter top at its middle) */
+  collectFurn(J, budget) {
+    const L = this.w.furnList, cx = J.cx, cz = J.cz, R2 = R_LEDGE * R_LEDGE;
+    let n = 0;
+    // (the roof kit's stacks: their boxes' tops, at their middles: the chimneys a falcon sits on; tile.roofCols)
+    if (!J.cols) {
+      J.cols = true;
+      for (const t of this.w.tiles || []) {
+        const Cq = t.roofCols; if (!Cq) continue;
+        for (let k = 0; k < Cq.length; k += 5, n++) {
+          const x = (Cq[k] + Cq[k + 2]) / 2, z = (Cq[k + 1] + Cq[k + 3]) / 2;
+          if ((x - cx) ** 2 + (z - cz) ** 2 > R2 || Cq[k + 2] - Cq[k] < 0.25 || Cq[k + 3] - Cq[k + 1] < 0.25) continue;
+          this.add(x, Cq[k + 4], z, 0, 8, cx, cz);
+        }
+      }
+      return Math.max(n, 1);
+    }
+    if (!L) return 0;
+    while (J.f < L.length && n < budget) {
+      const F = L[J.f], A = F.arr;
+      for (; J.fk < F.n && n < budget; J.fk++, n++) {
+        const o = J.fk * 10, x = A[o], z = A[o + 1];
+        if ((x - cx) ** 2 + (z - cz) ** 2 > R2) continue;
+        const kind = FURN_LEDGE[A[o + 9]];
+        if (kind < 0) continue;
+        const ux = A[o + 2], uz = A[o + 3], a = A[o + 4], yaw = Math.atan2(-uz, ux);         // (facing across it)
+        if (kind === 9 || kind === 11) {
+          const step = kind === 9 ? 1.5 : 2, m = Math.max(1, Math.floor((2 * a - 0.3) / step));
+          for (let k = 0; k < m; k++) {
+            const u = -a + 0.15 + (k + 0.5) * (2 * a - 0.3) / m, t = 0.5 + 0.5 * u / Math.max(a, 1e-4);
+            this.add(x + ux * u, A[o + 6] + (A[o + 7] - A[o + 6]) * t, z + uz * u, yaw, kind, cx, cz);
+          }
+        } else this.add(x, (A[o + 6] + A[o + 7]) / 2, z, yaw, kind, cx, cz);
+      }
+      if (J.fk >= F.n) { J.f++; J.fk = 0; }
+    }
+    return n;
+  }
+  nearCol(x, z, m) {
+    const t = this.w.tileAt ? this.w.tileAt(x, z) : null, C = t?.roofCols;
+    if (!C) return false;
+    for (let k = 0; k < C.length; k += 5) if (x > C[k] - m && x < C[k + 2] + m && z > C[k + 1] - m && z < C[k + 3] + m) return true;
+    return false;
+  }
+  get hasCols() { return (this.w.tiles || []).some((t) => t.roofCols); }
+  sortCands(J) { this.keys.subarray(0, this.nCand).sort(); J.q = 0; J.m = 0; this.stats.byKind.fill(0); this.stats.rejected = 0; }
+  /** (round 5) is the candidate a real perch: it stands on what is drawn (no sheer wall: the floor there IS its height,
+   *  within 3 cm), room over it (0.6 m) and nothing beside the body (0.14 m round, 0.1-0.35 m up); a pad (a sill, a
+   *  railing, a lamp, a church perch, a ridge) stands on its own drawn piece: only the room over it and its front */
+  perchOK(x, y, z, yaw, k) {
+    const pad = PAD_KIND[k];
+    // (a roof perch next to a roof-kit box: the drawn roof grid's cells there carry the box's stamp, not the roof's)
+    if ((k === 0 || k === 1) && this.nearCol(x, z, 0.7)) return false;
+    const c = this.column(x, z, y + 0.3);
+    if (!pad && Math.abs(c.floor - y) > 0.03) return false;
+    // (level where it stands: 0.2 m round within 4 cm, the drop's side free: a perch tilted under the tail / a wing)
+    if (!pad) for (let a = 0; a < 4; a++) {
+      const ang = yaw + a * Math.PI / 2, qx = x - Math.sin(ang) * 0.2, qz = z - Math.cos(ang) * 0.2, f = this.column(qx, qz, y + 0.3).floor;
+      if (f > y + 0.04 || (a !== 0 && f < y - 0.04 && k !== 9 && k !== 10 && k !== 8)) return false;
+    }
+    if (c.ceil < y + 0.6) return false;
+    // the body as it stands (a life-size perched falcon: the breast 0.1 m ahead, the shoulders 0.1 m to each side, the
+    // tail 0.15-0.22 m behind and low, up to 0.42 m tall): every point in free air (on a pitched roof the slope behind a
+    // bird facing down it rises into its tail; a higher roof part, a hedge, a wall beside a pillar). Behind a sill / a
+    // railing is the wall it stands against (its reveal / the balcony): not checked
+    const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx, P = BODY;
+    for (let i = 0; i < P.length; i += 3) {
+      const al = P[i], sd = P[i + 1], h = P[i + 2];
+      if (pad && al < 0 && k !== 2) continue;                  // (a sill: the bird stands along it, its tail over the sill too)
+      const px = x + fx * al + sx * sd, pz = z + fz * al + sz * sd;
+      // (a sill: the side toward the wall is its window's reveal, cut open over the sill line: not checked)
+      const q = this.column(px, pz, y + h);
+      if (pad && q.furn < 0 && this.w.inBuilding && this.w.inBuilding(px, pz)) continue;
+      if (q.floor > y + Math.max(h - 0.03, 0.012) && !(pad && q.pad >= 0)) return false;
+      // (inside a building's footprint under its roof: a part thinner than the roof grid's cells)
+      if (this.w.inBuilding && this.w.inBuilding(px, pz) && y + h < this.w.roofNear(px, pz) - 0.03) return false;
+    }
+    return true;
+  }
+  /** the sorted candidates, the nearest first, checked (perchOK) into the back pool until CAP */
+  validate(J, budget) {
+    const C = this.cand, keys = this.keys, B = this._back, byKind = this.stats.byKind;
+    let n = 0;
+    for (; J.q < this.nCand && J.m < CAP && n < budget; J.q++, n += 6) {
+      const c = keys[J.q] % 8192, o = c * 5, k = C[o + 4];
+      if (!this.perchOK(C[o], C[o + 1], C[o + 2], C[o + 3], k)) { this.stats.rejected++; continue; }
+      const L = B[J.m++];
+      L.x = C[o]; L.y = C[o + 1]; L.z = C[o + 2]; L.yaw = C[o + 3]; L.k = k; L.kind = LEDGE_KINDS[k]; L.drop = 0;
+      byKind[k]++;
+    }
+    return Math.max(n, 1);
+  }
+  /** the checked pool's pad grid, then swapped in */
   finish(J) {
-    const n = this.nCand, keys = this.keys.subarray(0, n);
-    keys.sort();
-    const B = this._back, G = this._bgrid, C = this.cand, byKind = this.stats.byKind;
-    byKind.fill(0);
+    const n = this.nCand, B = this._back, G = this._bgrid;
     G.heads.fill(-1); G.n = 0; G.x0 = Math.floor(J.cx / CELL) * CELL - (GRID / 2) * CELL; G.z0 = Math.floor(J.cz / CELL) * CELL - (GRID / 2) * CELL;
-    let m = 0, pads = 0;
-    for (let q = 0; q < Math.min(n, CAP); q++) {
-      const c = keys[q] % 8192, o = c * 5, L = B[m++];
-      L.x = C[o]; L.y = C[o + 1]; L.z = C[o + 2]; L.yaw = C[o + 3]; L.k = C[o + 4]; L.kind = LEDGE_KINDS[L.k]; L.drop = 0;
-      byKind[L.k]++;
+    const m = J.m;
+    let pads = 0;
+    for (let q = 0; q < m; q++) {
+      const L = B[q];
       if (!PAD_KIND[L.k]) continue;
       pads++;
       // a pad in every cell its disc touches (at most 4)
@@ -288,7 +414,7 @@ export class CityGymWorld {
       for (let jj = j0; jj <= j1; jj++) for (let ii = i0; ii <= i1; ii++) {
         if (ii < 0 || jj < 0 || ii >= GRID || jj >= GRID || G.n >= G.next.length) continue;
         const cell = jj * GRID + ii;
-        G.pad[G.n] = m - 1; G.next[G.n] = G.heads[cell]; G.heads[cell] = G.n; G.n++;
+        G.pad[G.n] = q; G.next[G.n] = G.heads[cell]; G.heads[cell] = G.n; G.n++;
       }
     }
     for (let q = m; q < CAP; q++) { const L = B[q]; L.x = 1e9; L.y = -1e9; L.z = 1e9; L.k = -1; L.kind = ""; }

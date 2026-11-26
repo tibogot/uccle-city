@@ -1291,8 +1291,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     dropAfterUpload(own.roads, { tag: `roads:${entry.name}`, keep: ["position", "index"] });
     for (const t of R.textures) dropTextureData(t);          // (the land-cover mask, the marking atlas: DataTextures; the orthophoto is an image)
   }
-  // (kit: the façade kit's placements, read-only: the falcon's perches on the sills / railings, viewer/falconFlight/cityGymWorld.js)
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, roofs: rf, drive, drawn, lift: fit?.lift, groups: Object.values(own), kit: B.kit ?? null };
+  // (kit: the façade kit's placements, read-only: the falcon's perches on the sills / railings, viewer/falconFlight/cityGymWorld.js;
+  // roofCols: the roof kit's stacks / housings as boxes [x0, z0, x1, z1, top]: its chimneys, and where the drawn roof grid's
+  // stamps are a box's, not the roof's)
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, roofs: rf, drive, drawn, lift: fit?.lift, groups: Object.values(own), kit: B.kit ?? null, roofCols: d.buildings?.roofKit?.cols ?? null };
 }
 
 // ------------------------------------------------------------------ main
