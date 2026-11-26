@@ -27,7 +27,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildLabLook } from "./bikeLabLook.js";
 import { createBikeEnv } from "../viewer/bike/bikeEnv.js";
-import { FEATURES, testHeight, testSurface, testColliders, SPOTS, BOUNDS, testGroundRamped, testHeightRamped, testEdges } from "../viewer/bike/bikeGround.js";
+import { FEATURES, testHeight, testSurface, testColliders, SPOTS, BOUNDS, testGroundRamped, testHeightRamped, testEdges, SNOW } from "../viewer/bike/bikeGround.js";
 import { loadCityDocs, buildCitySpot } from "../viewer/bike/bikeCitySpot.js";
 import { EDGE, EDGE_NAMES, BENCH } from "../viewer/bike/bikeEdges.js";
 import { soundGate } from "../viewer/audio/soundGate.js";
@@ -121,7 +121,7 @@ let look = null;
 if (W.city) gridMesh(W.bounds.x0, W.bounds.x1, W.bounds.z0, W.bounds.z1, 0.25, null, W.drawH, W.surface);
 else if (qs.get("look") !== "old") {
   scene.background = null; scene.fog = null;
-  look = await buildLabLook({ renderer, scene, camera, FEATURES, testHeight, testSurface, BOUNDS, PARK, quality: qs.get("grass") || "high" });
+  look = await buildLabLook({ renderer, scene, camera, FEATURES, testHeight, testSurface, BOUNDS, PARK, SNOW, quality: qs.get("grass") || "high" });
   hemi = look.lighting.hemi; sun = look.lighting.sun;
 } else {
   hemi = new THREE.HemisphereLight(0xdfe9f5, 0x5d5a48, 1.1); sun = new THREE.DirectionalLight(0xfff1dc, 2.4); sun.castShadow = true;

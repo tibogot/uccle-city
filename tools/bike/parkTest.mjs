@@ -62,6 +62,14 @@ const pumper = (steer = () => 0) => (s) => {
   check("lab ground: every feature on whole metres (the 1 m base grid cut out exactly under it), none overlapping: no coplanar faces", !bad.length, bad.join("; ") || `${FEATURES.length} features`, "0 overlaps, 0 fractional edges");
 }
 
+// ---------------------------------------------------------------- the lab's debug overlays: off by default, never through the rider
+{
+  const fs = await import("node:fs");
+  const src = fs.readFileSync(new URL("../../debug/bikeLab.js", import.meta.url), "utf8");
+  const edgesOff = /edges: qs\.get\("edges"\) === "1"/.test(src), depth = /LineBasicNodeMaterial\(\{ vertexColors: true, depthTest: true/.test(src) && !/depthTest: false/.test(src);
+  check("lab: the debug overlays (the edge layer's grind lines) off by default, depth tested (never drawn through the kid)", edgesOff && depth, `off by default ${edgesOff}, depth tested ${depth}`, "both");
+}
+
 // ---------------------------------------------------------------- the spots
 {
   const bad = [];

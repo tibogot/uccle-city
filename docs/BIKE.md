@@ -89,7 +89,7 @@ thing (move = pedal / brake / steer, Shift = run / sprint, Space = jump / hop, C
 |---|---|
 | body | mass 51 kg, wheelbase 0.95 m, cgHeight 0.95 m, wheelR 0.254 m, pitchInertia 0.30 m^2 |
 | contacts | springK 170 /s^2, springC 8 /s, maxComp 0.11 m, fnMax 80, legRange 0.12 m, legRate 9 /s, pumpGain 45 |
-| pedal | powerCruise 130 W, powerSprint 320 W, forceCruise 1.6, forceSprint 2.4 m/s^2, rollout 4.39 m, cadenceMax 128 rpm, drag 0.0055 /m |
+| pedal | powerCruise 62 W, powerSprint 240 W, forceCruise 1.6, forceSprint 2.4 m/s^2, rollout 4.39 m, cadenceMax 128 rpm, drag 0.0055 /m |
 | brakes | brakeFront 5.2, brakeRear 4.6 m/s^2, skidAt 0.85, skidMu 0.75, grip x1 |
 | steer | maxLean 0.65 rad, leanRate 7, leanV0 1.2 / leanV1 5 m/s, lowSteer 0.75 rad, barV0 1.5 / barV1 4.5 m/s, yawResponse 12, tyreRate 25, skidYaw 1.6, washSlip 2.0 m/s, washTime 0.45 s |
 | pitch | riderPitch 24 rad/s^2, pitchDamp 1.6, manualAssist 0.8, manualAngle 0.30 rad |
@@ -576,6 +576,36 @@ skatepark row, the spine transfer, the mini, the wall ride, the drop-in). **Know
 bike laid flat (no path pitch on the wall); the kick turn and the vert turn are automatic (a trick button later); the
 park's rails have no collider on their posts; riding off the SIDE of a raised feature (the table, the decks) stops the bike
 on its face (the ledge rule) instead of a drop; the casual rider does not yet ride the park's features.
+
+## Owner round 2 (2026-11-26, rule bike-lab-look)
+- **Speeds**: seated powerCruise 62 W = ~17.5 km/h cruise (a real 11-year-old 15-18), standing (Shift) powerSprint 240 W
+  = ~29 km/h, 0-15 km/h in 2.5 s standing vs 11 s seated; the stand-up is out of the saddle (riderIK s.sprint) and the
+  bike ROCKS with the stroke (drawn only: bikePose). The card says it; the HUD shows km/h. bikeTest: cruise 15-19,
+  sprint 25-31, 0-15 standing < a third of seated.
+- **Downhill**: no cap - gravity along the slope against rolling + air drag (CdA ~0.47 upright): coasting settles at
+  34 / 45.6 / 50.4 km/h on 6 / 10 / 12 % (the physics: 34.0 / 45.5 / 50.2), crouched (Space) `crouchDrag` 0.2 less drag:
+  56 km/h on 12 %. The lab has two LONG descents (6 % over 220 m, 12 % over 160 m, 16 m wide, run-outs; spots "hill 6 %"
+  / "hill 12 %"). Found on them: a slide along the side wall counted as a wash-out (now not while scraping a wall); a
+  clean but crossed landing at 39 km/h left a 3 m/s side slip that washed out (now the tyres take the path). To do in the
+  city: Avenue De Fre, Montagne de Saint-Job, the Kauwberg (the D6 spot has no long descent).
+- **New surfaces** (SURFACES rows): mud 0.40 grip / 0.085 rolling / 0.30 sink (pedalled ~4 km/h, a slog), snow 0.32 /
+  0.050 / 0.18 (~6 km/h), grass eased to 0.035 / 0.03 (~10 km/h seated; it crawled at 6). Lab patches: mud (x -46..-32,
+  ruts), snow (round, r 9 m at (-64, 74): the city's volumetric snow layer with the wheels' tracks), a grass field.
+  forgivingTest: slower in mud / snow, the casual rider rides them and the descents with no soft crash.
+- **Walking-pace touch-downs never bail** (rolled off a kicker's open back at 0.5 m/s, nose down 42 deg: sketchy).
+- **The look** (`debug/bikeLabLook.js`, `?look=old` = the old flat lab): the city's Lighting / sky / sun shadows / post,
+  the library's asphalt / paving concrete / cobbles scans, the city's textured lawn ground and grass blades (pushed by the
+  wheels), ~140 stylised trees round the lab (one instanced field), procedural TSL packed dirt / roots / sand / mud (wet,
+  glossy puddles) / snow / wooden planks (seams, screws); the ground ONE geometry with a group per material.
+- **Z-fighting**: every feature rectangle is on whole metres (feature() rounds out; heights are 0 outside the shapes), so
+  the 1 m base grid's cut-out is exact: no coplanar overlap (parkTest "lab ground").
+- **Debug overlays** (the edge layer: the blue / orange grind lines that showed through the kid): off by default (panel
+  "debug: the edge layer", `?edges=1`), depth tested (parkTest "lab: the debug overlays").
+- **Orbit camera**: O (or the panel's "Orbit camera" folder) orbits round the kid + bike while riding and paused (P):
+  drag orbit, wheel zoom, right-drag pan; presets side / front / back / top / low; slow motion 0.25 / 0.5 / 1x; Esc / O
+  back to the ride camera. three's OrbitControls with the target riding with the bike (as labs/falcon-lab.js).
+- Zero garbage: the D6 ride now sprints (the speeds it had before the power retune; seated at 62 W it spent its time on
+  kerb faces): 11.
 
 ## Into the city (next jobs, not done here)
 - Ground: `ground(x, z, out)` from the drive surface (viewer/drive/colliders.js `driveHeight` + central differences:

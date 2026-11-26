@@ -22,6 +22,9 @@ import { Grass } from "../viewer/grass/grass.js";
 import { STREET, setTreeRenderer, setTreeLighting } from "../viewer/treesStylized.js";
 import { lodEye } from "../viewer/lodFade.js";
 import { wind } from "../viewer/foliage/wind.js";
+import { createOverheadMap, markSolid } from "../viewer/weather/overheadMap.js";
+import { createSnowLayer, createTrackField } from "../viewer/weather/snowLayer.js";
+import { wx } from "../viewer/weather/weatherState.js";
 
 const n2 = (s, o = 0) => mx_noise_float(vec3(positionWorld.x.mul(s).add(o), float(o * 0.37), positionWorld.z.mul(s)));   // -1..1
 /** packed BMX dirt (base colour, darker grains, pale dust on the tops) */
@@ -70,7 +73,7 @@ const SURF_KEY = ["asphalt", "setts", "dirt", "grass", "sand", "roots", "mud", "
  * Build the look. opts: { renderer, scene, camera, FEATURES, testHeight, testSurface, BOUNDS, PARK }
  * Returns { lighting, pipe, ground (the mesh), materials, render(), update(dt, focus, s), grass, trees }
  */
-export async function buildLabLook({ renderer, scene, camera, FEATURES, testHeight, testSurface, BOUNDS, PARK, quality = "high" }) {
+export async function buildLabLook({ renderer, scene, camera, FEATURES, testHeight, testSurface, BOUNDS, PARK, SNOW = null, quality = "high" }) {
   const t0 = performance.now();
   const lighting = new Lighting(scene, renderer, "midday");
   await lighting.attach(camera);
@@ -185,9 +188,25 @@ export async function buildLabLook({ renderer, scene, camera, FEATURES, testHeig
     scene.add(trees.group);
   } catch (e) { console.warn("[bike lab look] trees failed:", e); trees = null; }
 
+  // ---- the SNOW patch: the city's volumetric snow layer (viewer/weather/snowLayer.js) on an overhead map round it only
+  // (edgeFade: a round soft edge), the wheels writing their tracks into it; the library materials keep no snow cover
+  let snow = null;
+  try {
+    if (SNOW) {
+      const omap = createOverheadMap({ renderer, centre: new THREE.Vector3(SNOW.x, 0, SNOW.z), size: 2 * SNOW.r + 4, res: 256 });
+      markSolid(ground); scene.updateMatrixWorld(true); await omap.bake(scene);
+      const track = createTrackField(omap);
+      snow = createSnowLayer({ renderer, map: omap, track, edgeFade: true });
+      scene.add(snow.mesh);
+      wx.uSnowDepth.value = 0.07; wx.uSnowCover.value = 0; wx.uOn.value = 1;
+    }
+  } catch (e) { console.warn("[bike lab look] snow layer failed:", e); snow = null; }
+  const stamps = [{ x: 0, z: 0, px: 0, pz: 0, r: 0.045, strength: 1 }, { x: 0, z: 0, px: 0, pz: 0, r: 0.045, strength: 1 }];
+  let stampPrev = null;
+
   console.log(`[bike lab look] ${(performance.now() - t0).toFixed(0)} ms, ground ${pos.length / 3} verts, ${all.length / 3} tris, scans ${scansOK}, grass ${!!grass}, trees ${trees ? "yes" : "no"}`);
   return {
-    lighting, pipe, ground, materials: M, grass, trees, steel: steelMat(), concreteWall: createMaterial("concrete_white", { mapping: "world" }),
+    lighting, pipe, ground, materials: M, grass, trees, snow, steel: steelMat(), concreteWall: createMaterial("concrete_white", { mapping: "world" }),
     update(dt, focus, s) {
       lighting.update(camera.position.y, testHeight(camera.position.x, camera.position.z), focus, 60, dt);
       lodEye.value.copy(camera.position);
@@ -196,6 +215,14 @@ export async function buildLabLook({ renderer, scene, camera, FEATURES, testHeig
         wind.update?.(dt);
         if (s && s.wheelPos) for (let i = 0; i < 2; i++) { const x = s.wheelPos[i * 2], z = s.wheelPos[i * 2 + 1]; grass.push.set(i, { x, y: s.wheelBot[i], z, radius: 0.25, strength: 1, vx: s.vx, vz: s.vz, ground: testHeight(x, z) }); }
         grass.update(camera, dt);
+      }
+      if (snow) {
+        let n = 0;
+        if (s && s.wheelPos && (s.contact[0] || s.contact[1])) {
+          for (let i = 0; i < 2; i++) { const st = stamps[i]; st.px = stampPrev ? stampPrev[i * 2] : s.wheelPos[i * 2]; st.pz = stampPrev ? stampPrev[i * 2 + 1] : s.wheelPos[i * 2 + 1]; st.x = s.wheelPos[i * 2]; st.z = s.wheelPos[i * 2 + 1]; }
+          stampPrev = Array.from(s.wheelPos); n = 2;
+        } else stampPrev = null;
+        snow.update(dt, n ? stamps : []);
       }
     },
     render() { pipe.render(hazeHook); pipe.setExposureFactor(lighting.adapt(1 / 60)); },
