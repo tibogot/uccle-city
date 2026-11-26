@@ -459,6 +459,7 @@ const bridgeDeckRefs = new Map();     // road id -> { fn, n }
 const FURN_SNAP = params.get("furnsnap") !== "old";      // data-layer furniture out of the driven lanes
 const PLAT_POLE = params.get("platpole") !== "old";      // (claude/defects1, rule nothing-hard-in-carriageway) a STIB pole flagged `platform` stays put only ON a drawn tram platform
 const PROP_REACH = params.get("propreach") !== "old";   // (claude/defects1) a prop with no kerb within 6 m looks up to 16 m (carriageway.js FAR_REACH)
+const SIGN_SIDE = params.get("signside") !== "old";        // (defects3, rule 30 round 4) a sign moved out of a lane keeps to its traffic's side (carriageway.js docOffLanes signSide)
 const STREET_PROPS = params.get("streetprops") !== "old"; // (class D, rule 30) + off the tram tracks, the OSM width without a measured street; plates + posts, boxes, Villo baked
 const PARK_CLEAR = params.get("parkclear") !== "old";     // parked cars by the measured width, the traffic lanes clear of them
 const TRAFPARK = params.get("trafpark") !== "old";       // traffic vs parked cars (docs/TRAFPARK.md)
@@ -1187,7 +1188,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]], STREET_PROPS ? { ...propOpt, tram: null, keep: (p) => p.platform } : {}), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
   const furnSnap = snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]], bed ? { ...propOpt, drop: (p) => bed.inHero(p.x, p.z) } : propOpt);
   const furnCounts = cityFurniture.addTile(entry.name, furnSnap, own.features);
-  const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, STREET_PROPS ? [["signs"]] : [["signs"], ["posts"]]), own.features);
+  const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, STREET_PROPS ? [["signs"]] : [["signs"], ["posts"]], STREET_PROPS && SIGN_SIDE ? { ...propOpt, signSide: true } : propOpt), own.features);
   await split("stops, furniture, street kit");
   if (snapMoved) say(`street furniture: ${snapMoved} data-layer points moved out of a driven lane onto the sidewalk (?furnsnap=old)`);
   if (skCounts) say(`streetkit: ${Object.entries(skCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/streetkit, viewer/streetkit)`);

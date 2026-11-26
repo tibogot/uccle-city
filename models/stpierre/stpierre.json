@@ -1,10 +1,10 @@
 {
  "asset": "Eglise Saint-Pierre d'Uccle, Parvis Saint-Pierre (tools/blender/stpierre.py)",
- "triangles_lod0": 31626,
- "triangles_far": 4256,
+ "triangles_lod0": 31624,
+ "triangles_far": 4494,
  "triangles_per_slot_lod0": {
   "brick_red_brussels": 759,
-  "stone_white": 18092,
+  "stone_white": 18090,
   "stone_blue": 1694,
   "slate": 50,
   "copper_brown": 1932,
@@ -16,8 +16,8 @@
  },
  "triangles_per_slot_far": {
   "brick_red_brussels": 747,
-  "stone_white": 2418,
-  "stone_blue": 146,
+  "stone_white": 2416,
+  "stone_blue": 386,
   "slate": 50,
   "copper_brown": 168,
   "copper_patina": 66,
@@ -73,11 +73,11 @@
    0.86,
    1.0
   ],
-  "lod0_px_per_m": 24.1,
+  "lod0_px_per_m": 23.5,
   "far_px_per_m": 10.5,
   "thin_faces_vertex_ao": [
    8945,
-   121
+   189
   ]
  },
  "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",

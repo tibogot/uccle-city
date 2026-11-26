@@ -1,6 +1,6 @@
 {
  "contract": "fuel-0.1",
- "built": "2026-11-14",
+ "built": "2026-11-26",
  "stations": [
   {
    "id": "n13148112304",
@@ -267,7 +267,7 @@
     "column_base": 1,
     "dispenser": 1,
     "fascia_sign": 4,
-    "grate": 12,
+    "grate": 10,
     "island": 1,
     "line": 2,
     "paypoint": 1,
@@ -395,7 +395,7 @@
     "column_base": 2,
     "dispenser": 2,
     "fascia_sign": 4,
-    "grate": 18,
+    "grate": 17,
     "island": 2,
     "line": 2,
     "paypoint": 1,
@@ -556,7 +556,7 @@
     "column_base": 2,
     "dispenser": 2,
     "fascia_sign": 5,
-    "grate": 24,
+    "grate": 23,
     "island": 2,
     "line": 2,
     "shopdoor": 1,
@@ -718,7 +718,7 @@
     "column_base": 2,
     "dispenser": 2,
     "fascia_sign": 5,
-    "grate": 17,
+    "grate": 16,
     "island": 2,
     "line": 2,
     "shopdoor": 1,

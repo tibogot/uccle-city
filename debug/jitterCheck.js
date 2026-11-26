@@ -18,6 +18,7 @@ const med = (a) => (a.length ? +[...a].sort((x, y) => x - y)[Math.floor(a.length
 const GATE = { x: 617.88, y: 61.6, z: 784.84, nx: -0.391, nz: -0.92 };       // H6 driveway gate (data/gardens/H6.json), 3.51 m, closed
 const WOLV = { x: -505.5, y: 46.9, z: -375.5, nx: 0.82, nz: -0.574 };        // E4 railing on a wall, Wolvendael's edge
 const DANDOY = { x: -743.95, y: 49.84, z: -501.72, nx: 0.7505, nz: 0.6609 }; // Maison Dandoy (debug/zfightCheck.js)
+const POLICE = { x: -492.5, y: 47.0, z: -354.9, nx: 0.82, nz: -0.57 };      // (defects3) the police station's yard grille (cast_iron_green, 3-5 mm), E4
 const DOORA = { x: -713.6, y: 51.29, z: -564.92, nx: 0.53, nz: 0.85 };       // E3 doorA (fanlight grille)
 const along = (f, u) => [f.x + f.nz * u, f.z - f.nx * u];
 const view = (f, u, y, hw, hh, d, h = 1.7) => ({ f, u, y, hw, hh, d, h });
@@ -25,6 +26,7 @@ export const VIEWS = {
   gate3: view(GATE, 1.75, 0.7, 1.9, 0.75, 3), gate8: view(GATE, 1.75, 0.7, 1.9, 0.75, 8), gate20: view(GATE, 1.75, 0.7, 1.9, 0.75, 20), gate40: view(GATE, 1.75, 0.7, 1.9, 0.75, 40),
   wolv3: view(WOLV, 0, 0.9, 2.5, 0.6, 3), wolv8: view(WOLV, 0, 0.9, 2.5, 0.6, 8), wolv20: view(WOLV, 0, 0.9, 2.5, 0.6, 20), wolv40: view(WOLV, 0, 0.9, 2.5, 0.6, 40),
   dandoy8: view(DANDOY, 0.7, 4.7, 0.6, 0.55, 8), dandoy20: view(DANDOY, 0.7, 4.7, 0.6, 0.55, 20), dandoy40: view(DANDOY, 0.7, 4.7, 0.6, 0.55, 40),   // the Juliet railing (kit balcony at -743.11, 54.04, -502.67)
+  police8: view(POLICE, 0, 1.1, 2.5, 0.8, 8), police20: view(POLICE, 0, 1.1, 2.5, 0.8, 20), police40: view(POLICE, 0, 1.1, 2.5, 0.8, 40),
   door8: view(DOORA, 0, 1.6, 0.7, 1.0, 8), door20: view(DOORA, 0, 1.6, 0.7, 1.0, 20),
 };
 const ground = (x, z) => V().hm.surface(x, z);
@@ -84,7 +86,7 @@ export async function run({ views = Object.keys(VIEWS), speeds = [1.5, 8], ...o 
     const r = await measure({ ...o, view, speed });
     rows.push({ view, speed, still: r.still?.shimmer, stillHot: r.still?.hot, moving: r.moving?.shimmer, movingHot: r.moving?.hot, yStill: r.still?.meanY, yMoving: r.moving?.meanY, err: r.error });
   }
-  return { mode: /jitter=old/.test(location.search) ? "old" : "new", rows };
+  return { mode: /jitter=old|herowire=old/.test(location.search) ? "old" : "new", rows };
 }
 export async function go(view, settle = 2000) {
   for (const el of document.querySelectorAll("#hud, #umap-mini, #umap-toggle, #sound-toggle, #gplay, .play-btn")) el.style.display = "none";
