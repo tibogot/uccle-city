@@ -14,15 +14,17 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, vec2, vec3, vec4, float, floor, fract, mix, step, smoothstep, clamp, abs, dot, max, min, mrt, roughness,
-  uniform, Fn, positionWorld, cameraPosition, normalize, normalWorld, pow, sin, time, length, fwidth, select,
+  uniform, Fn, positionWorld, cameraPosition, normalize, normalWorld, pow, sin, time, length, fwidth, select, texture, int, dFdx, dFdy, cross, inverseSqrt, transformNormalToView,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { env } from "../lighting.js";
 import { fadeVariant, SMOOTH } from "../lodFade.js";
 import { libSource } from "../materials/libSwitch.js";
+import { GLASS_V3, farGlassMaterial, VILLA_DIR } from "./villaGlass.js";
+import { poolMaterialV3 } from "./villaPool.js";
 
-export const VILLA_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves"];
+export const VILLA_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves", "sculpture"];
 export const VILLA_CODES = ["plain", "reveal", "plinth", "coping", "step", "slat", "frame", "door", "soffit", "roof", "garage", "led", "fire", "screen", "channel", "rug"];
 const C = Object.fromEntries(VILLA_CODES.map((n, i) => [n, i]));
 /** LOD switch distances (m, camera to the villa's box) and the half-width of each cross-fade band */
@@ -52,6 +54,37 @@ const slatCover = (x) => {
   return mix(bar, float(0.36), smoothstep(0.3, 0.6, fwidth(s)));
 };
 const std = (o) => Object.assign(new THREE.MeshStandardNodeMaterial(), o);
+/** villa3 job 4: the sculptures' maps + their uplights (world), set by loadVilla before the materials are built */
+const ART = { col: null, dat: null, lights: [] };
+/** the sculptures: one lit Standard material for all three (the scan's diffuse / AO / normal / roughness / metal from a
+ *  KTX2 array layer = the face code), the scan's normal map on a screen-space cotangent frame (no tangents shipped);
+ *  at night each is washed from below by its ground uplight: emissive only (rule fixed-light-count), warm, falling
+ *  off with distance and facing */
+function sculptureMaterial() {
+  const m = new THREE.MeshStandardNodeMaterial();
+  const k = int(codeF().add(0.5).min(2));
+  const c = texture(ART.col, uv()).depth(k), d = texture(ART.dat, uv()).depth(k);
+  // (the first look read as chrome: the scans' glossy roughness under the sky env; garden stone and bronze weather to satin)
+  m.colorNode = c.rgb; m.aoNode = c.a; m.roughnessNode = d.b.max(0.48); m.metalnessNode = d.a.mul(0.85);
+  const N = normalWorld.toVar();
+  const nx = d.r.mul(2).sub(1), ny = d.g.mul(2).sub(1).mul(ARTLOOK.flipY), nz = float(1).sub(nx.mul(nx)).sub(ny.mul(ny)).max(0).sqrt();
+  const dp1 = dFdx(positionWorld), dp2 = dFdy(positionWorld), duv1 = dFdx(uv()), duv2 = dFdy(uv());
+  const p2 = cross(dp2, N), p1 = cross(N, dp1);
+  const T = p2.mul(duv1.x).add(p1.mul(duv2.x)), B = p2.mul(duv1.y).add(p1.mul(duv2.y));
+  const im = inverseSqrt(max(dot(T, T), dot(B, B)).max(1e-14));
+  const Np = normalize(T.mul(im).mul(nx).add(B.mul(im).mul(ny)).add(N.mul(nz)));
+  m.normalNode = transformNormalToView(Np);
+  let up = float(0);
+  ART.lights.forEach((L, i) => {
+    const toL = vec3(L.x, L.y, L.z).sub(positionWorld), dist = length(toL);
+    const f = max(dot(Np, toL.div(dist)), 0.0).div(dist.mul(dist).mul(0.45).add(1.0));
+    up = up.add(f.mul(float(1).sub(min(abs(codeF().sub(i)), 1.0))));
+  });
+  m.emissiveNode = c.rgb.mul(lin(0xffd2a0)).mul(up).mul(env.uNight).mul(ARTLOOK.uplight);
+  m.userData.sculpture = true;
+  return m;
+}
+export const ARTLOOK = { uplight: uniform(1.4), flipY: uniform(-1.0) };
 const noSSR = (m) => { m.mrtNode = mrt({ metalRough: vec3(0, roughness, float(1)) }); return m; };
 
 const TEMP = {
@@ -78,9 +111,11 @@ const TEMP = {
     emissiveNode: lin(0xffc58a).mul(0.45).mul(env.uNight.mul(villaLook.windowsNight).mul(0.55)).mul(isC(C.channel)).mul(float(1).sub(slatCover(uv().x))),
     roughness: 0.62,
   }),
-  metal_dark: () => std({ color: new THREE.Color(0x2a2c2f), roughness: 0.34, metalness: 0.55 }),
+  // (villa3 job 2: the glazing gaskets / spacers, code plinth: a lighter grey line inside every frame, the edge of the unit)
+  metal_dark: () => std({ colorNode: mix(mix(lin(0x2a2c2f), lin(0x8a8d90), isC(C.plinth)), lin(0xc4c8cb), isC(C.door)), roughnessNode: mix(float(0.34), float(0.22), isC(C.door)), metalnessNode: mix(float(0.55), float(0.95), isC(C.door)), emissiveNode: lin(0xffd6a0).mul(isC(C.led)).mul(mix(float(0.0), float(3.0), env.uNight)) }),   // (job 3: code door = the ladder's brushed stainless)
   // the far glass (the interior cell's own glass replaces it within 30 m): dark, reflective; lit windows at night
   glass_window: () => {
+    if (GLASS_V3) return farGlassMaterial();          // villa3: the shared glass model (villaGlass.js); ?villa3=0 below
     const m = std({ color: new THREE.Color(0x0b1114), roughness: 0.04, metalness: 0.15 });
     const p = positionWorld;
     const warm = lin(0xffc58a).mul(vnoise(vec2(p.x.add(p.z).mul(0.35), p.y.mul(0.5))).mul(0.6).add(0.4));
@@ -107,6 +142,7 @@ const TEMP = {
     m.side = THREE.FrontSide;
     return m;
   },
+  sculpture: () => sculptureMaterial(),
   hedge: () => {
     const m = std({ roughness: 0.82 });
     m.colorNode = Fn(() => {
@@ -207,9 +243,22 @@ function wrapAO(src, slot) {
 }
 
 let promise = null;
-export function loadVilla() {
+export function loadVilla({ renderer = null } = {}) {
   return (promise ??= (async () => {
-    const base = new URL("../../models/villa/", import.meta.url).href;
+    // villa3 job 3b: the pool's baked caustics (162 KB) load WITH the model (the villa itself loads when needed, in the
+    // background), before the water's material is built: the texture is bound from the start (a placeholder swapped
+    // later did not rebind: the first try drew a flat brightening)
+    // villa3 job 4: the sculptures' maps (two KTX2 arrays, a layer per statue: tools/villa/art_ktx2.py), loaded with the model too
+    const art = GLASS_V3 && renderer ? import("../materials/scans.js").then(async (S) => {
+      const k = S.ktxLoader(renderer), b = new URL(VILLA_DIR, import.meta.url);
+      const [col, dat] = await Promise.all(["art_col.ktx2", "art_dat.ktx2"].map((f) => k.loadAsync(new URL(f, b).href)));
+      col.colorSpace = THREE.SRGBColorSpace; dat.colorSpace = THREE.NoColorSpace;
+      for (const x of [col, dat]) { x.wrapS = x.wrapT = THREE.ClampToEdgeWrapping; x.anisotropy = 4; x.needsUpdate = true; }
+      ART.col = col; ART.dat = dat;
+    }).catch((e) => { console.warn("[villa] sculptures' maps:", e.message); }) : null;
+    const caust = GLASS_V3 && renderer ? Promise.all([import("../materials/scans.js"), import("./villaPool.js")])
+      .then(([S, VP]) => VP.loadCaustics(S.ktxLoader(renderer), new URL("caustics.ktx2", new URL(VILLA_DIR, import.meta.url)).href)).catch((e) => { console.warn("[villa] caustics:", e.message); return null; }) : null;
+    const base = new URL(VILLA_DIR, import.meta.url).href;
     MeshoptDecoder.useWorkers?.(2);
     const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     const [gltf, notes, lib] = await Promise.all([
@@ -217,7 +266,7 @@ export function loadVilla() {
       fetch(base + "villa.json").then((r) => r.json()),
       SOURCE === "temp" ? null : import("../materials/shipped.js").catch((e) => { console.warn("[villa] material library not loaded:", e.message); return null; }),
     ]);
-    const names = [["Villa", "Villa_ivy"], ["Villa_lod1"], ["Villa_lod2"]];
+    const names = [["Villa", "Villa_ivy", "Villa_kit", "Villa_art"], ["Villa_lod1", "Villa_art_lod1"], ["Villa_lod2", "Villa_art_lod2"]];     // (villa3 job 3: the pool kit, near only)
     const lods = names.map(() => []);
     const nodes = {};
     gltf.scene.traverse((o) => { if (o.name) nodes[o.name] = nodes[o.name] ?? o; });
@@ -231,7 +280,9 @@ export function loadVilla() {
     });
     const tris = lods.map((l) => l.reduce((s, m) => s + m.geometry.index.count / 3, 0));
     const materials = {};
-    for (const s of VILLA_SLOTS) if (s !== "pool_water") materials[s] = wrapAO(sourceMaterial(s, lib), s);
+    if (art) await art;
+    if (ART.col) ART.lights = (notes.art?.lights || []).map((l) => new THREE.Vector3(...l.at).applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(...notes.placement.city_local_position), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), notes.placement.rotation_y_rad), new THREE.Vector3(1, 1, 1))));
+    for (const s of VILLA_SLOTS) if (s !== "pool_water" && (s !== "sculpture" || ART.col)) materials[s] = wrapAO(sourceMaterial(s, lib), s);
     const pl = notes.placement;
     const placement = { position: new THREE.Vector3(...pl.city_local_position), rotationY: pl.rotation_y_rad };
     const rootM = new THREE.Matrix4().compose(placement.position, new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), placement.rotationY), new THREE.Vector3(1, 1, 1));
@@ -245,6 +296,7 @@ export function loadVilla() {
     const make = (k) => {
       const g = new THREE.Group(); g.name = k === 0 ? "villa_lod0" : `villa_lod${k}`;
       for (const { slot, geometry } of lods[k]) {
+        if (!materials[slot]) continue;                 // (villa3: the sculptures when their maps failed to load)
         const m = new THREE.Mesh(geometry, materials[slot]);
         m.name = slot; m.userData.slot = slot; m.userData.base = m.material;
         m.castShadow = slot !== "glass_window" && slot !== "glow"; m.receiveShadow = true;
@@ -268,7 +320,8 @@ export function loadVilla() {
       return g;
     };
     const inv = rootM.clone().invert();
-    const waterMat = poolMaterial(notes.pool, inv);
+    if (caust) await caust;
+    const waterMat = GLASS_V3 ? poolMaterialV3(notes.pool, inv, notes) : poolMaterial(notes.pool, inv);     // (villa3 job 3: villaPool.js)
     const waterNode = nodes.Villa_water;
     let water = null;
     waterNode?.traverse((o) => { if (o.isMesh && !water) { water = new THREE.Mesh(o.geometry, waterMat); water.name = "villa-water"; water.receiveShadow = false; } });

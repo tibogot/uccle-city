@@ -25,7 +25,9 @@ const check = (ok, what, detail = "") => { rows.push(`${ok ? "PASS" : "FAIL"} ${
 
 // budgets (round 1, 2026-11-22): measured + headroom; raising one is a reviewed change
 // (round 2: the furnished interior, 200k triangles / 16 draws; the coordinator's cap, 2026-11-22)
-const B = { mb: 6.0, lod0: 62000, lod1: 20000, lod2: 1500, draws: 9, cellTris: 200000, cellDraws: 16 };
+// (villa3, 2026-11-26: the owner approved 9 MB with the textures streamed with the interior, ~230k interior triangles,
+// draws as docs/VILLA_V3_PLAN.md proposed: the cell stays <= 16)
+const B = { mb: 9.0, lod0: 62000, lod1: 20000, lod2: 1500, draws: 9, cellTris: 230000, cellDraws: 16 };
 
 const site = J("models/villa/site.json"), notes = J("models/villa/villa.json"), info = J("models/villa/interior.json");
 const plot = await imp("viewer/villa/villaPlot.js");
@@ -47,7 +49,8 @@ check(Math.hypot(px - sx, pz - sz) < 1e-3, "villaPlot.toCity = site.json's axes"
 const { readGlb } = await imp("tools/mesh_audit/glb.mjs");
 const ext = await readGlb(new URL("models/villa/villa.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const cell = await readGlb(new URL("models/villa/interior.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
-const mb = (statSync(new URL("models/villa/villa.glb", ROOT)).size + statSync(new URL("models/villa/interior.glb", ROOT)).size) / 1048576;
+const SHIP = ["models/villa/villa.glb", "models/villa/interior.glb", "models/villa/fabrics.ktx2", "models/villa/reflect.ktx2", "models/villa/caustics.ktx2", "models/villa/art_col.ktx2", "models/villa/art_dat.ktx2"];
+const mb = SHIP.reduce((s, f) => s + statSync(new URL(f, ROOT)).size, 0) / 1048576;
 check(mb <= B.mb, `download <= ${B.mb} MB`, `${mb.toFixed(2)} MB`);
 const tri = (parts, node) => parts.filter((p) => p.node === node).reduce((s, p) => s + p.index.length / 3, 0);
 const draws = (parts, node) => parts.filter((p) => p.node === node).length;
@@ -68,6 +71,191 @@ const prims = cj.meshes.flatMap((m, mi) => m.primitives.map((p) => ({ p, node: c
 const unbaked = prims.filter(({ p, node }) => (node === "Cell" || node === "Soft") && !["_LSKY", "_LSUN", "_LNIGHT"].every((a) => a in p.attributes));
 check(unbaked.length === 0, "every interior primitive carries the sky / sun / night bakes", unbaked.length ? `${unbaked.length} without` : "");
 
+// ---- 2b. villa3 (docs/VILLA_V3_PLAN.md, rule villa-glass-v3): ONE glass model (viewer/villa/villaGlass.js) for the far
+// glass (villaModel.js glass_window) and the cell's glass (villaInterior.js), with the env reflection on (the sky, the
+// tree line, the sun's glint: env's uniforms), Fresnel, premultiplied blending, no SSR / planar / render-target pass; one
+// glass primitive in the cell and one per exterior level (no extra draw)
+{
+  const gTxt = readFileSync(new URL("viewer/villa/villaGlass.js", ROOT), "utf8");
+  const mTxt = readFileSync(new URL("viewer/villa/villaModel.js", ROOT), "utf8"), iTxt = readFileSync(new URL("viewer/villa/villaInterior.js", ROOT), "utf8");
+  const reflOn = /env\.uSkyTop/.test(gTxt) && /env\.uSunDir/.test(gTxt) && /function outdoor\(R\)/.test(gTxt) && /pow\(float\(1\)\.sub\(ndv\), 5\.0\)/.test(gTxt);
+  const premul = /blendSrc = THREE\.OneFactor/.test(gTxt) && /blendDst = THREE\.OneMinusSrcAlphaFactor/.test(gTxt);
+  const noPass = !/Reflector|RenderTarget|ssr\(|pass\(|PMREMGenerator|new THREE\.(Point|Spot|Directional|Rect)Light/.test(gTxt);
+  const wired = /if \(GLASS_V3\) return farGlassMaterial\(\)/.test(mTxt) && /if \(GLASS_V3\) return nearGlassMaterial\(/.test(iTxt);
+  const gDraws = ["Villa", "Villa_lod1", "Villa_lod2"].map((n) => ext.parts.filter((p) => p.node === n && p.slot === "glass_window").length);
+  const cDraws = cell.parts.filter((p) => p.node === "Glass").length;
+  check(reflOn && premul && noPass && wired && gDraws.every((d) => d === 1) && cDraws === 1,
+    "villa glass: one shared model (villaGlass.js), env reflection + Fresnel on, premultiplied, no extra pass / light / draw",
+    `reflection ${reflOn}, premultiplied ${premul}, no pass ${noPass}, wired ${wired}, glass draws ext ${gDraws.join("/")} cell ${cDraws}`);
+}
+// ---- 2c. villa3 (rule villa-props-contact): the re-made pieces (interior.json contact footprints) SIT on the floor: under
+// each footprint the lowest drawn vertex (Cell + Soft) is within 5 mm of the floor (or the rug's top, +12 mm), nothing
+// sinks more than 5 mm into it; the three round-2 fabric slots are merged into `props` (one textured draw)
+{
+  const rects = info.contact || [];
+  const parts = cell.parts.filter((p) => p.node === "Soft" || p.node === "Cell");
+  const rowsC = [];
+  let bad = 0;
+  for (const r of rects) {
+    let lo = Infinity, sink = 0;
+    for (const p of parts) {
+      if (/oak_plank|stone_floor/.test(p.slot)) continue;
+      const P = p.positions;
+      for (let k = 0; k < P.length; k += 3) {
+        const u = P[k], y = P[k + 1], w = P[k + 2];
+        if (u < r.u[0] + 0.02 || u > r.u[1] - 0.02 || w < r.w[0] + 0.02 || w > r.w[1] - 0.02) continue;
+        if (y < r.y - 0.05 || y > r.y + 1.5) continue;            // (the storey: not the ceiling under the slab)
+        if (p.slot === "props" && Math.abs(y - (r.y + 0.012)) < 0.0015) continue;       // (the rug itself)
+        lo = Math.min(lo, y); sink = Math.max(sink, r.y - y);
+      }
+    }
+    const gapMm = (lo - r.y) * 1000, ok = (Math.abs(gapMm) <= 5 || Math.abs(gapMm - 12) <= 5) && sink <= 0.005;
+    if (!ok) bad++;
+    rowsC.push(`${((r.u[0] + r.u[1]) / 2).toFixed(1)},${((r.w[0] + r.w[1]) / 2).toFixed(1)}: ${gapMm.toFixed(1)} mm`);
+  }
+  const slots = new Set(cell.parts.map((p) => p.slot));
+  check(rects.length >= 15 && bad === 0 && slots.has("props") && !["fabric_white", "fabric_grey", "leather"].some((s) => slots.has(s)),
+    "the re-made pieces sit on the floor (lowest vertex within 5 mm of it / the rug), fabrics in ONE props slot", `${rects.length} footprints: ${rowsC.join("; ")}`);
+}
+// ---- 2c'. villa3 job 2 (rule villa-screens-mirror): the TV glass and the bathroom mirror read the room from baked
+// reflection panoramas (models/villa/reflect.ktx2, interior.json reflect: tv + mirror, day + night), sampled by the
+// interior's metal_black material for the screen / mirror codes: no render target, no light, no extra draw
+{
+  const iTxt = readFileSync(new URL("viewer/villa/villaInterior.js", ROOT), "utf8");
+  const r = info.reflect;
+  const okInfo = r && r.file === "reflect.ktx2" && ["tv_day", "tv_night", "mirror_day", "mirror_night"].every((l) => r.layers.includes(l));
+  const okShader = /function screenAndMirror\(light\)/.test(iTxt) && /isC\(C\.screen\)\.add\(isC\(C\.roof\)\)/.test(iTxt) && !/RenderTarget|CubeCamera|PMREMGenerator/.test(iTxt);
+  const mb = cell.parts.find((p) => p.node === "Cell" && p.slot === "metal_black");
+  let mirrorV = 0, screenV = 0;
+  if (mb?.ao) for (let k = 0; k < mb.ao.length; k++) { const c = Math.floor(mb.ao[k] * 16); if (c === 9) mirrorV++; if (c === 13) screenV++; }   // (glb.mjs: ao = COLOR_0's first channel = the face code here)
+  check(okInfo && okShader && mirrorV >= 8 && screenV >= 8, "the TV glass and the mirror reflect the room (baked panoramas, one lookup, no render target / light / draw)",
+    `layers ${r?.layers?.join(",")}, shader ${okShader}, mirror verts ${mirrorV}, screen verts ${screenV}`);
+}
+// ---- 2e. villa3 job 2 (rule uv-written): the UV the generator wrote (metres) is the UV shipped: not Blender's default
+// 0 / 1 per face (since round 1 a stale layer reference in villa.py make() wrote nowhere: every metre pattern was
+// drawn per face). Every big slot primitive has UVs beyond 0..1 and fewer than 60 % of its values at exactly 0 or 1
+{
+  const bad = [];
+  for (const p of [...ext.parts, ...cell.parts]) {
+    if (!p.uv0 || p.index.length < 300 || /glass|glow|leaves|pool|sculpture/.test(p.slot)) continue;   // (the sculptures' UVs are their scans' 0..1 atlases, by design)
+    let mn = Infinity, mx = -Infinity, cornerish = 0;
+    for (const x of p.uv0) { mn = Math.min(mn, x); mx = Math.max(mx, x); if (x === 0 || x === 1) cornerish++; }
+    if (mx - mn <= 1.0001 || cornerish / p.uv0.length > 0.6) bad.push(`${p.node}/${p.slot}`);
+  }
+  check(bad.length === 0, "the shipped UVs are the generator's metres (not Blender's default 0 / 1 per face)", bad.length ? bad.slice(0, 8).join(", ") : "");
+}
+// ---- 2f. villa3 job 3 (rules villa-pool-v2, villa-kit-near): the water = ONE material from villaPool.js (Fresnel over the
+// glass model's outdoor reflection + the house, the steps traced, no lane bar, the LED niches emissive), and the pool
+// kit node (Villa_kit, shown with LOD0) inside its own budget, every kit piece on the deck within 5 mm
+{
+  const pTxt = readFileSync(new URL("viewer/villa/villaPool.js", ROOT), "utf8"), mTxt = readFileSync(new URL("viewer/villa/villaModel.js", ROOT), "utf8");
+  const water = /import \{ outdoor \} from "\.\/villaGlass\.js"/.test(pTxt) && /slab\(p, R, houseA/.test(pTxt) && /for \(const s of steps\)/.test(pTxt)
+    && !/const lane =/.test(pTxt) && !/RenderTarget|Reflector|new THREE\.(Point|Spot|Rect)Light/.test(pTxt) && /GLASS_V3 \? poolMaterialV3\(/.test(mTxt);
+  check(water, "the pool water v2: Fresnel + outdoor / house reflection, the steps traced, no lane bar, no pass / light (villaPool.js)");
+  const kt = tri(ext.parts, "Villa_kit"), kd = draws(ext.parts, "Villa_kit");
+  const kit = ext.parts.filter((q) => q.node === "Villa_kit" && q.slot !== "hedge");
+  const rows3 = []; let bad3 = 0;
+  for (const r of notes.kit_contact || []) {
+    let lo = Infinity;
+    for (const q of kit) for (let k = 0; k < q.positions.length; k += 3) {
+      const u = q.positions[k], y = q.positions[k + 1], w = q.positions[k + 2];
+      if (u < r.u[0] + 0.01 || u > r.u[1] - 0.01 || w < r.w[0] + 0.01 || w > r.w[1] - 0.01 || y < r.y - 0.1 || y > r.y + 1.0) continue;
+      lo = Math.min(lo, y);
+    }
+    const gap = (lo - r.y) * 1000; if (!(Math.abs(gap) <= 5)) bad3++;
+    rows3.push(`${((r.u[0] + r.u[1]) / 2).toFixed(1)},${((r.w[0] + r.w[1]) / 2).toFixed(1)}: ${gap.toFixed(1)} mm`);
+  }
+  check(kt > 0 && kt <= 12000 && kd <= 4 && (notes.kit_contact || []).length >= 8 && bad3 === 0,
+    "the pool kit (Villa_kit, near only): <= 12k tris, <= 4 draws, every piece on the deck within 5 mm", `${kt} tris, ${kd} draws; ${rows3.join("; ")}`);
+}
+// ---- 2g. villa3 job 3b (rule villa-caustics-baked + villa-pool-v2's night tone range): the baked caustics stay
+// cheap (one KTX2 < 0.5 MB, <= 3 texture lookups in the water's shader), and the night glow is a glow, never a
+// blow-out: over the basin's walls and floor its luminance (the shader's own constants, POOL_NIGHT) peaks under
+// 0.9, averages >= 0.12 and nowhere drops under 0.02 (the deep end still reads)
+{
+  const pTxt = readFileSync(new URL("viewer/villa/villaPool.js", ROOT), "utf8");
+  const lookups = (pTxt.match(/\btexture\(/g) || []).length;
+  const kb = statSync(new URL("models/villa/caustics.ktx2", ROOT)).size / 1024;
+  check(lookups <= 3 && kb < 512, "the baked caustics: <= 3 texture lookups in villaPool.js, caustics.ktx2 < 0.5 MB", `${lookups} lookups, ${kb.toFixed(0)} KB`);
+  const VPm = await imp("viewer/villa/villaPool.js");
+  const P = notes.pool, W = P.water - 100, F = P.floor - 100;
+  const L = [];
+  for (let w = P.w0; w <= P.w1; w += 0.5) {
+    for (let u = P.u0; u <= P.u1; u += 0.5) L.push(VPm.poolNightLum(P, u, F, w));
+    for (const u of [P.u0, P.u1]) for (let y = F; y <= W; y += 0.3) L.push(VPm.poolNightLum(P, u, y, w));
+  }
+  const mx = Math.max(...L), mn = Math.min(...L), mean = L.reduce((s, x) => s + x, 0) / L.length;
+  check(mx <= 0.9 && mean >= 0.12 && mn >= 0.02, "the pool's night glow inside its tone range (peak <= 0.9, mean >= 0.12, deep end >= 0.02)", `peak ${mx.toFixed(2)}, mean ${mean.toFixed(2)}, min ${mn.toFixed(3)} over ${L.length} points`);
+}
+// ---- 2h. villa3 job 4 (rule villa-sculptures): the three CC0 sculptures: one material (one draw a level), LOD0 <= 46k
+// triangles (~15k each), LOD1 <= 12k, LOD2 <= 1.5k, each standing on its plinth (lowest vertex within 5 mm of the cap)
+{
+  const a0 = tri(ext.parts, "Villa_art"), a1 = tri(ext.parts, "Villa_art_lod1"), a2 = tri(ext.parts, "Villa_art_lod2");
+  const d0 = draws(ext.parts, "Villa_art");
+  const rows4 = []; let bad4 = 0;
+  for (const r of notes.art?.contact || []) {
+    let lo = Infinity;
+    for (const q of ext.parts.filter((q) => q.node === "Villa_art")) for (let i = 0; i < q.positions.length; i += 3) {
+      const u = q.positions[i], y = q.positions[i + 1], w = q.positions[i + 2];
+      if (u < r.u[0] || u > r.u[1] || w < r.w[0] || w > r.w[1]) continue;
+      lo = Math.min(lo, y);
+    }
+    const g = (lo - r.y) * 1000; if (!(Math.abs(g) <= 5)) bad4++;
+    rows4.push(`#${r.k} ${g.toFixed(1)} mm`);
+  }
+  check(a0 > 0 && a0 <= 46000 && a1 <= 12000 && a2 <= 1500 && d0 === 1 && (notes.art?.contact || []).length === 3 && bad4 === 0,
+    "the sculptures: one draw a level, LOD0 <= 46k / LOD1 <= 12k / LOD2 <= 1.5k triangles, each on its plinth within 5 mm", `${a0} / ${a1} / ${a2} tris, ${d0} draw; ${rows4.join(", ")}`);
+}
+// ---- 2i. villa3 job 5 (rule villa-garden-city-kit): the villa's hedges are the CITY's hedge modules and its shrubs the
+// city's plant kit: no `hedge`-slot box left in any villa node; every run a city species (gardenHedge.js HEDGE_SPECIES),
+// width <= 0.99 (the module's cap), its whole body inside the plot and clear of the terrace / pool; the shrubs on the
+// plot, of the plant doc's types; wired after the clear rings (cityGardens.addTileGen after clearRoadsGen, main.js
+// after the plants' clear-ring filter)
+{
+  // (the three terrace planters' topiary balls stay: soft rounded shrubs in Villa_kit's hedge slot, near only, ~300 tris each)
+  const boxes = ext.parts.filter((q) => q.slot === "hedge" && q.node !== "Villa_kit").reduce((s2, q) => s2 + q.index.length / 3, 0);
+  const topi = ext.parts.filter((q) => q.slot === "hedge" && q.node === "Villa_kit").reduce((s2, q) => s2 + q.index.length / 3, 0);
+  const hsrc = readFileSync(new URL("viewer/gardens/gardenHedge.js", ROOT), "utf8");
+  const SPEC = JSON.parse((hsrc.match(/HEDGE_SPECIES = (\[[^\]]*\])/) || [, "[]"])[1]);
+  const P = plot.PLOT_UW, T = notes.terrace, runs = plot.VILLA_HEDGE_RUNS || [];
+  let bad = [];
+  runs.forEach((r, i) => {
+    if (!SPEC.includes(r.species) || !(r.width > 0.3 && r.width <= 0.99) || !(r.height >= 0.5 && r.height <= 2.6)) bad.push(`#${i} ${r.species} ${r.width}`);
+    for (const [x, z] of r.points) {
+      const [u, w] = plot.toFrame(x, z), h = r.width / 2;
+      if (u - h < P.u0 - 0.01 || u + h > P.u1 || w - h < P.w0 || w + h > P.w1) { bad.push(`#${i} off the plot at u ${u.toFixed(1)} w ${w.toFixed(1)}`); break; }
+      if (u + h > T.u0 && u - h < T.u1 && w + h > T.w0 && w - h < T.w1) { bad.push(`#${i} on the terrace at u ${u.toFixed(1)} w ${w.toFixed(1)}`); break; }
+    }
+  });
+  // the boundary (hornbeam) runs close the plot: each end inside another run's body or against the front wall (u <= 10):
+  // no corner gap (the first layout left a 0.5 m slot at the back corners)
+  const seg = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1, f = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2)); return Math.hypot(p[0] - a[0] - dx * f, p[1] - a[1] - dz * f); };
+  runs.forEach((r, i) => {
+    if (r.species !== "hornbeam") return;
+    for (const e of [r.points[0], r.points[r.points.length - 1]]) {
+      if (plot.toFrame(...e)[0] <= 10.0) continue;
+      const hit = runs.some((q, j) => j !== i && q.points.some((pt, k) => k > 0 && seg(e, q.points[k - 1], pt) <= q.width / 2 + 0.01));
+      if (!hit) { const [u, w] = plot.toFrame(...e); bad.push(`#${i} open end at u ${u.toFixed(1)} w ${w.toFixed(1)}`); }
+    }
+  });
+  const types = J("data/plants/H9.json").types, rows5 = plot.villaShrubRows ? plot.villaShrubRows(types) : [];
+  for (let o = 0; o < rows5.length; o += 6) { const [u, w] = plot.toFrame(rows5[o], rows5[o + 1]); if (u < P.u0 || u > P.u1 || w < P.w0 || w > P.w1) bad.push(`shrub ${o / 6} off the plot`); }
+  const gsrc = readFileSync(new URL("viewer/gardens/cityGardens.js", ROOT), "utf8"), msrc = readFileSync(new URL("viewer/main.js", ROOT), "utf8");
+  const wired = gsrc.indexOf("this.extraHedges?.[name]") > gsrc.indexOf("clearRoadsGen(doc") && gsrc.indexOf("clearRoadsGen(doc") > 0
+    && /extraHedges = \{ H9: VILLA_HEDGE_RUNS \}/.test(msrc)
+    && msrc.indexOf("villaShrubRows(") > msrc.indexOf("if (!inClear(P[o], P[o + 1]))");
+  check(boxes === 0 && topi <= 1000 && runs.length >= 10 && rows5.length / 6 >= 12 && bad.length === 0 && wired,
+    "the villa's hedges / shrubs are the city's kits (no hedge boxes; runs on the plot, off the terrace; wired after the clear rings)",
+    `${boxes} hedge-box tris (${topi} planter topiary), ${runs.length} runs (${runs.reduce((s2, r) => s2 + r.points.length, 0)} pts), ${rows5.length / 6} shrubs${bad.length ? "; " + bad.slice(0, 4).join("; ") : ""}${wired ? "" : "; NOT wired"}`);
+}
+// ---- 2d. villa3 (rule villa-licences): every external asset the villa ships is listed with its licence and source page
+{
+  let lic = ""; try { lic = readFileSync(new URL("models/villa/LICENCES.md", ROOT), "utf8"); } catch { /* missing */ }
+  const fab = [...J("models/villa/fabrics.json").layers.map((l) => l.id), "marble_bust_01", "horse_statue_01", "bronze_whale_statue"];
+  const missing = fab.filter((id) => !lic.split(/\r?\n/).some((ln) => ln.includes(id) && ln.includes("CC0") && ln.includes(`polyhaven.com/a/${id}`)));
+  check(lic.length > 0 && missing.length === 0, "every external asset listed in models/villa/LICENCES.md (licence + source page)", missing.length ? `missing: ${missing.join(", ")}` : `${fab.length} fabric scans, CC0`);
+}
+
 // ---- 3. joins: LOD0 + gate + grounds vs the terrain
 const { Heightmap } = await imp("viewer/heightmap.js");
 const hdr = J("data/tiles/H9/terrain.json");
@@ -79,7 +267,7 @@ const toWorld = (p) => {
   for (let i = 0; i < P.length; i += 3) { v.set(p.positions[i], p.positions[i + 1], p.positions[i + 2]).applyMatrix4(rootM); P[i] = v.x; P[i + 1] = v.y; P[i + 2] = v.z; }
   return { ...p, positions: P };
 };
-const model = ext.parts.filter((p) => ["Villa", "Villa_gateL", "Villa_gateR"].includes(p.node)).map(toWorld);
+const model = ext.parts.filter((p) => ["Villa", "Villa_kit", "Villa_gateL", "Villa_gateR"].includes(p.node)).map(toWorld);   // (villa3 job 3: the coping is the kit node's, drawn with LOD0)
 // the paved grounds as the viewer builds them (the same function, the tile's heightmap)
 const groundAt = (x, z) => hm.surface(x, z);
 const GG = await imp("viewer/villa/villaGroundsGeom.js");

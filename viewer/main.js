@@ -22,7 +22,7 @@ import { addStalle } from "./stalleCity.js";
 import { addTownHall } from "./townhallCity.js";
 import { addVanBuuren } from "./vanbuurenCity.js";
 import { addVilla } from "./villa/villaCity.js";
-import { VILLA_ON, villaClearRings, villaTreesClear, villaGrassSolid } from "./villa/villaPlot.js";   // the villa on Av. du Prince d'Orange (claude/villa1; ?villa=0 off)
+import { VILLA_ON, villaClearRings, villaTreesClear, villaGrassSolid, VILLA_GARDEN_V3, VILLA_HEDGE_RUNS, villaShrubRows } from "./villa/villaPlot.js";   // the villa on Av. du Prince d'Orange (claude/villa1; ?villa=0 off)
 import { addWolvendael } from "./wolvendaelCity.js";
 import { addPolice } from "./policeCity.js";
 import { addCalevoet } from "./calevoetCity.js";
@@ -564,6 +564,11 @@ const TRAFFIC = params.get("traffic") !== "0";   // round 4: on by default (?tra
 const trafficTiles = new Map();
 window.__trafficTiles = trafficTiles;            // (debug: the lane graphs, for checks in the console)
 let cityTraffic = null;
+// ?peds=0: no people (claude/peds2, viewer/pedestrians/cityPeds.js); each full tile's walk graph is kept here until they
+// start, then added / removed with its tile
+const PEDS = params.get("peds") !== "0";
+const pedTiles = new Map();
+let cityPeds = null;
 let cityNight = null;                         // ?night=1 (viewer/nightLights/cityNight.js): lamps + cars as pool lights
 let falconsReady = null, falconsOn = true;   // the Saint-Job peregrines (viewer/falcons.js), once loaded       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
@@ -825,6 +830,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     surfVote: params.get("surfvote") !== "old",                                                    // the street-surface name vote with repaired / normalised names (viewer/streetNames.js, docs/SURFVOTE.md), ?surfvote=old = the raw names (never matched: asphalt)
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
+    peds: PEDS && !lite,                                                                             // claude/peds2: the walk graph (viewer/pedestrians/walkGraph.js), ?peds=0 none
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", railT: RAIL_T, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
@@ -1015,6 +1021,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const furnP = cityFurniture.fetchTile(entry.name);    // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
   const skP = cityStreetKit.fetchTile(entry.name);      // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
   const twP = cityTwoWheelers.fetchTile(entry.name);    // (motorbike round 2: the shops the parked two-wheelers gather near)
+  if (VILLA_GARDEN_V3) cityGardens.extraHedges = { H9: VILLA_HEDGE_RUNS };   // (villa3 job 5: the villa's hedges are the city's modules)
   const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
   const ivyP = cityIvy.fetchTile(entry.name);           // ivy on walls, climbers on railings (viewer/plants/cityIvy.js), ?ivy=0 off
   const plantsP = cityPlants.fetchTile(entry.name);     // shrubs, bed plants, beds, window boxes (viewer/plants/), on by default, ?plants=0 off
@@ -1173,7 +1180,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (the STIB stops: not the tram test: a tram-island stop's pole and shelter stand beside the track by design; a pole the
   // stops builder put on an OSM tram platform (pole.platform: on the slab tram.js draws, UrbIS calls it tram road) stays)
   const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]], STREET_PROPS ? { ...propOpt, tram: null, keep: (p) => p.platform } : {}), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
-  const furnCounts = cityFurniture.addTile(entry.name, snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]], bed ? { ...propOpt, drop: (p) => bed.inHero(p.x, p.z) } : propOpt), own.features);
+  const furnSnap = snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]], bed ? { ...propOpt, drop: (p) => bed.inHero(p.x, p.z) } : propOpt);
+  const furnCounts = cityFurniture.addTile(entry.name, furnSnap, own.features);
   const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, STREET_PROPS ? [["signs"]] : [["signs"], ["posts"]]), own.features);
   await split("stops, furniture, street kit");
   if (snapMoved) say(`street furniture: ${snapMoved} data-layer points moved out of a driven lane onto the sidewalk (?furnsnap=old)`);
@@ -1216,6 +1224,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (VIVIER && bridgeDeckRefs.size && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (deckY(B[o], B[o + 1]) == null) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
   if (clearRings.length && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (!inClear(P[o], P[o + 1])) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
   if (clearRings.length && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (!inClear(B[o], B[o + 1])) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
+  // villa3 job 5: the villa's shrubs from the city's plant kit (viewer/villa/villaPlot.js), after the plot's clear ring
+  if (VILLA_GARDEN_V3 && entry.name === "H9" && plantDoc?.plants) plantDoc.plants = plantDoc.plants.concat(villaShrubRows(plantDoc.types || ["box_ball", "laurel", "rhododendron", "hydrangea", "rose", "lavender", "bulbs", "geranium"]));
   // claude/roads (rule 38): no shrub / bed standing in, or hanging its crown over, the drawn carriageway (viewer/plants/plantsClear.js;
   // ?roads=old: as before)
   if (ROADS_R && plantDoc) { const r = plantsOffCarriageway(plantDoc, drivenAt); if (r.plants || r.beds) { plantDoc = r.doc; say(`plants: ${r.plants} shrub(s), ${r.beds} bed(s) off the carriageway (rule 38)`); } }
@@ -1295,6 +1305,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     for (const t of R.textures) t.dispose();
     if (trafficTiles.delete(entry.name)) cityTraffic?.removeTile(entry.name);
+    if (pedTiles.delete(entry.name)) cityPeds?.removeTile(entry.name);
   };
   await frame("show");
   tramLine?.snapTile(entry.name, feats, bounds);
@@ -1308,6 +1319,12 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (bollards && cityProps.on) bollards.userData.refs = drawn.bollards.map((q) => q.ref);   // (props: the walker's bollard posts follow a snapped / bent one, cityHook.js)
   const drive = tileDrive(d.drive, roads, bounds, drawn, COLFIX ? own.features : null);
   frame("drive colliders");
+  // (claude/peds2) the tile's walk graph to the people (viewer/pedestrians/cityPeds.js): cleared of the drawn furniture
+  // (this drive set) in slices there; the drawn benches become seats
+  if (PEDS && d.peds) {
+    const pt = { packed: d.peds, extra: { col: drive?.col ?? null, grid: d.road?.surfaceData?.grid ?? null, benches: (furnSnap?.benches || []).map((b) => ({ x: b.x, z: b.z, yaw: b.yaw })) } };
+    pedTiles.set(entry.name, pt); cityPeds?.addTile(entry.name, pt.packed, pt.extra);
+  }
   log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); slices over 4 ms: ${slices.join(", ") || "none"}; ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
   // roof heights (m TAW, 0 = none) for fly-mode collision: the max of the 2 m cells around the point, so the bird
   // keeps clear of a roof edge it is about to cross
@@ -2008,6 +2025,27 @@ async function main() {
       window.__traffic = cityTraffic;
       log(`traffic: on (?traffic=1), ${trafficTiles.size} tile graphs; ?trafficdebug=1 draws the lane graph`);
     } catch (e) { log(`traffic: ${e.message}`); console.error(e); }
+  }
+  // ?peds=0 off: the people (viewer/pedestrians/cityPeds.js) on the walk graphs, after the traffic (their crossings are
+  // its obstacles), updated after it
+  if (PEDS) {
+    try {
+      const m = await import("./pedestrians/cityPeds.js");
+      const fp = { x: 0, z: 0 };
+      const pedFocus = () => {
+        if (third?.on) { fp.x = third.tp.ctl.pos[0]; fp.z = third.tp.ctl.pos[2]; }
+        else if (flyer.on) { fp.x = flyer.x; fp.z = flyer.z; }
+        else if (driver.on) { fp.x = driver.x; fp.z = driver.z; }
+        else if (walker.on) { fp.x = walker.x; fp.z = walker.z; }
+        else { fp.x = controls.target.x; fp.z = controls.target.z; }
+        return fp;
+      };
+      await m.cityPeds.start({ scene, renderer, camera, ground: movingGround, focus: pedFocus, driver, getThird: () => third, getTram: () => tramLine, getTraffic: () => cityTraffic, log });
+      cityPeds = m.cityPeds;
+      for (const [n, t] of pedTiles) cityPeds.addTile(n, t.packed, t.extra);
+      const ti = cityTraffic ? updaters.indexOf(cityTraffic.update) : -1;
+      updaters.splice(ti >= 0 ? ti + 1 : updaters.length, 0, (camPos, cam) => cityPeds.update(camPos, cam));
+    } catch (e) { log(`people: ${e.message}`); console.error(e); }
   }
   // (villamark) ?at=x,z&view=third: the character AT x, z facing ?heading / ?look (?atthird=old: the road start as before)
   const AT0 = parseAt(params);

@@ -35,6 +35,7 @@ import { tileFootbridges, meshFootbridges, carveUnder, footSoffitCap, footFootpr
 import { applyParkSquares, carveFlights, withoutLines } from "./heros/herosSurface.js";
 import { loadUnderpass, underpassTerrain, underpassSurfaces, underpassLines } from "./underground/underpass.js";
 import { drawnGround, sinkFeet, footprintIndex } from "./groundFit.js";
+import { buildWalkGraph } from "./pedestrians/walkGraph.js";   // (claude/peds2) the walk graph
 
 let railP = null;
 let grassKindsP = null;
@@ -125,6 +126,15 @@ async function streetlifeFronts(base, name) {
   if (!r?.ok) return null;
   const doc = await r.json();
   return (doc.pois || []).filter((p) => p.face && !["atm", "school", "civic"].includes(p.kind)).map(({ face: f }) => ({ x: f.x, z: f.z, nx: f.nx, nz: f.nz, w: f.w }));
+}
+
+/** (claude/peds2) the street-life layer's points of interest of a tile, every kind (shops, cafés, schools ...): [{ x, z,
+ *  kind }] for the people's density by place (viewer/pedestrians/walkGraph.js placeOf); [] when the tile has none */
+async function streetlifePois(base, name) {
+  const r = await fetch(new URL(`../streetlife/${name}.json`, base)).catch(() => null);
+  if (!r?.ok) return [];
+  const doc = await r.json().catch(() => null);
+  return (doc?.pois || []).map((p) => ({ x: p.face?.x ?? p.x, z: p.face?.z ?? p.z, kind: p.kind })).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.z));
 }
 
 let overridesP = null;
@@ -667,7 +677,12 @@ export async function buildTileData(entry, base) {
   // (claude/footbridge) the footbridges this tile holds (levels resolved and terrain carved at the rail carve): walls
   // and piers into the drawn terrain
   const footbridges = footBuilt.length ? await step("footbridges", () => meshFootbridges(footBuilt, (x, z) => hm.surface(x, z), (rail?.doc.platforms || []).map((q) => ({ ring: q.ring, top: q.top })))) : [];
-  return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive, footbridges,
+  // (claude/peds2, rule peds-walk-graph) the pedestrians' walk graph: the drawn sidewalks (street model kerbs through the
+  // class raster), corners, the drawn crossings (signalled ones with their phase), paths, platforms, squares, clear of
+  // the drive colliders' walls / trunks and the bollards (viewer/pedestrians/walkGraph.js); entry.peds === false: none
+  const peds = entry.peds !== false && road.surfaceData?.grid ? await step("walk graph", async () => buildWalkGraph({ bounds, model: net.streetModel, grid: road.surfaceData.grid, roofs, col: drive.col,
+    crossings: road.inventory?.crossings, roads, feats, bollards: road.surfaceData.bollards, pois: await streetlifePois(base, entry.name) })) : null;
+  return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive, footbridges, peds,
     netInfo, road, terrain, buildings, cover, traffic, parked: parked ? { sites: parked.sites, stats: parked.stats } : null, times, rail: railOut, grassTypes,
     bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => { const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || (onCarriageway(d, x, z) && drawnAt(x, z)) : measuredAt, mesh = deckMesh(d, hm.ground, cov, v ? streetTop : null);
       // (claude/ground, rule mover-ground; entry.movGround === false = ?movground=old: the fitted top only) the walked top never under the drawn slab

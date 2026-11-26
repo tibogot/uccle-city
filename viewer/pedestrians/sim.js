@@ -54,7 +54,8 @@ export class PedSim {
     this.counters = { spawnHidden: 0, spawnFaded: 0, spawnInViewUnfaded: 0, removedHidden: 0, removedFaded: 0, removedInViewUnfaded: 0, redCrossings: 0, redRunners: 0, boarded: 0, alighted: 0 };
     this.redRunnerShare = 0.02;
     this.leaves = world.graph.nodes.filter((n) => n.kind === "door" || n.kind === "end");
-    this.grid = new Map();
+    this.gHead = null; this.gNext = null; this._cells = null;
+    this.extraSep = null;    // (the city: the player as a neighbour, viewer/pedestrians/citySim.js)
     this.season = 0.75;      // 0 summer .. 1 winter (November ~0.75)
     this.rain = 0;           // 0 dry .. 1 rain (the weather lab's hook: setWeather)
     this.groupShare = 0.25;  // spawns that bring a companion (a couple, a parent and a child)
@@ -225,20 +226,34 @@ export class PedSim {
     else { p.alive = false; this.counters.removedHidden++; }
   }
 
+  // neighbours: a 2 m hash grid as linked lists in typed arrays (claude/peds2, rule peds-no-alloc: no Map of arrays and
+  // no closure per person a frame); 4096 buckets, a shared bucket only costs a distance test
   _buildGrid() {
-    const g = this.grid; g.clear();
-    for (const p of this.people) {
+    const n = this.people.length;
+    if (!this.gHead) this.gHead = new Int32Array(4096);
+    if (!this.gNext || this.gNext.length < n) this.gNext = new Int32Array(Math.max(n, 64));
+    const H = this.gHead, N = this.gNext; H.fill(-1);
+    for (let i = 0; i < n; i++) {
+      const p = this.people[i];
       if (!p.alive) continue;
-      const k = (Math.floor(p.x / 2) * 73856093) ^ (Math.floor(p.z / 2) * 19349663);
-      let l = g.get(k); if (!l) g.set(k, (l = [])); l.push(p);
+      const k = ((Math.floor(p.x / 2) * 73856093) ^ (Math.floor(p.z / 2) * 19349663)) & 4095;
+      N[i] = H[k]; H[k] = i;
     }
   }
-  _neighbours(p, fn) {
-    const gx = Math.floor(p.x / 2), gz = Math.floor(p.z / 2);
+  /** the neighbour lists' heads of the 3 x 3 cells round p into this._cells (bucket ids; duplicates possible: -1 skipped) */
+  _cellsOf(p) {
+    const C = this._cells || (this._cells = new Int32Array(9)), gx = Math.floor(p.x / 2), gz = Math.floor(p.z / 2);
+    let k = 0;
     for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
-      const l = this.grid.get(((gx + i) * 73856093) ^ ((gz + j) * 19349663));
-      if (l) for (const q of l) if (q !== p) fn(q);
+      const b = (((gx + i) * 73856093) ^ ((gz + j) * 19349663)) & 4095;
+      let dup = false; for (let q = 0; q < k; q++) if (C[q] === b) dup = true;
+      C[k++] = dup ? -1 : b;
     }
+    return C;
+  }
+  _neighbours(p, fn) {
+    const C = this._cellsOf(p);
+    for (let c = 0; c < 9; c++) { if (C[c] < 0) continue; for (let i = this.gHead[C[c]]; i >= 0; i = this.gNext[i]) { const q = this.people[i]; if (q !== p) fn(q); } }
   }
 
   _stepPerson(p, dt) {
@@ -282,19 +297,26 @@ export class PedSim {
     const want = stopping ? Math.min(p.vPref, Math.max(0, dist - 0.05) * 1.6) : p.vPref * (p.leaving ? 1.05 : 1);
     p.v += (want - p.v) * Math.min(1, dt * (want < p.v ? 3.5 : 1.8));
     // separation: people within 0.65 m push apart (sideways mostly), passing slower ones on the left
+    // (one pass over the 3 x 3 cells: the separation push and the oncoming test, no closure)
     let sx = 0, sz = 0;
-    this._neighbours(p, (q) => {
-      const ex = p.x - q.x, ez = p.z - q.z, dd = ex * ex + ez * ez;
-      if (dd < 0.42 && dd > 1e-6) { const k = (0.65 - Math.sqrt(dd)) / 0.65; sx += ex * k; sz += ez * k; }
-    });
     // keep right for oncoming people (Mr.doob's side-step idea, his pedestrian-system.js:503-506): someone ahead within
     // 3.5 m, coming the other way, less than 0.7 m across -> drift 0.45 m to the right, then back
     const fx = Math.sin(p.yaw), fz = Math.cos(p.yaw);
     let oncoming = false;
-    if (p.v > 0.3 && !p.spot) this._neighbours(p, (q) => {
-      const ex = q.x - p.x, ez = q.z - p.z, ahead = ex * fx + ez * fz, across = Math.abs(ex * fz - ez * fx);
-      if (ahead > 0 && ahead < 3.5 && across < 0.7 && Math.sin(q.yaw) * fx + Math.cos(q.yaw) * fz < -0.3) oncoming = true;
-    });
+    const look2 = p.v > 0.3 && !p.spot, C = this._cellsOf(p), PP = this.people, GN = this.gNext;
+    for (let c = 0; c < 9; c++) {
+      if (C[c] < 0) continue;
+      for (let i = this.gHead[C[c]]; i >= 0; i = GN[i]) {
+        const q = PP[i]; if (q === p) continue;
+        const ex = p.x - q.x, ez = p.z - q.z, dd = ex * ex + ez * ez;
+        if (dd < 0.42 && dd > 1e-6) { const k = (0.65 - Math.sqrt(dd)) / 0.65; sx += ex * k; sz += ez * k; }
+        if (look2 && !oncoming && dd < 12.25) {
+          const ahead = -ex * fx - ez * fz, across = Math.abs(-ex * fz + ez * fx);
+          if (ahead > 0 && ahead < 3.5 && across < 0.7 && Math.sin(q.yaw) * fx + Math.cos(q.yaw) * fz < -0.3) oncoming = true;
+        }
+      }
+    }
+    if (this.extraSep) { const e = this.extraSep(p); if (e) { sx += e.x; sz += e.z; if (e.oncoming) oncoming = true; } }
     const dodgeT = oncoming ? -0.45 : 0;
     p.dodge = (p.dodge || 0) + Math.max(-0.35 * dt, Math.min(0.35 * dt, dodgeT - (p.dodge || 0)));
     let mx = 0, mz = 0;
@@ -355,7 +377,7 @@ export class PedSim {
     let tx = L.x + fz * side - (narrow ? fx * 0.85 : 0), tz = L.z - fx * side - (narrow ? fz * 0.85 : 0);
     if (L.seat && L.spot) {
       if (!p.seatNode) {
-        p.seatNode = this.w.graph.nodes.find((n) => n.sit && n !== L.seatNode && (!n.taken || !n.taken.alive || !n.taken.seat) && Math.hypot(n.x - L.spot.x, n.z - L.spot.z) < 1.6) || null;
+        p.seatNode = this._seatNear(L);
         if (p.seatNode) p.seatNode.taken = p;
       }
       if (p.seatNode) { tx = p.seatNode.x; tz = p.seatNode.z; if (Math.hypot(tx - p.x, tz - p.z) < 0.12) { p.action = p.seatNode.sit; p.face = p.seatNode.face; } }
@@ -381,6 +403,10 @@ export class PedSim {
     const gy = this.w.ground(p.x, p.z); p.gy = gy; p.y += (gy - p.y) * Math.min(1, dt / 0.12);
   }
 
+  /** a free seat next to the seated leader L (the city looks only round L's seat: viewer/pedestrians/citySim.js) */
+  _seatNear(L) {
+    return this.w.graph.nodes.find((n) => n.sit && n !== L.seatNode && (!n.taken || !n.taken.alive || !n.taken.seat) && Math.hypot(n.x - L.spot.x, n.z - L.spot.z) < 1.6) || null;
+  }
   /** A dive away from a car coming fast (owner default: only at speed): 1.6 m sideways in 0.55 s, down for a moment,
    *  up again (Mr.doob's dive poses in the live band; further out, the bone table shows a quick side-step). */
   _diving(p, dt) {

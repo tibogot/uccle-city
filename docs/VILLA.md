@@ -132,3 +132,86 @@ boot tile was always I6, `start` was the nearest road of THE BOOT TILE (main.js 
 bounds: the nearest I6 road point to the villa is on I6's edge) and third person started at `start`. Fix by cause: the
 boot tile is the tile under `?at` (viewer/placeLink.js bootTile; `?attile=old` = I6), and third person starts at `?at`
 itself (`?atthird=old` = the road start); an `?at` whose tile is not in streams it in through the teleport first.
+
+## v3 job 1 (claude/villa3, 2026-11-26): the window glass + the bed (docs/VILLA_V3_PLAN.md; `?villa3=0` = before)
+
+The owner approved the v3 plan and its budget raise (download 9 MB with the textures fetched with the interior < 60 m,
+interior ~230k triangles, draws as proposed) on the condition that perf stays very good; "glasses" meant the WINDOW
+GLASS ("they looked very fake"). Job 1 = items 0 (glass) and 1 (bed).
+
+| fix | why (cause) | what | rule / check |
+|---|---|---|---|
+| window glass | the near glass was a fixed sky tint at a constant 10-85 % opacity (milky head-on, its reflection dimmed by its own alpha), no garden / tree line / sun in it, the same from inside; the far glass reflected only the PMREM sky over flat grey | ONE glass model, viewer/villa/villaGlass.js: Fresnel (Schlick, F0 0.05) over an analytic outdoor reflection (sky gradient, a ragged tree line, the lawn, the sun's glint: lighting.js env, no SSR / planar pass, no light); from inside, the lit room reflected (dark mirrors at night); the near glass PREMULTIPLIED (reflection x F + the room behind x 0.86 (1 - F)); the far glass = the same reflection over a dim room tone glowing at night, and the near glass fades in from exactly that (no pop at 30 m); a balustrade's top edge reads as thick green glass | villa-glass-v3, `villa` 2b |
+| frames | 10 cm deep, 4 mm chamfer: read as flat black strips | 14 cm deep, 8 mm chamfer (the edges catch the light): same triangle count | `villa` budgets |
+| bed (master 2.0 m, guest 1.8 m) | five inflated boxes, a stiff throw slab floating 10 cm over the bed, flat colour | tools/blender/villa_bed.py: recessed black plinth (shadow gap), boucle platform + tall headboard, fitted-sheet mattress; DUVET, TURN-DOWN and THROW are Blender cloth simulations on the bed's own meshes as colliders (the duvet's head edge pinned: the first build slid it off the foot onto the floor), relaxed, solidified (3 / 2.8 / 1.2 cm), decimated, UV in metres; pinched-corner pillows (2 Euro, 2 sleeping, a cushion); cognac leather bench on a black frame; bedsides with a drawer gap on a recessed plinth. ~9-10k triangles a bed | villa-props-contact, `villa` 2c |
+| fabrics | the soft goods were a colour + value noise (plastic / suede; leather read as wood) | the three fabric slots merged into ONE textured slot `props` (16 -> 14 draws): a KTX2 2D array (models/villa/fabrics.ktx2, 512 px x 4 layers, UASTC + RDO + zstd, 1.0 MB: luminance detail, AO, normal) of CC0 Poly Haven scans (linen, knit, boucle, leather; models/villa/LICENCES.md), tinted per code in TSL, a relief term from the scan's normal (screen-space cotangent frame) under the baked light; streamed with the interior, never at boot. The round-2 items (sofas, chairs, rugs) keep their old look in the same slot until their jobs | villa-licences, `villa` 2d |
+| contact | the per-corner bake (0.42 m grid) cannot hold the crease where furniture meets the floor | interior.json `contact` footprints (from the collider boxes); the floors' TSL (oak, stone, the rug code) darkens round them (7 cm falloff): no decal, no draw | villa-props-contact |
+
+Budgets after job 1: download 6.75 MB (villa.glb 1.25 + interior.glb 4.53 + fabrics.ktx2 0.97) <= 9; LOD0 56,994 tris /
+8 draws (unchanged); interior cell 192,390 tris / 14 draws (was 179,420 / 16). Build: `python tools/villa/fabrics_ktx2.py
+<scan dir> 512` (once), then villa.py + pack.mjs as above; `tools/blender/villa_bed_preview.py` renders the bed alone.
+
+## v3 job 2 (claude/villa3, 2026-11-26): seating, TV, mirror, job-1 polish, and the UV bug
+
+| fix | why (cause) | what | rule / check |
+|---|---|---|---|
+| sofas (pit 6.0 m / 4.2 m, media lounge 4.6 m) + 7 armchairs | round 2: a radiator of 20-28 identical tubes on a soft slab, one plastic off-white (the pit's over-bright under the sun bake), no seams, floating on two black bars | tools/blender/villa_seating.py: recessed black plinth (shadow gap), upholstered deck between arms, a back frame; SEAT and BACK cushions are Blender CLOTH simulations with internal PRESSURE (a welted rounded core, shrunk 4 %, inflated, settled on the deck: bulge, sag, corner wrinkles; the backs with no gravity, leaning 14 deg); scatter cushions in two fabrics; one armchair simulated, its copies placed. The fabric = props codes 13 / 5 / 12 (oatmeal / greige weave, darker than the old white) | villa-props-contact (16 footprints, all within 0.4 mm of their floor) |
+| TV + media wall | a 2.8 x 1.6 m black box: a hole | an 85" TV (1.9 x 1.07 m, 3.5 cm body, 1 cm bezel), its glass reflects the lounge from a baked Cycles PANORAMA (Fresnel F0 0.04), a faint picture at night only; a soundbar; the media unit's three drawers with shadow gaps on a recessed plinth | villa-screens-mirror |
+| bathroom mirror | the same near-black screen code | silvered (88 %) reflection of the bathroom from its own panorama (day / night) | villa-screens-mirror |
+| probes | (new) | models/villa/reflect.ktx2: 4 layers (tv / mirror x day / night), 1024 x 512 equirect, UASTC + zstd, 0.73 MB, streamed with the interior; one lookup in the metal_black slot by face code: no render target, no light, no draw | villa-screens-mirror |
+| throw | the fleece scan alone read as a plain caramel slab | a chunky knit (2.4 x 2 cm V stitches, anti-aliased to its mean under ~2 px) over the scan | (props) |
+| rugs | blotchy value noise | the knit scan at rug scale, full relief, the contact shadow | (props) |
+| glass from high up | the steep downward reflection read as brown wood | the ground reflected darker, neutral, sky-cooled; the tree line rounder (no spiky octave) | villa-glass-v3 |
+| frame spacer / edge line | none | a glazing gasket round every field on both faces (8 mm, a light grey line 2 mm off the pane; 736 strips, ~4.4k triangles: LOD0 56,994 -> 61,410 of 62k) | villa-budgets |
+| **every villa UV** | **since round 1 villa.py make() wrote the UV through a layer reference taken BEFORE the colour attribute was added (which reallocates the mesh's attribute storage): the write went nowhere, every face kept Blender's default 0 / 1 unwrap; every metre pattern (oak planks, cladding boards, marble, tiles, the plaster's noise, the library scans, the fabric scans) was drawn once per face (the audit's "stripy oak", "fish-scale plaster")** | the layer fetched by name right before the write, read back (the build stops if it did not take); the marble's veins re-tuned for the real scale | **uv-written**, `villa` 2e |
+
+Budgets after job 2: download 6.92 MB (villa.glb + interior.glb + fabrics.ktx2 + reflect.ktx2) <= 9; LOD0 61,410 tris /
+8 draws (<= 62k / 9); interior cell 201,038 tris / 14 draws (<= 230k / 16).
+
+## v3 job 3 (claude/villa3, 2026-11-26): the pool, and the mirror's day highlight
+
+| fix | why (cause) | what | rule / check |
+|---|---|---|---|
+| mirror by day | the probe bake clipped the window to white (Standard view, exposure 0): a light box in the mirror | the probes rendered one stop down (gain x2 in the shader) and a soft knee on the mirror's day reflection | villa-screens-mirror |
+| the water | milky, no reflection, giant caustics, steps invisible, a flat cyan sheet at night | viewer/villa/villaPool.js (one opaque material, 2 triangles): calm wind ripples (noise gradients, no mover), Fresnel F0 0.02 over the glass model's outdoor reflection + the HOUSE (ray-box on its masses: glazing low, cladding high, warm at night), the refracted basin traced to the floor, walls and the four ENTRY STEPS (dark nosing tiles), 2.5 cm mosaic, caustics at 0.15 m fading with depth, Beer-Lambert absorption (turquoise -> deep blue-green), four LED niches emissive at night, lit from below | villa-pool-v2 |
+| the dark stripe | round 2's "lane line" tested abs(w - mid w): a 24 cm bar ACROSS the 4.5 m width at mid-length, not along the length: a lap-pool marking a residential pool does not have | removed | villa-pool-v2 (no `lane` in the shader) |
+| coping | four long bars, no joint | ~0.6 m stones with 4 mm joints, a 15 mm round-over | villa-kit-near |
+| the kit | none | Villa_kit (near only, with LOD0; 10.5k tris, 4 draws): a stainless two-rail ladder over the coping, four aluminium loungers (two by the pool + a parasol, two under the pergola), three planters with clipped shrubs, a clipped hedge skirt on the lawn round the terrace (the deck stood as a 0.7 m black block); every piece within 0.4 mm of the deck; the skirt sunk 0.3 m | villa-kit-near, joins |
+
+Budgets after job 3: download 7.0 MB of 9; LOD0 (Villa) 60,978 tris / 8 draws of 62k / 9 (the old coping bars moved
+into the kit); Villa_kit 10,534 tris / 4 draws (its own cap, 12k / 4: asked of the owner); interior unchanged.
+
+## v3 job 3b (2026-11-26): baked caustics, the night glow, the kit budget
+
+- The owner approved the Villa_kit cap (12k tris / 4 draws, near only, outside the 9-draw level cap): recorded in rule villa-budgets.
+- **Caustics** (the owner: "I've seen way better caustics in games"): BAKED, tools/villa/caustics_bake.py: a tileable periodic wave surface refracts a sun bundle onto a floor 1.1 m down, photons splatted into a 256 px tile, R / G / B at n 1.327 / 1.333 / 1.341 (the rainbow edges in ONE lookup), 12 looping frames, ETC1S: models/villa/caustics.ktx2, 162 KB. The water's shader samples it twice (two scales / scroll directions / frame phases) and keeps the MIN (the sharp web), projects it along the refracted sun onto the floor, the treads and the walls, moves it with the ripples, fades it with depth, and drops it where the coping shades the entry point: 2 lookups, no extra pass. The first wiring swapped a placeholder texture after the material was built: it did not rebind (a flat brightening): the texture now loads with the model, before the water's material (rule villa-caustics-baked).
+- **Night** (job 3 read black-blue; a first pass before it blew out white): the LED niches light the basin with an exponential falloff into the deep end, the walls and floor lit from below with the same caustic web, the water faintly luminous; constants in villaPool.js POOL_NIGHT, read by the gate's tone check (peak <= 0.9, mean >= 0.12, deep end >= 0.02: now 0.43 / 0.18 / 0.088).
+
+## v3 job 4 (2026-11-26): the sculptures
+
+Three real CC0 scans (Poly Haven; models/villa/LICENCES.md; downloads untouched in data/raw/villa_sculptures/): a
+classical marble bust on a 1.1 m column (u 47.6, w 10.2), a rearing marble horse (scaled x6, its wooden display base
+dropped, u 50.8, w -23.6), a bronze whale at the end of the pool's axis (u 54.2, w -6.0); pale stone plinths with cap
+stones, a ground uplight in front of each (metal_dark lens code led: emissive at night; the statue's night wash in
+its material, no light). tools/blender/villa_art.py: LOD0 = the scan (welded, the horse's open base filled), LOD1 /
+LOD2 = a voxel remesh, decimated, UV transferred back; ONE material for all (two KTX2 arrays, a layer per statue:
+models/villa/art_col.ktx2 + art_dat.ktx2, 1.2 MB, tools/villa/art_ktx2.py; loaded with the model). The first look
+read as chrome (the scans' glossy roughness under the sky env): roughness >= 0.48, metal x 0.85. The first packs
+had 220 / 8 / 2 blocking mesh-audit items (decimation slits and folds, the x6 horse's seams): fixed by cause (rule
+villa-sculptures). Budgets: Villa_art 41,135 / 7,474 / 782 tris, 1 draw a level; download 8.82 MB of 9.
+
+## v3 job 5 (2026-11-26): the garden on the city's kits
+
+The owner: "the garden was ugly, with the hedges around the villa being like big blocks, not natural at all". Cause:
+villa.py drew its own hedges (stepped boxes with a leaf shader, a second hedge technique next to the city's), so they
+read as blocks at every distance and never matched the street's hedges. Now (rule villa-garden-city-kit) the villa's
+hedges are 10 runs (259 m) of the CITY's front-garden hedge modules (viewer/gardens/gardenHedge.js: baked clipped
+leaf surface, leaf cards inside 24 m, soft lumps, the shadowed foot, species colour by season, 3 dithered LODs,
+colliders): beech behind the street wall, box along the living wing and round the terrace (the old skirt), hornbeam
+2.2 m on the plot's sides and back (ends overlapping: no corner slot); and 17 shrubs from the city's plant kit
+(hydrangeas along the front, rhododendrons / laurels in the back corners, lavender by the lawn steps, box balls
+near the sculptures). viewer/villa/villaPlot.js VILLA_HEDGE_RUNS / villaShrubRows, added to tile H9 after the plot's
+clear ring (cityGardens.extraHedges, main.js). villa.py: CITY_HEDGES (VILLA_BOX_HEDGES=1 = the boxes back). The city
+hedges round the plot are the same modules (one look). Cost: no draw of its own (the city's hedge pool, already
+drawn); +258 module instances (+ cards near), Villa LOD0 49.1k tris (was 61k), download 8.44 MB of 9. `?villa3=0`
+= before (the v2 model and its boxes). Sheet: uccle-villa3/job5/job5_compare.png.

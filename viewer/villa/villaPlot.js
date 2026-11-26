@@ -80,3 +80,44 @@ export function villaGrassSolid(THREE, surface, bounds) {
   const m = new THREE.Mesh(g); m.name = "villa-grass-solid";
   return m;
 }
+
+// ---- villa3 job 5 (rule villa-garden-city-kit): the villa's hedges and garden plants are the CITY's: hedge runs for the
+// front-garden hedge modules (viewer/gardens/gardenHedge.js: baked clipped leaf surface, leaf-spray cards, soft lumps,
+// the leggy shadowed foot, 3 dithered LODs: one pool for the whole city, no draw of its own) and shrubs for the plant
+// kit (viewer/plants: box balls, laurels, rhododendrons, hydrangeas, lavender), added to tile H9 AFTER the plot's clear
+// ring (the old house's pieces still go). villa.py no longer builds hedge boxes (the owner: "big blocks, not natural").
+// Runs: (u, w) polylines in the villa frame, a point every metre, species / height / width as the city's data.
+export const VILLA_GARDEN_V3 = VILLA_ON && (typeof location === "undefined" || new URLSearchParams(location.search).get("villa3") !== "0");
+const runUW = (pts, species, height, width) => {
+  const out = [];
+  for (let k = 0; k + 1 < pts.length; k++) {
+    const [u0, w0] = pts[k], [u1, w1] = pts[k + 1], n = Math.max(1, Math.ceil(Math.hypot(u1 - u0, w1 - w0) / 1.0));
+    for (let i = k ? 1 : 0; i <= n; i++) out.push(toCity(u0 + (u1 - u0) * i / n, w0 + (w1 - w0) * i / n).map((v) => +v.toFixed(2)));
+  }
+  return { points: out, species, height, width, villa: true };
+};
+/** the villa's hedge runs (city metres) */
+export const VILLA_HEDGE_RUNS = [
+  runUW([[10.4, -33.2], [10.4, -0.9]], "beech", 1.75, 0.85),            // the front, behind the low wall (south of the gate)
+  runUW([[10.4, 23.8], [10.4, 29.2]], "beech", 1.75, 0.85),             // ... north of the gate
+  runUW([[13.55, -22.8], [13.55, -1.2]], "box", 0.8, 0.6),                // along the living wing's plinth
+  runUW([[9.95, -33.45], [57.45, -33.45]], "hornbeam", 2.2, 0.95),       // the plot's south side
+  runUW([[9.95, 29.45], [57.45, 29.45]], "hornbeam", 2.2, 0.95),         // ... the north side
+  runUW([[57.5, -33.45], [57.5, 29.45]], "hornbeam", 2.2, 0.95),         // ... the back (its ends overlap the sides: no corner gap)
+  // the terrace's skirt (the deck stood as a 0.7 m black block in the lawn): low box, its foot on the lawn
+  runUW([[44.88, -17.7], [44.88, -1.25]], "box", 0.7, 0.55), runUW([[44.88, 5.25], [44.88, 16.7]], "box", 0.7, 0.55),
+  runUW([[36.5, -17.38], [44.6, -17.38]], "box", 0.7, 0.55), runUW([[36.5, 16.38], [44.6, 16.38]], "box", 0.7, 0.55),
+];
+/** the villa's shrubs: [u, w, type, scale] (the plant kit's types) */
+const VILLA_SHRUBS_UW = [
+  [12.1, -20.0, "hydrangea", 1.0], [12.1, -15.6, "hydrangea", 0.9], [12.1, -11.2, "hydrangea", 1.05], [12.1, -6.8, "hydrangea", 0.95],
+  [55.8, -30.6, "rhododendron", 1.55], [55.6, 26.4, "rhododendron", 1.45], [48.0, -31.0, "rhododendron", 1.3], [52.0, 27.2, "laurel", 1.5], [46.0, 27.6, "laurel", 1.35],
+  [45.4, -2.2, "lavender", 1.0], [45.6, -3.4, "lavender", 0.9], [45.4, 6.4, "lavender", 1.0], [45.6, 7.6, "lavender", 0.9],
+  [47.6, 9.25, "box_ball", 0.8], [47.6, 11.15, "box_ball", 0.8], [53.0, -7.6, "box_ball", 0.9], [53.0, -4.4, "box_ball", 0.9],
+];
+/** the shrubs as the plant doc's 6-number rows (x, z, type index, yaw / 255, scale %, 0) for `types` */
+export function villaShrubRows(types) {
+  const out = [];
+  VILLA_SHRUBS_UW.forEach(([u, w, t, s], i) => { const k = types.indexOf(t); if (k < 0) return; const [x, z] = toCity(u, w); out.push(+x.toFixed(2), +z.toFixed(2), k, (i * 53) % 255, Math.round(s * 100), 0); });
+  return out;
+}
