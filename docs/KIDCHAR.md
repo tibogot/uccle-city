@@ -414,3 +414,69 @@ In `C:\Users\tibog\Downloads\uccle-kidchar\v4\`:
 - `knee_closeup_before_after.png`
 - `collar_closeup_before_after.png`
 - `lab_*`
+
+## Phase 5: riding poses against photos (2026-11-26)
+The owner asked us to "compare with images online of people riding bikes". I looked at photos and did not store them:
+- Wikimedia Commons "BMX race" (kids in a race berm) and "BMX boy" (a seated boy on a BMX);
+- Bing image results (a rider on a pump track);
+- written coaching guides: the USA Cycling BMX Skills Curriculum and MTB "attack position" guides.
+
+**Photo notes:**
+- head up, eyes ahead;
+- seated: the back 20-35 deg forward, the arms long with a slight bend (elbow 120-160 deg);
+- standing: out of the saddle over the bottom bracket, the legs near straight at the bottom of the stroke, the elbows
+  bent and out;
+- heels down when standing, crouched or landing;
+- landing: the knees and elbows bent to absorb;
+- manual: the arms near straight, the hips low and back;
+- cornering: the bike leans more than the body.
+
+**Found (before this phase):**
+- The arms were folded: elbow 94 deg seated and 51 standing.
+- The toes pointed down in every pose: foot pitch 35 deg, where flat on the ground is 24.
+- In a turn the body leaned 1.27 times the bike, the opposite of a real rider.
+- The arms were bent in a manual.
+- The standing hips were pinned about 1 cm above the seated ones. The leg fit ignored the ankling lift, losing 5 cm of
+  reach.
+
+**Fixes:**
+- New riderIK settings:
+  - `reachArmMin`: the back comes up, down to `spineMin`, until the arms open. Less when crouched, more in a manual.
+  - `heelDrop` / `heelDropStand`: the heels down.
+  - The leg fit now uses the ankled pedal circle.
+- `RIDE_KIDA`:
+
+  | setting | value |
+  |---|---|
+  | reachArmMin | 0.9 |
+  | reachArmCrouch | 0.14 |
+  | reachArmManual | 0.02 |
+  | spineMin | -0.4 |
+  | standFwd | 0.1 |
+  | standPitch | 0.1 |
+  | heelDrop | 0.12 |
+  | heelDropStand | 0.2 |
+  | leanExtra | -0.3 |
+  | manualBack | 0.26 |
+
+**Check:** a new kidTest row in `kida`, "riding poses vs photos". For cruise, sprint, descent, air, landing, berm and
+manual, it measures the head pitch, torso lean, elbow and knee angles, foot pitch, hip position against the bottom
+bracket and saddle, and the body-to-bike lean ratio, each against a range from the notes. The old settings fail it in 9
+places.
+
+**Now:**
+
+| pose | measured |
+|---|---|
+| cruise | torso 31, elbow 124 |
+| sprint | hips over the BB (-3 cm), 7 cm higher than seated, knee 84-140, elbow 101 |
+| descent | hips 12 cm behind the BB, heels 17 |
+| air | elbow 120 |
+| landing | knee 57-90, elbow 98 |
+| manual | elbow 131, hips 19 cm back |
+| turn | the body at 0.63 of the bike's lean |
+
+The head is level in every pose (6 deg down).
+
+**Shots:** `C:\Users\tibog\Downloads\uccle-kidchar\ride\ride_sheet.png` (the lab's orbit camera at 0.25x) and the
+`r_*.png` frames.
