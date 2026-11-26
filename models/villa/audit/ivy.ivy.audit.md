@@ -1,6 +1,6 @@
 # Mesh audit (before pack): ivy.ivy
 
-2,022 triangles, 4,044 welded vertices, 4,044 open edges, 107,310 rays, 195 ms.
+2,022 triangles, 4,044 welded vertices, 4,044 open edges, 107,310 rays, 323 ms.
 
 **0 blocking**, 4 warnings. Clean (no blocking item).
 

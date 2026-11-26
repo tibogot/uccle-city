@@ -197,6 +197,7 @@ export const FEATURES = [
   on("stalle", "world", "Stalle chapel", "Chapelle de Stalle (+ interior).", { sub: "Landmarks" }),
   on("vanbuuren", "world", "van Buuren house", "Musée van Buuren.", { sub: "Landmarks" }),
   on("villa", "world", "villa (Prince d'Orange)", "A fictional modern villa on Av. du Prince d'Orange (UrbIS solid 543176 replaced): swing gate that opens, garage with cars, pool terrace, an interior streamed within 30 m (viewer/villa/, docs/VILLA.md); off: the UrbIS house.", { sub: "Landmarks" }),
+  on("villa3", "world", "villa v3 (glass + bed)", "villa3 job 1 (docs/VILLA_V3_PLAN.md): the villa's window glass rebuilt (one glass model: Fresnel, the garden / tree line / sun reflected, the room behind with its baked light, the lit room reflected from inside at night; viewer/villa/villaGlass.js), deeper chamfered frames, the master + guest beds re-made (Blender cloth-sim duvet / turn-down / throw, pinched pillows, boucle headboard; CC0 fabric scans in a KTX2 array streamed with the interior), a contact shadow under them; off: the round-2 files (models/villa/v2/) and glass.", { sub: "Landmarks" }),
   on("calevoet", "world", "Calevoet station", "Uccle-Calevoet station.", { sub: "Landmarks" }),
   on("papenkasteel", "world", "Papenkasteel", "Papenkasteel / château de Stalle (Rue Papenkasteel 99), the castle on the Geleytsbeek; off: the UrbIS blocks.", { sub: "Landmarks" }),
   on("geleytsbeek", "world", "Geleytsbeek castle (alias)", "Same switch as ?papenkasteel (the castle on the Geleytsbeek).", { sub: "Landmarks", ui: false }),

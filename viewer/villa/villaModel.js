@@ -21,6 +21,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { env } from "../lighting.js";
 import { fadeVariant, SMOOTH } from "../lodFade.js";
 import { libSource } from "../materials/libSwitch.js";
+import { GLASS_V3, farGlassMaterial, VILLA_DIR } from "./villaGlass.js";
 
 export const VILLA_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves"];
 export const VILLA_CODES = ["plain", "reveal", "plinth", "coping", "step", "slat", "frame", "door", "soffit", "roof", "garage", "led", "fire", "screen", "channel", "rug"];
@@ -81,6 +82,7 @@ const TEMP = {
   metal_dark: () => std({ color: new THREE.Color(0x2a2c2f), roughness: 0.34, metalness: 0.55 }),
   // the far glass (the interior cell's own glass replaces it within 30 m): dark, reflective; lit windows at night
   glass_window: () => {
+    if (GLASS_V3) return farGlassMaterial();          // villa3: the shared glass model (villaGlass.js); ?villa3=0 below
     const m = std({ color: new THREE.Color(0x0b1114), roughness: 0.04, metalness: 0.15 });
     const p = positionWorld;
     const warm = lin(0xffc58a).mul(vnoise(vec2(p.x.add(p.z).mul(0.35), p.y.mul(0.5))).mul(0.6).add(0.4));
@@ -209,7 +211,7 @@ function wrapAO(src, slot) {
 let promise = null;
 export function loadVilla() {
   return (promise ??= (async () => {
-    const base = new URL("../../models/villa/", import.meta.url).href;
+    const base = new URL(VILLA_DIR, import.meta.url).href;
     MeshoptDecoder.useWorkers?.(2);
     const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     const [gltf, notes, lib] = await Promise.all([

@@ -1,21 +1,21 @@
 # Mesh audit (before pack): villa.lod0
 
-58,886 triangles, 32,749 welded vertices, 3,998 open edges, 626,268 rays, 3130 ms.
+58,886 triangles, 32,749 welded vertices, 3,998 open edges, 626,268 rays, 7957 ms.
 
-**0 blocking**, 12461 warnings. Clean (no blocking item).
+**0 blocking**, 12553 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 11676 |
+| sliver | warn | 11768 |
 | nonmanifold | warn | 98 |
 | tjunction | warn | 687 |
-| seam | info | 753 |
-| opening | info | 1279 |
-| backtoback | info | 3181 |
+| seam | info | 756 |
+| opening | info | 1280 |
+| backtoback | info | 3189 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 11676)
+## sliver (warn, 11768)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -60,7 +60,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 12.20, 118.11, 9.00 | Villa/render_white | 282 | 3.193 |
 | 12.20, 117.04, 9.01 | Villa/render_white | 282 | 3.193 |
 
-(11636 more in the JSON)
+(11728 more in the JSON)
 
 ## nonmanifold (warn, 98)
 
@@ -86,26 +86,26 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 44.85, 117.27, -0.99 | Villa/stone_blue | 4 |
 | 44.85, 117.28, 5.00 | Villa/stone_blue | 4 |
 | 44.85, 117.27, 4.99 | Villa/stone_blue | 4 |
-| 14.15, 121.40, 4.56 | Villa/metal_dark | 4 |
-| 14.15, 118.40, 4.56 | Villa/metal_dark | 4 |
-| 14.15, 121.40, 5.44 | Villa/metal_dark | 4 |
-| 14.15, 118.40, 5.44 | Villa/metal_dark | 4 |
-| 14.15, 121.40, 12.06 | Villa/metal_dark | 4 |
-| 14.15, 118.70, 12.06 | Villa/metal_dark | 4 |
-| 14.15, 121.40, 21.44 | Villa/metal_dark | 4 |
-| 14.15, 118.70, 21.44 | Villa/metal_dark | 4 |
-| 14.15, 124.80, -21.14 | Villa/metal_dark | 4 |
-| 14.15, 118.40, -21.14 | Villa/metal_dark | 4 |
-| 14.15, 124.80, -19.96 | Villa/metal_dark | 4 |
-| 14.15, 118.40, -19.96 | Villa/metal_dark | 4 |
-| 14.15, 124.80, -16.94 | Villa/metal_dark | 4 |
-| 14.15, 118.40, -16.94 | Villa/metal_dark | 4 |
-| 14.15, 124.80, -15.86 | Villa/metal_dark | 4 |
-| 14.15, 118.40, -15.86 | Villa/metal_dark | 4 |
-| 14.15, 124.80, -12.54 | Villa/metal_dark | 4 |
-| 14.15, 118.40, -12.54 | Villa/metal_dark | 4 |
-| 14.15, 124.80, -11.46 | Villa/metal_dark | 4 |
-| 14.15, 118.40, -11.46 | Villa/metal_dark | 4 |
+| 14.15, 121.39, 4.56 | Villa/metal_dark | 4 |
+| 14.15, 118.41, 4.56 | Villa/metal_dark | 4 |
+| 14.15, 121.39, 5.44 | Villa/metal_dark | 4 |
+| 14.15, 118.41, 5.44 | Villa/metal_dark | 4 |
+| 14.15, 121.39, 12.06 | Villa/metal_dark | 4 |
+| 14.15, 118.71, 12.06 | Villa/metal_dark | 4 |
+| 14.15, 121.39, 21.44 | Villa/metal_dark | 4 |
+| 14.15, 118.71, 21.44 | Villa/metal_dark | 4 |
+| 14.15, 124.79, -21.14 | Villa/metal_dark | 4 |
+| 14.15, 118.41, -21.14 | Villa/metal_dark | 4 |
+| 14.15, 124.79, -19.96 | Villa/metal_dark | 4 |
+| 14.15, 118.41, -19.96 | Villa/metal_dark | 4 |
+| 14.15, 124.79, -16.94 | Villa/metal_dark | 4 |
+| 14.15, 118.41, -16.94 | Villa/metal_dark | 4 |
+| 14.15, 124.79, -15.86 | Villa/metal_dark | 4 |
+| 14.15, 118.41, -15.86 | Villa/metal_dark | 4 |
+| 14.15, 124.79, -12.54 | Villa/metal_dark | 4 |
+| 14.15, 118.41, -12.54 | Villa/metal_dark | 4 |
+| 14.15, 124.79, -11.46 | Villa/metal_dark | 4 |
+| 14.15, 118.41, -11.46 | Villa/metal_dark | 4 |
 
 (58 more in the JSON)
 
@@ -156,21 +156,21 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (647 more in the JSON)
 
-## seam (info, 753)
+## seam (info, 756)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
 | 36.00, 118.40, -7.85 | Villa/stone_blue + Villa/stone_blue | 25.57 | 95 | 90 |
-| 12.10, 123.00, -5.74 | Villa/wood_cladding + Villa/metal_dark | 26.96 | 81 | 45 |
-| 12.10, 125.00, -5.83 | Villa/wood_cladding + Villa/metal_dark | 26.96 | 81 | 45 |
+| 12.09, 123.00, -5.72 | Villa/wood_cladding + Villa/metal_dark | 26.99 | 81 | 45 |
+| 12.09, 125.00, -5.85 | Villa/wood_cladding + Villa/metal_dark | 26.99 | 81 | 45 |
 | 12.15, 123.45, -6.00 | Villa/wood_cladding + Villa/glass_window | 54.6 | 78 | 90 |
 | 36.00, 118.38, -16.89 | Villa/stone_blue + Villa/stone_blue | 17.78 | 69 | 90 |
-| 37.40, 122.40, 0.28 | Villa/wood_cladding + Villa/metal_dark | 21.76 | 65 | 45 |
+| 37.41, 122.40, 0.24 | Villa/wood_cladding + Villa/metal_dark | 21.79 | 65 | 45 |
 | 43.33, 118.40, -14.97 | Villa/stone_blue + Villa/stone_blue | 16.53 | 64 | 90 |
 | 36.00, 118.40, 8.00 | Villa/stone_blue + Villa/stone_blue | 16.08 | 63 | 90 |
 | 38.38, 118.40, -14.97 | Villa/stone_blue + Villa/stone_blue | 16.53 | 62 | 90 |
 | 37.35, 123.45, 0.00 | Villa/wood_cladding + Villa/glass_window | 43.4 | 62 | 90 |
-| 37.36, 125.40, 0.06 | Villa/wood_cladding + Villa/metal_dark | 18.96 | 59 | 45 |
+| 37.36, 125.40, 0.07 | Villa/wood_cladding + Villa/metal_dark | 18.99 | 59 | 45 |
 | 12.30, 126.00, -5.00 | Villa/render_white + Villa/concrete_soffit | 100 | 50 | 90 |
 | 38.40, 118.40, -15.35 | Villa/stone_blue + Villa/stone_blue | 6.54 | 48 | 90 |
 | 38.16, 118.40, 0.97 | Villa/stone_blue + Villa/stone_blue | 6.54 | 47 | 90 |
@@ -183,27 +183,27 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 36.00, 118.40, 5.00 | Villa/stone_blue + Villa/stone_blue | 5.87 | 35 | 90 |
 | 45.57, 117.50, -1.00 | Villa/stone_blue + Villa/stone_blue | 8.74 | 34 | 22.1 |
 | 14.35, 126.30, -8.00 | Villa/wood_cladding + Villa/metal_dark | 22 | 32 | 90 |
-| 14.10, 118.70, 12.39 | Villa/render_white + Villa/metal_dark | 9.46 | 31 | 45 |
-| 24.06, 118.70, 22.86 | Villa/render_white + Villa/metal_dark | 8.96 | 31 | 45 |
+| 14.09, 118.70, 12.42 | Villa/render_white + Villa/metal_dark | 9.49 | 31 | 45 |
+| 24.07, 118.70, 22.86 | Villa/render_white + Villa/metal_dark | 8.99 | 31 | 45 |
 | 24.00, 119.25, 22.85 | Villa/render_white + Villa/glass_window | 21 | 30 | 90 |
-| 24.06, 121.40, 22.87 | Villa/render_white + Villa/metal_dark | 8.96 | 29 | 45 |
+| 24.07, 121.40, 22.88 | Villa/render_white + Villa/metal_dark | 8.99 | 29 | 45 |
 | 14.00, 125.95, -22.55 | Villa/render_white + Villa/metal_dark | 14.69 | 28 | 90 |
 | 14.15, 119.25, 12.00 | Villa/render_white + Villa/glass_window | 19.6 | 28 | 90 |
-| 14.10, 118.73, -19.90 | Villa/render_white + Villa/metal_dark | 6.63 | 28 | 45 |
-| 14.10, 118.73, -15.80 | Villa/render_white + Villa/metal_dark | 6.63 | 28 | 45 |
-| 35.90, 118.73, -22.70 | Villa/render_white + Villa/metal_dark | 7.03 | 28 | 45 |
+| 14.09, 118.75, -19.90 | Villa/render_white + Villa/metal_dark | 6.68 | 28 | 45 |
+| 14.09, 118.75, -15.80 | Villa/render_white + Villa/metal_dark | 6.68 | 28 | 45 |
+| 35.91, 118.75, -22.70 | Villa/render_white + Villa/metal_dark | 7.08 | 28 | 45 |
 | 35.85, 119.25, 8.00 | Villa/render_white + Villa/glass_window | 19.6 | 28 | 90 |
-| 14.10, 121.40, 12.24 | Villa/render_white + Villa/metal_dark | 8.06 | 27 | 45 |
-| 14.10, 118.58, -21.20 | Villa/render_white + Villa/metal_dark | 6.63 | 26 | 45 |
-| 14.10, 118.58, -17.00 | Villa/render_white + Villa/metal_dark | 6.63 | 26 | 45 |
+| 14.09, 121.40, 12.21 | Villa/render_white + Villa/metal_dark | 8.09 | 27 | 45 |
+| 14.09, 118.55, -21.20 | Villa/render_white + Villa/metal_dark | 6.68 | 26 | 45 |
+| 14.09, 118.55, -17.00 | Villa/render_white + Villa/metal_dark | 6.68 | 26 | 45 |
 | 36.00, 118.38, 16.05 | Villa/stone_blue + Villa/stone_blue | 6.71 | 25 | 90 |
-| 14.10, 118.42, 5.50 | Villa/stone_blue + Villa/metal_dark | 0.3 | 25 | 45 |
-| 14.15, 118.42, 4.56 | Villa/stone_blue + Villa/metal_dark | 1.89 | 25 | 90 |
-| 14.15, 118.42, -21.14 | Villa/stone_blue + Villa/metal_dark | 2.49 | 25 | 90 |
+| 14.15, 118.42, 4.56 | Villa/stone_blue + Villa/metal_dark | 1.92 | 25 | 90 |
+| 14.15, 118.42, -21.14 | Villa/stone_blue + Villa/metal_dark | 2.52 | 25 | 90 |
+| 14.15, 118.42, -16.94 | Villa/stone_blue + Villa/metal_dark | 2.32 | 25 | 90 |
 
-(713 more in the JSON)
+(716 more in the JSON)
 
-## opening (info, 1279)
+## opening (info, 1280)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -248,9 +248,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 124.55, -12.60 | Villa/render_white | 0 + 0 + 1 | 0.3 |
 | 14.00, 124.75, -11.40 | Villa/render_white | 0 + 0 + -1 | 0.3 |
 
-(1239 more in the JSON)
+(1240 more in the JSON)
 
-## backtoback (info, 3181)
+## backtoback (info, 3189)
 
 | at | parts | area |
 |---|---|---|
@@ -295,7 +295,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 121.97, 10.25 | Villa/render_white + Villa/metal_dark | 0.04667 |
 | 14.00, 121.88, 9.91 | Villa/render_white + Villa/metal_dark | 0.05413 |
 
-(3141 more in the JSON)
+(3149 more in the JSON)
 
 
 Nodes: Villa, Villa_bay, Villa_gateL, Villa_gateR, Villa_door, Villa_water. Distances: {"Villa_ivy":80,"Villa":80,"Villa_bay":80,"Villa_gateL":80,"Villa_gateR":80,"Villa_door":80,"Villa_water":400,"Villa_far":2000,"Villa_lod1":260,"Villa_lod2":2000}. Quantum 0.000 mm. Offset 0,100,0.

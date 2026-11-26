@@ -25,7 +25,9 @@ const check = (ok, what, detail = "") => { rows.push(`${ok ? "PASS" : "FAIL"} ${
 
 // budgets (round 1, 2026-11-22): measured + headroom; raising one is a reviewed change
 // (round 2: the furnished interior, 200k triangles / 16 draws; the coordinator's cap, 2026-11-22)
-const B = { mb: 6.0, lod0: 62000, lod1: 20000, lod2: 1500, draws: 9, cellTris: 200000, cellDraws: 16 };
+// (villa3, 2026-11-26: the owner approved 9 MB with the textures streamed with the interior, ~230k interior triangles,
+// draws as docs/VILLA_V3_PLAN.md proposed: the cell stays <= 16)
+const B = { mb: 9.0, lod0: 62000, lod1: 20000, lod2: 1500, draws: 9, cellTris: 230000, cellDraws: 16 };
 
 const site = J("models/villa/site.json"), notes = J("models/villa/villa.json"), info = J("models/villa/interior.json");
 const plot = await imp("viewer/villa/villaPlot.js");
@@ -47,7 +49,8 @@ check(Math.hypot(px - sx, pz - sz) < 1e-3, "villaPlot.toCity = site.json's axes"
 const { readGlb } = await imp("tools/mesh_audit/glb.mjs");
 const ext = await readGlb(new URL("models/villa/villa.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const cell = await readGlb(new URL("models/villa/interior.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
-const mb = (statSync(new URL("models/villa/villa.glb", ROOT)).size + statSync(new URL("models/villa/interior.glb", ROOT)).size) / 1048576;
+const SHIP = ["models/villa/villa.glb", "models/villa/interior.glb", "models/villa/fabrics.ktx2"];
+const mb = SHIP.reduce((s, f) => s + statSync(new URL(f, ROOT)).size, 0) / 1048576;
 check(mb <= B.mb, `download <= ${B.mb} MB`, `${mb.toFixed(2)} MB`);
 const tri = (parts, node) => parts.filter((p) => p.node === node).reduce((s, p) => s + p.index.length / 3, 0);
 const draws = (parts, node) => parts.filter((p) => p.node === node).length;
@@ -67,6 +70,60 @@ const cj = cell.json;
 const prims = cj.meshes.flatMap((m, mi) => m.primitives.map((p) => ({ p, node: cj.nodes.find((n) => n.mesh === mi)?.name })));
 const unbaked = prims.filter(({ p, node }) => (node === "Cell" || node === "Soft") && !["_LSKY", "_LSUN", "_LNIGHT"].every((a) => a in p.attributes));
 check(unbaked.length === 0, "every interior primitive carries the sky / sun / night bakes", unbaked.length ? `${unbaked.length} without` : "");
+
+// ---- 2b. villa3 (docs/VILLA_V3_PLAN.md, rule villa-glass-v3): ONE glass model (viewer/villa/villaGlass.js) for the far
+// glass (villaModel.js glass_window) and the cell's glass (villaInterior.js), with the env reflection on (the sky, the
+// tree line, the sun's glint: env's uniforms), Fresnel, premultiplied blending, no SSR / planar / render-target pass; one
+// glass primitive in the cell and one per exterior level (no extra draw)
+{
+  const gTxt = readFileSync(new URL("viewer/villa/villaGlass.js", ROOT), "utf8");
+  const mTxt = readFileSync(new URL("viewer/villa/villaModel.js", ROOT), "utf8"), iTxt = readFileSync(new URL("viewer/villa/villaInterior.js", ROOT), "utf8");
+  const reflOn = /env\.uSkyTop/.test(gTxt) && /env\.uSunDir/.test(gTxt) && /function outdoor\(R\)/.test(gTxt) && /pow\(float\(1\)\.sub\(ndv\), 5\.0\)/.test(gTxt);
+  const premul = /blendSrc = THREE\.OneFactor/.test(gTxt) && /blendDst = THREE\.OneMinusSrcAlphaFactor/.test(gTxt);
+  const noPass = !/Reflector|RenderTarget|ssr\(|pass\(|PMREMGenerator|new THREE\.(Point|Spot|Directional|Rect)Light/.test(gTxt);
+  const wired = /if \(GLASS_V3\) return farGlassMaterial\(\)/.test(mTxt) && /if \(GLASS_V3\) return nearGlassMaterial\(/.test(iTxt);
+  const gDraws = ["Villa", "Villa_lod1", "Villa_lod2"].map((n) => ext.parts.filter((p) => p.node === n && p.slot === "glass_window").length);
+  const cDraws = cell.parts.filter((p) => p.node === "Glass").length;
+  check(reflOn && premul && noPass && wired && gDraws.every((d) => d === 1) && cDraws === 1,
+    "villa glass: one shared model (villaGlass.js), env reflection + Fresnel on, premultiplied, no extra pass / light / draw",
+    `reflection ${reflOn}, premultiplied ${premul}, no pass ${noPass}, wired ${wired}, glass draws ext ${gDraws.join("/")} cell ${cDraws}`);
+}
+// ---- 2c. villa3 (rule villa-props-contact): the re-made pieces (interior.json contact footprints) SIT on the floor: under
+// each footprint the lowest drawn vertex (Cell + Soft) is within 5 mm of the floor (or the rug's top, +12 mm), nothing
+// sinks more than 5 mm into it; the three round-2 fabric slots are merged into `props` (one textured draw)
+{
+  const rects = info.contact || [];
+  const parts = cell.parts.filter((p) => p.node === "Soft" || p.node === "Cell");
+  const rowsC = [];
+  let bad = 0;
+  for (const r of rects) {
+    let lo = Infinity, sink = 0;
+    for (const p of parts) {
+      if (/oak_plank|stone_floor/.test(p.slot)) continue;
+      const P = p.positions;
+      for (let k = 0; k < P.length; k += 3) {
+        const u = P[k], y = P[k + 1], w = P[k + 2];
+        if (u < r.u[0] + 0.02 || u > r.u[1] - 0.02 || w < r.w[0] + 0.02 || w > r.w[1] - 0.02) continue;
+        if (y < r.y - 0.05 || y > r.y + 1.5) continue;            // (the storey: not the ceiling under the slab)
+        if (p.slot === "props" && Math.abs(y - (r.y + 0.012)) < 0.0015) continue;       // (the rug itself)
+        lo = Math.min(lo, y); sink = Math.max(sink, r.y - y);
+      }
+    }
+    const gapMm = (lo - r.y) * 1000, ok = (Math.abs(gapMm) <= 5 || Math.abs(gapMm - 12) <= 5) && sink <= 0.005;
+    if (!ok) bad++;
+    rowsC.push(`${((r.u[0] + r.u[1]) / 2).toFixed(1)},${((r.w[0] + r.w[1]) / 2).toFixed(1)}: ${gapMm.toFixed(1)} mm`);
+  }
+  const slots = new Set(cell.parts.map((p) => p.slot));
+  check(rects.length >= 5 && bad === 0 && slots.has("props") && !["fabric_white", "fabric_grey", "leather"].some((s) => slots.has(s)),
+    "the re-made pieces sit on the floor (lowest vertex within 5 mm of it / the rug), fabrics in ONE props slot", `${rects.length} footprints: ${rowsC.join("; ")}`);
+}
+// ---- 2d. villa3 (rule villa-licences): every external asset the villa ships is listed with its licence and source page
+{
+  let lic = ""; try { lic = readFileSync(new URL("models/villa/LICENCES.md", ROOT), "utf8"); } catch { /* missing */ }
+  const fab = J("models/villa/fabrics.json").layers.map((l) => l.id);
+  const missing = fab.filter((id) => !lic.split(/\r?\n/).some((ln) => ln.includes(id) && ln.includes("CC0") && ln.includes(`polyhaven.com/a/${id}`)));
+  check(lic.length > 0 && missing.length === 0, "every external asset listed in models/villa/LICENCES.md (licence + source page)", missing.length ? `missing: ${missing.join(", ")}` : `${fab.length} fabric scans, CC0`);
+}
 
 // ---- 3. joins: LOD0 + gate + grounds vs the terrain
 const { Heightmap } = await imp("viewer/heightmap.js");

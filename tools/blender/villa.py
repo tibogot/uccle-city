@@ -25,6 +25,7 @@ import bpy, bmesh, math, os, sys, json, time, random
 from mathutils import Vector, Matrix
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import interior_kit as K
+import villa_bed as VB
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 def arg(k, d=None): return ARGS[ARGS.index(k) + 1] if k in ARGS else d
@@ -85,8 +86,11 @@ STAIR = dict(u0=21.42, w0=9.8, w1=11.0, n=22, going=0.28)       # the hall's flo
 RISE = (F1 - GL) / STAIR["n"]
 
 EXT_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves"]
-INT_SLOTS = ["plaster_white", "oak_plank", "walnut", "marble_white", "stone_floor", "fabric_white", "fabric_grey", "leather", "brass",
+# villa3: the three fabric slots (fabric_white / fabric_grey / leather) merged into ONE textured slot `props` (the fabric
+# scans' KTX2 array, a tint + a scan layer per code: viewer/villa/villaInterior.js PROPS): 16 -> 14 interior draws
+INT_SLOTS = ["plaster_white", "oak_plank", "walnut", "marble_white", "stone_floor", "props", "brass",
              "metal_black", "glow", "plant", "ceramic_white", "books", "art", "glass_window"]
+PROPS_OLD = {"fabric_white": 0, "fabric_grey": 1, "leather": 2}          # their plain code in props (channel 14 / rug 15 kept)
 CODES = ["plain", "reveal", "plinth", "coping", "step", "slat", "frame", "door", "soffit", "roof", "garage", "led", "fire", "screen",
          "channel", "rug"]
 C = {n: i for i, n in enumerate(CODES)}
@@ -105,6 +109,8 @@ class Acc:
         self.name = name; self.slots = slots
         self.v = []; self.f = []; self.fs = []; self.fc = []; self.fuv = []; self.sm = []
     def poly(self, pts, slot, code=0, normal=None, uvs=None, smooth=False):
+        if isinstance(slot, str) and slot in PROPS_OLD and slot not in self.slots:
+            code = code if code in (C["channel"], C["rug"]) else PROPS_OLD[slot]; slot = "props"
         pts = [Vector(p) for p in pts]
         if len(pts) < 3: return
         n = (pts[1] - pts[0]).cross(pts[2] - pts[0])
@@ -130,10 +136,11 @@ class Acc:
                 self.poly([q(s0, t0), q(s1, t0), q(s1, t1), q(s0, t1)], slot, code, normal)
     def emit(self, bm, slot, code, M, smooth=False):
         """a kit piece (bmesh in its own frame) placed by M; UV0 box-projected in the piece frame"""
+        uvl = bm.loops.layers.uv.active          # (villa3: a piece with its own UV, metres: the cloth keeps it)
         for fa in bm.faces:
             n = fa.normal
             pts = [M @ l.vert.co for l in fa.loops]
-            uvs = [K.box_uv(l.vert.co, n) for l in fa.loops]
+            uvs = [tuple(l[uvl].uv) for l in fa.loops] if uvl is not None else [K.box_uv(l.vert.co, n) for l in fa.loops]
             sl = slot(fa) if callable(slot) else slot
             self.poly(pts, sl, code, None, uvs, smooth)
             # (winding kept as the piece's: recalc_face_normals made it outward)
@@ -239,12 +246,13 @@ def pane(acc, axis, c, hole, out, slot, code=0):
     if axis == "u": acc.rect(P(c, a0, h0), P(c, a1, h0), P(c, a1, h1), P(c, a0, h1), slot, code, nrm)
     else: acc.rect(P(a0, c, h0), P(a1, c, h0), P(a1, c, h1), P(a0, c, h1), slot, code, nrm)
 
-def frames(acc, axis, c, hole, mull=1.6, transom=None, t=0.06, d=0.10, slot="metal_dark"):
+def frames(acc, axis, c, hole, mull=1.6, transom=None, t=0.06, d=0.14, slot="metal_dark"):
     """an aluminium frame round a hole at the glass plane c, mullions every ~mull m, transoms at the given heights"""
     a0, a1, h0, h1 = hole
     def bx(x0, x1, y0, y1):
-        if axis == "u": bbox(acc, c - d / 2, c + d / 2, x0, x1, y0, y1, slot, C["frame"], bevel=0.004, seg=1, skip_down=False)
-        else: bbox(acc, x0, x1, c - d / 2, c + d / 2, y0, y1, slot, C["frame"], bevel=0.004, seg=1, skip_down=False)
+        # (villa3: 14 cm deep, an 8 mm chamfer: the profile reads as a solid aluminium section, its edges catch the light)
+        if axis == "u": bbox(acc, c - d / 2, c + d / 2, x0, x1, y0, y1, slot, C["frame"], bevel=0.008, seg=1, skip_down=False)
+        else: bbox(acc, x0, x1, c - d / 2, c + d / 2, y0, y1, slot, C["frame"], bevel=0.008, seg=1, skip_down=False)
     bx(a0, a0 + t, h0, h1); bx(a1 - t, a1, h0, h1)
     bx(a0 + t, a1 - t, h0, h0 + t); bx(a0 + t, a1 - t, h1 - t, h1)
     n = max(1, round((a1 - a0) / mull))
@@ -893,10 +901,12 @@ def put(parts, u, w, h, face=(0.0, 1.0), smooth=True, s=None, colb=None):
             slot, code = KIT[slot], (0 if leafy else 1)
         if slot == "walnut" and kit_piece(parts): slot = "plant"
         IN.emit(bm, slot, code, M, smooth and slot in SOFT_SLOTS)
+    if colb and CONTACT_ON[0]: CONTACT_SRC.append((u, w, h, face, colb))
     if kit_piece(parts): PLANTS.append((u, w, h))
     if colb: colbox(u - colb[0], u + colb[0], w - colb[1], w + colb[1], h, h + colb[2])
 
-SOFT_SLOTS = ("fabric_white", "fabric_grey", "leather", "plant", "glow", "ceramic_white")     # smooth-shaded; everything else flat
+SOFT_SLOTS = ("props", "fabric_white", "fabric_grey", "leather", "plant", "glow", "ceramic_white")     # smooth-shaded; everything else flat
+CONTACT_SRC = []; CONTACT_ON = [False]               # villa3: the footprints the floors' contact shadow reads (interior.json contact)
 PLANTS = []                                          # the kit plants (their open leaves: listed in the audit's allow file)
 kit_piece = lambda parts: any(p[1] in ("Hard", "Wood", "Fabric", "Glow", "Plaster", "Glass", "plant") for p in parts)
 LIGHTS = []                                         # night bake: (name, pos, watts, colour, radius, aim or None)
@@ -1165,13 +1175,20 @@ def interior():
     bbox(IN, JU0, JU0 + 0.4, -7.6, -6.4, F1, F1 + 2.4, "walnut", C["door"], 0.006, 2)
     colbox(JU0, JU0 + 0.4, -7.6, -6.4, F1, F1 + 2.4)
     # bedroom 2 (back): a bed to the glass
-    put(bed_modern(1.8), 33.0, -1.6, F1, (1, 0), colb=(1.1, 1.0, 0.6))
+    CONTACT_ON[0] = True
+    put(VB.bed_v3(1.8, seed=2, master=False), 33.0, -1.6, F1, (1, 0), colb=(1.12, 0.97, 0.6))
+    CONTACT_ON[0] = False
     # the master suite: a king bed to the back glass, a walnut headboard wall, bedsides, a lounge chair, a rug
     bbox(IN, 29.0, 29.25, 13.2, 21.6, F1, F1 + 1.5, "walnut", C["door"], 0.006, 2)
     colbox(29.0, 29.25, 13.2, 21.6, F1, F1 + 1.5)
-    put(bed_modern(2.0), 30.45, 17.4, F1, (1, 0), colb=(1.15, 1.1, 0.6))
-    for w_ in (15.6, 19.2):
-        bbox(IN, 29.3, 29.8, w_ - 0.3, w_ + 0.3, F1, F1 + 0.5, "walnut", C["door"], 0.006, 2)
+    CONTACT_ON[0] = True
+    put(VB.bed_v3(2.0, seed=1, master=True), 30.45, 17.4, F1, (1, 0), colb=(1.16, 1.07, 0.6))
+    CONTACT_ON[0] = False
+    for w_ in (15.6, 19.2):         # villa3: the bedsides with a drawer (a 6 mm shadow gap), on a recessed black plinth
+        bbox(IN, 29.34, 29.76, w_ - 0.26, w_ + 0.26, F1, F1 + 0.04, "metal_black", 0, 0.003, 1, False)
+        bbox(IN, 29.3, 29.8, w_ - 0.3, w_ + 0.3, F1 + 0.04, F1 + 0.3, "walnut", C["door"], 0.004, 2, False)
+        bbox(IN, 29.3, 29.8, w_ - 0.3, w_ + 0.3, F1 + 0.306, F1 + 0.5, "walnut", C["door"], 0.004, 2, False)
+        CONTACT_SRC.append((29.55, w_, F1, (1, 0), (0.25, 0.3, 0.5)))
     put([(K.box(4.0, 0.012, 3.2, 0.004, 1), "fabric_grey", C["rug"])], 31.2, 17.4, F1, (1, 0), smooth=False)
     put(lounge_chair(), 35.8, 21.6, F1, (-1, -1), colb=(0.45, 0.45, 0.8))
     # round 2: THE BATHROOM (u 12.3 .. 20.5, a partition with a doorway by the marble wall): stone floor, a freestanding
@@ -1196,9 +1213,10 @@ def interior():
     for (u_, w_) in ((14.2, 19.0), (17.5, 19.0), (14.2, 14.0), (17.5, 14.0)): downlight(u_, w_, C1, 8.0)
     put(K.plant(1.4, 0.24, seed=23, kind="ficus", spread=0.6), 19.7, 22.5, F1, (0, 1), colb=(0.3, 0.3, 1.1))
     # the bed set: cushions, a folded throw, a leather bench at its foot, lamps on the bedsides, art
-    for (w_, f) in ((16.7, (1, 0)), (17.4, (1, 0)), (18.1, (1, 0))): cushion(30.15, w_, F1 + 0.8, f)
-    put([(K.soft(2.1, 0.05, 0.55, r=0.02, n=(8, 2, 4), puff=0.01, seed=9, oy=0.62), "leather", 0)], 31.6, 17.4, F1, (1, 0))
-    put([(K.soft(0.45, 0.42, 1.5, r=0.05, n=(3, 4, 7), puff=0.01, oy=0.02), "leather", 0)], 32.9, 17.4, F1, (0, 1), colb=(0.23, 0.75, 0.42))
+    # villa3: the pillows, cushion and the (cloth-simulated) throw are the bed's own (villa_bed.py); the bench re-made
+    CONTACT_ON[0] = True
+    put(VB.bench_v3(1.5, 0.45, 0.44), 32.95, 17.4, F1, (1, 0), colb=(0.23, 0.75, 0.44))     # (kit x = its length: along w)
+    CONTACT_ON[0] = False
     for w_ in (15.6, 19.2): table_lamp(29.55, w_, F1 + 0.5)
     art(IN, "w", 11.3, 1, 31.0, 33.6, F1 + 1.0, F1 + 2.4, code=2)
     put(K.plant(1.4, 0.24, seed=29, kind="ficus", spread=0.6), 36.4, -6.8, F1, (0, 1), colb=(0.3, 0.3, 1.1))
@@ -1383,6 +1401,13 @@ def bed_modern(w):
 interior()
 print(f"interior: {len(IN.f)} faces, glass {len(IG.f)}, collider {len(COL) // 3} tris, {len(LIGHTS)} lamps ({time.time() - T0:.1f}s)")
 
+# villa3: the contact-shadow footprints (the floors' TSL darkens round them: no decal, no draw): plan rectangles (u, w)
+# and the floor level (three local y) in the villa frame
+CONTACT = []
+for (u_, w_, h_, face_, cb) in CONTACT_SRC:
+    du, dw = (cb[0], cb[1])
+    CONTACT.append({"u": [round(u_ - du, 3), round(u_ + du, 3)], "w": [round(w_ - dw, 3), round(w_ + dw, 3)], "y": round(h_ - OY, 3)})
+print("contact footprints:", len(CONTACT))
 # ================================================================================================ meshes
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scn = bpy.context.scene
@@ -1424,7 +1449,7 @@ ob_gl = make(GATE_L, EXT_M, GATE_L_O); ob_gr = make(GATE_R, EXT_M, GATE_R_O); ob
 # the soft furnishings (cushions, rugs, leather, plants: smooth-shaded) in their own node "Soft": the audit checks them
 # without the streak / bentflat checks (those guard architecture: a cushion's normals turn round its rounded edges by design)
 SOFT = Acc("Soft", INT_SLOTS); HARD = Acc("Cell", INT_SLOTS)
-SOFT_IDX = {INT_SLOTS.index(n) for n in ("fabric_white", "fabric_grey", "leather", "plant", "ceramic_white")}
+SOFT_IDX = {INT_SLOTS.index(n) for n in ("props", "plant", "ceramic_white")}
 for fi, f in enumerate(IN.f):
     A_ = SOFT if IN.fs[fi] in SOFT_IDX else HARD
     b = len(A_.v); A_.v.extend(IN.v[i] for i in f); A_.f.append(tuple(range(b, b + len(f))))
@@ -1719,6 +1744,7 @@ info = {
     "sun_dir_uwh": list(SUN_DIR), "samples": SAMPLES,
     "spawn": {"gate_out": loc(7.0, 20.2, 115.6), "living": loc(27.0, -9.5, GL), "landing": loc(28.6, 5.0, F1), "terrace": loc(40.5, 6.0, GL), "lounge": loc(30.0, 15.0, GL)},
     "tris": {"cell": tri(ob_cell), "soft": tri(ob_soft), "glass": tri(ob_iglass), "collider": len(COL) // 3},
+    "contact": CONTACT,
 }
 json.dump(info, open(os.path.join(OUT, "interior.json"), "w"), indent=1)
 # the mesh audit's allow list: the kit plants' leaves are open blades by design (leak / crossing / seam round them)

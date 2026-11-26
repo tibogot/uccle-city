@@ -132,3 +132,21 @@ boot tile was always I6, `start` was the nearest road of THE BOOT TILE (main.js 
 bounds: the nearest I6 road point to the villa is on I6's edge) and third person started at `start`. Fix by cause: the
 boot tile is the tile under `?at` (viewer/placeLink.js bootTile; `?attile=old` = I6), and third person starts at `?at`
 itself (`?atthird=old` = the road start); an `?at` whose tile is not in streams it in through the teleport first.
+
+## v3 job 1 (claude/villa3, 2026-11-26): the window glass + the bed (docs/VILLA_V3_PLAN.md; `?villa3=0` = before)
+
+The owner approved the v3 plan and its budget raise (download 9 MB with the textures fetched with the interior < 60 m,
+interior ~230k triangles, draws as proposed) on the condition that perf stays very good; "glasses" meant the WINDOW
+GLASS ("they looked very fake"). Job 1 = items 0 (glass) and 1 (bed).
+
+| fix | why (cause) | what | rule / check |
+|---|---|---|---|
+| window glass | the near glass was a fixed sky tint at a constant 10-85 % opacity (milky head-on, its reflection dimmed by its own alpha), no garden / tree line / sun in it, the same from inside; the far glass reflected only the PMREM sky over flat grey | ONE glass model, viewer/villa/villaGlass.js: Fresnel (Schlick, F0 0.05) over an analytic outdoor reflection (sky gradient, a ragged tree line, the lawn, the sun's glint: lighting.js env, no SSR / planar pass, no light); from inside, the lit room reflected (dark mirrors at night); the near glass PREMULTIPLIED (reflection x F + the room behind x 0.86 (1 - F)); the far glass = the same reflection over a dim room tone glowing at night, and the near glass fades in from exactly that (no pop at 30 m); a balustrade's top edge reads as thick green glass | villa-glass-v3, `villa` 2b |
+| frames | 10 cm deep, 4 mm chamfer: read as flat black strips | 14 cm deep, 8 mm chamfer (the edges catch the light): same triangle count | `villa` budgets |
+| bed (master 2.0 m, guest 1.8 m) | five inflated boxes, a stiff throw slab floating 10 cm over the bed, flat colour | tools/blender/villa_bed.py: recessed black plinth (shadow gap), boucle platform + tall headboard, fitted-sheet mattress; DUVET, TURN-DOWN and THROW are Blender cloth simulations on the bed's own meshes as colliders (the duvet's head edge pinned: the first build slid it off the foot onto the floor), relaxed, solidified (3 / 2.8 / 1.2 cm), decimated, UV in metres; pinched-corner pillows (2 Euro, 2 sleeping, a cushion); cognac leather bench on a black frame; bedsides with a drawer gap on a recessed plinth. ~9-10k triangles a bed | villa-props-contact, `villa` 2c |
+| fabrics | the soft goods were a colour + value noise (plastic / suede; leather read as wood) | the three fabric slots merged into ONE textured slot `props` (16 -> 14 draws): a KTX2 2D array (models/villa/fabrics.ktx2, 512 px x 4 layers, UASTC + RDO + zstd, 1.0 MB: luminance detail, AO, normal) of CC0 Poly Haven scans (linen, knit, boucle, leather; models/villa/LICENCES.md), tinted per code in TSL, a relief term from the scan's normal (screen-space cotangent frame) under the baked light; streamed with the interior, never at boot. The round-2 items (sofas, chairs, rugs) keep their old look in the same slot until their jobs | villa-licences, `villa` 2d |
+| contact | the per-corner bake (0.42 m grid) cannot hold the crease where furniture meets the floor | interior.json `contact` footprints (from the collider boxes); the floors' TSL (oak, stone, the rug code) darkens round them (7 cm falloff): no decal, no draw | villa-props-contact |
+
+Budgets after job 1: download 6.75 MB (villa.glb 1.25 + interior.glb 4.53 + fabrics.ktx2 0.97) <= 9; LOD0 56,994 tris /
+8 draws (unchanged); interior cell 192,390 tris / 14 draws (was 179,420 / 16). Build: `python tools/villa/fabrics_ktx2.py
+<scan dir> 512` (once), then villa.py + pack.mjs as above; `tools/blender/villa_bed_preview.py` renders the bed alone.

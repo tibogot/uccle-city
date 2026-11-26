@@ -1,18 +1,18 @@
 # Mesh audit (before pack): interior.cell
 
-106,772 triangles, 59,766 welded vertices, 9,124 open edges, 587,472 rays, 4995 ms.
+107,172 triangles, 59,982 welded vertices, 9,116 open edges, 586,064 rays, 10438 ms.
 
-**0 blocking**, 7325 warnings. Clean (no blocking item).
+**0 blocking**, 7441 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
 | near | warn | 387 |
-| sliver | warn | 6570 |
+| sliver | warn | 6686 |
 | nonmanifold | warn | 135 |
 | tjunction | warn | 233 |
-| seam | info | 1898 |
+| seam | info | 1908 |
 | opening | info | 653 |
-| backtoback | info | 6471 |
+| backtoback | info | 6651 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -63,7 +63,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (347 more in the JSON)
 
-## sliver (warn, 6570)
+## sliver (warn, 6686)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -108,7 +108,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 22.54, 125.40, -7.99 | Cell/plaster_white | 42 | 0.42 |
 | 22.40, 125.40, -7.98 | Cell/plaster_white | 42 | 0.42 |
 
-(6530 more in the JSON)
+(6646 more in the JSON)
 
 ## nonmanifold (warn, 135)
 
@@ -204,7 +204,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (193 more in the JSON)
 
-## seam (info, 1898)
+## seam (info, 1908)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -249,7 +249,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 29.93, 125.40, -5.48 | Cell/plaster_white + Cell/plaster_white | 10.17 | 51 | 90 |
 | 16.67, 119.48, 11.30 | Cell/marble_white + Cell/metal_black | 9.34 | 48 | 45 |
 
-(1858 more in the JSON)
+(1868 more in the JSON)
 
 ## opening (info, 653)
 
@@ -298,7 +298,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (613 more in the JSON)
 
-## backtoback (info, 6471)
+## backtoback (info, 6651)
 
 | at | parts | area |
 |---|---|---|
@@ -343,7 +343,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.30, 118.56, -17.13 | Cell/plaster_white + Cell/walnut | 0.01952 |
 | 14.30, 118.71, -17.17 | Cell/plaster_white + Cell/walnut | 0.02113 |
 
-(6431 more in the JSON)
+(6611 more in the JSON)
 
 
 Nodes: Cell, Glass. Distances: {"*":35}. Quantum 0.000 mm. Offset 0,100,0.
