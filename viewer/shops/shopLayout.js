@@ -58,10 +58,10 @@ export function interiorType(p) {
   const k = p.kind, c = p.cat || "";
   if (T_CAFE_K.has(k) || T_CAFE.has(c)) return 2;
   if (k === "bakery" || T_BAKERY.has(c)) return 0;
-  if (k === "pharmacy" || T_PHARMA.has(c)) return 1;
+  if (k === "pharmacy" || T_PHARMA.has(c) || c === "optician") return 1;   // (claude/reality1: an optician's white shelves read as the pharmacy room)
   if (T_BOUTIQUE.has(c)) return 3;
-  if (k === "supermarket" || T_GROCERY.has(c)) return 4;
-  if (k === "bank" || k === "post" || k === "hotel" || T_OFFICE.has(c)) return 5;
+  if (k === "supermarket" || T_GROCERY.has(c) || c === "gift" || c === "interior_decoration") return 4;   // (claude/reality1: the shelved shops of the shop-street fill)
+  if (k === "bank" || k === "post" || k === "hotel" || T_OFFICE.has(c) || c === "vacant") return 5;   // (claude/reality1: an empty shop to let: the bare office room)
   if (T_SALON.has(c)) return 6;
   return 7;
 }

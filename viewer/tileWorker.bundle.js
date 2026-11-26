@@ -1288,8 +1288,61 @@ function period(r, sh, w) {
   }
   return 3;
 }
+var STEEP_COS = Math.cos(35 * Math.PI / 180);
+var STEEP_SHARE = 0.7;
+var ERA_RANK = { pre: 0, inter: 1, post: 2 };
+function mergeEv(a, b) {
+  if (!a) return { ...b };
+  const o = { ...a };
+  if (b.inst && !o.inst) o.inst = b.inst;
+  if (b.wall && !o.wall) o.wall = b.wall;
+  if (b.era && (!o.era || ERA_RANK[b.era] < ERA_RANK[o.era])) {
+    o.era = b.era;
+    o.year = b.year;
+  }
+  if (!o.era && b.near && !o.near) o.near = b.near;
+  return o;
+}
+function evWeights(w, ev, steep, h = 0, row = true) {
+  if (ev?.era || ev?.inst) return w;
+  const o = w.slice();
+  if (steep >= STEEP_SHARE && row) {
+    o[0] = Math.max(o[0], 2);
+    o[2] = 0;
+    o[3] = 0;
+    o[1] *= 0.05;
+  }
+  if (ev?.near === "old" && h <= 20) {
+    o[2] *= 0.25;
+    o[3] *= 0.25;
+  } else if (ev?.near === "new") {
+    o[0] *= 0.25;
+    o[1] *= 0.5;
+  }
+  if (o.every((v) => v === 0)) o[0] = 1;
+  return o;
+}
+var steepRow = (g, partyShare) => partyShare > 0.15 || g.area < 350;
+function evType(p, ev, flat, steep) {
+  if (ev?.inst) return ev.era === "pre" || ev.era === "inter" || steep >= 0.5 && ev.era !== "post" ? TYPE.MAITRE : TYPE.DECO;
+  if (ev?.era === "pre") return TYPE.MAITRE;
+  if (ev?.era === "inter") return flat > 0.6 ? TYPE.DECO : TYPE.MAITRE;
+  if (ev?.era === "post") return p === 1 ? TYPE.DECO : TYPE.BLOCK;
+  return p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
+}
+function applyBuildingEvidence(doc, ev, on = true) {
+  if (on === false || !doc?.buildings) return doc;
+  doc._bldclass = true;
+  const S3 = ev?.solids || {};
+  for (const b of doc.buildings) {
+    const e = S3[String(b.id).split("/").pop()];
+    if (e) b.attrs = { ...b.attrs || {}, _ev: e };
+  }
+  return doc;
+}
 function classify(doc, P, I2, legacyStyle) {
   const B = doc.buildings, n = B.length;
+  const BC = doc._bldclass === true;
   const keyOf = (b) => String(b.attrs?.BU_ID ?? b.id);
   const cell = 25, grid = /* @__PURE__ */ new Map();
   const box5 = B.map((b) => {
@@ -1321,8 +1374,9 @@ function classify(doc, P, I2, legacyStyle) {
   B.forEach((b, bi) => {
     const key = keys[bi];
     let g = G2.get(key);
-    if (!g) G2.set(key, g = { area: 0, per: 0, party: 0, pn: [], h: 0, eaves: 0, flat: 0, roof: 0, cx: 0, cz: 0, w: 0, landmark: false, main: 0 });
+    if (!g) G2.set(key, g = { area: 0, per: 0, party: 0, pn: [], h: 0, eaves: 0, flat: 0, steep: 0, roof: 0, cx: 0, cz: 0, w: 0, landmark: false, main: 0, ev: null });
     if (b.attrs?._landmark) g.landmark = true;
+    if (BC && b.attrs?._ev) g.ev = mergeEv(g.ev, b.attrs._ev);
     const ring2 = b.footprint[0];
     let a = 0;
     for (let k = 0; k < ring2.length; k++) {
@@ -1361,11 +1415,12 @@ function classify(doc, P, I2, legacyStyle) {
       const ar = Math.abs(cy) / 2;
       g.roof += ar;
       if (Math.abs(cy) / L2 > 0.97) g.flat += ar;
+      else if (Math.abs(cy) / L2 < STEEP_COS) g.steep += ar;
     }
   });
   const T3 = /* @__PURE__ */ new Map();
   for (const [key, g] of G2) {
-    const flat = g.roof > 0 ? g.flat / g.roof : 0;
+    const flat = g.roof > 0 ? g.flat / g.roof : 0, steep = g.roof > 0 ? g.steep / g.roof : 0;
     const cx = g.w ? g.cx / g.w : 0, cz = g.w ? g.cz / g.w : 0;
     let opp = false;
     for (let i = 0; i < g.pn.length && !opp; i++) for (let j = i + 1; j < g.pn.length; j++) if (g.pn[i][0] * g.pn[j][0] + g.pn[i][1] * g.pn[j][1] < -0.7) {
@@ -1391,11 +1446,12 @@ function classify(doc, P, I2, legacyStyle) {
         w[0] = 0;
         w[1] *= 0.15;
       }
-      const p = period(r, SH.flats, w);
-      type2 = p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
+      const p = period(r, SH.flats, BC ? evWeights(w, g.ev, steep, g.h, steepRow(g, partyShare)) : w);
+      type2 = BC ? evType(p, g.ev, flat, steep) : p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
     } else if ((form2 === "terraced" || form2 === "semi") && g.eaves >= 11) {
-      const p = period(r, SH.flats, flat > 0.6 ? [0.5, 1, 1.2, 1.2] : [2, 1.5, 0.7, 0.6]);
-      type2 = p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
+      const w = flat > 0.6 ? [0.5, 1, 1.2, 1.2] : [2, 1.5, 0.7, 0.6];
+      const p = period(r, SH.flats, BC ? evWeights(w, g.ev, steep, g.h, steepRow(g, partyShare)) : w);
+      type2 = BC ? evType(p, g.ev, flat, steep) : p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
     } else if (form2 === "terraced" || form2 === "semi" && g.area < 110) {
       const sh = form2 === "terraced" ? SH.closed : SH.semi;
       const w = [1, 1, 1, 1];
@@ -1432,18 +1488,23 @@ function classify(doc, P, I2, legacyStyle) {
       // (Avenue Coghen / Churchill: red-brick blocks with long balconies)
       [TYPE.VILLA]: [[3, 0.45], [4, 0.15], [0, 0.35], [2, 0.05]]
     }[type2]);
-    const garage2 = type2 === TYPE.BELETAGE || type2 === TYPE.VILLA && h01(key + "|gar") < 0.45 ? 1 : 0;
-    T3.set(key, { type: type2, style: style2, garage: garage2, form: form2, flat });
+    const styleI = BC && g.ev?.inst && type2 === TYPE.MAITRE && !g.ev.wall ? pick(rs, [[0, 0.65], [2, 0.2], [1, 0.15]]) : null;
+    const wl = BC && (type2 === TYPE.MAITRE || type2 === TYPE.DECO) ? g.ev?.wall : null;
+    const styleW = wl === "brick" ? h01(key + "|klinker") < 0.15 ? 1 : 0 : wl === "stone" ? 4 : BC && type2 === TYPE.MAITRE && (g.ev?.era === "pre" || g.ev?.era === "inter" || g.ev?.near === "old") && !g.ev?.inst ? pick(rs, [[0, 0.6], [1, 0.15], [4, 0.15], [3, 0.1]]) : null;
+    const garage2 = g.ev?.inst && BC ? 0 : type2 === TYPE.BELETAGE || type2 === TYPE.VILLA && h01(key + "|gar") < 0.45 ? 1 : 0;
+    T3.set(key, { type: type2, style: styleW ?? styleI ?? style2, garage: garage2, form: form2, flat, steep, row: steepRow(g, partyShare), ev: BC ? g.ev : null });
   }
-  const type = new Uint8Array(n), style = new Float32Array(n), garage = new Uint8Array(n), form = new Array(n);
+  const type = new Uint8Array(n), style = new Float32Array(n), garage = new Uint8Array(n), form = new Array(n), steepS = new Float32Array(n), rowS = new Uint8Array(n);
   B.forEach((b, bi) => {
     const t = T3.get(keys[bi]);
     type[bi] = t.type;
     garage[bi] = t.garage;
     form[bi] = t.form;
+    steepS[bi] = t.steep;
+    rowS[bi] = t.row ? 1 : 0;
     style[bi] = t.style ?? legacyStyle(b, keys[bi]);
   });
-  return { type, style, garage, form };
+  return { type, style, garage, form, steep: steepS, row: rowS };
 }
 var TYPE_GRID = [
   [1.2, 0.52, 0.27, 0.77, 0.29, 0.79, 0, 3.25, 0.87, 1.2],
@@ -23798,7 +23859,7 @@ async function gardenDocNear(base, name, b, old = false) {
   return doc;
 }
 async function gardenDoc(base, name, old = false) {
-  const r = await fetch(new URL(`../gardens/${old ? "old/" : ""}${name}.json`, base)).catch(() => null);
+  const r = await fetch(new URL(`../gardens/${old === "fg" ? "fgold/" : old ? "old/" : ""}${name}.json`, base)).catch(() => null);
   return r?.ok ? r.json().catch(() => null) : null;
 }
 async function streetlifeFronts(base, name) {
@@ -23816,6 +23877,7 @@ async function streetlifePois(base, name) {
 var overridesP = null;
 var streetVoteP = null;
 var streetVote = (base) => streetVoteP ??= fetch(new URL("../roads/streetVote.json", base)).then((r) => r.ok ? r.json() : { exact: {}, loose: {} }).catch(() => ({ exact: {}, loose: {} }));
+var bldEvidence = (base, name) => fetch(new URL(`../bldclass/${name}.json`, base)).then((r) => r.ok ? r.json() : null).catch(() => null);
 var overrides = (base) => overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => r.ok ? r.json() : {}).catch(() => ({}));
 var lookSet = (looks, entry) => {
   if (!looks) return looks;
@@ -23829,6 +23891,7 @@ var lookSet = (looks, entry) => {
     if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
     if (entry.carrefour === false && v.set === "carrefour") continue;
     if (entry.places2 === false && v.set === "places2") continue;
+    if (entry.montjoie === false && v.set === "montjoie") continue;
     out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
   }
   return out;
@@ -24106,7 +24169,7 @@ async function buildTileData(entry, base) {
   } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
-  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, !!entry.gatesOld)) : null;
+  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, entry.gatesOld ? true : entry.frontgardenOld ? "fg" : false)) : null;
   const gardenNear = gardenDoc0 !== null || entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true, span: !entry.gatesOld }) : null;
   const streetModel = surf && paint === "v2" && entry.streetModel !== false ? await step("street model inputs", () => streetModelInputs({ base, name: entry.name, bounds, overrides: ov, ver: (entry.files.surfaces || "").split("?")[1] || "" })) : null;
   const tramProfile = entry.sawtooth !== false && surf ? await step("tram profile", () => fetch(new URL("../transit/tram_profile.json", base)).then((r) => r.ok ? r.json() : null).catch(() => null)) : null;
@@ -24255,6 +24318,7 @@ async function buildTileData(entry, base) {
   const nb = bDoc.buildings.length;
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;
   hideBuildings(bDoc, entry.hide);
+  if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name));
   roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));
   const railT = entry.railT !== false;
   const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railT ? railFences2(rail.doc, bounds, rail.heroes, roads, hm.ground, { surface: tunnelSurface(tcut, hm.surface), roadY: roadGround }) : railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
@@ -24431,6 +24495,7 @@ async function buildLiteData(entry, base) {
   await MeshoptSimplifier.ready;
   const [idxS] = MeshoptSimplifier.simplify(idx2, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
   hideBuildings(bDoc, entry.hide);
+  if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name));
   const dv = new DataView(bBuf), V2 = dv.getUint32(0, true), T3 = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V2 * 3), I2 = new Uint32Array(bBuf, 8 + V2 * 12, T3 * 3);
   if (entry.farLook !== false) {
@@ -24923,4 +24988,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "682fa4e50b10d698";
+self.__TILE_CODE_HASH = "78125a09abac04ae";

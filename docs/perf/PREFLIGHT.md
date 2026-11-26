@@ -8,6 +8,9 @@ on a laptop with 1.2 of 15.7 GB free (Chrome: 6.2 GB in 60 processes). Numbers t
 - One city tab, in front, not minimised, at the reference URL:
   `http://localhost:8820/viewer/index.html?ring=1&far=1&time=golden&traffic=0`
 
+- Each timed page load in a FRESH tab: open a new tab, close the old one, then navigate (rule perf-fresh-tab; the
+  harnesses report `freshTab`). ~20 reloads in one tab filled the GPU's memory and stalled the drives (2026-11-26).
+
 ## 1. System check (30 s)
 `powershell -ExecutionPolicy Bypass -File tools/perf/preflight.ps1`
 Power (mains, plan), CPU speed (% of base clock: < 90 % = throttled) and load at rest, free memory, Chrome's memory,

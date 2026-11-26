@@ -29,7 +29,7 @@
   "pair_C1_far_kerb_after_clash": 11,
   "pair_C1_island": 2,
   "pair_F19_asked": 51,
-  "plate_posts": 782,
+  "plate_posts": 788,
   "plates_shared": 39,
   "poles": 1777,
   "poles_short": 1739,
@@ -59,21 +59,21 @@
   "slide_furniture": 1,
   "slide_kerb_too_far": 704,
   "slide_tree": 9,
-  "snap_plates": 377,
+  "snap_plates": 388,
   "snap_postboxes": 23,
-  "snap_posts": 377,
+  "snap_posts": 388,
   "snap_stuck_plates": 0,
   "snap_stuck_postboxes": 0,
   "snap_stuck_villoPieces": 0,
   "snap_villo_dropped_bikes": 0,
   "snap_villo_dropped_docks": 0,
   "snap_villo_dropped_totems": 0,
-  "villo_docks": 470,
+  "villo_docks": 450,
   "villo_docks_wanted": 604,
-  "villo_lane": 12,
+  "villo_lane": 11,
   "villo_no_stands": 1,
-  "villo_relaid": 20,
-  "villo_sidewalk": 15,
+  "villo_relaid": 22,
+  "villo_sidewalk": 16,
   "villo_turned": 1
  },
  "perTile": {
@@ -96,7 +96,7 @@
   "F1": {
    "poles": 54,
    "plates": 55,
-   "posts": 14,
+   "posts": 15,
    "villo": 1,
    "docks": 23,
    "bikes": 3
@@ -112,7 +112,7 @@
   "H1": {
    "poles": 28,
    "plates": 28,
-   "posts": 13,
+   "posts": 14,
    "villo": 0,
    "docks": 0,
    "bikes": 0
@@ -160,7 +160,7 @@
   "H2": {
    "poles": 15,
    "plates": 15,
-   "posts": 10,
+   "posts": 9,
    "villo": 0,
    "docks": 0,
    "bikes": 0
@@ -208,7 +208,7 @@
   "F3": {
    "poles": 30,
    "plates": 31,
-   "posts": 13,
+   "posts": 14,
    "villo": 1,
    "docks": 22,
    "bikes": 10
@@ -248,7 +248,7 @@
   "B4": {
    "poles": 46,
    "plates": 47,
-   "posts": 33,
+   "posts": 31,
    "villo": 1,
    "docks": 23,
    "bikes": 12
@@ -256,7 +256,7 @@
   "C4": {
    "poles": 16,
    "plates": 16,
-   "posts": 2,
+   "posts": 4,
    "villo": 1,
    "docks": 20,
    "bikes": 20
@@ -264,7 +264,7 @@
   "D4": {
    "poles": 29,
    "plates": 29,
-   "posts": 12,
+   "posts": 13,
    "villo": 0,
    "docks": 0,
    "bikes": 0
@@ -280,7 +280,7 @@
   "F4": {
    "poles": 20,
    "plates": 20,
-   "posts": 5,
+   "posts": 6,
    "villo": 0,
    "docks": 0,
    "bikes": 0
@@ -331,7 +331,7 @@
    "posts": 16,
    "villo": 1,
    "docks": 10,
-   "bikes": 5
+   "bikes": 10
   },
   "B5": {
    "poles": 24,
@@ -352,7 +352,7 @@
   "D5": {
    "poles": 32,
    "plates": 32,
-   "posts": 6,
+   "posts": 7,
    "villo": 1,
    "docks": 11,
    "bikes": 11
@@ -360,7 +360,7 @@
   "E5": {
    "poles": 32,
    "plates": 32,
-   "posts": 2,
+   "posts": 3,
    "villo": 1,
    "docks": 7,
    "bikes": 7
@@ -376,7 +376,7 @@
   "G5": {
    "poles": 20,
    "plates": 20,
-   "posts": 7,
+   "posts": 6,
    "villo": 0,
    "docks": 0,
    "bikes": 0
@@ -456,10 +456,10 @@
   "D6": {
    "poles": 31,
    "plates": 32,
-   "posts": 6,
+   "posts": 7,
    "villo": 1,
-   "docks": 8,
-   "bikes": 3
+   "docks": 24,
+   "bikes": 14
   },
   "E6": {
    "poles": 29,
@@ -488,7 +488,7 @@
   "H6": {
    "poles": 28,
    "plates": 28,
-   "posts": 6,
+   "posts": 4,
    "villo": 0,
    "docks": 0,
    "bikes": 0
@@ -496,7 +496,7 @@
   "I6": {
    "poles": 8,
    "plates": 9,
-   "posts": 5,
+   "posts": 4,
    "villo": 1,
    "docks": 25,
    "bikes": 13
@@ -680,7 +680,7 @@
   "F8": {
    "poles": 8,
    "plates": 8,
-   "posts": 2,
+   "posts": 3,
    "villo": 0,
    "docks": 0,
    "bikes": 0
@@ -696,7 +696,7 @@
   "H8": {
    "poles": 6,
    "plates": 6,
-   "posts": 5,
+   "posts": 6,
    "villo": 0,
    "docks": 0,
    "bikes": 0
@@ -760,7 +760,7 @@
   "D9": {
    "poles": 8,
    "plates": 8,
-   "posts": 6,
+   "posts": 5,
    "villo": 0,
    "docks": 0,
    "bikes": 0
@@ -976,7 +976,7 @@
   "K11": {
    "poles": 10,
    "plates": 10,
-   "posts": 9,
+   "posts": 11,
    "villo": 0,
    "docks": 0,
    "bikes": 0

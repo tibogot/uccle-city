@@ -28,6 +28,10 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    UA, HU+EU, BG+EU, RO+EU, KE, SZ, BF, ER, AF, NI, AO), 6 no, 2 unseen; the real Commons flags (PD) in one atlas, real
    proportions, a local wind along the front; rule embassy-flags, row embassyflags. Left: generic blocks where the real
    embassies are villas (Hungary, Eswatini, Afghanistan); Romania's garden pole not placed.
+4a2. GATE FLAKES (coordinator 2026-11-26): (a) pedsgraph's W6 "walk graph <= 800 ms" reads the build time stored WITH
+   the cached tile (tile cache), so one slow build (809 ms) failed it on every run until TILE_CACHE=0; the timing must
+   come from the row's own build (or be skipped for cache hits), rule tile-cache; (b) trafmix's sim-cost twins fail TOO
+   NOISY whenever anything else runs (4 merges tripped): give merge.mjs a "timing rows alone, first, retry x3" step.
 4b2. ACTIVITIES, one at a time, each self-contained (loaded only where it happens, own perf budget + checks; owner
    2026-11-26 agreed the order: core city perf + the three games first): (1) SNOOKER in the villa (mouse play: aim,
    pull back, shoot; real ball physics: collisions, cushions, spin, pockets; no character; loads with the interior);
@@ -180,6 +184,8 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   sign, lettered awning, window lettering), look only. NO copied logos (trademark + artwork, and imagery is never
   traced); big chains: name + colours with generic lettering, or an invented name (owner's call per chain); a small
   shop's real logo only with its written OK (owner asks).
+
+- [ ] REALITY ROUND 1 done 2026-11-26 (claude/reality1, not merged): 14 spots, docs/REALITY_ROUND_2026-11-26.md (classes C1-C15, later jobs in its last section), owner sheet C:\Users\tibog\Downloads\uccle-reality\round1_sheet.png. Montjoie school fixed (?montjoie=old, rule institution-not-balcony-block, row montjoie); Bleus d'Encre sign fixed.
 
 **Step 3: places (compare with photos, look only)**
 - [x] MERGED 2026-11-23 (claude/parkfence) Wolvendael: big metal fences all round + several big gates (one at the Dieweg tram terminus).

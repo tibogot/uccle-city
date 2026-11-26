@@ -426,7 +426,7 @@
    "srcIn": 3,
    "low.data": 505,
    "nowall.data": 86,
-   "short.data": 24,
+   "short.data": 29,
    "inward": 21,
    "balcOrphan": 3
   },
@@ -1213,6 +1213,6 @@
   "open1": 401,
   "balcOrphanMax": 2
  },
- "note": "tools/audit/missingWallsCensus.mjs --ratchet (claude/walls2, rule walls-closed-from-street): per tile and city-wide ceilings, each this run's count + max(3, 3 %), only ever lowered; feetMoved is always 0; balcOrphanMax 2",
+ "note": "tools/audit/missingWallsCensus.mjs --ratchet (claude/walls2, rule walls-closed-from-street): per tile and city-wide ceilings, each this run's count + max(3, 3 %), only ever lowered; feetMoved is always 0; balcOrphanMax 2 | claude/reality1 (rule bldclass-evidence, 2026-11-26): J5 short.data 24 -> 29: Chaussee de Waterloo 1172 (solid 509828) now draws as a maison de maitre instead of a balcony block; the same UrbIS data gap (cause data, 16 m2, nothing new missing) is sampled as short instead of no-wall; J5 data samples 659 (ceiling 680)",
  "when": "2026-11-24T18:41:11.550Z"
 }
