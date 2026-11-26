@@ -1067,11 +1067,11 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   }
   if (deckMeshes.length) own.roads.add(...deckMeshes);
   await frame("roads");
-  const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover, await orthoP);
+  const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover, await waitFor(orthoP));
   own.terrain.add(terr);
   if (d.rail && railP) {       // ?trains=1: carved + built in the tile worker (viewer/rail/railData.js), wrapped here
     await frame("terrain mesh");
-    const rail = await railP;
+    const rail = await waitFor(railP);
     const rt = rail.m.railTileMeshes(d.rail);
     if (rt.group.children.length) own.features.add(rt.group);
     const st = rt.stats;
@@ -2373,7 +2373,9 @@ async function main() {
   if (params.get("compileboost") !== "old") boostCompile(renderer, () => playLoader.active);   // perfgame round 2
   if (params.get("compileslice") !== "old") window.__fineCompile = fineCompile(renderer, () => playLoader.active, Math.max(1, +(params.get("compileslicems") ?? 4) || 4));   // falconstutter
   // perf8 (?compileflush=old): under the play loader the queued compile jobs are done together in one forced frame (warmup.js)
-  setCompileFlush({ active: () => playLoader.active, render: () => (pipe ? pipe.render(null) : renderer.render(scene, camera)), renderer, scene, shadowDirty: (objs) => markSunShadowDirty(objs) });
+  setCompileFlush({ active: () => playLoader.active, render: () => (pipe ? pipe.render(null) : renderer.render(scene, camera)), renderer, scene, shadowDirty: (objs) => markSunShadowDirty(objs),
+    // (perf5 round 2, flushalone) a flush chunk draws the scene pass alone (its MRT target: the same build keys), not the post chain
+    renderScene: () => { if (!pipe?.passTarget) return renderer.render(scene, camera); const rt = renderer.getRenderTarget(), mrt = renderer.getMRT(); renderer.setRenderTarget(pipe.passTarget); renderer.setMRT(pipe.passMRT); try { renderer.render(scene, camera); } finally { renderer.setRenderTarget(rt); renderer.setMRT(mrt); } } });
   // perfgame round 3 (?readysweep=old): the landmarks' pipeline windows (vendor/engine/parallelPipelines.js) wrap three's
   // Pipelines.isReady (called on EVERY draw) and restore what they saw at their open: windows that overlap out of order
   // leave a closed window's wrapper in place for good (~0.1 ms a frame, measured in the drive trace). isReady is only

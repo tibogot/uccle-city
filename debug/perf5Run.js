@@ -42,5 +42,15 @@ export function buildClusters(t0 = window.__gamePerfLast?.t0 ?? 0, minMs = 15) {
 }
 export async function policeFull(o) {
   const r = await police(o);
-  return { tabLoads: r.tabLoads, freshTab: r.freshTab, play: r.play, cover: r.boot?.cover, url: location.search, brief: r.brief, frameMs: r.frameMs, probe: r.probe, lf: r.lf.map((f) => f.slice(0, 2)), clusters: buildClusters() };
+  return { tabLoads: r.tabLoads, freshTab: r.freshTab, play: r.play, cover: r.boot?.cover, url: location.search, loader: loaderTasks(), brief: r.brief, frameMs: r.frameMs, probe: r.probe, lf: r.lf.map((f) => f.slice(0, 2)), clusters: buildClusters() };
+}
+
+/** under the play loader (cover -> play): the long tasks, the compile flushes, the tiles' main-thread slices */
+export function loaderTasks() {
+  const B = window.__boot, cover = B?.cover ?? 0, play = globalThis.__playAt ?? Infinity;
+  if (!B) return null;
+  const lt = B.long.filter(([t]) => t >= cover && t <= play), loaf = B.loaf.filter(([t]) => t >= cover && t <= play);
+  const fl = (globalThis.__flushes || []).map((f) => ({ jobs: f.jobs, drawables: f.drawables, ms: f.ms, chunks: f.chunks.length, maxChunk: Math.max(0, ...f.chunks.map((c) => c[2])) }));
+  const tiles = B.logs.filter((l) => /main-thread work/.test(l[1])).map((l) => [l[0], (l[1].match(/^tile (\w+)/) || [])[1], +(l[1].match(/work (\d+)/) || [])[1], (l[1].match(/longest slice (\d+ ms \([^)]*\))/) || [])[1]]);
+  return { longN: lt.length, longMs: lt.reduce((a, x) => a + x[1], 0), longest: lt.sort((a, b) => b[1] - a[1]).slice(0, 5), over50: lt.filter((x) => x[1] > 50).length, loafTop: loaf.sort((a, b) => b[1] - a[1]).slice(0, 3), flushes: fl.slice(0, 6), tiles };
 }

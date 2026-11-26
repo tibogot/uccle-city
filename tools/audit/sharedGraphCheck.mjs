@@ -161,6 +161,7 @@ if (!OLD) {
   const W = fs.readFileSync(path.join(ROOT, "viewer/warmup.js"), "utf8");
   ok(W.includes('const FLUSH_SPLIT = QS_F.get("flushsplit") !== "old";') && W.includes("FLUSH_ALONE ? 40 : 1500"), "the compile flush is split by default, ~40 ms chunks (?flushsplit=old / ?flushalone=old: before)");
   ok(W.includes('for (const c of scene.children) if (!keep.has(c) && !c.isLight) set(c, "visible", false);') && W.includes("if (t?.parent === scene) keep.add(t);"), "a flush chunk draws only its own objects (the lights and the roots' own ancestors kept)");
+  ok(W.includes("for (const o of ms) units.push({ jobs: [j], meshes: [o], n: 1 });") && W.includes('if (only && !only.has(o)) { set(o, "visible", false); return; }'), "a flush chunk is a set of DRAWABLES (a big job spread over several chunks)");
 }
 
 // ---- 5. the old paths (child process)

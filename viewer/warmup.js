@@ -202,26 +202,38 @@ async function flushJobs(take) {
   const wins = [];
   if (!FLUSH_SPLIT) { const r = flushDraw(take); rec.drawables = r.n; if (r.win) wins.push(r.win); }
   else {
+    // (FLUSH_ALONE) the units are DRAWABLES, not whole jobs: a big job (a landmark: 50-150 meshes) is drawn over several
+    // chunks, the rest of its meshes hidden for each (a 1.3-1.5 s chunk before this); before: whole jobs per chunk
+    const units = [];
+    for (const j of take) {
+      if (!FLUSH_ALONE) { j.__n ??= drawablesOf(j.roots); units.push({ jobs: [j], meshes: null, n: j.__n }); continue; }
+      const ms = [];
+      for (const r of [].concat(j.roots)) r?.traverse((o) => { if (o.isMesh || o.isPoints || o.isLine || o.isSprite) ms.push(o); });
+      if (!ms.length) units.push({ jobs: [j], meshes: [], n: 0 });
+      for (const o of ms) units.push({ jobs: [j], meshes: [o], n: 1 });
+    }
     let i = 0, perDrawable = 0, budget = FLUSH_FIRST;
-    while (i < take.length) {
-      const chunk = [];
-      let n = 0;
-      while (i < take.length) {
-        const j = take[i];
-        j.__n ??= drawablesOf(j.roots);
-        if (chunk.length && n + j.__n > budget) break;
-        n += j.__n; chunk.push(j); i++;
+    while (i < units.length) {
+      const jobs = new Set(), only = FLUSH_ALONE ? new Set() : null;
+      let n = 0, k = 0;
+      while (i < units.length) {
+        const u = units[i];
+        if (k && n + u.n > budget) break;
+        n += u.n; k++; i++;
+        for (const j of u.jobs) jobs.add(j);
+        if (only) for (const o of u.meshes) only.add(o);
       }
       const c0 = performance.now();
-      const r = flushDraw(chunk);
+      const r = flushDraw([...jobs], only);
       const ms = performance.now() - c0;
       if (r.win) wins.push(r.win);
-      rec.drawables += r.n; rec.chunks.push([chunk.length, r.n, Math.round(ms)]);
+      rec.drawables += r.n; rec.chunks.push([jobs.size, r.n, Math.round(ms)]);
       // (the cost per drawable swings 1-50 ms: a chunk of already-built materials is cheap, new ones are not: the estimate
       // follows a dearer chunk at once and a cheaper one slowly, and a chunk never takes more than FLUSH_MAX drawables)
-      if (r.n > 0) { const c = ms / r.n; perDrawable = perDrawable ? Math.max(c, 0.8 * perDrawable + 0.2 * c) : c; budget = Math.max(FLUSH_MIN, Math.min(FLUSH_MAX, Math.round(FLUSH_TASK_MS / Math.max(0.5, perDrawable)))); }
+      // (FLUSH_ALONE: a plain moving average: one 400 ms material must not hold every later chunk at one drawable)
+      if (r.n > 0) { const c = ms / r.n; perDrawable = !perDrawable ? c : FLUSH_ALONE ? 0.5 * perDrawable + 0.5 * c : Math.max(c, 0.8 * perDrawable + 0.2 * c); budget = Math.max(FLUSH_MIN, Math.min(FLUSH_MAX, Math.round(FLUSH_TASK_MS / Math.max(0.5, perDrawable)))); }
       // a new task (FLUSH_ALONE: the loader's frame runs in between when one is due); before: a rendered frame, then a task
-      if (i < take.length) { if (!FLUSH_ALONE) await new Promise((res) => requestAnimationFrame(() => res())); await new Promise((res) => setTimeout(res, 0)); }
+      if (i < units.length) { if (!FLUSH_ALONE) await new Promise((res) => requestAnimationFrame(() => res())); await new Promise((res) => setTimeout(res, 0)); }
     }
     if (FLUSH_ALONE) flushWith.shadowDirty?.([...flushWith.scene.children]);   // (the city's casters back in the sun's cache)
   }
@@ -232,8 +244,8 @@ async function flushJobs(take) {
 }
 // one forced draw of `take`'s roots in the city's pass, with a parallel-pipeline window open for it (closed right after:
 // returns its end() promise, resolved when the pipelines started in it are ready)
-function flushDraw(take) {
-  const { renderer, scene, render } = flushWith;
+function flushDraw(take, only = null) {   // (only: the drawables to draw, the job's others hidden: FLUSH_ALONE)
+  const { renderer, scene } = flushWith, render = (FLUSH_ALONE && flushWith.renderScene) || flushWith.render;   // (FLUSH_ALONE: the scene pass only)
   const holder = new THREE.Group(); holder.name = "perf8-flush";
   const saved = [], tops = [];
   const set = (o, k, v) => { if (o[k] !== v) { saved.push([o, k, o[k]]); o[k] = v; } };
@@ -256,6 +268,7 @@ function flushDraw(take) {
         if (disposedGeo.has(o.geometry)) { set(o, "visible", false); skipStats.flush++; return; }   // (disposed since it was queued: heapfix)
         set(o, "visible", true);
         if (o.isMesh || o.isPoints || o.isLine || o.isSprite) {
+          if (only && !only.has(o)) { set(o, "visible", false); return; }
           n++;
           set(o, "frustumCulled", false);
           if (o.isInstancedMesh && o.count === 0) set(o, "count", 1);
