@@ -46,6 +46,8 @@ const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i
 const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); return i >= 0; };
 const CHILD = opt("--child", null), OUT = opt("--out", null), JOBS = +opt("--jobs", 1), SOLID = opt("--solid", null);
 const EYES = flag("--eyes"), ALL = flag("--all");
+// (defects3) --outeronly: the outer footprint ring only, as before (the courtyard / light-well walls untested)
+const INNER = !flag("--outeronly"), FAR = flag("--far");
 // (claude/walls2, gate row `walls`, rule walls-closed-from-street) --gate CEIL.json: exit 1 when a count is over its ceiling
 // (per tile and city-wide), a false foot is moved, > 2 orphan balconies, an eye inside a building; --selftest: the old
 // behaviours (?feet=old, ?wallempty=old) on their tiles must FAIL the same ceilings; --ratchet: write the ceilings down to
@@ -197,7 +199,10 @@ async function tileChild(T) {
   const shell = concatSoups([{ name: "walls", pos: B.walls?.position }, { name: "kitWalls", pos: B.walls?.kit?.position }, { name: "roofs", pos: B.roofs?.position }]);
   const det = B.details?.position || new Float32Array(0);
   const all = concatSoups([{ name: "shell", pos: shell.pos }, { name: "details", pos: det }]);
-  const bvh = new Bvh(shell.pos);
+  // (defects3) --far: judge the FAR tile's shell instead (tileData.js buildLiteData draws the UrbIS solids as they are:
+  // no wall repair, no feet, no kit)
+  const src0 = FAR ? sourceOf(T, bs) : null;
+  const bvh = new Bvh(FAR ? src0.pos : shell.pos);
   const [bx0, bx1, bz0, bz1] = [d.bounds.x0 - 40, d.bounds.x1 + 40, d.bounds.z0 - 40, d.bounds.z1 + 40];
   const dsm = dsmOf(all.pos, bx0, bz0, bx1, bz1, 0.5);
   const src = sourceOf(T, bs), sbvh = new Bvh(src.pos);
@@ -220,6 +225,10 @@ async function tileChild(T) {
   const tally = { byShape: {}, lostFeet: 0, feetMoved: 0, recess: 0, through: 0, footEdges: src.footEdges, falseFootEdges: src.falseEdges, samples: 0, ok: 0, inward: 0, missing: 0, data: 0, srcIn: 0, lost: 0, colShort: 0, colNoWall: 0, colLow: 0, balcSlabs: 0, balcOrphan: 0, balcOrphanM2: 0, roofPts: 0, roofHole: 0, roofIn: 0, roofLost: 0 };
   const explain = [];
   const recOf = new Map();
+  // (defects3) the courtyard / light-well rings' samples (footprint[1..]): their own tally (tally.court), not under the
+  // outer ring's ceilings (a new view of the city: reported, ratcheted on its own)
+  const court = { byShape: {}, lostFeet: 0, recess: 0, through: 0, samples: 0, ok: 0, inward: 0, missing: 0, data: 0, srcIn: 0, lost: 0, colShort: 0, colNoWall: 0, colLow: 0 };
+  tally.court = court;
   const rec = (bi) => {
     let r = recOf.get(bi);
     if (!r) {
@@ -256,12 +265,15 @@ async function tileChild(T) {
   bs.forEach((b, bi) => {
     const want = !SOLID || b.id.endsWith("/" + SOLID);
     if (!want) return;
-    const ring = b.footprint[0];
-    const n = ring.length - (ring.length > 1 && ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1] ? 1 : 0);
-    let A = 0; for (let i = 0; i < n; i++) { const [ax, az] = ring[i], [cx, cz] = ring[(i + 1) % n]; A += ax * cz - cx * az; }
-    const sgn = A > 0 ? 1 : -1;
     const own = src.roofs[bi];
     // ------------------------------------------------------------------ EDGE
+    // (defects3) EVERY ring: the outer one and the courtyards / light wells (footprint[1..]: their walls face into the
+    // hole and the street / the sky sees them; before, only footprint[0] was tested). A hole's "outward" is into the hole.
+    for (let ri = 0; ri < (INNER ? b.footprint.length : 1); ri++) {
+    const ring = b.footprint[ri], TL = ri ? court : tally;   // (a courtyard's samples counted apart: TL.court)
+    const n = ring.length - (ring.length > 1 && ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1] ? 1 : 0);
+    let A = 0; for (let i = 0; i < n; i++) { const [ax, az] = ring[i], [cx, cz] = ring[(i + 1) % n]; A += ax * cz - cx * az; }
+    const sgn = (A > 0 ? 1 : -1) * (ri ? -1 : 1);
     for (let i = 0; i < n; i++) {
       const [ax, az] = ring[i], [cx, cz] = ring[(i + 1) % n], L = Math.hypot(cx - ax, cz - az);
       if (L < 1) continue;
@@ -269,7 +281,7 @@ async function tileChild(T) {
       const eRow = { edge: i, L: +L.toFixed(1), cols: [] };
       for (let u = SP / 2; u < L; u += SP) {
         const ex = ax + tx * u, ez = az + tz * u;
-        if (fp.pip(ex + ox * 0.3, ez + oz * 0.3, ring)) continue;            // a concave sliver: the outward guess is wrong here
+        if (ri ? !fp.pip(ex + ox * 0.3, ez + oz * 0.3, ring) : fp.pip(ex + ox * 0.3, ez + oz * 0.3, ring)) continue;   // a concave sliver: the outward guess is wrong here
         const ix = ex - ox * 0.6, iz = ez - oz * 0.6;
         const roofH = roofOver(own, ix, iz);
         if (!(roofH > -Infinity)) continue;                                   // no own roof over this point (open to the sky)
@@ -282,22 +294,22 @@ async function tileChild(T) {
           let off = -1; for (let t = 0.3; t <= 6; t += 0.25) { const H = dsm.at(ex + ox * t, ez + oz * t); if (!(H > h - 0.2)) { off = t; break; } }
           if (off < 0) { col.push("c"); continue; }                           // something drawn in front all the way out (covered)
           const sx0 = ex + ox * off, sz0 = ez + oz * off, tmax = off + 1.2;
-          tally.samples++;
+          TL.samples++;
           const hit = bvh.hit(sx0, h, sz0, -ox, 0, -oz, tmax);
-          if (hit && !hit.back) { tally.ok++; col.push("o"); continue; }
+          if (hit && !hit.back) { TL.ok++; col.push("o"); continue; }
           const r = rec(bi);
           const sh = sbvh.hit(sx0, h, sz0, -ox, 0, -oz, tmax);
           const cause = !sh ? "data" : sh.back ? "srcIn" : "lost";
-          tally[cause]++; r[cause]++;
-          if (cause === "lost") { if (src.touchesFalseFoot(sh.tri)) { tally.lostFeet++; r.lostFeet++; } }
+          TL[cause]++; r[cause]++;
+          if (cause === "lost") { if (src.touchesFalseFoot(sh.tri)) { TL.lostFeet++; r.lostFeet++; } }
           colCause.push(cause);
-          if (hit) { tally.inward++; r.inwardM2 += CELL_A; col.push("i"); }
+          if (hit) { TL.inward++; r.inwardM2 += CELL_A; col.push("i"); }
           else {
-            tally.missing++; r.missM2 += CELL_A; col.push("m");
+            TL.missing++; r.missM2 += CELL_A; col.push("m");
             // deeper: a front face further in (<= 40 m) = a RECESS (an arcade, an undercroft on pilotis, a deep loggia:
             // often real, the street sees a wall behind it); none = THROUGH (the street sees through / into the void)
             const deep = bvh.hit(sx0, h, sz0, -ox, 0, -oz, off + 40);
-            if (deep && !deep.back) { tally.recess++; r.recess++; } else { tally.through++; r.through++; }
+            if (deep && !deep.back) { TL.recess++; r.recess++; } else { TL.through++; r.through++; }
           }
           r.sx += ex; r.sy += h; r.sz += ez; r.sn++;
         }
@@ -308,15 +320,18 @@ async function tileChild(T) {
           const bad = (c) => c === "m" || c === "i";
           const firstOk = k.indexOf("o"), lastOk = k.lastIndexOf("o");
           let shape = "mixed";
-          if (firstOk < 0) { tally.colNoWall++; r.nowall++; shape = "nowall"; }
-          else if (k.slice(lastOk + 1).some(bad) && !k.slice(0, firstOk).some(bad)) { tally.colShort++; r.short++; shape = "short"; }
-          else if (k.slice(0, firstOk).some(bad)) { tally.colLow++; r.low++; shape = "low"; }
-          for (const c of colCause) { const kk = `${shape}.${c}`; tally.byShape[kk] = (tally.byShape[kk] || 0) + 1; }
+          if (firstOk < 0) { TL.colNoWall++; r.nowall++; shape = "nowall"; }
+          else if (k.slice(lastOk + 1).some(bad) && !k.slice(0, firstOk).some(bad)) { TL.colShort++; r.short++; shape = "short"; }
+          else if (k.slice(0, firstOk).some(bad)) { TL.colLow++; r.low++; shape = "low"; }
+          for (const c of colCause) { const kk = `${shape}.${c}`; TL.byShape[kk] = (TL.byShape[kk] || 0) + 1; }
         }
         if (SOLID) eRow.cols.push(`${u.toFixed(1)}:${col.join("")}`);
       }
-      if (SOLID) explain.push(eRow);
+      if (SOLID) explain.push({ ...eRow, ...(ri ? { ring: ri } : {}) });
     }
+    }
+    const ring = b.footprint[0];
+    const n = ring.length - (ring.length > 1 && ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1] ? 1 : 0);
     // ------------------------------------------------------------------ ROOF
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
     for (const [x, z] of ring) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
@@ -423,7 +438,7 @@ if (IS_MAIN && EYES) {
 async function census(tiles, env = {}) {
   const queue = tiles.slice(), results = [];
   const run = (T) => new Promise((ok) => {
-    const args = ["--max-old-space-size=2048", "--import", "./tools/road_audit/register.mjs", fileURLToPath(import.meta.url), "--child", T, ...(SOLID ? ["--solid", SOLID] : [])];
+    const args = ["--max-old-space-size=2048", "--import", "./tools/road_audit/register.mjs", fileURLToPath(import.meta.url), "--child", T, ...(SOLID ? ["--solid", SOLID] : []), ...(INNER ? [] : ["--outeronly"]), ...(FAR ? ["--far"] : [])];
     const p = spawn(process.execPath, args, { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, ...env } });
     let so = "", se = ""; p.stdout.on("data", (b) => { so += b; }); p.stderr.on("data", (b) => { se += b; });
     p.on("close", (code) => {
@@ -444,6 +459,7 @@ function summary(results) {
   const ok = results.filter((r) => !r.error);
   const sum = { byShape: {} }; for (const r of ok) for (const [k, v] of Object.entries(r.tally)) {
     if (k === "byShape") { for (const [k2, v2] of Object.entries(v)) sum.byShape[k2] = (sum.byShape[k2] || 0) + v2; }
+    else if (k === "court") { const c = sum.court ||= {}; for (const [k2, v2] of Object.entries(v)) if (typeof v2 === "number") c[k2] = (c[k2] || 0) + v2; }
     else sum[k] = +((sum[k] || 0) + v).toFixed(1);
   }
   const worst = ok.flatMap((r) => r.list.map((w) => ({ tile: r.tile, ...w }))).sort((a, b) => (b.missM2 + b.inwardM2) - (a.missM2 + a.inwardM2));
