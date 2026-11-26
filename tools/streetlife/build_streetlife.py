@@ -76,13 +76,23 @@ def _h01(key, salt=""):
     return int(hashlib.md5(f"{key}|{salt}".encode()).hexdigest()[:8], 16) / 2 ** 32
 
 
-def _pick_fill(key):
-    u = _h01(key, "cat") * sum(w for _, _, w in FILL_CATS)
-    for cat, word, w in FILL_CATS:
-        if u < w:
+# the interior room each fill trade gets (viewer/shops/shopLayout.js interiorType): two fill shops of one room side by side
+# would break the neighbour rule (two variants a room: gate row shopsv2)
+FILL_ROOM = {"clothes": "boutique", "shoes": "boutique", "jewelry": "boutique", "dry_cleaning": "boutique", "hairdresser": "salon", "beauty": "salon",
+             "estate_agent": "office", "travel_agency": "office", "vacant": "office", "optician": "pharmacy", "florist": "grocery", "gift": "grocery",
+             "interior_decoration": "grocery"}
+
+
+def _pick_fill(key, avoid=()):
+    for k in range(8):
+        u = _h01(key, f"cat{k}" if k else "cat") * sum(w for _, _, w in FILL_CATS)
+        for cat, word, w in FILL_CATS:
+            if u < w:
+                break
+            u -= w
+        if FILL_ROOM.get(cat) not in avoid:
             return cat, word
-        u -= w
-    return FILL_CATS[-1][:2]
+    return cat, word
 
 
 def classify(t):
@@ -787,7 +797,8 @@ def build_tile(name: str, src) -> dict:
                     fa = F.attach(mx, mz, 5.5, bu=sd["bu"], reach=1.5, street=st)
                     if not fa or fa.get("side") is None or fa["side"] > 5.0:
                         continue
-                    cat, word = _pick_fill(key)
+                    rooms = {FILL_ROOM.get(p.get("cat"), p.get("cat")) for p in out["pois"] if p.get("face") and math.hypot(p["face"]["x"] - fa["x"], p["face"]["z"] - fa["z"]) < 13.0}
+                    cat, word = _pick_fill(key, rooms)
                     out["pois"].append({"id": f"fill:{name}:{si}:{ei}", "kind": "shop", "cat": cat, "name": word, "fill": True, "x": fa["x"], "z": fa["z"], "face": fa})
     # ---- STIB stops
     shelters = src["shelters"]
