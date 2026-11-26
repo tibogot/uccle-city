@@ -28,3 +28,9 @@ one pale stone (cream); a dated pre-1946 or old-street maison de maitre with no 
 klinker, 25 % render). Street View (look only): Av. Churchill 4, Rue Alphonse Renard, Rue Edith Cavell 143 are the
 check's wall fixtures; Avenue Brugmann 291's turret house now brick; Avenue Brugmann 304 (1938 modernist, beige tile)
 still draws red (a modernist style dates no material: render or yellow brick).
+
+**Round 4 (claude/reality2).** A row building of <= 24 m with a shop front on its ground floor (data/bldclass `shop`: a
+street-life front, real or the shop-street fill) and no post-war evidence is a shop house of a commercial row
+(maison de maître dress), never a balcony block (Rue Xavier De Bue: Kruidvat's sign was under a balcony slab). An
+interwar modernist block of flats (inventory 'Modernisme' / 'Art Déco', apartments, 1919-45) is buff / yellow face brick
+(Avenue Brugmann 304); the modernist villas keep the draw. Census: balcony blocks 1,539 -> 1,390.
