@@ -152,7 +152,8 @@ export function offLane(x, z, lanes, fit, opt = {}) {
   // point's own height (a point on a road deck over the line is not on the bed)
   const onTram = (px, pz) => (!!tram && tram.dist(px, pz) < TRAM_CLEAR) || (!!rail && rail.on(px, pz, y));
   if (!lanes || (!fit && !osm) || !(lanes.inside(x, z, 0) || onTram(x, z))) return { x, z, moved: false };
-  const free = (px, pz) => !lanes.inside(px, pz, 0) && !onTram(px, pz);
+  // (defects3, rule 30 round 4) opt.ok(qx, qz): an extra test on every candidate spot (a sign keeps to its traffic's side)
+  const free = (px, pz) => !lanes.inside(px, pz, 0) && !onTram(px, pz) && (!opt.ok || opt.ok(px, pz));
   const k = fit ? fit.nearKerb(x, z, 6) : null;
   if (k) for (const back of [0.5, 0.35, 0.8, 1.2]) {
     const qx = k.x + k.lx * back, qz = k.z + k.lz * back;
@@ -205,7 +206,19 @@ export function docOffLanes(doc, paths, lanes, fit, opt = {}) {
   const lift = (x, z) => (fit ? fit.lift(x, z) : 0) + (opt.ground ? opt.ground(x, z) : 0);
   // (rule 39) opt.drop(p) -> true: the point is left out (inside a hero road bridge: its model draws what stands on it)
   const fix = (p) => { if (!p || typeof p.x !== "number" || opt.keep?.(p)) return p; if (opt.drop?.(p)) { dropped++; return null; }
-    const r = offLane(p.x, p.z, lanes, fit, opt.rail ? { ...opt, y: p.y } : opt); if (!r.moved) return p; moved++;
+    const o1 = opt.rail ? { ...opt, y: p.y } : opt;
+    // (defects3, rule 30 round 4: ?signside=old as before) a SIGN moved out of the lane keeps to the side of the traffic it
+    // faces (its face's right-hand side, Belgium), within 3 m along its street: the nearest free spot used to be across the street (8 signs 7-14 m onto
+    // the far kerb, facing their traffic from its left); only when that side has no spot does it take the other
+    // (only when the nearest spot is on the traffic's left by > 2 m; then its side's spot if not much further: no 15 m
+    // trip over a wide junction)
+    const sideOf = (qx, qz) => (qx - p.x) * Math.cos(p.yaw) - (qz - p.z) * Math.sin(p.yaw);
+    let r = offLane(p.x, p.z, lanes, fit, o1);
+    if (opt.signSide && typeof p.yaw === "number" && r.moved && sideOf(r.x, r.z) < -2.0) {
+      const r1 = offLane(p.x, p.z, lanes, fit, { ...o1, ok: (qx, qz) => sideOf(qx, qz) >= -1.0 && Math.abs((qx - p.x) * Math.sin(p.yaw) + (qz - p.z) * Math.cos(p.yaw)) <= 3.0 });
+      if (r1.moved && Math.hypot(r1.x - p.x, r1.z - p.z) <= Math.hypot(r.x - p.x, r.z - p.z) + 3.0) r = r1;
+    }
+    if (!r.moved) return p; moved++;
     return { ...p, x: r.x, z: r.z, ...(typeof p.y === "number" ? { y: p.y + lift(r.x, r.z) - lift(p.x, p.z) } : {}) }; };
   const out = { ...doc };
   for (const [key, sub] of paths) {

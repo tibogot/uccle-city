@@ -50,6 +50,7 @@ from rasterio.merge import merge
 from rasterio.transform import from_origin
 from scipy import ndimage
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
+from shapely.strtree import STRtree
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
@@ -166,17 +167,67 @@ def toward_road(T: Tile, x, z):
     return (vx / l, vz / l), d, rr, ((b2.x - a.x) / tl, (b2.y - a.y) / tl)
 
 
+CARRIAGE = (0, 1, 2)          # surfaces.json classes the viewer drives / runs trams on (roadway, tramRoad, tramSite)
+
+
+def measured_carriage(T: Tile):
+    """(defects3, rule 30 furniture-placed-once) the MEASURED carriageway polygons (UrbIS roadway / tram road / site) of
+    the tile, cached: the viewer's lane test (viewer/streets/carriageway.js) uses them before the OSM band"""
+    if getattr(T, "_carriage", None) is None:
+        polys = []
+        sf = ROOT / "data" / "tiles" / T.name / "surfaces.json"
+        if sf.exists():
+            for s_ in json.loads(sf.read_text(encoding="utf-8"))["surfaces"]:
+                if s_["c"] in CARRIAGE and s_["rings"] and len(s_["rings"][0]) >= 3:
+                    p = Polygon(s_["rings"][0], s_["rings"][1:])
+                    polys.append(p if p.is_valid else p.buffer(0))
+        T._carriage = (polys, STRtree(polys) if polys else None)
+    return T._carriage
+
+
+# viewer/streets/carriageway.js carriageHalf: the OSM band's half width the viewer's lane test uses (lanes without
+# sidewalk / verge / green + half the centre; no lanes: vendor/roads ROAD_TYPES, values dumped from roadCrossSection.js)
+ROAD_TYPE_HALF = {"alley": 2.6, "local": 5.2, "collector": 4.85, "avenue": 8.8, "boulevard": 10.8, "rural": 4.0, "highway": 13.5,
+                  "dualHighway": 12.6, "ramp": 6.25, "oneWay": 4.7}
+
+
+def viewer_half(T: Tile):
+    """road id -> the viewer's band half width (max of its two sides), cached per tile"""
+    if getattr(T, "_vhalf", None) is None:
+        rd = json.loads((ROOT / "data" / "tiles" / T.name / "roads.json").read_text(encoding="utf-8"))
+        out = {}
+        for r in rd["roads"]:
+            ln = r.get("lanes") or {}
+            if ln.get("left") or ln.get("right"):
+                c = float((ln.get("center") or {}).get("width") or 0) / 2
+                side = lambda a: sum(float(l.get("width") or 0) for l in (a or []) if l.get("type") not in ("sidewalk", "verge", "green"))
+                out[r["id"]] = c + max(side(ln.get("left")), side(ln.get("right")))
+            else:
+                out[r["id"]] = ROAD_TYPE_HALF.get(r.get("type"), ROAD_TYPE_HALF["local"])
+        T._vhalf = out
+    return T._vhalf
+
+
 def kerb_dist(T: Tile, x, z):
-    """distance from (x, z) to the nearest carriageway edge (road centreline distance - the engine's half width); + = off it"""
+    """distance from (x, z) to the nearest carriageway edge; + = off it. The engine's OSM band (centreline distance - its
+    half width) AND the measured UrbIS carriageway (defects3: the LUMO price board on the Rue de Stalle stood 3 m into the
+    measured roadway, 1.2 m off the OSM band's edge: the builder looked at the OSM band only, the viewer's lanes at both)"""
     best = None
     p = Point(x, z)
     for i in T.segtree.query(p.buffer(40)):
         ln, rr = T.segs[i]
         if rr["hw"] in ("service", "footway", "path", "cycleway", "pedestrian", "steps", "track"):
             continue
-        d = ln.distance(p) - rr["half"]
+        d = ln.distance(p) - max(rr["half"], viewer_half(T).get(rr["id"], 0.0))
         if best is None or d < best:
             best = d
+    polys, tree = measured_carriage(T)
+    if tree is not None:
+        for i in tree.query(p.buffer(40)):
+            poly = polys[int(i)]
+            d = -poly.boundary.distance(p) if poly.contains(p) else poly.distance(p)
+            if best is None or d < best:
+                best = d
     return best if best is not None else 99.0
 
 

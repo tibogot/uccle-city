@@ -21,6 +21,8 @@ import { RU_TEMP_MATERIALS } from "./russianModel.js";
 import { libSource } from "./materials/libSwitch.js";
 import { wxMat } from "./weather/cityWeatherize.js";
 export { setLodFades } from "./stpierreModel.js";
+import { wireGeometries, withWire, THIN_SLOTS } from "./heroWires.js";   // (claude/defects3, rule 35 round 2: the thin strokes widened + dithered, docs/JITTER.md 6)
+const WIRE_KEYS = new Set(["latourdefrein"]), WIRE_SLOTS = new Set();   // `${key} ${slot}`
 
 export const L5_CODES = ["plain", "coping", "surround", "cornice", "plinth", "band", "sill", "sculpture", "ridge", "louvre", "gutter",
   "gilt", "door", "mosaic", "frame", "lead"];
@@ -83,6 +85,8 @@ export function loadChurch(key) {
       o.geometry.userData.shared = true;
       if (k >= 0) lods[k].push({ slot: o.material.name, geometry: o.geometry });
     });
+    // (defects3) La Tour de Frein's 968 glazing bars: the straight thin strokes' wire data, off the main thread
+    if (WIRE_KEYS.has(key)) (await wireGeometries(lods.flat().map((l) => l.geometry))).forEach((w, i) => { if (w?.wired && THIN_SLOTS.has(lods.flat()[i].slot)) WIRE_SLOTS.add(`${key} ${lods.flat()[i].slot}`); });
     const tris = lods.map((l) => l.reduce((s, m) => s + (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3, 0));
     const materials = {};
     for (const s of C.slots) materials[s] = wrapAO(sourceMaterial(s, lib, C, key), aoTex, s, key);
@@ -150,6 +154,7 @@ function wrapAO(src, aoTex, slot, key) {
   }
   m.userData.shared = true; m.userData.slot = slot;
   m.userData.farAO = { aoTex, look: l5Look };          // (perfgame round 7: the merged far LOD's AO, farMerge.js)
+  if (WIRE_SLOTS.has(`${key} ${slot}`)) withWire(m);
   return m;
 }
 
