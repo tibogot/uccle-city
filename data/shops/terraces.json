@@ -294,6 +294,7 @@
     "signFill": 0.9
    }
   },
+  "osm:n3930461153": {"_name": "Bleus d'Encre (bookshop, Parvis Saint-Pierre; claude/reality1, Street View Apr 2024, looked at, not kept): OSM names it 'Bleu d'encre', the sign and its website say BLEUS D'ENCRE (librairie). The whole ground floor painted a mid blue, pilasters and door included; a wide blue fascia across it with the name in big white capitals; a dark blue band over the window with the name again in small white letters. Real name and colours, plain lettering in our own font, no logo", "front": {"family": "classic", "paint": 2, "lightbox": false, "awning": false, "board": [0.03, 0.16, 0.42], "ink": [0.95, 0.95, 0.93], "sign": "BLEUS D'ENCRE"}},
   "osm:n11685293316": {
    "_name": "Le refuge, Ch. de Saint-Job (ex Au Petit Job): a front-yard terrace behind a clipped hedge, square parasols, dark bistro chairs; blue awning with lettering on the valance",
    "depth": 4.2,
