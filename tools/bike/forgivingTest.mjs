@@ -33,7 +33,7 @@ const T0 = performance.now();
   const T = causesTable(seeds);
   const groups = {};
   for (const [name, r] of Object.entries(T.byRun)) { const g = groups[r.group] ||= { crashes: 0, secs: 0, rides: 0, causes: {}, runs: [] }; g.crashes += r.crashes; g.secs += r.secs; g.rides += r.rides; g.runs.push(name); for (const [c, n] of Object.entries(r.causes)) g.causes[c] = (g.causes[c] || 0) + n; }
-  const want = { kerb: 0.05, cobbles: 0.05, bumps: 0.05, roots: 0.05, pump: 0.05, sand: 0.05, slope: 0.1, jump: 0.05, bowl: 0.05, drop: 0.05 };
+  const want = { kerb: 0.05, cobbles: 0.05, bumps: 0.05, roots: 0.05, pump: 0.05, sand: 0.05, slope: 0.1, jump: 0.05, bowl: 0.05, drop: 0.05, descent: 0.05 };
   for (const [g, lim] of Object.entries(want)) {
     const G = groups[g], pm = G ? G.crashes / (G.secs / 60) : NaN;
     check(`casual rider, ${g} (${G?.runs.join(", ")})`, G && pm <= lim, `${G?.crashes} crashes in ${G?.rides} rides (${f2(pm)} a minute)${G && G.crashes ? ": " + Object.entries(G.causes).map(([c, n]) => `${c} ${n}`).join(", ") : ""}`, `<= ${lim} a minute (old tuning: kerbs 6.5-8.8, sand turning 1.5, bowl carving 1.0)`);
@@ -42,6 +42,21 @@ const T0 = performance.now();
   check("casual rider, the plaza (a wall, posts, a car, a log: real hits allowed)", P && P.crashes / (P.secs / 60) < 1, `${P?.crashes} crashes in ${P?.rides} rides (${f2(P?.crashes / (P?.secs / 60))} a minute): ${Object.entries(P?.causes || {}).map(([c, n]) => `${c} ${n}`).join(", ")}`, "< 1 a minute, only real hits (old tuning 1.50, 11 of them 'landed sideways')");
   const soft = Object.entries(T.causes).filter(([c]) => !/hit a (wall|car|post)|front wheel hit the kerb/.test(c)).reduce((a, [, n]) => a + n, 0);
   check("casual rider: no soft crash anywhere (landing / wash-out / endo / loop-out)", soft <= 1, `${soft} (all causes: ${Object.entries(T.causes).map(([c, n]) => `${c} ${n}`).join(", ") || "none"}; ${f2(T.perMin)} crashes a minute in all)`, "<= 1 over every ride");
+}
+
+// ---------------------------------------------------------------- 1b. downhill speed is physical (owner 2026-11-26)
+{
+  // coasting down an endless 6 / 10 / 12 % slope: the terminal speed against the physics - gravity along the slope =
+  // rolling resistance + air drag (v_t^2 = g (sin a - Crr cos a) / drag) - within 10 %; crouched it goes faster
+  const term = (G, crouch = false) => { const env = createBikeEnv({ ground: groundQuery((x, z) => -G * z, () => SURF.asphalt) }); const s = spawn(env, 0, 0, 0); s.vz = 3; ride(s, env, () => ({ hop: crouch }), 90); return bikeSpeed(s); };
+  const out = [], bad = [];
+  for (const G of [0.06, 0.10, 0.12]) {
+    const a = Math.atan(G), vt = Math.sqrt(BIKE.gravity * (Math.sin(a) - 0.010 * Math.cos(a)) / BIKE.drag), v = term(G);
+    out.push(`${G * 100} %: ${f1(v * 3.6)} km/h (physics ${f1(vt * 3.6)})`); if (Math.abs(v / vt - 1) > 0.1) bad.push(G);
+  }
+  const vc = term(0.12, true), vu = term(0.12);
+  check("downhill: coasting terminal speed = gravity vs rolling + air drag (within 10 %), no cap; crouched faster", !bad.length && vc > vu * 1.04,
+    `${out.join("; ")}; 12 % crouched ${f1(vc * 3.6)} km/h`, "within 10 %, crouched > upright");
 }
 
 // ---------------------------------------------------------------- 2. the hard hits (and the gentle ones)

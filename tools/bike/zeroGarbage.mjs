@@ -39,7 +39,7 @@ const docs = await loadCityDocs("D6", async (p) => fs.readFileSync(p)), C = buil
 const CC = buildColliders(C.polys, C.circles, C.bounds);
 const city = createBikeEnv({ sets: () => [CC], ground: groundQuery(C.height, C.surface, 0.03), edges: C.edges });
 const home = [-1290, 735, C.height(-1290, 735)], cs = createBikeState(home[0], home[1], 0, home[2]); cs.vz = 4;
-const rCity = await count(city, cs, { pedal: 1, steer: 0.2 }, home);
+const rCity = await count(city, cs, { pedal: 1, sprint: true, steer: 0.2 }, home);   // (sprint: the speeds this ride had before the 2026-11-26 power retune)
 obs.disconnect();
 const out = { flat: rFlat, city: rCity };
 if (process.argv.includes("--json")) console.log(JSON.stringify(out));

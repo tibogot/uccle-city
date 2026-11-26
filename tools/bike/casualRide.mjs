@@ -42,6 +42,8 @@ export const RUNS = [
   R("bowl across", "bowl", BOWL.x, BOWL.z - BOWL.R - 6, 0, [3, 8], 2 * BOWL.R + 10, { spread: 10 }),
   R("bowl carving", "bowl", BOWL.x, BOWL.z - BOWL.R + 2, 0, [3, 7], 50, { secs: 16, weave: 1, spread: 20 }),
   R("small drops", "drop", DROPS ? DROPS.x : 0, DROPS ? DROPS.z0 - 6 : 0, 0, [2, 8], DROPS ? DROPS.len + 10 : 1, { skip: !DROPS }),
+  R("hill 6 % down", "descent", 154, 38, Math.PI / 2, [0, 2], 280, { secs: 45, spread: 2 }),
+  R("hill 12 % down", "descent", 154, 62, Math.PI / 2, [0, 2], 220, { secs: 35, spread: 2 }),
   R("plaza wandering", "plaza", 0, -2, Math.PI / 2, [2, 6], 60, { secs: 20, weave: 1, spread: 180 }),
 ];
 

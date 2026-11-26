@@ -42,7 +42,7 @@ export const WALL = { x0: -10, x1: 10, z0: -22, z1: -21.4, top: 2.5 };
 export const LOG = { x0: -4, x1: -1, z0: -14.15, z1: -13.85, top: 0.25 };
 export const CAR = { x: 7, z: -12, w: 1.8, l: 4.3, top: 1.45 };
 export const POSTS = Array.from({ length: 8 }, (_, k) => ({ x: -18 + (k % 2) * 2.4, z: -6 - k * 3.2, r: 0.1 }));
-export const BOUNDS = { x0: -80, x1: 150, z0: -40, z1: 236 };
+export const BOUNDS = { x0: -80, x1: 450, z0: -40, z1: 236 };
 // the street (feel round 2)
 export const STREET = { x0: 100, x1: 140, z0: 30, z1: 95 };
 export const STAIRS = { x0: 128, x1: 132, z0: 70, n: 8, rise: 0.15, run: 0.3, land: 7.6, ramp: 9.6 };
@@ -122,11 +122,20 @@ feature("drops", DROPS.x0, DROPS.x1, DROPS.z0, DROPS.z0 + DROPS.len, SURF.asphal
 // THE BMX PARK (2026-11-25, viewer/bike/bikePark.js): z 116-232
 addParkFeatures(feature, SURF);
 const slopeH = (s, G, run, flat) => G * (sm(s) - sm(s - run) - sm(s - run - flat) + sm(s - 2 * run - flat));
+// (owner 2026-11-26: "on a steep descent we are supposed to go way faster") two LONG descents along +x, a 10 m flat top
+// to start from, then 6 % over 220 m (13 m high) / 12 % over 160 m (19 m), a 60 m run-out: long enough to reach the coasting terminal speed
+export const HILL6 = { x0: 152, z0: 30, z1: 46, grade: 0.06, run: 220, top: 10, out: 60 };
+export const HILL12 = { x0: 152, z0: 54, z1: 70, grade: 0.12, run: 160, top: 10, out: 60 };
+for (const Hh of [HILL6, HILL12]) {
+  Hh.h = Hh.grade * Hh.run;
+  feature(Hh === HILL6 ? "hill 6 %" : "hill 12 %", Hh.x0 - 2, Hh.x0 + Hh.top + Hh.run + Hh.out, Hh.z0, Hh.z1, SURF.asphalt,
+    (x) => { const u = x - Hh.x0 - Hh.top; return Hh.h - Hh.grade * (sm(u) - sm(u - Hh.run)); }, 0.5);
+}
 feature("slope", SLOPE.x0 - 2, SLOPE.x0 + 92, SLOPE.z0, SLOPE.z1, SURF.asphalt, (x) => slopeH(x - SLOPE.x0, SLOPE.grade, 40, 10), 0.5);
 feature("steep", STEEP.x0 - 2, STEEP.x0 + 48, STEEP.z0, STEEP.z1, SURF.asphalt, (x) => slopeH(x - STEEP.x0, STEEP.grade, 20, 6), 0.5);
 
 /** asphalt areas outside the features (the rest is grass) */
-const ASPHALT = [[-60, 140, -40, 10], [-3, 3, 10, 100], [10, 20, 10, 60], [24, 28, 10, 50], [40, 78, 32, 76], [STREET.x0, STREET.x1, STREET.z0, STREET.z1], ...PARK_ASPHALT];
+const ASPHALT = [[-60, 140, -40, 10], [-3, 3, 10, 100], [10, 20, 10, 60], [24, 28, 10, 50], [40, 78, 32, 76], [140, 450, 26, 74], [STREET.x0, STREET.x1, STREET.z0, STREET.z1], ...PARK_ASPHALT];
 const inR = (x, z, a, b, c, d) => x >= a && x < b && z >= c && z < d;
 
 export const FEATURES = F;
@@ -186,7 +195,7 @@ export function testColliders(KIND) {
   // the embankments' long sides (the slope / steep features stand 4.8 / 4 m over the grass) are retaining walls, as in the
   // city (a wall is a collider; the ground never has a face the bike could drive into sideways)
   // (in 2 m pieces, each as high as the embankment there + 0.3 m)
-  for (const F0 of [SLOPE, STEEP]) {
+  for (const F0 of [SLOPE, STEEP, HILL6, HILL12]) {
     const f = F.find((q) => q.x0 === F0.x0 - 2 && q.z0 === F0.z0);
     for (let x = f.x0; x < f.x1 - 1e-6; x += 2) {
       let h = 0;
@@ -214,7 +223,7 @@ export function testColliders(KIND) {
 /** where to start each test run / the lab's teleport buttons: [x, z, heading] */
 export const SPOTS = {
   start: [0, 0, 0], kicker: [0, 8, 0], table: [0, 32, 0], pump: [-15, 2, 0], roots: [-25, 0, 0], bowl: [-36, 55, 0],
-  kerb: [15, 12, 0], sand: [26, 30, 0], bench: [109.45, 38, 0], ledge: [117.6, 32, 0], stairs: [130, 79, Math.PI], slope: [30, 0, Math.PI / 2], steep: [30, 25, Math.PI / 2], wall: [0, -10, Math.PI], log: [-2.5, -6, Math.PI],
+  kerb: [15, 12, 0], sand: [26, 30, 0], bench: [109.45, 38, 0], ledge: [117.6, 32, 0], stairs: [130, 79, Math.PI], slope: [30, 0, Math.PI / 2], "hill 6 %": [HILL6.x0 + 3, (HILL6.z0 + HILL6.z1) / 2, Math.PI / 2], "hill 12 %": [HILL12.x0 + 3, (HILL12.z0 + HILL12.z1) / 2, Math.PI / 2], steep: [30, 25, Math.PI / 2], wall: [0, -10, Math.PI], log: [-2.5, -6, Math.PI],
 };
 /** the park's spots (bikePark.js PARK_SPOTS: [x, z, heading, speed]) - the lab's park menu (0 / N / B) */
 export { PARK_SPOTS, PARK_WALLRIDES };

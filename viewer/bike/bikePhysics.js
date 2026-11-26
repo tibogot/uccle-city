@@ -30,7 +30,7 @@ import { edgeCell, segNearest, EDGE } from "./bikeEdges.js";
 export const DT = 1 / 120;
 
 /** surface ids returned by the ground query */
-export const SURF = { asphalt: 0, setts: 1, dirt: 2, grass: 3, sand: 4, roots: 5 };
+export const SURF = { asphalt: 0, setts: 1, dirt: 2, grass: 3, sand: 4, roots: 5, mud: 6, snow: 7 };
 /** per surface: grip (friction coefficient), roll (rolling resistance coefficient, x g), sink (extra drag per m/s in
  *  soft ground, 1/s), buzz (vibration for the camera / telemetry: m of small bumps). Panel-tunable. */
 export const SURFACES = [
@@ -40,6 +40,10 @@ export const SURFACES = [
   { name: "grass", grip: 0.55, roll: 0.060, sink: 0.06, buzz: 0.010 },
   { name: "sand", grip: 0.42, roll: 0.120, sink: 0.25, buzz: 0.003 },
   { name: "roots", grip: 0.50, roll: 0.045, sink: 0.03, buzz: 0.022 },
+  // (the lab's new test surfaces, 2026-11-26: mud sticky and slippery - low grip, high rolling loss and sink; packed
+  // snow on the volumetric layer - the least grip, a soft sink)
+  { name: "mud", grip: 0.40, roll: 0.085, sink: 0.30, buzz: 0.004 },
+  { name: "snow", grip: 0.32, roll: 0.050, sink: 0.18, buzz: 0.002 },
 ];
 
 /** Everything tunable (panel sliders: BIKE_RANGES). A kid of ~11 (40 kg) on a 20" BMX (11 kg), one gear 44/16. */
@@ -59,13 +63,15 @@ export const BIKE = {
   legRate: 9,           // 1/s, how fast the legs follow
   pumpGain: 45,         // 1/s, forward push per (extension speed x back slope), per wheel
   // pedalling (one gear: 44/16 on 20" = 4.39 m per crank turn)
-  powerCruise: 130,     // W, a kid riding along
-  powerSprint: 320,     // W, standing on the pedals (Shift)
+  powerCruise: 62,      // W, a kid riding along seated: ~17.5 km/h (owner 2026-11-26: a real 11-year-old cruises 15-18)
+  powerSprint: 240,     // W, standing on the pedals (Shift): ~29 km/h, 0-15 km/h in 2.5 s (sprints 25-30)
   forceCruise: 1.6,     // m/s^2, the push at a standstill, seated (~330 N mean on the pedal: 4.2 x the wheel's)
   forceSprint: 2.4,     // m/s^2, standing on the pedals (~520 N)
   rollout: 4.39,        // m per crank turn
   cadenceMax: 128,      // rpm, spinning out (no more push above ~34 km/h)
-  drag: 0.0055,         // 1/m, air (CdA 0.47 m^2 upright: rho CdA / 2m)
+  drag: 0.0055,         // 1/m, air (CdA 0.47 m^2 upright: rho CdA / 2m) - NO speed cap: coasting a 6 / 10 / 12 % hill
+                        // settles at ~34 / 45 / 50 km/h (gravity along the slope = rolling + drag), faster than the pedals
+  crouchDrag: 0.2,      // fraction of the drag the kid saves crouched (Space held: tucked low, CdA ~0.38)
   // brakes (the lever's most; also limited by each tyre's grip)
   brakeFront: 5.2,      // m/s^2
   brakeRear: 4.6,       // m/s^2
@@ -204,7 +210,7 @@ export const BIKE_RANGES = {
   springK: [60, 400, 5, "contacts"], springC: [2, 30, 0.5, "contacts"], maxComp: [0.04, 0.25, 0.01, "contacts"], fnMax: [20, 200, 5, "contacts"],
   legRange: [0, 0.3, 0.01, "contacts"], legRate: [2, 30, 0.5, "contacts"], pumpGain: [0, 120, 1, "contacts"],
   powerCruise: [40, 300, 5, "pedal"], powerSprint: [100, 700, 10, "pedal"], forceCruise: [1, 8, 0.1, "pedal"], forceSprint: [1, 10, 0.1, "pedal"],
-  rollout: [3, 6, 0.01, "pedal"], cadenceMax: [80, 180, 1, "pedal"], drag: [0, 0.02, 0.0005, "pedal"],
+  rollout: [3, 6, 0.01, "pedal"], cadenceMax: [80, 180, 1, "pedal"], drag: [0, 0.02, 0.0005, "pedal"], crouchDrag: [0, 0.5, 0.01, "pedal"],
   brakeFront: [1, 10, 0.1, "brakes"], brakeRear: [1, 10, 0.1, "brakes"], skidAt: [0.3, 1, 0.01, "brakes"], skidMu: [0.3, 1, 0.01, "brakes"], grip: [0.3, 1.5, 0.01, "brakes"],
   maxLean: [0.3, 1.0, 0.01, "steer"], leanRate: [1, 20, 0.5, "steer"], leanV0: [0, 4, 0.1, "steer"], leanV1: [1, 10, 0.1, "steer"],
   lowSteer: [0.2, 1.2, 0.01, "steer"], barV0: [0, 4, 0.1, "steer"], barV1: [1, 8, 0.1, "steer"], yawResponse: [2, 30, 0.5, "steer"],
@@ -851,7 +857,7 @@ function motionPhase(s, w, B) {
   } else if (footHold) vF *= Math.exp(-6 * dt);
   const dv = retard * dt;
   vF = Math.abs(vF) <= dv ? 0 : vF - sgn(vF) * dv;
-  const hs = hyp(vF, vL), dragK = 1 / (1 + B.drag * hs * dt);
+  const hs = hyp(vF, vL), dragK = 1 / (1 + B.drag * (s.legs < 0 ? 1 + B.crouchDrag * s.legs : 1) * hs * dt);   // (crouched: less drag)
   vF *= dragK; vL *= dragK;
   s.vy += aY * dt;
   s.pitchVel += alpha * dt;
@@ -940,7 +946,8 @@ function motionPhase(s, w, B) {
     s.slip = vL;
     s.slipAngle = Math.atan2(vL, Math.max(0.3, Math.abs(vF)));
     // washing out: sliding sideways with no skid on purpose (too much lean for the surface, or a locked front)
-    if (!(s.wobbleT > 0) && ((Math.abs(vL) > B.washSlip && !s.skid) || (s.frontLock && Math.abs(s.lean) > 0.25))) { s.washT += dt; if (s.washT > B.washTime) { crash(s, "washed out"); } }
+    // (a slide along a wall the bike is scraping is the wall's, not a wash-out: owner round 2, 40 km/h down the hill lane)
+    if (!(s.wobbleT > 0) && !s.envContacts && ((Math.abs(vL) > B.washSlip && !s.skid) || (s.frontLock && Math.abs(s.lean) > 0.25))) { s.washT += dt; if (s.washT > B.washTime) { crash(s, "washed out"); } }
     else s.washT = Math.max(0, s.washT - dt * 2);
     if (s.skid && Math.abs(s.slipAngle) > 1.15 && v > 4 && !(s.wobbleT > 0)) crash(s, "slid out");
   } else { s.slip = 0; s.slipAngle = 0; }
@@ -1409,6 +1416,9 @@ function landing(s, wheel, sl, vn, vL, vF, B) {
   R[3][1] = moving ? band(yawOff, B.yawSketchy, B.yawBail) : 0;
   R[4][1] = band(vn, B.hardSketchy + absorb, B.hardBail + absorb);
   R[5][1] = band(s.trick, B.trickSketchy, B.trickBail);
+  // (owner round 2: a walking-pace touch-down - rolled off a kicker's open back at 0.5 m/s, nose down 42 deg - is never a
+  // bail: the kid puts a foot down. Slower than 2 m/s and softer than 2 m/s into the ground: sketchy at worst)
+  if (!moving && vn < 2) for (const r of R) if (r[1] > 0.99) r[1] = 0.99;
   let cause = "", worst = 0, why = "";
   for (const [name, sev] of R) {
     if (sev > 1 && !cause) cause = name;
@@ -1422,6 +1432,9 @@ function landing(s, wheel, sl, vn, vL, vF, B) {
   // (forgiving falls) the tyres stop the air's spin at touch-down (a spinning bike set down kept turning on the ground
   // while its path did not: a slide, "washed out", after a landing judged clean)
   s.yawVel *= 0.3;
+  // (owner round 2: a clean landing a little crossed - 16 deg at 39 km/h down the hill - left a 3 m/s side slip that washed
+  // out 0.45 s later: under the sketchy limit the tyres take the line the bike flies, the heading set onto the path)
+  if (!cause && R[3][1] === 0 && moving && vF > 0) s.heading = Math.atan2(s.vx, s.vz);
   if (cause) { crash(s, cause); return; }
   // flat landings cost forward speed (a landing on the down slope keeps it: vn is small there)
   let loss = B.landLoss * clamp((vn - 2) / Math.max(1, B.hardBail - 2), 0, 1);

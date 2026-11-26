@@ -107,7 +107,7 @@ const pumper = (steer = () => 0) => (s) => {
   check("pump track loop: pumped round it, steering along it: a lap, no crash, the speed kept", pt.s.crashes === 0 && pt.laps >= 1 && pt.minV > 2.5,
     `${f2(pt.laps)} laps in 30 s, min ${f1(pt.minV)} m/s, ${pt.s.crashes} crashes${pt.s.crashes ? ` ("${pt.s.crashCause}")` : ""}`, ">= 1 lap, > 2.5 m/s, 0 crashes");
   const B = PARK.berms;
-  const bl = lap(B, "berm loop", (s) => ({ pedal: bikeSpeed(s) < 6.5 ? 1 : 0, steer: follow(B, -1)(s) }), 30);
+  const bl = lap(B, "berm loop", (s) => ({ pedal: bikeSpeed(s) < 6.5 ? 1 : 0, sprint: true, steer: follow(B, -1)(s) }), 30);
   check("berm loop: carved round both banks at ~6.5 m/s: laps, no wash-out, leaning past the flat limit", bl.s.crashes === 0 && bl.laps >= 1 && bl.maxLean > BIKE.maxLean + 0.03,
     `${f2(bl.laps)} laps, max lean ${f1(bl.maxLean * 57.3)} deg (flat limit ${f1(BIKE.maxLean * 57.3)}), ${bl.s.crashes} crashes${bl.s.crashes ? ` ("${bl.s.crashCause}")` : ""}`, ">= 1 lap, 0 crashes, lean > flat limit");
 }

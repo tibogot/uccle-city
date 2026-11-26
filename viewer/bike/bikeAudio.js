@@ -70,7 +70,7 @@ export function soundParams(s, B, mem, out, S = SOUND) {
   // ---- rolling: each wheel on the ground adds half of its surface's voice; the loop's rate follows the speed
   const lvl = S.roll * sm(0.3, 1.2, v) * (0.35 + 0.65 * Math.min(1, v / S.rollV));
   for (let k = 0; k < 6; k++) { out.roll[k] = 0; out.rollRate[k] = clamp(v / SURF_SOUND[k].vRef, 0.25, 3); }
-  if (down) for (let i = 0; i < 2; i++) if (s.contact[i]) { const k = s.surf[i] | 0; if (k >= 0 && k < 6) out.roll[k] += 0.5 * lvl * SURF_SOUND[k].gain; }
+  if (down) for (let i = 0; i < 2; i++) if (s.contact[i]) { const k0 = s.surf[i] | 0, k = k0 === 6 ? 2 : k0 === 7 ? 4 : k0; if (k >= 0 && k < 6) out.roll[k] += 0.5 * lvl * SURF_SOUND[k].gain; }
   // ---- the freewheel: the ratchet ticks at the rear wheel's turns over the cog's (the cranks drive the cog through
   // 44/16); pedalling the cog turns with the wheel: silent; stopping the pedals: the ticks rise as the cadence decays
   const R = B.wheelR, wheelRev = v / (TAU * R), cogRev = (s.cadence || 0) / 60 * (B.rollout / (TAU * R));

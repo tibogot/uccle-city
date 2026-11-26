@@ -102,17 +102,18 @@ function randomInputs(seed, n) {
   const cruise = kmh(bikeSpeed(s));
   ride(s, env, () => ({ pedal: 1, sprint: true }), 30);
   const sprint = kmh(bikeSpeed(s));
-  check("flat cruise (seated, 130 W)", cruise > 22 && cruise < 28, `${f1(cruise)} km/h`, "22-28 km/h");
-  check("flat sprint (standing, 320 W)", sprint > 28 && sprint < 35, `${f1(sprint)} km/h`, "28-35 km/h");
+  check("flat cruise (seated, 62 W)", cruise > 15 && cruise < 19, `${f1(cruise)} km/h`, "15-19 km/h (an 11-year-old cruising)");
+  check("flat sprint (standing, 240 W)", sprint > 25 && sprint < 31, `${f1(sprint)} km/h`, "25-31 km/h");
   const e2 = createBikeEnv({ ground: groundQuery((x, z) => -0.12 * z, () => SURF.asphalt) }), s2 = spawn(e2, 0, 0, 0);
   ride(s2, e2, () => ({}), 40);
   const down = kmh(bikeSpeed(s2));
   check("12 % descent, coasting", down > 38 && down < 60, `${f1(down)} km/h`, "38-60 km/h");
-  // 0-20 km/h: seated (a kid riding off) and standing on the pedals
-  const t20 = (sprint) => { const q = spawn(env, 0, 0, 0); let t = NaN; ride(q, env, () => ({ pedal: 1, sprint }), 20, (b) => { if (!(t === t) && bikeSpeed(b) > 20 / 3.6) t = b.t; }); return t; };
-  const tc = t20(false), ts = t20(true);
-  check("0-20 km/h seated", tc > 4 && tc < 11, `${f1(tc)} s`, "4-11 s");
-  check("0-20 km/h standing (sprint)", ts > 2.5 && ts < 6, `${f1(ts)} s`, "2.5-6 s");
+  // 0-15 km/h: seated (a kid riding off) and standing on the pedals - standing must be clearly faster (owner 2026-11-26:
+  // "can't he stand up to push more?")
+  const t15 = (sprint) => { const q = spawn(env, 0, 0, 0); let t = NaN; ride(q, env, () => ({ pedal: 1, sprint }), 20, (b) => { if (!(t === t) && bikeSpeed(b) > 15 / 3.6) t = b.t; }); return t; };
+  const tc = t15(false), ts = t15(true);
+  check("0-15 km/h seated", tc > 6 && tc < 15, `${f1(tc)} s`, "6-15 s");
+  check("0-15 km/h standing (sprint): much quicker", ts > 1.5 && ts < 4 && ts < tc / 3, `${f1(ts)} s`, "1.5-4 s, < a third of seated");
 }
 
 // ---------------------------------------------------------------- 3. never tunnels
@@ -190,7 +191,7 @@ function randomInputs(seed, n) {
     if (x > 5 && x < 38) { const v = bikeSpeed(q); vmin = Math.min(vmin, v); vmax = Math.max(vmax, v); }
     if (q.pushing) pushed = true;
   }, (q) => q.x > SLOPE.x0 + 44);
-  check("12 % climb pedalled seated", !pushed && s.x > SLOPE.x0 + 40 && vmin > 1 && vmax < 3.5, `climb ${f2(vmin)}-${f2(vmax)} m/s, pushed ${pushed}, top reached ${s.x > SLOPE.x0 + 40}`, "1-3.5 m/s, no pushing");
+  check("12 % climb pedalled seated", !pushed && s.x > SLOPE.x0 + 40 && vmin > 0.85 && vmax < 3.5, `climb ${f2(vmin)}-${f2(vmax)} m/s, pushed ${pushed}, top reached ${s.x > SLOPE.x0 + 40}`, "0.85-3.5 m/s (a slow seated grind at 62 W), no pushing");
   const s2 = spawn(env, 30, 25, Math.PI / 2);
   s2.vx = 2;
   let pushT = 0, pushX = NaN;
@@ -315,7 +316,7 @@ function randomInputs(seed, n) {
     const d = (b.z - BIKE.wheelbase / 2) - LOG.z1;
     if (!popped && d < 2.8 && d > 1.2) held = true;
     if (held && d <= 1.2) { held = false; popped = true; }
-    return { hop: held, pedal: 0.3 };
+    return { hop: held, pedal: 1 };
   }, 3);
   check("a full hop clears the 25 cm log", s4.z < LOG.z0 - 1 && s4.crashes === 0, `z ${f1(s4.z)} crashes ${s4.crashes} "${s4.crashCause}"`, "past it, no crash");
   const s5 = spawn(lab, -2.5, -6, Math.PI); s5.vz = -3;
@@ -902,7 +903,8 @@ function clampN(v) { return v < -1 ? -1 : v > 1 ? 1 : v; }
   // ---- speed sense: the FOV opens with speed, eased (no step), back as it slows
   {
     const env = flatEnv(), s = spawn(env, 0, 0, 0); let f0 = NaN, fMax = 0, jump = 0, prev = NaN;
-    film(s, env, (q, t) => ({ pedal: t < 12 ? 1 : 0, sprint: t < 12, brakeR: t > 12 ? 1 : 0 }), 16, cfg(), (r) => { if (!(f0 === f0)) f0 = r.fov; fMax = Math.max(fMax, r.fov); if (prev === prev) jump = Math.max(jump, Math.abs(r.fov - prev)); prev = r.fov; }, () => 0, null);
+    s.vz = 6;       // (a run-up: 240 W standing now takes longer to 30 km/h)
+    film(s, env, (q, t) => ({ pedal: t < 12 ? 1 : 0, sprint: t < 12, brakeR: t > 12 ? 1 : 0 }), 16, cfg(), (r) => { if (!(f0 === f0)) f0 = BIKE_CAMERA.fov; fMax = Math.max(fMax, r.fov); if (prev === prev) jump = Math.max(jump, Math.abs(r.fov - prev)); prev = r.fov; }, () => 0, null);
     check("camera: speed sense (FOV with speed, eased)", fMax - f0 > 4 && fMax - f0 <= BIKE_CAMERA.fovKick + 0.01 && jump < 0.3 && Math.abs(prev - f0) < 0.5,
       `FOV ${f1(f0)} -> ${f1(fMax)} deg at 30 km/h -> ${f1(prev)} stopped; the biggest change a frame ${f2(jump)} deg`, "+4..8 deg, < 0.3 deg a frame, back");
   }
