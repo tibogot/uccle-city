@@ -66,6 +66,7 @@ import { buildGrounds } from "./grounds.js";
 import { lyceeFront } from "./lyceeFront.js";
 import { embassyFlags, loadEmbassyFlags } from "./embassyFlags.js";
 import { parkFence, PARKFENCE } from "./parkFence.js";
+import { timberFence, TIMBER } from "./fences/timberFence.js";   // (claude/reality1 round 3, rule timber-fence) wooden post-and-rail fences from OSM, ?timberfence=0 none
 import { billboards, BILLBOARDS } from "./billboards.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -820,6 +821,8 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
     carrefour: params.get("carrefour") !== "old",                                                  // claude/carrefour: the Carrefour Market's retail-box look (buildingLooks set "carrefour"), ?carrefour=old = the generated block
     places2: params.get("places2") !== "old",                                                      // claude/places2: Le Pigeon Noir's ochre-mustard render + its white neighbour (buildingLooks set "places2"), ?places2=old = the generated look
+    montjoie: params.get("montjoie") !== "old",                                                    // claude/reality1: Institut Montjoie's red-brick neo-Gothic look (buildingLooks set "montjoie") + its asphalt yards (grounds, switch ?montjoie=old), ?montjoie=old = the generated block on a lawn
+    bldclass: params.get("bldclass") !== "old",                                                    // claude/reality1 (rule bldclass-evidence): building types from open-data evidence (dates, institutions, steep roofs: data/bldclass), ?bldclass=old = the form-only draw (balcony blocks under steep roofs)
     cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2, vivier: VIVIER, footbridge: params.get("footbridge") !== "old",                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
     roadBend: params.get("roadbend") !== "old",                                                    // curvedroads: the engine strips trimmed at bends tighter than the road is wide (viewer/streets/roadBends.js, docs/roads/BENDS.md), ?roadbend=old = folded as built
     roadLines: params.get("roadlines") !== "old",                                                  // markings (census F, rule 33): the lane strips + their lines on the measured carriageway, clipped off sidewalks (viewer/streets/lineFit.js), ?roadlines=old = as the median width fit put them
@@ -845,6 +848,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     zfight: params.get("zfight") !== "old",                                                         // claude/zfight (rule 34): overlapping coplanar UrbIS triangles cut, the steps' buried soffits left out (facadeGeom.js, viewer/coplanarClean.js), the ivy off the shopfronts; ?zfight=old = as before (z-fighting roofs / walls)
     colFeet: params.get("colfeet") !== "old",                                                       // claude/collisions (rule 25): the walls' feet sunk onto the drawn ground BEFORE the building colliders are traced from them (tileData.js), ?colfeet=old = after (colliders from the floating solids)
     gatesOld: params.get("gates") === "old",                                                        // claude/gates (rule house-front-garden-closed): the garden data before the front-gates job (data/gardens/old: the retaining walls' gates / steps read it too), docs/GATES.md
+    frontgardenOld: params.get("frontgarden") === "old",                                           // claude/reality1 (rule frontgarden-by-context): the garden data before the boundary followed the house family (data/gardens/fgold)
     roadsR: ROADS_R,                                                                                 // claude/roads (rule 38): smooth lane offsets, the band only off measured streets, restricted service roads out of the traffic (docs/ROADS_R.md), ?roads=old = before
     tramFit: params.get("tramfit") !== "old",                                                       // claude/tramfit (rule 32): the tram tracks fitted to the measured street (data/tramfit, viewer/track.js tramTracks), ?tramfit=old = the OSM ways as they are (rails under the kerb / on the sidewalk)
     cache: params.get("tilecache") !== "0",
@@ -1189,7 +1193,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const fuelCounts = cityFuel.addTile(entry.name, await waitFor(fuelP), own.features);
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
   // (citydefects) no generated plant in a yard / gate mouth (data/overrides.json plantsClear; ?plantsclear=old)
-  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : [], villaClearRings());   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
+  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k, v]) => !k.startsWith("_") && !(v?.set === "montjoie" && params.get("montjoie") === "old")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : [], villaClearRings());   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
   const pfClear = PARKFENCE ? await parkFence.clearTest() : null;   // (parkfence) no garden piece / generated plant on a park's fence line
   // (allocrate, ?ringtest=old: the destructuring loop over every ring) index reads + a bounding box per ring (viewer/ringTest.js)
   const clearSet = RING_TEST ? ringSet(clearRings) : null;
@@ -1218,6 +1222,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (parkfence) the Parc de Wolvendael's and the Parc de la Sauvagère's fences and gates on this tile's drawn ground
   // (viewer/parkFence.js: instanced, the colliders a hero root per park and tile; ?parkfence=0 none)
   if (PARKFENCE) parkFence.tile(entry.name, gardenGround).then((c) => { if (c) say(`park fences: ${Object.entries(c).map(([k, v]) => `${k} ${Object.entries(v).filter(([, n]) => n).map(([q, n]) => `${n} ${q}`).join(" ")}`).join("; ")} (viewer/parkFence.js)`); }).catch((e) => say(`park fences failed: ${e.message}`));
+  // (claude/reality1 round 3, rule timber-fence) OSM wooden post-and-rail fences on this tile's drawn ground (viewer/fences/timberFence.js: 2 instanced meshes a tile, the colliders a hero root a tile; ?timberfence=0 none)
+  if (TIMBER) timberFence.tile(entry.name, own.features, gardenGround).then((c) => { if (c) say(`timber fences: ${c.posts} posts, ${c.rails} rails (viewer/fences/timberFence.js)`); }).catch((e) => say(`timber fences failed: ${e.message}`));
   if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
   // (vivier) no generated plant on a road deck: the bank under the Vivier d'Oie deck grew box balls up through its slab
   if (VIVIER && bridgeDeckRefs.size && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (deckY(P[o], P[o + 1]) == null) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
@@ -1683,6 +1689,7 @@ async function main() {
   // ... and the Lycée Français's three (viewer/lyceeFront.js: once tile F7 has built the poles; ?cortenbosch=old none)
   if (CORTENBOSCH && params.get("flags") !== "0") lyceeFront.flags({ scene, updaters, renderer, compiler: heroCompiler, params, log }).catch((e) => log(`lycée flags failed: ${e.message}`));
   if (EMBASSYFLAGS) embassyFlags.start({ scene, updaters, renderer, compiler: heroCompiler, params, log }).catch((e) => log(`embassy flags failed: ${e.message} (?embassyflags=0: none)`));
+  if (TIMBER) timberFence.start(scene);
   if (PARKFENCE) parkFence.start({ scene, updaters, world, compiler: heroCompiler, log }).catch((e) => log(`park fences failed: ${e.message} (?parkfence=0: none)`));
   // (billboards) the big ad boards on gables and roofs, invented posters, the trivision prisms turning (viewer/billboards.js; ?billboards=0 none)
   if (BILLBOARDS) billboards.start({ scene, updaters, compiler: heroCompiler, log }).catch((e) => log(`billboards failed: ${e.message} (?billboards=0: none)`));
@@ -1895,7 +1902,7 @@ async function main() {
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
   // (cortenbosch2) the Lycée Français's railing, sliding gate and flag poles (viewer/lyceeFront.js, tile F7) collide like the
   // landmarks: car blocks from their triangles in the 0.3-1.3 m band, the triangles for walk / third person
-  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); if (PARKFENCE) for (const n of await parkFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (EMBASSYFLAGS) for (const n of await embassyFlags.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (params.get("places2") !== "old") for (const n of playgroundRootNames(await loadOverrides(DATA), params)) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
+  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); if (PARKFENCE) for (const n of await parkFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (EMBASSYFLAGS) for (const n of await embassyFlags.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (TIMBER) for (const n of await timberFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (params.get("places2") !== "old") for (const n of playgroundRootNames(await loadOverrides(DATA), params)) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
   else {
     if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});
     for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);

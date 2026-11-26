@@ -95,6 +95,48 @@ def h01(s, salt=""):
 # wall), the terraces low walls + railings with shrubs behind; tall brick walls are rarer (Henri Pirenne)
 TERRACE_MIX = [("rail", 0.34), ("railhedge", 0.20), ("wall", 0.16), ("wallhedge", 0.10), ("hedge", 0.10), ("modern", 0.05), ("open", 0.05)]
 VILLA_MIX = [("rail", 0.08), ("railhedge", 0.20), ("wall", 0.08), ("wallhedge", 0.14), ("hedge", 0.38), ("modern", 0.06), ("open", 0.06)]
+# (claude/reality1, rule frontgarden-by-context, class C4 of docs/REALITY_ROUND_2026-11-26.md) the boundary by the HOUSE'S
+# FAMILY (viewer/buildingTypes.js type as the city draws it, with the data/bldclass evidence), not one mix for all: Street
+# View round 1 (look only): Uccle's pre-war rows and maisons de maitre stand behind a LOW plinth (stone / brick, 0.3-0.6 m)
+# with a black iron railing and a gate, often a hedge behind it (Av. de la Floride, Brugmann); solid brick walls are rarer
+# (older villas, some estates); the post-war bel-etage and block fronts are open paved drives, low walls or hedges (Av.
+# De Fre, Ch. de Saint-Job); the 1990s estates hedges and low walls; schools / hospitals / churches a steel bar fence
+# (Dieweg, Edith Cavell, Montjoie's yard). ?frontgarden=old: the data before (data/gardens/fgold/).
+PREWAR_TERRACE_MIX = [("rail", 0.50), ("railhedge", 0.26), ("wallhedge", 0.08), ("hedge", 0.07), ("wall", 0.05), ("modern", 0.02), ("open", 0.02)]
+PREWAR_VILLA_MIX = [("rail", 0.18), ("railhedge", 0.30), ("wall", 0.07), ("wallhedge", 0.12), ("hedge", 0.29), ("modern", 0.02), ("open", 0.02)]
+POSTWAR_MIX = [("hedge", 0.32), ("wallhedge", 0.22), ("modern", 0.22), ("rail", 0.14), ("railhedge", 0.06), ("wall", 0.04)]   # (no "open": rule house-front-garden-closed; the open paved drives come from the driveway openings)
+NINETIES_MIX = [("hedge", 0.52), ("wallhedge", 0.26), ("modern", 0.15), ("rail", 0.07)]
+FAMILY = True                                        # --family old: the one mix for all (?frontgarden=old data)
+TYPE_MAITRE, TYPE_DECO, TYPE_BELETAGE, TYPE_BLOCK, TYPE_VILLA, TYPE_NINETIES = 1, 2, 3, 4, 5, 6
+
+
+def family_mix(f, villa):
+    """the boundary mix for a street face's house (None: the old per-terrace / per-villa mix)"""
+    t, era = f.get("type"), f.get("era")
+    if t in (TYPE_MAITRE,) or (t == TYPE_DECO and era in ("pre", "inter", "old")) or (t in (0, TYPE_VILLA) and era in ("pre", "inter", "old")):
+        return PREWAR_VILLA_MIX if villa else PREWAR_TERRACE_MIX
+    if t in (TYPE_BELETAGE, TYPE_BLOCK) or era in ("post", "new"):
+        return POSTWAR_MIX
+    if t == TYPE_NINETIES:
+        return NINETIES_MIX
+    return None
+
+
+def fam_name(f, villa=False):
+    """the family label written on each garden record (tools/audit/frontgardenCheck.mjs counts the mix per family)"""
+    if f.get("inst") in ("school", "hospital", "church", "convent", "civic"): return "inst"
+    m = family_mix(f, villa)
+    return "prewar" if m is PREWAR_TERRACE_MIX else "prewar-villa" if m is PREWAR_VILLA_MIX else "postwar" if m is POSTWAR_MIX else "nineties" if m is NINETIES_MIX else None
+
+
+def bar_fence(seed):
+    """an institution's steel bar fence: on a 12 cm kerb, flat bars 1.4-1.6 m (1.8-2 m read as floating beams over a retaining wall, H6 2026-11-26), black / anthracite, posts"""
+    s = make_style("rail", seed, True)
+    s.update({"wallH": 0.12, "rail": 1, "railH": 1.4 + 0.2 * h01(seed, "bh"), "paint": 0 if h01(seed, "bp") < 0.6 else 1, "cap": 1, "brick": 4, "pillar": 1, "fence": "bars"})
+    s.pop("gilded", None)
+    return s
+
+
 HEDGE_SPECIES = [("privet", 0.34), ("beech", 0.26), ("laurel", 0.16), ("hornbeam", 0.12), ("box", 0.12)]
 
 
@@ -591,10 +633,16 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
             if best[0] >= 0.4:
                 st = osm_style(best[1][1], bu, villa)
                 if st: st["osm"] = 1; stats["osm_runs"] += 1; stats["osm_" + best[1][1].get("barrier", "?")] += 1
+        # (the family mixes tell a ROW (the building has a whole party wall: terraced_bi) from a free-standing house; the
+        # old "villa" flag is true on nearly every street face: partyH is 0 on a street face)
+        fvilla = f["bi"] not in terraced_bi and gardens[r["fi"]] > 3.0
+        fam = family_mix(f, fvilla) if FAMILY else None
+        if st is None and FAMILY and f.get("inst") in ("school", "hospital", "church", "convent", "civic"):
+            st = bar_fence(street + "|inst" if street else bu); stats["inst_fences"] += 1
         if st is None:
-            mix = VILLA_MIX if villa else TERRACE_MIX
+            mix = fam or (VILLA_MIX if villa else TERRACE_MIX)
             dom = pick(mix, h01(street or bu, "street-kind" + ("v" if villa else "t")))
-            kind = dom if (street and h01(bu, "follow") < 0.6) else pick(mix, h01(bu, "kind"))
+            kind = dom if (street and h01(bu, "follow") < (0.7 if fam is not None else 0.6)) else pick(mix, h01(bu, "kind"))   # (a row of one family follows its street more)
             # (claude/gates) an OPEN front only as a house's own choice, about 1 in 3 of the old picks (villas 2 %, rows
             # 1.7 %): a street whose dominant draw was "open" had 60 % of its houses open (Rue du Ham I6); the owner and
             # the Street View sample (docs/GATES.md): nearly every Uccle house has a front fence, hedge or wall
@@ -731,6 +779,9 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                 if o[2] == "ped" and o[0] <= 0.01: pil.add(0.0)
                 if o[2] == "ped" and o[1] >= L - 0.01: pil.add(round(L, 3))
         maxbay = 3.2 if st["kind"] == "rail" else 6.0
+        # (rule frontgarden-by-context) a house-family railing: piers at its ends, corners and gates, panels up to 8 m between
+        # (a 6-8 m Uccle front is one railing panel between its party-line piers, Street View 2026-11-26); keeps the pier budget (gates row piersTileMax)
+        if FAMILY and fam is not None and st["kind"] == "rail" and st.get("fence") != "bars": maxbay = 8.0
         if has_pillars:
             for a, b in solid:
                 inner = sorted(p for p in pil if a - 1e-3 <= p <= b + 1e-3)
@@ -827,7 +878,7 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                     out_gates.append([r2(pa[0]), r2(gy), r2(pa[1]), round(yaw, 4), r2(w), 1, round(ang, 3), sid]); stats["car_gates"] += 1
                 else: stats["car_open"] += 1
         stats["gardens"] += 1
-        out_gardens.append({"bu": bu, "gap": r2(gardens[r["fi"]]), "len": r2(L), "kind": st["kind"], "style": sid, "osm": bool(st.get("osm")),
+        out_gardens.append({"bu": bu, "gap": r2(gardens[r["fi"]]), "len": r2(L), "kind": st["kind"], "style": sid, "osm": bool(st.get("osm")), **({"fam": fam_name(f, fvilla)} if FAMILY and fam_name(f, fvilla) else {}),
                             "ops": [[r2(o[0]), r2(o[1]), o[2]] for o in merged]})
     # keep the pieces of this tile's buildings only (runs may reach a few metres over the edge)
     doc = {"contract": CONTRACT, "tile": name, "styles": styles, "segs": out_segs, "pillars": out_pillars, "gates": out_gates,
@@ -899,8 +950,10 @@ def main():
     ap.add_argument("--debug", default=None)
     ap.add_argument("--jobs", type=int, default=1, help="tiles placed in this many processes")
     ap.add_argument("--out", default=None, help="write the docs here instead of data/gardens (a comparison build)")
+    ap.add_argument("--family", default="new", help="old: the boundary mix before rule frontgarden-by-context")
     a = ap.parse_args()
-    global OUT
+    global OUT, FAMILY
+    FAMILY = a.family != "old"
     if a.out: OUT = Path(a.out)
     tiles = list(all_tiles()) if a.all else (a.tile or ["I6"])
     OUT.mkdir(parents=True, exist_ok=True)
