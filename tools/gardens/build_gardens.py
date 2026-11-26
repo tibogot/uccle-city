@@ -106,6 +106,7 @@ PREWAR_TERRACE_MIX = [("rail", 0.50), ("railhedge", 0.26), ("wallhedge", 0.08), 
 PREWAR_VILLA_MIX = [("rail", 0.18), ("railhedge", 0.30), ("wall", 0.07), ("wallhedge", 0.12), ("hedge", 0.29), ("modern", 0.02), ("open", 0.02)]
 POSTWAR_MIX = [("hedge", 0.32), ("wallhedge", 0.22), ("modern", 0.22), ("rail", 0.14), ("railhedge", 0.06), ("wall", 0.04)]   # (no "open": rule house-front-garden-closed; the open paved drives come from the driveway openings)
 NINETIES_MIX = [("hedge", 0.52), ("wallhedge", 0.26), ("modern", 0.15), ("rail", 0.07)]
+GARAGE = True                                        # --garage old: no garage drives (rule garage-has-drive)
 FAMILY = True                                        # --family old: the one mix for all (?frontgarden=old data)
 TYPE_MAITRE, TYPE_DECO, TYPE_BELETAGE, TYPE_BLOCK, TYPE_VILLA, TYPE_NINETIES = 1, 2, 3, 4, 5, 6
 
@@ -593,7 +594,8 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
         if key not in style_ix: style_ix[key] = len(styles); styles.append(s)
         return style_ix[key]
 
-    out_segs, out_pillars, out_gates, out_hedges, out_gardens = [], [], [], [], []
+    out_segs, out_pillars, out_gates, out_hedges, out_gardens, out_drives = [], [], [], [], [], []
+    garage_doors, seen_garage = [], set()
     run_metres = Counter()
     def door_s(f, ls):
         """the door's projection (along the face normal) onto the run ls: its arc length, or None"""
@@ -705,6 +707,31 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                 if g.geom_type != "Point": continue
                 s = ls.project(g)
                 if not any(o[0] - 0.5 < s < o[1] + 0.5 for o in ops if o[2] == "car"): ops.append([s - 1.6, s + 1.6, "car"]); stats["drive_osm"] += 1
+        # (claude/reality2, rule garage-has-drive) the garage door the painted facade draws (tools/gardens/faces.mjs garageAt):
+        # a car opening in front of it where no driveway already covers it, and a paved drive from the door to the line
+        # (Avenue De Fre: garage doors opened onto the lawn); ?garagedrive=old (--garage old): none
+        ga = f.get("garageAt") if GARAGE else None
+        if ga:
+            seen_garage.add(id(f))
+            ray = LineString([(ga["x"] + f["nx"] * 0.1, ga["z"] + f["nz"] * 0.1), (ga["x"] + f["nx"] * (REACH + 1), ga["z"] + f["nz"] * (REACH + 1))])
+            q = ray.intersection(ls)
+            if not q.is_empty:
+                q = q if q.geom_type == "Point" else min(getattr(q, "geoms", [q]), key=lambda g: g.distance(Point(ga["x"], ga["z"])))
+                q = q if q.geom_type == "Point" else q.centroid
+                sgar = ls.project(q)
+                gw = max(2.8, ga["w"] + 0.6)
+                if not any(o[0] - 0.2 <= sgar - gw / 2 and sgar + gw / 2 <= o[1] + 0.2 for o in ops if o[2] == "car"):
+                    ops.append([sgar - gw / 2, sgar + gw / 2, "car"]); stats["drive_garage"] += 1
+                ta = (f["b"][0] - f["a"][0], f["b"][1] - f["a"][1]); tl = math.hypot(*ta) or 1; tx, tz = ta[0] / tl, ta[1] / tl
+                hw = ga["w"] / 2 + 0.1                     # (inside the opening: the hedge ends and jamb piers stay out of the ring)
+                p0, p1 = ls.interpolate(max(0.0, sgar - hw)), ls.interpolate(min(L, sgar + hw))
+                d = math.hypot(q.x - ga["x"], q.y - ga["z"])
+                garage_doors.append({"x": ga["x"], "z": ga["z"], "w": ga["w"], "drive": 0.5 < d < REACH})
+                if 0.5 < d < REACH:
+                    # (the ring stops 0.25 m short of the line: the jamb piers stand on it and the plants clear keeps off the ring)
+                    bk = 0.25
+                    out_drives.append({"bu": bu, "ring": [[r2(ga["x"] - tx * hw), r2(ga["z"] - tz * hw)], [r2(ga["x"] + tx * hw), r2(ga["z"] + tz * hw)],
+                                                          [r2(p1.x - f["nx"] * bk), r2(p1.y - f["nz"] * bk)], [r2(p0.x - f["nx"] * bk), r2(p0.y - f["nz"] * bk)]]})
         # merge: overlapping driveways join. (claude/gates) A door inside / against a driveway gets its own pedestrian
         # gate BESIDE the driveway (sharing a pier: the Brussels pair, a driveway gate + a garden gate), on the door's
         # side where the run has room, else carved from a driveway >= 4.1 m wide; only where neither fits does the walk
@@ -880,9 +907,14 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
         stats["gardens"] += 1
         out_gardens.append({"bu": bu, "gap": r2(gardens[r["fi"]]), "len": r2(L), "kind": st["kind"], "style": sid, "osm": bool(st.get("osm")), **({"fam": fam_name(f, fvilla)} if FAMILY and fam_name(f, fvilla) else {}),
                             "ops": [[r2(o[0]), r2(o[1]), o[2]] for o in merged]})
+    # (rule garage-has-drive) the garage doors no garden run stands in front of: the house is on the sidewalk line (the
+    # sidewalk is its drive) or set back with no measured line (counted, no drive drawn)
+    for f in faces:
+        if GARAGE and f.get("garageAt") and id(f) not in seen_garage:
+            garage_doors.append({"x": f["garageAt"]["x"], "z": f["garageAt"]["z"], "w": f["garageAt"]["w"], "drive": False, "noRun": True})
     # keep the pieces of this tile's buildings only (runs may reach a few metres over the edge)
     doc = {"contract": CONTRACT, "tile": name, "styles": styles, "segs": out_segs, "pillars": out_pillars, "gates": out_gates,
-           "hedges": out_hedges, "gardens": out_gardens,
+           "hedges": out_hedges, "gardens": out_gardens, "drives": out_drives, "garageDoors": garage_doors,
            "counts": {"faces": len(cand), "gardenFaces": len(gardens), "runs": len(runs), "segs": len(out_segs), "pillars": len(out_pillars),
                       "gates": len(out_gates), "hedges": len(out_hedges), "metres": {k: round(v, 1) for k, v in run_metres.items()}},
            "topo": topo_ok, "skips": skips}
@@ -950,10 +982,12 @@ def main():
     ap.add_argument("--debug", default=None)
     ap.add_argument("--jobs", type=int, default=1, help="tiles placed in this many processes")
     ap.add_argument("--out", default=None, help="write the docs here instead of data/gardens (a comparison build)")
+    ap.add_argument("--garage", default="new", help="old: no garage drives (rule garage-has-drive)")
     ap.add_argument("--family", default="new", help="old: the boundary mix before rule frontgarden-by-context")
     a = ap.parse_args()
-    global OUT, FAMILY
+    global OUT, FAMILY, GARAGE
     FAMILY = a.family != "old"
+    GARAGE = a.garage != "old"
     if a.out: OUT = Path(a.out)
     tiles = list(all_tiles()) if a.all else (a.tile or ["I6"])
     OUT.mkdir(parents=True, exist_ok=True)
