@@ -87,6 +87,7 @@ const JOINT_LAMBDA = 2;            // weight of one corner triple's second diffe
 const JOINT_MU = 0.02;             // pull of a corner to its own plane's value (anchors a corner with little data)
 const JOINT_RAIL = 30;             // weight of one 1 m tram-rail sample (the track profile + its road lift) against a street sample's 1
 const JOINT_EMPTY = 3, JOINT_EMPTY_MAX = 0.15;   // a corner with less sample weight moves at most JOINT_EMPTY_MAX from its own value
+const JOINT_MAX = 0.3;             // m: any corner moves at most this from its own value (the saw-tooth is cm; a steep narrow spur fitted by few samples is not flattened: J11 Av. des Sorbiers 24, a 1.4 m garden path drawn flat got a wall on both sides, a stacked wall)
 const JOINT_ITER = 300, JOINT_TOL = 1e-10;
 /**
  * The street height field's corners (cellKey -> value in `corner`, the per-corner fits) re-solved together: minimise
@@ -99,7 +100,7 @@ const JOINT_ITER = 300, JOINT_TOL = 1e-10;
  * as viewer/trackProfile.js railTop averages it): the trams' rails sit on the street and the street follows their smooth
  * profile. Without them the field, unable to follow a street's crown inside a 6 m cell, sat up to 11 cm under the rails (Av.
  * Brugmann F2; moverground tram 1,414 -> 2,400 m city-wide). A corner with almost no samples (< JOINT_EMPTY) is extrapolated by the penalty
- * alone (up to 1.5 m off at F2 Brugmann): held within JOINT_EMPTY_MAX. With clamp: within H_MARGIN of its cells' samples.
+ * alone (up to 1.5 m off at F2 Brugmann): held within JOINT_EMPTY_MAX; any corner within JOINT_MAX. With clamp: within H_MARGIN of its cells' samples.
  * Tuning (claude/sawtooth, tools/audit/census/sawtooth.mjs on I6 H6 F2): LAMBDA 0.5 / 1 / 2 / 4 = 26 / 17 / 13 / 8 sidewalk
  * + road saw-tooth places (per corner: 60); |H - ground| over the samples p50 / p99 2.0 / 14.3 cm at 0.5, 2.6 / 19.7 at 2
  * (per corner 2.4 / 17.1). Tried and dropped: a robust (Huber) fit (4 places, p99 34 cm: junction creases drawn off their
@@ -180,7 +181,8 @@ function jointFit(street, corner, classAt, groundAt, clamp, bounds, fitCorner, r
   keys.forEach((k, q) => {
     let v = x[q];
     if (!Number.isFinite(v)) return;
-    if (cnt[q] < JOINT_EMPTY) v = Math.min(c0[q] + JOINT_EMPTY_MAX, Math.max(c0[q] - JOINT_EMPTY_MAX, v));
+    const mx = cnt[q] < JOINT_EMPTY ? JOINT_EMPTY_MAX : JOINT_MAX;
+    v = Math.min(c0[q] + mx, Math.max(c0[q] - mx, v));
     if (clamp && lo[q] <= hi[q]) v = Math.min(hi[q] + H_MARGIN, Math.max(lo[q] - H_MARGIN, v));
     corner.set(k, v);
   });
