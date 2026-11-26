@@ -7,7 +7,6 @@
 //   - Uccle / Ukkel: vertically divided light blue - white, blue at the hoist (Flags of the World, be-bxluc, after
 //     the municipality; colours from its arms). The exact blue is not specified: a mid light blue is used.
 import * as THREE from "three/webgpu";
-import { EMBASSY_DESIGNS, EMBASSY_SOURCES } from "./embassyDesigns.js";
 
 export const FLAG_DESIGNS = {
   belgium: { name: "Belgium", aspect: 1.5, draw: (g, w, h) => {
@@ -37,10 +36,10 @@ export const FLAG_DESIGNS = {
     for (let j = 0; j < 8; j++) for (let i = 0; i < 12; i++) { g.fillStyle = (i + j) % 2 ? "#e8e8e8" : "#3a7bd5"; g.fillRect((i * w) / 12, (j * h) / 8, w / 12 + 1, h / 8 + 1); }
     g.fillStyle = "#d33"; g.fillRect(0, 0, w * 0.04, h);
   } },
-  ...EMBASSY_DESIGNS,                 // the embassy flags' countries (viewer/flags/embassyDesigns.js, rule embassy-flags)
 };
 
-/** where each design comes from (rule embassy-flags: every design has a source): a national / official flag is not
+/** where each design comes from (the embassy flags are the Commons SVGs instead: data/flags/embassy_sources.json,
+ *  viewer/flags/flagAtlas.js): a national / official flag is not
  *  protected by copyright (Belgian copyright law art. XI.172 excludes official acts; the designs are public domain, as
  *  on Wikimedia Commons), drawn here in code from the legal description / construction sheet named */
 export const FLAG_SOURCES = {
@@ -49,7 +48,6 @@ export const FLAG_SOURCES = {
   france: { source: "Constitution of 1958 art. 2; the 2020 navy blue of the Élysée", licence: "public domain (official design)" },
   eu: { source: "EU graphical specifications for the European emblem (europa.eu)", licence: "public domain (official emblem; reproduction allowed by the Council of Europe / EU terms)" },
   uccle: { source: "Flags of the World be-bxluc (the commune's colours from its arms)", licence: "public domain (municipal flag, plain bicolour)" },
-  ...EMBASSY_SOURCES,
 };
 
 /** an upright five-pointed star (outer radius r) */

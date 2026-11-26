@@ -8,7 +8,9 @@
 //     vertex-coloured mesh per tile in the tile's features group (it fades and unloads with the tile); one shared
 //     material for every tile;
 //   - the FLAGS: cloth (rule flags-are-cloth, viewer/flags/): every free-standing pole's flag is ONE BakedFlags set
-//     (one loop recorded in the worker, one draw for all of them), the designs from ONE atlas (flags/flagAtlas.js: the
+//     (one loop recorded in the worker, one draw for all of them; each instance stretched along the fly to its flag's
+//     real proportions), the REAL flags from ONE atlas (the Wikimedia Commons SVGs rasterised at build time,
+//     tools/flags/build_atlas.mjs; flags/flagAtlas.js: the
 //     instance's cell); a bracket's angled pole needs its own loop (its axis and its wall), so one set per bracket;
 //   - LIVE cloth only for the nearest LIVE_MAX within LIVE_RADIUS (a fixed pool built at start: no allocation, no
 //     shader build on a frame; the pool's materials precompiled with the sets through the page's precompile queue);
@@ -17,7 +19,7 @@ import * as THREE from "three/webgpu";
 import { uniform } from "three/tsl";
 import { BakedFlags, LiveFlag, clothMaterial } from "./flags/flagField.js";
 import { FABRIC } from "./flags/flagCloth.js";
-import { flagAtlas } from "./flags/flagAtlas.js";
+import { loadFlagAtlas } from "./flags/flagAtlas.js";
 
 export const LIVE_RADIUS = 45, HIDE_DIST = 700, LIVE_MAX = 6;
 export const POLE_H = 7.0, BRACKET_LEN = 2.2, BRACKET_TILT = 35;            // m, m, degrees above the horizontal
@@ -146,35 +148,45 @@ export const embassyFlags = {
     const wind = { speed: Number.isFinite(ws) ? ws : 5, deg: Number.isFinite(wd) ? wd : 70 };
     const dirOf = (deg) => { const a = THREE.MathUtils.degToRad(deg); return [Math.cos(a), 0, -Math.sin(a)]; };
     const keys = [...new Set(poles.map((p) => p.design))];
-    const atlas = flagAtlas(keys, renderer);
+    // the real flags (the Commons SVGs rasterised at build time: tools/flags/build_atlas.mjs), each with its own
+    // proportions: a free pole's cloth is the simulated 1 m hoist stretched along the fly to the flag's aspect (one loop,
+    // one draw for all); a bracket / wall pole is simulated at its flag's own width
+    const atlas = await loadFlagAtlas(renderer);
+    const missing = keys.filter((k) => atlas.cellOf(k) < 0);
+    if (missing.length) log?.(`embassy flags: no atlas cell for ${missing.join(", ")} (tools/flags/build_atlas.mjs)`);
     // the free-standing poles: one set; each bracket: its own set (its axis, its wall)
     // (a free pole within the cloth's reach of a wall, p.wall, flies its own loop kept clear of that wall, as a bracket)
     const free = poles.filter((p) => p.type !== "bracket" && !p.wall), brackets = poles.filter((p) => p.type === "bracket" || p.wall);
     const freeCloth = { width: FLAG_W, height: FLAG_H, axis: [0, 1, 0], out: dirOf(wind.deg), windDir: dirOf(wind.deg), fabric: FABRIC.polyester, planes: [] };
     const sets = [], flags = [];
     if (free.length) {
-      const set = await BakedFlags.create({ cloth: freeCloth, map: null, atlas, capacity: free.length, speed: wind.speed });
+      const set = await BakedFlags.create({ cloth: freeCloth, map: null, atlas, capacity: free.length, speed: wind.speed, stretch: true });
       sets.push(set);
-      for (const p of free) flags.push({ p, set, i: set.add(0, -1e4, 0, { phase: Math.random(), scale: 0, cell: atlas.cellOf(p.design) }), cloth: freeCloth, top: new THREE.Vector3(), on: false, live: null, state: "baked", d: Infinity });
+      for (const p of free) {
+        const fly = (FLAG_H * atlas.aspectOf(p.design)) / FLAG_W;
+        flags.push({ p, set, fly, i: set.add(0, -1e4, 0, { phase: Math.random(), scale: 0, cell: atlas.cellOf(p.design), fly }), cloth: freeCloth, top: new THREE.Vector3(), on: false, live: null, state: "baked", d: Infinity });
+      }
     }
     for (const p of brackets) {
       const wallPole = p.type !== "bracket", axis = wallPole ? [0, 1, 0] : bracketAxis(p);
       // the wall as a half-space in the sim frame (relative to the hoist top)
-      const size = wallPole ? [FLAG_W, FLAG_H] : BRACKET_FLAG;
+      const hoist = wallPole ? FLAG_H : BRACKET_FLAG[1], size = [hoist * atlas.aspectOf(p.design), hoist];
       const cloth = { width: size[0], height: size[1], axis, out: dirOf(wind.deg), windDir: dirOf(wind.deg), fabric: FABRIC.polyester, planes: [wallPole ? [p.wall.n[0], 0, p.wall.n[1], -p.wall.d + 0.04] : bracketPlane(p, axis)] };
       const set = await BakedFlags.create({ cloth, map: null, atlas, capacity: 1, speed: wind.speed });
       sets.push(set);
-      flags.push({ p, set, i: set.add(0, -1e4, 0, { phase: Math.random(), scale: 0, cell: atlas.cellOf(p.design) }), cloth, top: new THREE.Vector3(), on: false, live: null, state: "baked", d: Infinity });
+      flags.push({ p, set, fly: 1, i: set.add(0, -1e4, 0, { phase: Math.random(), scale: 0, cell: atlas.cellOf(p.design), fly: 1 }), cloth, top: new THREE.Vector3(), on: false, live: null, state: "baked", d: Infinity });
     }
     for (const s of sets) { s.mesh.visible = false; s.mesh.userData.nightMover = 2; s.mesh.name = "flags_baked_embassy"; scene.add(s.mesh); }
     // the live pool: LIVE_MAX cloths for the free poles + one per bracket, each with its own material (its cell a
     // uniform), all built and precompiled now
     const pool = [];
     const liveOf = (cloth) => {
-      const cell = uniform(0), material = clothMaterial(null, { atlas, cell });
+      const wd = cloth.windDir, wl = Math.hypot(wd[0], wd[2]) || 1;
+      const cell = uniform(0), s = uniform(1), fly = uniform(new THREE.Vector3(wd[0] / wl, 0, wd[2] / wl));
+      const material = clothMaterial(null, { atlas, cell, stretch: { s, fly } });
       const lf = new LiveFlag({ cloth: { ...cloth, windDir: undefined }, map: null, material });
       lf.mesh.visible = false; lf.mesh.userData.nightMover = 2; lf.mesh.name = "flag_live_embassy"; lf.mesh.frustumCulled = false;
-      lf.cell = cell; lf.busy = null;
+      lf.cell = cell; lf.s = s; lf.busy = null;
       scene.add(lf.mesh);
       return lf;
     };
@@ -192,7 +204,7 @@ export const embassyFlags = {
     const takeLive = (f) => {
       const lf = f.own ?? pool.find((q) => !q.busy);
       if (!lf) return false;
-      lf.busy = f; f.live = lf; lf.cell.value = f.set.extra[f.i * 4 + 2];
+      lf.busy = f; f.live = lf; lf.cell.value = f.set.extra[f.i * 4 + 2]; lf.s.value = f.fly;
       Object.assign(lf.cloth.wind, { speed: wind.speed, dir: dirOf(wind.deg) });
       lf.startFrom(f.set.stateAt(f.i, t), 0);
       lf.mesh.position.copy(f.top); lf.mesh.visible = true;

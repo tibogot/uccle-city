@@ -5,8 +5,10 @@
 //      saying what was seen;
 //   2. one pole per mount of a "yes" place and no other: no pole on a place recorded "no" or "unseen" (nor on a place
 //      gone from the file); every pole's design is a place's design;
-//   3. every design flown is a viewer/flags/flagDesigns.js key with a source (FLAG_SOURCES: a public-domain origin and
-//      the construction it follows); every FLAG_DESIGNS key has one;
+//   3. every design flown is a cell of the atlas (viewer/flags/atlas/embassy_flags.{png,json}), every cell a recorded
+//      source (data/flags/embassy_sources.json: the Commons page, sha1, author, a usable licence), the PNG the one its
+//      layout records, and, with the sources here (data/raw/flags/commons), the atlas rebuilt by
+//      tools/flags/build_atlas.mjs equal to the committed one byte for byte;
 //   4. no pole floating or in a wall: viewer/embassyFlags.js poleGeometry on a tilted, bumpy test ground: the footing's
 //      top over the highest ground under it, its foot under the lowest, the pole's foot on the footing's top; a free
 //      pole outside every footprint and >= 0.5 m from walls; nearer than the cloth's reach (1.7 m) only with that
@@ -65,12 +67,31 @@ const badDesign = poles.filter((q) => !byOsm.get(q.place)?.check?.designs?.inclu
 check("2. every pole flies its place's recorded design", !badDesign.length, badDesign.map((q) => `${q.id} ${q.design}`).join(", "));
 
 // ---- 3. the designs and their sources
-const { FLAG_DESIGNS, FLAG_SOURCES } = await import("../../viewer/flags/flagDesigns.js");
+const SRC = JSON.parse(read("data/flags/embassy_sources.json")).flags, ATLAS = JSON.parse(read("viewer/flags/atlas/embassy_flags.json"));
 const flown = [...new Set(poles.map((q) => q.design))];
-const noKey = flown.filter((k) => !FLAG_DESIGNS[k]);
-check("3. every design flown is a flagDesigns.js key", !noKey.length, noKey.join(", ") || flown.join(", "));
-const noSrc = Object.keys(FLAG_DESIGNS).filter((k) => k !== "test" && !(FLAG_SOURCES?.[k]?.source && FLAG_SOURCES[k].licence));
-check("3. every design has a source + licence (FLAG_SOURCES)", !noSrc.length, noSrc.join(", ") || `${Object.keys(FLAG_SOURCES ?? {}).length} sources`);
+const noCell = flown.filter((k) => !ATLAS.cells[k]);
+check("3. every design flown has its atlas cell (viewer/flags/atlas/embassy_flags.json)", !noCell.length, noCell.join(", ") || flown.join(", "));
+// a source: the Commons page, the file's sha1, the author and a licence the city may use (public domain; a CC-BY /
+// CC-BY-SA one only with its author and licence credited in CREDITS.md)
+const credits = read("CREDITS.md");
+const badSrc = Object.entries(SRC).filter(([k, f]) => {
+  const pd = /^public domain$/i.test(f.licence) && /^pd/i.test(f.licenceCode ?? "pd"), cc = /^CC[ -]BY(-SA)? /i.test(f.licence);
+  return !f.page?.startsWith("https://commons.wikimedia.org/") || !/^[0-9a-f]{40}$/.test(f.sha1 ?? "") || !f.author || !(pd || (cc && credits.includes(f.page)));
+});
+check("3. every source: its Commons page, sha1, author and a usable licence (public domain, or CC-BY(-SA) credited in CREDITS.md)", !badSrc.length, badSrc.map(([k, f]) => `${k}: ${f.licence}`).join(", ") || Object.entries(SRC).map(([k, f]) => `${k} ${f.licence}`).join(", "));
+const cellsOff = Object.entries(ATLAS.cells).filter(([k, c]) => !SRC[k] || SRC[k].sha1 !== c.sha1 || Math.abs(SRC[k].aspect - c.aspect) > 1e-6);
+check("3. every atlas cell is a recorded source (same sha1, same proportions)", !cellsOff.length && Object.keys(SRC).every((k) => ATLAS.cells[k]), cellsOff.map(([k]) => k).join(", ") || `${Object.keys(ATLAS.cells).length} cells`);
+{
+  const png = fs.readFileSync(path.join(ROOT, "viewer/flags/atlas/embassy_flags.png"));
+  const sha = (await import("node:crypto")).createHash("sha256").update(png).digest("hex");
+  check("3. the committed atlas PNG is the one its layout records (png_sha256)", sha === ATLAS.png_sha256, sha.slice(0, 12));
+  const haveRaw = Object.values(SRC).every((f) => fs.existsSync(path.join(ROOT, f.file)));
+  if (haveRaw) {
+    const { buildAtlas } = await import("../flags/build_atlas.mjs");
+    const r = buildAtlas();
+    check("3. the atlas rebuilt from the sources (data/raw/flags/commons, sha1 checked) equals the committed one byte for byte (no hand edit)", r.png.equals(png) && r.layout.png_sha256 === ATLAS.png_sha256, `${r.png.length} bytes`);
+  } else check("3. (data/raw/flags/commons not here: the rebuild comparison skipped; node tools/flags/fetch_flags.mjs)", true);
+}
 
 // ---- 4. no pole floating, none in a wall
 const { poleGeometry } = await import("../../viewer/embassyFlags.js");

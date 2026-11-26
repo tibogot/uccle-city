@@ -13,6 +13,7 @@ import { ROOT } from "./geo.mjs";
 
 const { buildTile, Bvh, concatSoups } = await import("../audit/census/lib_mesh.mjs");
 const doc = JSON.parse(fs.readFileSync(path.join(ROOT, "data/places/embassy_flags.json"), "utf8"));
+const ATLAS = JSON.parse(fs.readFileSync(path.join(ROOT, "viewer/flags/atlas/embassy_flags.json"), "utf8"));
 globalThis.location ??= { search: "" };
 const { poleGeometry, bracketAxis, POLE_H, BRACKET_LEN } = await import("../../viewer/embassyFlags.js");
 
@@ -33,7 +34,7 @@ export async function clearance() {
       const o0 = p.type === "bracket" ? 0.15 : 0.1;
       const ph = bvh.hit(bx + ax[0] * o0, by + ax[1] * o0, bz + ax[2] * o0, ax[0], ax[1], ax[2], L - o0);
       const pole = ph ? `meets ${soup.names[soup.src[ph.tri]]} ${(o0 + ph.t).toFixed(2)} m up the pole` : null;
-      const fly = p.type === "bracket" ? 1.2 : 1.5, hoist = p.type === "bracket" ? 0.8 : 1.0;
+      const hoist = p.type === "bracket" ? 0.8 : 1.0, fly = hoist * (ATLAS.cells[p.design]?.aspect ?? 1.5);       // (the flag's real proportions)
       const wn = p.type === "bracket" ? p.n : p.wall?.n ?? null;
       const top = [tx - ax[0] * 0.12, ty - ax[1] * 0.12, tz - ax[2] * 0.12], blocked = [];
       for (const s of [0, 0.5, 1]) {
