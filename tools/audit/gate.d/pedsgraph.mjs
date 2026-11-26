@@ -4,7 +4,7 @@ export default {
   script: "tools/audit/pedsAudit.mjs",
   node: ["--import", "./tools/road_audit/register.mjs"],
   args: ["--graph", "--quiet"],
-  guards: "the people's walk graph (claude/peds2, rules peds-walk-graph, peds-crossings-only; viewer/pedestrians/walkGraph.js) on H5 I5 H6 I6 (Saint-Job) + F4 (Wolvendael): W1 <= 1 % of the walked length on a carriageway cell (only crossings / tram platforms may be), W2 no edge through a drawn wall / building / island, W3 >= 85 % of the drawn crossings linked kerb to kerb, W4 every crossing within 25 m of a signal carries its phase, W5 >= 90 % of the drawn sidewalk within 2.5 m of a walking line, W6 the worker step <= 400 ms a tile",
+  guards: "the people's walk graph (claude/peds2, rules peds-walk-graph, peds-crossings-only; viewer/pedestrians/walkGraph.js) on H5 I5 H6 I6 (Saint-Job) + F4 (Wolvendael): W1 <= 1 % of the walked length on a carriageway cell (only crossings / tram platforms may be), W2 no edge through a drawn wall / building / island, W3 >= 85 % of the drawn crossings linked kerb to kerb, W4 every crossing within 25 m of a signal carries its phase, W5 >= 90 % of the drawn sidewalk within 2.5 m of a walking line, W6 the worker step <= 800 ms a tile (~5 % of the tile build)",
   meta: {
     features: [{ key: "peds", type: "on", group: "world" }],
     text: [

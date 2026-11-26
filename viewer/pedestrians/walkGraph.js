@@ -24,8 +24,8 @@ export const WALK_VERSION = 1;
 export const EK = { walk: 0, path: 1, cross: 2, zebra: 3, platform: 4, square: 5, steps: 6, link: 7 };
 export const EK_NAME = ["walk", "path", "cross", "zebra", "platform", "square", "steps", "link"];
 export const NK = { walk: 0, kerb: 1, border: 2, board: 3, square: 4, path: 5, pause: 6 };
-export const PLACE = { home: 0, shop: 1, transit: 2, park: 3, square: 4 };
-export const PLACE_NAME = ["home", "shop", "transit", "park", "square"];
+export const PLACE = { home: 0, shop: 1, transit: 2, park: 3, square: 4, school: 5 };
+export const PLACE_NAME = ["home", "shop", "transit", "park", "square", "school"];
 // UrbIS classes (pipeline/build_surfaces.py, viewer/surfaces.js SURF_CLASS) as stored in the grid (class + 1)
 const C = { none: 0, roadway: 1, tramRoad: 2, tramSite: 3, parking: 4, square: 5, sidewalk: 6, median: 7, path: 8, ramp: 9, pit: 10 };
 const SIDE = new Uint8Array(11); SIDE[C.sidewalk] = SIDE[C.ramp] = SIDE[C.square] = SIDE[C.path] = 1;
@@ -409,7 +409,7 @@ export function buildWalkGraph(o) {
   let m = 0;
   for (let id = 0; id < E.length; id++) if (alive[id]) { const e = E[id]; EA[m] = map[e.a]; EB[m] = map[e.b]; EKa[m] = e.k; EW[m] = e.w; EP[m] = e.ph; m++; }
   // the place of each edge (density by place: viewer/pedestrians/citySim.js): shops / stops / parks near it
-  placeOf(o.feats, X, Z, EA, EB, EKa, PL);
+  placeOf(o.feats, o.pois || [], X, Z, EA, EB, EKa, PL);
   const BD = new Float32Array(boards.length * 4);
   boards.forEach((bd, k) => { BD[k * 4] = map[bd.n]; BD[k * 4 + 1] = bd.ux; BD[k * 4 + 2] = bd.uz; BD[k * 4 + 3] = bd.len; });
   stats.nodes = N; stats.edges = M; stats.lineM = Math.round(stats.lineM); stats.pathM = Math.round(stats.pathM);
@@ -496,8 +496,10 @@ function simplify(P, tol, maxLen, force = null) {
 
 /** the place code of each edge: square / park edges by their kind and the park areas; shops and transit stops by the
  *  OSM points within reach of the edge's middle */
-function placeOf(feats, X, Z, EA, EB, EK2, out) {
-  const shops = [], stops = [];
+function placeOf(feats, pois, X, Z, EA, EB, EK2, out) {
+  const shops = [], stops = [], schools = [];
+  // the street-life layer's pois (shops, cafés, schools: data/streetlife) and the OSM points
+  for (const p of pois) { if (p.kind === "school") schools.push(p); else if (p.kind !== "atm" && p.kind !== "civic") shops.push(p); }
   for (const p of feats?.points || []) {
     if (p.kind === "shop" || p.tags?.amenity === "cafe" || p.tags?.amenity === "restaurant" || p.tags?.amenity === "bakery" || p.tags?.amenity === "pharmacy" || p.tags?.amenity === "bank") shops.push(p);
     else if (p.kind === "tram_stop" || p.kind === "bus_stop" || p.kind === "pt_stop_position") stops.push(p);
@@ -509,6 +511,7 @@ function placeOf(feats, X, Z, EA, EB, EK2, out) {
     let pl = PLACE.home;
     if (k === EK.square) pl = PLACE.square;
     else if (k === EK.platform || stops.some((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < 40 * 40)) pl = PLACE.transit;
+    else if (schools.some((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < 60 * 60)) pl = PLACE.school;
     else if (shops.some((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < 35 * 35)) pl = PLACE.shop;
     else if (k === EK.path || k === EK.steps || parks.some((r) => inRings(x, z, r))) pl = PLACE.park;
     out[m] = pl;

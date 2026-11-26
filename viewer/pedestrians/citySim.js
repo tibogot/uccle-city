@@ -18,7 +18,7 @@ const FADE_FROM = 140;                              // m: a spawn in view is all
 const FAR = 90;                                     // m: people this far from the camera step at 20 Hz
 // people per metre of walk graph at the place's peak (weekday). Calibrated on Place de Saint-Job at 08:30 (~40-60 in view
 // on a weekday morning, the owner's figure): docs/PEDESTRIANS.md "City"
-export const DENSITY = { [PLACE.home]: 0.007, [PLACE.shop]: 0.028, [PLACE.transit]: 0.032, [PLACE.park]: 0.012, [PLACE.square]: 0.035 };
+export const DENSITY = { [PLACE.home]: 0.007, [PLACE.shop]: 0.028, [PLACE.transit]: 0.032, [PLACE.park]: 0.025, [PLACE.square]: 0.035, [PLACE.school]: 0.03 };
 // the share of the peak by hour (0-23) per place (weekday; shops shut after 19:00 and on Sunday mornings, parks fill in
 // the afternoon, transit has the two rush hours)
 const H_HOME = [0.03, 0.02, 0.01, 0.01, 0.02, 0.06, 0.2, 0.6, 0.9, 0.6, 0.45, 0.5, 0.6, 0.55, 0.45, 0.55, 0.75, 0.9, 0.8, 0.55, 0.35, 0.22, 0.12, 0.06];
@@ -26,11 +26,13 @@ const H_SHOP = [0.02, 0.01, 0.01, 0.01, 0.01, 0.03, 0.1, 0.35, 0.6, 0.8, 0.9, 1.
 const H_TRANSIT = [0.03, 0.01, 0.01, 0.01, 0.03, 0.15, 0.55, 1.0, 1.0, 0.6, 0.4, 0.45, 0.5, 0.45, 0.45, 0.6, 0.9, 1.0, 0.85, 0.5, 0.3, 0.2, 0.12, 0.06];
 const H_PARK = [0.0, 0.0, 0.0, 0.0, 0.0, 0.02, 0.1, 0.3, 0.4, 0.45, 0.55, 0.65, 0.75, 0.8, 0.85, 0.9, 1.0, 1.0, 0.85, 0.5, 0.2, 0.06, 0.02, 0.0];
 const H_SQUARE = [0.03, 0.02, 0.01, 0.01, 0.01, 0.04, 0.15, 0.55, 0.8, 0.8, 0.85, 1.0, 1.0, 0.9, 0.85, 0.9, 1.0, 1.0, 0.9, 0.6, 0.4, 0.25, 0.12, 0.05];
-const CURVES = { [PLACE.home]: H_HOME, [PLACE.shop]: H_SHOP, [PLACE.transit]: H_TRANSIT, [PLACE.park]: H_PARK, [PLACE.square]: H_SQUARE };
+const H_SCHOOL = [0, 0, 0, 0, 0, 0, 0.02, 0.4, 1.0, 0.25, 0.1, 0.15, 0.45, 0.3, 0.15, 0.6, 1.0, 0.45, 0.2, 0.05, 0.02, 0, 0, 0];
+const CURVES = { [PLACE.school]: H_SCHOOL, [PLACE.home]: H_HOME, [PLACE.shop]: H_SHOP, [PLACE.transit]: H_TRANSIT, [PLACE.park]: H_PARK, [PLACE.square]: H_SQUARE };
 const lerpH = (k, h) => { const i = Math.floor(h) % 24, f = h - Math.floor(h); return k[(i + 24) % 24] + (k[(i + 25) % 24] - k[(i + 24) % 24]) * f; };
 /** people per metre at place `pl` at hour h (0-24); weekday 1 / weekend 0; rain 0..1 */
 export function densityAt(pl, h, { weekend = false, rain = 0 } = {}) {
   let d = DENSITY[pl] * lerpH(CURVES[pl], h);
+  if (weekend && pl === PLACE.school) return 0.05 * d;
   if (weekend) d *= pl === PLACE.park ? 1.5 : pl === PLACE.transit ? 0.5 : pl === PLACE.shop ? (h < 12 ? 0.7 : 0.5) : 0.8;
   return d * (1 - 0.55 * Math.min(1, rain));
 }
@@ -54,7 +56,7 @@ export class CitySim extends PedSim {
     this.candN = 0; let cum = 0;
     const opt = { weekend: this.weekend, rain: this.rain };
     const D = this._dens || (this._dens = new Float64Array(8));
-    for (let pl = 0; pl < 5; pl++) D[pl] = densityAt(pl, this.hour, opt) * this.densityK;
+    for (let pl = 0; pl < 6; pl++) D[pl] = densityAt(pl, this.hour, opt) * this.densityK;
     for (const T of g.tiles.values()) {
       if (!T.ready) continue;
       for (let i = 0; i < T.walk.length; i++) {

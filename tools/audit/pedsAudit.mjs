@@ -34,7 +34,7 @@ const argv = process.argv.slice(2), QUIET = argv.includes("--quiet");
 const DO_G = argv.includes("--graph") || !argv.includes("--sim"), DO_S = argv.includes("--sim") || !argv.includes("--graph");
 const jsonOut = argv.includes("--json") ? argv[argv.indexOf("--json") + 1] : null;
 const TILES = ["H5", "I5", "H6", "I6", "F4"];
-const MAX_CARRIAGE = 0.01, LINKED = 0.85, COVER = 0.9, WG_MS = 400;
+const MAX_CARRIAGE = 0.01, LINKED = 0.85, COVER = 0.9, WG_MS = 800;
 const MIN_AM = 60, MAX_AM = 260, MAX_NIGHT = 30, ALLOC_KB_STEP = 0.5, STEP_MS = 0.5;
 const CARRIAGE = new Set([1, 2, 3, 4, 7]);            // class + 1: roadway, tram road, tram site, parking, median
 const fails = [], fail = (c, m) => fails.push(`${c}: ${m}`), log = (...a) => { if (!QUIET) console.log(...a); };

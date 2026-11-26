@@ -1,5 +1,9 @@
 # Pedestrians: resume here
 
+**2026-11-26, claude/peds2 (P2 in the city)**: people in the city, on by default, `?peds=0` off. See "City" in
+`docs/PEDESTRIANS.md`. Next: quiet GPU / CPU re-run at Saint-Job (`__peds.hidden` A/B), stop shelters that close
+sidewalk edges, more waiting at tram stops, a real drive test of the step-back / dive, the lab leftovers.
+
 State 2026-11-11, branch `claude/pedestrians` (worktree `.claude/worktrees/pedestrians`), not merged, not pushed.
 Read `docs/PEDESTRIANS.md` (what exists, results, weak points) and `docs/PEDESTRIANS_RESEARCH.md` (design, phases).
 

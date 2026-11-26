@@ -128,6 +128,15 @@ async function streetlifeFronts(base, name) {
   return (doc.pois || []).filter((p) => p.face && !["atm", "school", "civic"].includes(p.kind)).map(({ face: f }) => ({ x: f.x, z: f.z, nx: f.nx, nz: f.nz, w: f.w }));
 }
 
+/** (claude/peds2) the street-life layer's points of interest of a tile, every kind (shops, cafés, schools ...): [{ x, z,
+ *  kind }] for the people's density by place (viewer/pedestrians/walkGraph.js placeOf); [] when the tile has none */
+async function streetlifePois(base, name) {
+  const r = await fetch(new URL(`../streetlife/${name}.json`, base)).catch(() => null);
+  if (!r?.ok) return [];
+  const doc = await r.json().catch(() => null);
+  return (doc?.pois || []).map((p) => ({ x: p.face?.x ?? p.x, z: p.face?.z ?? p.z, kind: p.kind })).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.z));
+}
+
 let overridesP = null;
 let streetVoteP = null;
 /** data/roads/streetVote.json (tools/build_street_vote.mjs): street key -> its city-wide OSM surface code (not asphalt) */
@@ -669,8 +678,8 @@ export async function buildTileData(entry, base) {
   // (claude/peds2, rule peds-walk-graph) the pedestrians' walk graph: the drawn sidewalks (street model kerbs through the
   // class raster), corners, the drawn crossings (signalled ones with their phase), paths, platforms, squares, clear of
   // the drive colliders' walls / trunks and the bollards (viewer/pedestrians/walkGraph.js); entry.peds === false: none
-  const peds = entry.peds !== false && road.surfaceData?.grid ? await step("walk graph", () => buildWalkGraph({ bounds, model: net.streetModel, grid: road.surfaceData.grid, roofs, col: drive.col,
-    crossings: road.inventory?.crossings, roads, feats, bollards: road.surfaceData.bollards })) : null;
+  const peds = entry.peds !== false && road.surfaceData?.grid ? await step("walk graph", async () => buildWalkGraph({ bounds, model: net.streetModel, grid: road.surfaceData.grid, roofs, col: drive.col,
+    crossings: road.inventory?.crossings, roads, feats, bollards: road.surfaceData.bollards, pois: await streetlifePois(base, entry.name) })) : null;
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive, footbridges, peds,
     netInfo, road, terrain, buildings, cover, traffic, parked: parked ? { sites: parked.sites, stats: parked.stats } : null, times, rail: railOut, grassTypes,
     bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => { const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || (onCarriageway(d, x, z) && drawnAt(x, z)) : measuredAt, mesh = deckMesh(d, hm.ground, cov, v ? streetTop : null);
