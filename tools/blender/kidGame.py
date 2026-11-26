@@ -135,7 +135,7 @@ def delete_group(inner, name):
     g.add(sorted(inner), 1.0, "REPLACE")
     m = basemesh.modifiers.new(name, "MASK"); m.vertex_group = name; m.invert_vertex_group = True
 
-def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True, ratio=1.0, shape=None):
+def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True, ratio=1.0, shape=None, hem_in=None):
     """the body's faces whose vertices are all in region(i) -> a garment: each vertex offset out along its normal by
     off(i, co, normal), smoothed (boundary pinned), then CUT by planes [(geom_ok(centre, normal) or None, point,
     normal)] (bisect, the outer side cleared: clean hems / cuffs / openings, no stair-step edges), the new vertices of
@@ -205,6 +205,22 @@ def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True
     # UVs (the body's own UV layer dropped: a new layer next to it got a ".001" name and the body's UVs won)
     bm = bmesh.new(); bm.from_mesh(o.data)
     GARM["dl"] = bm.verts.layers.deform.active
+    if hem_in:
+        # a TURNED-IN hem: the open edge above z hem_in[0] folds hem_in[1] m in toward its own loop's middle (per side)
+        # and down: looking into the top, the eye meets the fabric, not a gap to the (decimated) skin
+        zt, dep = hem_in
+        edges = [e for e in bm.edges if e.is_boundary and all(v.co.z > zt for v in e.verts)]
+        if edges:
+            res = bmesh.ops.extrude_edge_only(bm, edges=edges)
+            nv = [g for g in res["geom"] if isinstance(g, bmesh.types.BMVert)]
+            for side in (1, -1):
+                vs = [v for v in nv if v.co.x * side > 0]
+                if not vs: continue
+                c = sum((v.co for v in vs), Vector()) / len(vs)
+                for v in vs:
+                    d = Vector((c.x - v.co.x, c.y - v.co.y, 0))
+                    if d.length > 1e-6: v.co += d.normalized() * dep
+                    v.co.z -= dep * 0.6
     uvl = bm.loops.layers.uv.new("UVMap")
     for f in bm.faces:
         for l in f.loops: l[uvl].uv = uv_of(f, l.vert.co, -1)
@@ -297,6 +313,7 @@ def build_outfit():
     # ---------------- the socks: knee-high-ish, two stripes under a white top
     knee = min(bone_z("calf_l"), bone_z("calf_r"))
     s_lo, s_hi = 0.065, knee - 0.07
+    GARM["s_hi"] = s_hi
     sk_region = lambda i: inbody[i] and dom[i] in ("calf_l", "calf_r", "foot_l", "foot_r") and s_lo - 0.03 <= P(i).z <= s_hi + 0.03
     sk_cuts = [(None, Vector((0, 0, s_hi)), Vector((0, 0, 1))), (None, Vector((0, 0, s_lo)), Vector((0, 0, -1)))]
     sk_uv = lambda f, co, i: cell_uv("socks", 0.5, min(1, max(0, (co.z - s_lo) / (s_hi - s_lo))))
@@ -304,7 +321,7 @@ def build_outfit():
     # (the KNEE MARKS: the socks stood 3.5 mm off the leg up to their top edge: looking into the top you saw the dark gap
     # and the skin's cut edge. The top 2 cm grip the leg like an elastic cuff: 1 mm off, the 2 mm shell sinks into the skin)
     sk_off = lambda i, co, n: 0.0035 if co.z < s_hi - 0.02 else 0.0035 - 0.0025 * min(1.0, (co.z - (s_hi - 0.02)) / 0.012)
-    socks, inner_s = garment("kid_socks", me, sk_region, sk_off, sk_cuts, sk_uv, thick=0.002, smooth=1)
+    socks, inner_s = garment("kid_socks", me, sk_region, sk_off, sk_cuts, sk_uv, thick=0.002, smooth=1)     # (a turned-in hem was tried: folded into dark ticks at the sides once snapped)
     # ---------------- the cap: the head's skin above a tilted rim plane, lifted over the hair (the hair stays: worn
     # backwards the fringe shows), a white centre panel, + a forward and a backward brim
     brows = parts[C["brows"]]
@@ -713,6 +730,22 @@ def game():
         d = o.modifiers.new("budget", "DECIMATE"); d.ratio = ratio; d.use_symmetry = True; d.symmetry_axis = "X"
         while o.modifiers.find("budget") > 0: bpy.ops.object.modifier_move_up(modifier="budget")
         bpy.ops.object.modifier_apply(modifier="budget")
+    # the KNEE MARKS (owner): the socks were built on the full-resolution leg, the skin is then decimated (its facets sit
+    # a few mm inside the old surface): a dark gap showed between the sock's top and the leg. The cuff (the top 2.5 cm)
+    # is snapped onto the DECIMATED skin, 1 mm out, both shells: it grips the leg as drawn
+    if "socks" in slots and "skin" in slots and "s_hi" in GARM:
+        from mathutils.bvhtree import BVHTree
+        sk_o, so = slots["skin"][0], slots["socks"][0]
+        dg = bpy.context.evaluated_depsgraph_get()
+        bvh = BVHTree.FromObject(sk_o, dg)
+        n_s = 0
+        for v in so.data.vertices:
+            if v.co.z < GARM["s_hi"] - 0.025: continue
+            hit, nrm, _, dist = bvh.find_nearest(v.co)
+            if hit is not None and dist < 0.03:
+                t = min(1.0, (v.co.z - (GARM["s_hi"] - 0.025)) / 0.012)
+                v.co = v.co.lerp(hit + nrm * 0.001, t); n_s += 1
+        print(f"sock cuffs snapped to the decimated leg: {n_s} vertices")
     # UV layers: one "UVMap" each
     for o in meshes:
         uvs = o.data.uv_layers
