@@ -189,23 +189,23 @@
      "eu"
     ],
     "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
-    "note": "Rue Gabrielle 105: Romania left, the EU right (a V pair); a Romanian flag also flies on a pole in the garden to the left, behind the wall (not placed: not on this building's front)",
+    "note": "Rue Gabrielle 105: Romania left, the EU right (a V pair); a Romanian flag also flies on a pole in the garden to the left, behind the wall (not placed: not on this building's front); placed: the two arms 1 m apart at 30 / 50 deg (not one plate) so the two 1.5 x 1.0 m flags never fly through each other in a wind along the front",
     "mounts": [
      {
       "type": "bracket",
       "design": "romania",
-      "along": 0,
+      "along": -0.5,
       "y": 5.6,
-      "tilt": 40,
-      "splay": -25
+      "tilt": 30,
+      "splay": -15
      },
      {
       "type": "bracket",
       "design": "eu",
-      "along": 0,
+      "along": 0.5,
       "y": 5.6,
-      "tilt": 40,
-      "splay": 25
+      "tilt": 50,
+      "splay": 15
      }
     ]
    }
@@ -285,14 +285,14 @@
      "eu"
     ],
     "seen": "Google Street View Jun 2024 (look only, 2026-11-26)",
-    "note": "Av. Moscicki 14: the Bulgarian flag left, the EU flag right, both over the door",
+    "note": "Av. Moscicki 14: the Bulgarian flag left, the EU flag right, both over the door; placed: the two brackets at 30 / 50 deg so the two flags fly in two layers (not through each other)",
     "mounts": [
      {
       "type": "bracket",
       "design": "bulgaria",
       "along": -0.4,
       "y": 3.4,
-      "tilt": 35,
+      "tilt": 30,
       "splay": -20
      },
      {
@@ -300,7 +300,7 @@
       "design": "eu",
       "along": 0.4,
       "y": 3.4,
-      "tilt": 35,
+      "tilt": 50,
       "splay": 20
      }
     ]
@@ -546,19 +546,19 @@
    "tile": "H1",
    "type": "bracket",
    "design": "romania",
-   "x": 736.75,
-   "z": -1514.58,
+   "x": 736.86,
+   "z": -1514.09,
    "n": [
     0.9767,
     -0.2144
    ],
    "y": 5.6,
    "ground_at": [
-    737.92,
-    -1514.84
+    738.03,
+    -1514.35
    ],
-   "tilt": 40,
-   "splay": -25,
+   "tilt": 30,
+   "splay": -15,
    "t": [
     -0.2144,
     -0.9767
@@ -571,19 +571,19 @@
    "tile": "H1",
    "type": "bracket",
    "design": "eu",
-   "x": 736.75,
-   "z": -1514.58,
+   "x": 736.64,
+   "z": -1515.07,
    "n": [
     0.9767,
     -0.2144
    ],
    "y": 5.6,
    "ground_at": [
-    737.92,
-    -1514.84
+    738.03,
+    -1514.35
    ],
-   "tilt": 40,
-   "splay": 25,
+   "tilt": 50,
+   "splay": 15,
    "t": [
     -0.2144,
     -0.9767
@@ -638,7 +638,7 @@
     950.96,
     -1095.4
    ],
-   "tilt": 35,
+   "tilt": 30,
    "splay": -20,
    "t": [
     -0.1875,
@@ -663,7 +663,7 @@
     950.96,
     -1095.4
    ],
-   "tilt": 35,
+   "tilt": 50,
    "splay": 20,
    "t": [
     -0.1875,

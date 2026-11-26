@@ -147,6 +147,8 @@ if (!process.argv.includes("--no-build")) {
   const limp = r.filter(([, v]) => v.min < MIN_SPREAD), edge = r.filter(([, v]) => v.faceMin != null && v.faceMin < MIN_FACE), inWall = r.filter(([, v]) => v.wallMin != null && v.wallMin < -0.01);
   check(`7. every flag spreads (fly end / width >= ${MIN_SPREAD}) in 9 wind directions at 5 m/s`, !limp.length, limp.map(([id, v]) => `${id} ${v.design} ${v.min.toFixed(2)}`).join("; ") || `lowest ${Math.min(...r.map(([, v]) => v.min)).toFixed(2)}`);
   check(`7. every flag on a front reads broadside from the street (along the front >= ${MIN_FACE} of its width) in every direction`, !edge.length, edge.map(([id, v]) => `${id} ${v.design} ${v.faceMin.toFixed(2)}`).join("; ") || `lowest ${Math.min(...r.filter(([, v]) => v.faceMin != null).map(([, v]) => v.faceMin)).toFixed(2)}`);
+  const { MIN_GAP } = await import("../embassy/flutter.mjs"), tangled = r.filter(([, v]) => v.pairGap != null && v.pairGap < MIN_GAP);
+  check(`7. two flags of one place never fly through each other (nearest vertices >= ${MIN_GAP} m)`, !tangled.length, tangled.map(([id, v]) => `${id} ${v.pairGap.toFixed(2)} m`).join("; ") || `${r.filter(([, v]) => v.pairGap != null).length} flag(s) in pairs`);
   check("7. no cloth vertex in its wall (half-space) while flying", !inWall.length, inWall.map(([id, v]) => `${id} ${v.wallMin.toFixed(3)} m`).join("; ") || "clear");
 }
 
