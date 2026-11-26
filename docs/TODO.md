@@ -19,6 +19,11 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    what the owner OKs.
 4. Defects (sections below) + reality rounds; villa V3 jobs 2+ alongside (sofa, TV, pool, sculptures, kitchen / bath,
    night lamps, glassware).
+4b. EMBASSY FLAGS (owner 2026-11-26, small job when a slot frees): fetch OSM office=diplomatic (+ country) for Uccle
+   (today's OSM pull has only the Russian embassy); embassies / chancelleries vs residences (residences rarely fly a flag):
+   a flag only where Street View shows a real pole / flag (look only); the existing cloth flags (viewer/flagsCity.js:
+   baked loops, live cloth < 45 m, hidden > 700 m, rule flags-are-cloth); public-domain flag designs; check: one per
+   real pole, no flag on a residence without a pole, cost structural (draws / live count).
 5. Later: TENNIS (owner 2026-11-26: 159 OSM tennis pitches in the area, drawn as ground only today: courts first (lines,
    nets, wind-screen fences, instanced, near only), then an arcade tennis game lab (ball physics, AI, scoring), then E at
    any court; swings: the owner checks Mixamo), then the ideas list.
