@@ -28,6 +28,10 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    UA, HU+EU, BG+EU, RO+EU, KE, SZ, BF, ER, AF, NI, AO), 6 no, 2 unseen; the real Commons flags (PD) in one atlas, real
    proportions, a local wind along the front; rule embassy-flags, row embassyflags. Left: generic blocks where the real
    embassies are villas (Hungary, Eswatini, Afghanistan); Romania's garden pole not placed.
+4a2. GATE FLAKES (coordinator 2026-11-26): (a) pedsgraph's W6 "walk graph <= 800 ms" reads the build time stored WITH
+   the cached tile (tile cache), so one slow build (809 ms) failed it on every run until TILE_CACHE=0; the timing must
+   come from the row's own build (or be skipped for cache hits), rule tile-cache; (b) trafmix's sim-cost twins fail TOO
+   NOISY whenever anything else runs (4 merges tripped): give merge.mjs a "timing rows alone, first, retry x3" step.
 4b2. ACTIVITIES, one at a time, each self-contained (loaded only where it happens, own perf budget + checks; owner
    2026-11-26 agreed the order: core city perf + the three games first): (1) SNOOKER in the villa (mouse play: aim,
    pull back, shoot; real ball physics: collisions, cushions, spin, pockets; no character; loads with the interior);
