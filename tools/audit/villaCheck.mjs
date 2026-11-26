@@ -49,7 +49,7 @@ check(Math.hypot(px - sx, pz - sz) < 1e-3, "villaPlot.toCity = site.json's axes"
 const { readGlb } = await imp("tools/mesh_audit/glb.mjs");
 const ext = await readGlb(new URL("models/villa/villa.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const cell = await readGlb(new URL("models/villa/interior.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
-const SHIP = ["models/villa/villa.glb", "models/villa/interior.glb", "models/villa/fabrics.ktx2", "models/villa/reflect.ktx2"];
+const SHIP = ["models/villa/villa.glb", "models/villa/interior.glb", "models/villa/fabrics.ktx2", "models/villa/reflect.ktx2", "models/villa/caustics.ktx2"];
 const mb = SHIP.reduce((s, f) => s + statSync(new URL(f, ROOT)).size, 0) / 1048576;
 check(mb <= B.mb, `download <= ${B.mb} MB`, `${mb.toFixed(2)} MB`);
 const tri = (parts, node) => parts.filter((p) => p.node === node).reduce((s, p) => s + p.index.length / 3, 0);
@@ -167,6 +167,25 @@ check(unbaked.length === 0, "every interior primitive carries the sky / sun / ni
   }
   check(kt > 0 && kt <= 12000 && kd <= 4 && (notes.kit_contact || []).length >= 8 && bad3 === 0,
     "the pool kit (Villa_kit, near only): <= 12k tris, <= 4 draws, every piece on the deck within 5 mm", `${kt} tris, ${kd} draws; ${rows3.join("; ")}`);
+}
+// ---- 2g. villa3 job 3b (rule villa-caustics-baked + villa-pool-v2's night tone range): the baked caustics stay
+// cheap (one KTX2 < 0.5 MB, <= 3 texture lookups in the water's shader), and the night glow is a glow, never a
+// blow-out: over the basin's walls and floor its luminance (the shader's own constants, POOL_NIGHT) peaks under
+// 0.9, averages >= 0.12 and nowhere drops under 0.02 (the deep end still reads)
+{
+  const pTxt = readFileSync(new URL("viewer/villa/villaPool.js", ROOT), "utf8");
+  const lookups = (pTxt.match(/\btexture\(/g) || []).length;
+  const kb = statSync(new URL("models/villa/caustics.ktx2", ROOT)).size / 1024;
+  check(lookups <= 3 && kb < 512, "the baked caustics: <= 3 texture lookups in villaPool.js, caustics.ktx2 < 0.5 MB", `${lookups} lookups, ${kb.toFixed(0)} KB`);
+  const VPm = await imp("viewer/villa/villaPool.js");
+  const P = notes.pool, W = P.water - 100, F = P.floor - 100;
+  const L = [];
+  for (let w = P.w0; w <= P.w1; w += 0.5) {
+    for (let u = P.u0; u <= P.u1; u += 0.5) L.push(VPm.poolNightLum(P, u, F, w));
+    for (const u of [P.u0, P.u1]) for (let y = F; y <= W; y += 0.3) L.push(VPm.poolNightLum(P, u, y, w));
+  }
+  const mx = Math.max(...L), mn = Math.min(...L), mean = L.reduce((s, x) => s + x, 0) / L.length;
+  check(mx <= 0.9 && mean >= 0.12 && mn >= 0.02, "the pool's night glow inside its tone range (peak <= 0.9, mean >= 0.12, deep end >= 0.02)", `peak ${mx.toFixed(2)}, mean ${mean.toFixed(2)}, min ${mn.toFixed(3)} over ${L.length} points`);
 }
 // ---- 2d. villa3 (rule villa-licences): every external asset the villa ships is listed with its licence and source page
 {

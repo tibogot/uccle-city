@@ -180,3 +180,9 @@ Budgets after job 2: download 6.92 MB (villa.glb + interior.glb + fabrics.ktx2 +
 
 Budgets after job 3: download 7.0 MB of 9; LOD0 (Villa) 60,978 tris / 8 draws of 62k / 9 (the old coping bars moved
 into the kit); Villa_kit 10,534 tris / 4 draws (its own cap, 12k / 4: asked of the owner); interior unchanged.
+
+## v3 job 3b (2026-11-26): baked caustics, the night glow, the kit budget
+
+- The owner approved the Villa_kit cap (12k tris / 4 draws, near only, outside the 9-draw level cap): recorded in rule villa-budgets.
+- **Caustics** (the owner: "I've seen way better caustics in games"): BAKED, tools/villa/caustics_bake.py: a tileable periodic wave surface refracts a sun bundle onto a floor 1.1 m down, photons splatted into a 256 px tile, R / G / B at n 1.327 / 1.333 / 1.341 (the rainbow edges in ONE lookup), 12 looping frames, ETC1S: models/villa/caustics.ktx2, 162 KB. The water's shader samples it twice (two scales / scroll directions / frame phases) and keeps the MIN (the sharp web), projects it along the refracted sun onto the floor, the treads and the walls, moves it with the ripples, fades it with depth, and drops it where the coping shades the entry point: 2 lookups, no extra pass. The first wiring swapped a placeholder texture after the material was built: it did not rebind (a flat brightening): the texture now loads with the model, before the water's material (rule villa-caustics-baked).
+- **Night** (job 3 read black-blue; a first pass before it blew out white): the LED niches light the basin with an exponential falloff into the deep end, the walls and floor lit from below with the same caustic web, the water faintly luminous; constants in villaPool.js POOL_NIGHT, read by the gate's tone check (peak <= 0.9, mean >= 0.12, deep end >= 0.02: now 0.43 / 0.18 / 0.088).

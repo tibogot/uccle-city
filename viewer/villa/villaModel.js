@@ -211,8 +211,13 @@ function wrapAO(src, slot) {
 }
 
 let promise = null;
-export function loadVilla() {
+export function loadVilla({ renderer = null } = {}) {
   return (promise ??= (async () => {
+    // villa3 job 3b: the pool's baked caustics (162 KB) load WITH the model (the villa itself loads when needed, in the
+    // background), before the water's material is built: the texture is bound from the start (a placeholder swapped
+    // later did not rebind: the first try drew a flat brightening)
+    const caust = GLASS_V3 && renderer ? Promise.all([import("../materials/scans.js"), import("./villaPool.js")])
+      .then(([S, VP]) => VP.loadCaustics(S.ktxLoader(renderer), new URL("caustics.ktx2", new URL(VILLA_DIR, import.meta.url)).href)).catch((e) => { console.warn("[villa] caustics:", e.message); return null; }) : null;
     const base = new URL(VILLA_DIR, import.meta.url).href;
     MeshoptDecoder.useWorkers?.(2);
     const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
@@ -272,6 +277,7 @@ export function loadVilla() {
       return g;
     };
     const inv = rootM.clone().invert();
+    if (caust) await caust;
     const waterMat = GLASS_V3 ? poolMaterialV3(notes.pool, inv, notes) : poolMaterial(notes.pool, inv);     // (villa3 job 3: villaPool.js)
     const waterNode = nodes.Villa_water;
     let water = null;

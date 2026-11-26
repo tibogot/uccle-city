@@ -62,7 +62,7 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
     const hm = new Heightmap(hdr, buf);
     return (x, z) => hm.surface(x, z);
   })();
-  Promise.all([whenNeeded("villa").then(() => loadVilla()), groundP]).then(async ([m, groundAt]) => {
+  Promise.all([whenNeeded("villa").then(() => loadVilla({ renderer })), groundP]).then(async ([m, groundAt]) => {
     const tLoad = performance.now() - t0;
     const root = new THREE.Group(); root.name = "villa";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
@@ -172,6 +172,7 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
       if (cars && !carsSet && window.__driver) carsSet = window.__driver.addStatic(cars.rings.map((r) => ({ rings: [r] })));
       const d = m.distance(camPos);
       state.d = d;
+
       if (SMOOTH) { const s = villaLodState(d); setLodFades(levels, s.shown, s.fades); state.shown = s.shown; state.fades = s.fades; }
       else { const k = VILLA_LODS.findIndex((l) => d < l.until); levels.forEach((lv, i) => { lv.visible = i === k; }); }
       if (bay) bay.visible = levels[0].visible;

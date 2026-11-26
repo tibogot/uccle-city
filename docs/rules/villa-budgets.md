@@ -5,7 +5,7 @@ check: `villa` (tools/audit/villaCheck.mjs) + browser row `villa` (the stream-in
 ---
 **Rule.** The villa on Av. du Prince d'Orange (viewer/villa/) stays inside its budgets: download (villa.glb + interior.glb
 + fabrics.ktx2) <= 9 MB (villa3, the owner 2026-11-26: textures streamed with the interior, never at boot); LOD0 <= 62k triangles, LOD1 <= 20k, LOD2 <= 1.5k, one draw per named slot (<= 9 per level); the interior cell
-<= 230k triangles (villa3) and <= 16 draws (round 2, the furnished rooms), every opaque interior primitive carrying its three baked lights (sky / sun / night: no
+<= 230k triangles (villa3) and <= 16 draws (round 2, the furnished rooms), the pool kit node Villa_kit <= 12k triangles / <= 4 draws, drawn only within 70 m (with LOD0) and outside the 9-draw level cap (approved by the owner 2026-11-26), every opaque interior primitive carrying its three baked lights (sky / sun / night: no
 runtime light, rule fixed-light-count). The interior streams in (fetch < 60 m, shown < 30 m) with its shaders built in
 the background before it shows: no frame over 33 ms while it fetches, compiles or appears. The drive lane from the gate
 to the garage's right bay is free of car blockers and no parked car stands in it; the closed gate closes its mouth; the

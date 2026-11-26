@@ -21,7 +21,7 @@
 import * as THREE from "three/webgpu";
 import {
   vec2, vec3, vec4, float, floor, fract, mix, step, smoothstep, clamp, abs, dot, max, min, uniform, Fn, positionWorld, cameraPosition,
-  normalize, pow, time, fwidth, select, length, reflect, transpose,
+  normalize, pow, time, fwidth, select, length, reflect, transpose, texture, int,
 } from "three/tsl";
 import { env } from "../lighting.js";
 import { outdoor } from "./villaGlass.js";
@@ -36,6 +36,35 @@ const vnoise = (p) => {
   const i = floor(p), f = fract(p), u2 = f.mul(f).mul(float(3).sub(f.mul(2)));
   return mix(mix(hash2(i), hash2(i.add(vec2(1, 0))), u2.x), mix(hash2(i.add(vec2(0, 1))), hash2(i.add(vec2(1, 1))), u2.x), u2.y);
 };
+/** the night glow's constants: the shader and the gate's tone check (villaCheck 2f) both read these */
+export const POOL_NIGHT = {
+  aqua: 0x38c8f2, base: 0.06, gain: 0.62, i_max: 1.25, fall: 2.2, c_mix: 0.45, spot: 0.35, spot_r: 0.32, niche_depth: 0.45,
+  niches: (pool) => [[pool.u0, -11.0], [pool.u0, -3.0], [pool.u1, -11.0], [pool.u1, -3.0]],
+};
+/** CPU replica of the night glow's luminance at a basin point (u, y, w): the tone check (no blow-out, a real glow) */
+export function poolNightLum(pool, u, y, w, cweb = 0.35) {
+  const W = pool.water - 100; let I = 0, spot = 0;
+  for (const [lu, lw] of POOL_NIGHT.niches(pool)) {
+    const d = Math.hypot(u - lu, y - (W - POOL_NIGHT.niche_depth), w - lw);
+    I += Math.exp(-d / POOL_NIGHT.fall); spot = Math.max(spot, Math.max(0, 1 - d / POOL_NIGHT.spot_r));
+  }
+  const lum = Math.min(I, POOL_NIGHT.i_max) * POOL_NIGHT.gain * ((1 - POOL_NIGHT.c_mix) + 2 * POOL_NIGHT.c_mix * cweb) + POOL_NIGHT.base + spot * POOL_NIGHT.spot;
+  const c = new THREE.Color(POOL_NIGHT.aqua);
+  return lum * (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b);
+}
+/** the baked caustics array (models/villa/caustics.ktx2, streamed with the villa's near textures): a placeholder of
+ *  the same kind until it lands (the texture nodes' value swapped: no pipeline rebuild) */
+export const CAUST_FRAMES = 12;
+const CAUST = (() => {
+  const ph = new THREE.DataArrayTexture(new Uint8Array(4 * CAUST_FRAMES).fill(90), 1, 1, CAUST_FRAMES); ph.needsUpdate = true;
+  return { node: { value: ph }, nodes: [] };
+})();
+export async function loadCaustics(ktx, url) {
+  const tex = await ktx.loadAsync(url);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.NoColorSpace; tex.needsUpdate = true;
+  CAUST.node.value = tex;
+  return tex;
+}
 /** live look (uniforms) */
 export const poolLook = { ripple: uniform(1.0), refl: uniform(1.0), caustic: uniform(1.2), led: uniform(1.0), absorb: uniform(new THREE.Vector3(0.75, 0.13, 0.1)) };
 
@@ -104,28 +133,43 @@ export function poolMaterialV3(pool, rootInv, notes) {
       nose = max(nose, onStep.mul(step(abs(h.z.sub(wEdge)), 0.05)).mul(step(abs(h.y.sub(yTop)), 0.06)));
     }
     tile = mix(tile, lin(0x22394a), nose);
-    // caustics: 0.25 m, sharp, fading with the depth of the hit
+    // caustics (job 3b, rule villa-caustics-baked): the BAKED light-through-waves tile (models/villa/caustics.ktx2,
+    // tools/villa/caustics_bake.py: R / G / B at three refractive indices = the rainbow edges), projected along the
+    // refracted SUN onto the floor, the treads and the walls, sampled TWICE (two scales, scroll directions, frame
+    // phases) and the MIN kept: the sharp web (2 lookups, the only ones on this material). Moving with the ripples,
+    // fading with depth, none where the coping shades the water (the sun's entry point outside the open surface)
     const dz = float(W).sub(h.y).max(0.0);
-    const cq = h.xz.div(0.15);
-    const c1 = vnoise(cq.add(vec2(t.mul(0.5), t.mul(0.3)))), c2 = vnoise(cq.mul(1.6).sub(vec2(t.mul(0.35), t.mul(0.55))));
-    const caust = pow(float(1).sub(abs(c1.sub(c2))), 9.0).mul(2.2).mul(float(1).sub(smoothstep(0.3, 1.6, dz).mul(0.6))).mul(poolLook.caustic);
+    const sdl = normalize(uInv.mul(vec4(vec3(env.uSunDir), 0.0)).xyz);
+    const rsun = normalize(vec3(sdl.x.mul(-0.75), sdl.y.mul(-1.0).min(-0.2), sdl.z.mul(-0.75)));     // (refracted, steeper)
+    const sp = h.xz.sub(rsun.xz.mul(float(W).sub(h.y).div(rsun.y.negate()))).add(slope.mul(0.35)).toVar();
+    const inside = step(pool.u0 + 0.04, sp.x).mul(step(sp.x, pool.u1 - 0.04)).mul(step(pool.w0 + 0.04, sp.y)).mul(step(sp.y, pool.w1 - 0.04));
+    const fr = floor(time.mul(8.0)), lay1 = fr.mod(CAUST_FRAMES), lay2 = fr.add(CAUST_FRAMES / 2).mod(CAUST_FRAMES);
+    const cu1 = sp.div(1.3).add(vec2(time.mul(0.021), time.mul(0.013)));
+    const cu2 = vec2(sp.x.mul(0.6).sub(sp.y.mul(0.8)), sp.x.mul(0.8).add(sp.y.mul(0.6))).div(1.75).add(vec2(time.mul(-0.017), time.mul(0.019)));
+    const cA = texture(CAUST.node.value, cu1).depth(int(lay1)), cB = texture(CAUST.node.value, cu2).depth(int(lay2));
+    const cweb = min(cA.rgb, cB.rgb).toVar();
+    const caust = cweb.mul(4.5).mul(mix(float(1), float(0.4), smoothstep(0.2, 1.5, dz))).mul(inside).mul(poolLook.caustic);
     const sunK = smoothstep(0.02, 0.2, env.uSunDir.y).mul(float(1).sub(env.uNight));
-    const lit = tile.mul(vec3(1.0).add(vec3(env.uSunColor).mul(caust.mul(sunK))));
+    const lit = tile.mul(vec3(0.7).add(vec3(env.uSunColor).mul(caust.mul(sunK))));
     // absorption over the in-water path: shallow turquoise, deep blue-green
     const path = tt.add(dz.mul(0.6));
     const a = vec3(poolLook.absorb);
     const trans = vec3(a.x.mul(path).negate().exp(), a.y.mul(path).negate().exp(), a.z.mul(path).negate().exp());
     const deep = lin(0x0a4a55);
     const under = mix(deep, lit, trans).mul(0.62);
-    // ---- night: four LED niches in the long walls (u0 / u1, two each), their glow in the water; lit from below
+    // ---- night (job 3b, rule villa-pool-v2 + its tone check): a lit pool GLOWS: bright aqua round the four LED niches
+    // (the long walls), fading into the deep end, the walls and floor lit from below with the same caustic web
+    // rippling, the water itself faintly luminous; emissive only, inside the tone range POOL_NIGHT (gate villa 2f)
     const n_ = env.uNight;
-    let led = float(0);
-    for (const [lu, lw] of [[pool.u0, -11.0], [pool.u0, -3.0], [pool.u1, -11.0], [pool.u1, -3.0]]) {
-      const dSpot = length(vec2(h.x.sub(lu), h.z.sub(lw)).mul(vec2(3, 1))).add(abs(h.y.sub(W - 0.45)).mul(3.0));
-      led = led.add(smoothstep(0.35, 0.0, dSpot).mul(3.0)).add(float(1).div(dSpot.mul(dSpot).mul(6.0).add(1.0)).mul(0.25));
+    let I = float(0), spot = float(0);
+    for (const [lu, lw] of POOL_NIGHT.niches(pool)) {
+      const dN = length(vec3(h.x.sub(lu), h.y.sub(W - POOL_NIGHT.niche_depth), h.z.sub(lw)));
+      I = I.add(dN.div(POOL_NIGHT.fall).negate().exp());
+      spot = max(spot, smoothstep(POOL_NIGHT.spot_r, 0.0, dN));
     }
-    // (the first night pass drew the whole basin white: the glow is a few % of the day's light, deepest near the niches)
-    const glow = lin(0x2f9fd6).mul(n_).mul(led.mul(0.35).add(0.045)).mul(trans.mul(0.7).add(0.3)).mul(poolLook.led).mul(tile.mul(0.5).add(0.5));
+    const lumN = I.min(POOL_NIGHT.i_max).mul(POOL_NIGHT.gain).mul(mix(float(1 - POOL_NIGHT.c_mix), float(1 + POOL_NIGHT.c_mix), cweb.g))
+      .add(POOL_NIGHT.base).add(spot.mul(POOL_NIGHT.spot));
+    const glow = lin(POOL_NIGHT.aqua).mul(n_).mul(lumN).mul(trans.mul(0.6).add(0.4)).mul(poolLook.led).mul(tile.mul(0.4).add(0.6));
     // ---- the reflection: the house (a ray-box test on its masses) or the outdoor scene
     const R = reflect(v, n).toVar();
     const tA = slab(p, R, houseA.b0, houseA.b1), tB = slab(p, R, houseB.b0, houseB.b1);
