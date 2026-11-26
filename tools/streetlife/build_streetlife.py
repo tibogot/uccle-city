@@ -63,6 +63,28 @@ SHOP_KIND = {"bakery": "bakery", "pastry": "bakery", "supermarket": "supermarket
 NO_NAME_TEXT = {"doctors", "dentist"}            # skipped: brass plates with personal names, not shop fronts
 
 
+FILL = True                                     # (rule shop-street-fill) --fill old: none
+# a shop street's other ground floors (Street View 2026-11-26): the trades seen most, as plain words in our own lettering
+FILL_CATS = [("clothes", "BOUTIQUE", 0.18), ("hairdresser", "COIFFURE", 0.14), ("vacant", "À LOUER", 0.12), ("estate_agent", "IMMOBILIER", 0.1),
+             ("beauty", "INSTITUT DE BEAUTÉ", 0.08), ("optician", "OPTIQUE", 0.06), ("shoes", "CHAUSSURES", 0.06), ("dry_cleaning", "PRESSING", 0.05),
+             ("gift", "CADEAUX", 0.05), ("florist", "FLEURS", 0.05), ("interior_decoration", "DÉCORATION", 0.05), ("travel_agency", "VOYAGES", 0.03),
+             ("jewelry", "BIJOUTERIE", 0.03)]
+
+
+def _h01(key, salt=""):
+    import hashlib
+    return int(hashlib.md5(f"{key}|{salt}".encode()).hexdigest()[:8], 16) / 2 ** 32
+
+
+def _pick_fill(key):
+    u = _h01(key, "cat") * sum(w for _, _, w in FILL_CATS)
+    for cat, word, w in FILL_CATS:
+        if u < w:
+            return cat, word
+        u -= w
+    return FILL_CATS[-1][:2]
+
+
 def classify(t):
     a, s = t.get("amenity"), t.get("shop")
     if a == "fuel":
@@ -732,6 +754,41 @@ def build_tile(name: str, src) -> dict:
             rec["atm"] = True
         out["pois"].append(rec)
 
+    # ---- (claude/reality1 round 3, rule shop-street-fill, class C2) THE SHOP STREETS' OTHER GROUND FLOORS: Street View
+    # (reality round 2026-11-26: Rue Xavier De Bue, Ch. d'Alsemberg, Ch. de Waterloo at Vivier d'Oie / Fort-Jaco, Parvis
+    # Saint-Pierre): every ground floor of a shop street is a shop, OSM maps a third of them. A street face of a building
+    # standing on the sidewalk (<= 5 m to the kerb), on a stretch with >= 3 OSM shops of the same street within 45 m, with
+    # no shop yet: a generic front (a trade word on the fascia, no invented brand), 85 % of them (doors to the flats above
+    # stay). --fill old: none
+    if FILL:
+        real = [(p["face"]["street"], p["face"]["x"], p["face"]["z"]) for p in out["pois"] if p.get("face") and p["kind"] != "atm" and not p.get("fill")]
+        if len(real) >= 3:
+            for si in sorted(range(len(T.solids)), key=lambda i: T.solids[i]["bu"] or ""):
+                sd = T.solids[si]
+                if sd["landmark"]:
+                    continue
+                for ei, e in enumerate(T.edges_of(si)):
+                    ax, az, bx, bz, nx, nz, L, rd, rr = e
+                    st = rr.get("name")
+                    if not st or L < 4.5 or F.used.get((si, ei, False)):
+                        continue
+                    mx, mz = (ax + bx) / 2, (az + bz) / 2
+                    if not T.inside(mx, mz):
+                        continue
+                    near = sum(1 for s2, x2, z2 in real if s2 == st and math.hypot(x2 - mx, z2 - mz) <= 45.0)
+                    if near < 3:
+                        continue
+                    key = f"{sd['bu']}|{ei}"
+                    if _h01(key, "fill") >= 0.85:
+                        continue
+                    # (no fill next to a real shop of this building on any of its walls: a corner shop's other face, a yard front)
+                    if any(p.get("face") and p["face"].get("si") == si and math.hypot(p["face"]["x"] - mx, p["face"]["z"] - mz) < L / 2 + 4.0 for p in out["pois"] if not p.get("fill")):
+                        continue
+                    fa = F.attach(mx, mz, 5.5, bu=sd["bu"], reach=1.5, street=st)
+                    if not fa or fa.get("side") is None or fa["side"] > 5.0:
+                        continue
+                    cat, word = _pick_fill(key)
+                    out["pois"].append({"id": f"fill:{name}:{si}:{ei}", "kind": "shop", "cat": cat, "name": word, "fill": True, "x": fa["x"], "z": fa["z"], "face": fa})
     # ---- STIB stops
     shelters = src["shelters"]
     for f in sorted((src["stib"] or {}).get("features", []), key=lambda f: str(f["properties"].get("stop_id"))):
@@ -881,7 +938,8 @@ def build_tile(name: str, src) -> dict:
     c = Counter(p["kind"] for p in out["pois"])
     out["counts"] = {**dict(sorted(c.items())), "fuel": len(out["fuel"]), "stops": len(out["stops"]), "villo": len(out["villo"]),
                      "postboxes": len(out["postboxes"]), "glass": len(out["glass"]), "plates": len(out["plates"]), "numbers": len(out["numbers"]),
-                     "named": sum(1 for p in out["pois"] if p.get("name")) + sum(1 for p in out["fuel"] if p.get("name"))}
+                     "named": sum(1 for p in out["pois"] if p.get("name") and not p.get("fill")) + sum(1 for p in out["fuel"] if p.get("name")),
+                     "fill": sum(1 for p in out["pois"] if p.get("fill"))}
     out["buildMs"] = round((time.time() - t0) * 1000)
     return out
 
@@ -894,7 +952,10 @@ def main():
     # (shops2) rewrite only the shops (pois + their counts) of the existing tile files: the rest (numbers, plates, stops) moves
     # by centimetres on a rebuild since the tiles' terrain / buildings changed; a full rebuild is a city-wide job of its own
     ap.add_argument("--pois-only", action="store_true")
+    ap.add_argument("--fill", default="new", help="old: no shop-street fill (rule shop-street-fill)")
     a = ap.parse_args()
+    global FILL
+    FILL = a.fill != "old"
     raw = (a.raw or default_raw()) / "streetlife"
     src = load_raw(raw)
     tiles = list(all_tiles()) if a.all else [t.upper() for t in a.tiles]
