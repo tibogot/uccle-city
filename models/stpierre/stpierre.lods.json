@@ -1,25 +1,27 @@
 {
+ "StPierre_lod1_noFight": {
+  "rounds": 4,
+  "before": {
+   "pairs": 900,
+   "m2": 40.586626880290275
+  },
+  "after": {
+   "pairs": 0,
+   "m2": 0
+  },
+  "dropped": 0,
+  "locked": 9021
+ },
  "StPierre_lod1": {
   "from": "StPierre",
-  "sourceTris": 31626,
-  "tris": 15432,
-  "noFight": {
-   "before": {
-    "pairs": 900,
-    "m2": 40.56879712927999
-   },
-   "after": {
-    "pairs": 0,
-    "m2": 0
-   },
-   "locked": 8271
-  }
+  "sourceTris": 31624,
+  "tris": 15740
  },
  "StPierre_lod2": {
   "from": "StPierre_far",
-  "sourceTris": 4256,
-  "tris": 2782
+  "sourceTris": 4494,
+  "tris": 3328
  },
- "glbBytes": 1090716,
- "rawBytes": 3192092
+ "glbBytes": 1103036,
+ "rawBytes": 3216984
 }
