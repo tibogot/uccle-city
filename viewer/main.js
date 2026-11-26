@@ -1531,8 +1531,9 @@ async function main() {
     cityQuality._pipe = pipe; if (params.get("quality")) cityQuality.set(params.get("quality"));   // --- upscale: the settings menu's quality presets
     if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
     if (params.get("precompile") !== "0") compileFor = (roots, o) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null, first: !!o?.first, names: o?.names ?? null, last: !!o?.last });   // ?precompile=0: A/B
-    if (compileFor && RAIL_WARM && TRAINS && !railWarmed) { railWarmed = true; railP?.then((rail) => { if (!rail) return; const st = rail.m.railTileMeshes(rail.m.railWarmData()); st.group.name = "rail-warm"; return preCompile(st.group, TILE_FADE); }).catch((e) => log(`rail warm: ${e.message}`)); }
     else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
+    // (perf5: AFTER the precompile if / else above: inserted between them it took that else and set the tone-mapping exposure on every page)
+    if (compileFor && RAIL_WARM && TRAINS && !railWarmed) { railWarmed = true; railP?.then((rail) => { if (!rail) return; const st = rail.m.railTileMeshes(rail.m.railWarmData()); st.group.name = "rail-warm"; return preCompile(st.group, TILE_FADE); }).catch((e) => log(`rail warm: ${e.message}`)); }
   };
 
   setLampPool(scene, updaters);                       // perfgame round 6: one city-wide lamp pool (?lamppool=old: per tile)

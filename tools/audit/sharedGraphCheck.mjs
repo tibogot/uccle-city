@@ -176,6 +176,13 @@ if (!OLD) {
   ok(M.includes("const contour = contourFn(contourOn);"), "main.js: one contour graph per switch (the terrain template's key)");
   ok(M.includes("railTileMeshes(rail.m.railWarmData())") && M.includes('RAIL_WARM = GAME_START && params.get("railwarm") !== "old"'), "main.js compiles the rail stand-in at a game start (?railwarm=old: not)");
   ok(M.includes("shadowDirty: (objs) => markSunShadowDirty(objs)"), "main.js gives the flush the sun cache's dirty mark");
+  // (the tour's darkening, 2026-11-26) the rail warm-up's line was first inserted between the precompile `if` and its
+  // `else`: the else then belonged to the rail test, ran on every non-game page and set renderer.toneMappingExposure =
+  // 0.55 under the pipeline's own exposure (all 22 tour views darker: mean luma 107 -> 78). The pair must stay adjacent.
+  const L = M.split(/\r?\n/), pi = L.findIndex((l) => l.includes('if (params.get("precompile") !== "0") compileFor = (roots, o) =>'));
+  let pj = pi + 1; while (pj < L.length && /^\s*\/\//.test(L[pj])) pj++;
+  ok(pi >= 0 && /^\s*else \{ renderer\.toneMapping = THREE\.ACESFilmicToneMapping; renderer\.toneMappingExposure = lighting\.exposureScale; \}/.test(L[pj] || ""), "main.js: the precompile if / tone-mapping else pair is intact (nothing between them)");
+  ok(L.findIndex((l) => l.includes("railWarmed = true")) > pj, "main.js: the rail warm-up comes after that if / else");
 }
 if (!QUIET || fails) console.log(fails ? `${fails} FAIL` : "sharedgraph: all ok");
 process.exit(fails ? 1 : 0);
