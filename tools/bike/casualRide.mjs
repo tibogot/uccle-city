@@ -7,7 +7,7 @@
 // `bikefall`) asserts on them.
 import { DT, BIKE, createBikeState, stepBike, bikeSpeed } from "../../viewer/bike/bikePhysics.js";
 import { createBikeEnv } from "../../viewer/bike/bikeEnv.js";
-import { testGroundRamped, testColliders, testEdges, PARK_WALLRIDES, KERB, SAND, PUMP, ROOTS, KICKER, TABLE, BOWL, SLOPE, STEEP, COBBLES, BUMPS, DROPS } from "../../viewer/bike/bikeGround.js";
+import { testGroundRamped, testColliders, testEdges, PARK_WALLRIDES, MUD, SNOW, FIELD, KERB, SAND, PUMP, ROOTS, KICKER, TABLE, BOWL, SLOPE, STEEP, COBBLES, BUMPS, DROPS } from "../../viewer/bike/bikeGround.js";
 import { buildColliders, KIND } from "../../viewer/drive/colliders.js";
 
 const CL = testColliders(KIND);
@@ -42,6 +42,11 @@ export const RUNS = [
   R("bowl across", "bowl", BOWL.x, BOWL.z - BOWL.R - 6, 0, [3, 8], 2 * BOWL.R + 10, { spread: 10 }),
   R("bowl carving", "bowl", BOWL.x, BOWL.z - BOWL.R + 2, 0, [3, 7], 50, { secs: 16, weave: 1, spread: 20 }),
   R("small drops", "drop", DROPS ? DROPS.x : 0, DROPS ? DROPS.z0 - 6 : 0, 0, [2, 8], DROPS ? DROPS.len + 10 : 1, { skip: !DROPS }),
+  R("mud", "mud", (MUD.x0 + MUD.x1) / 2, MUD.z0 - 6, 0, [2, 6], MUD.z1 - MUD.z0 + 8, { secs: 14 }),
+  R("mud turning", "mud", (MUD.x0 + MUD.x1) / 2, MUD.z0 + 2, 0, [2, 5], 30, { secs: 10, weave: 1 }),
+  R("snow", "snow", SNOW.x, SNOW.z - SNOW.r - 4, 0, [2, 6], 2 * SNOW.r + 6, { secs: 14 }),
+  R("snow turning", "snow", SNOW.x, SNOW.z - 4, 0, [2, 5], 30, { secs: 10, weave: 1 }),
+  R("grass field", "grass", (FIELD.x0 + FIELD.x1) / 2, FIELD.z0 + 2, 0, [2, 6], 40, { secs: 14, weave: 1, spread: 30 }),
   R("hill 6 % down", "descent", 154, 38, Math.PI / 2, [0, 2], 280, { secs: 45, spread: 2 }),
   R("hill 12 % down", "descent", 154, 62, Math.PI / 2, [0, 2], 220, { secs: 35, spread: 2 }),
   R("plaza wandering", "plaza", 0, -2, Math.PI / 2, [2, 6], 60, { secs: 20, weave: 1, spread: 180 }),

@@ -33,7 +33,7 @@ const T0 = performance.now();
   const T = causesTable(seeds);
   const groups = {};
   for (const [name, r] of Object.entries(T.byRun)) { const g = groups[r.group] ||= { crashes: 0, secs: 0, rides: 0, causes: {}, runs: [] }; g.crashes += r.crashes; g.secs += r.secs; g.rides += r.rides; g.runs.push(name); for (const [c, n] of Object.entries(r.causes)) g.causes[c] = (g.causes[c] || 0) + n; }
-  const want = { kerb: 0.05, cobbles: 0.05, bumps: 0.05, roots: 0.05, pump: 0.05, sand: 0.05, slope: 0.1, jump: 0.05, bowl: 0.05, drop: 0.05, descent: 0.05 };
+  const want = { kerb: 0.05, cobbles: 0.05, bumps: 0.05, roots: 0.05, pump: 0.05, sand: 0.05, slope: 0.1, jump: 0.05, bowl: 0.05, drop: 0.05, descent: 0.05, mud: 0.05, snow: 0.05, grass: 0.05 };
   for (const [g, lim] of Object.entries(want)) {
     const G = groups[g], pm = G ? G.crashes / (G.secs / 60) : NaN;
     check(`casual rider, ${g} (${G?.runs.join(", ")})`, G && pm <= lim, `${G?.crashes} crashes in ${G?.rides} rides (${f2(pm)} a minute)${G && G.crashes ? ": " + Object.entries(G.causes).map(([c, n]) => `${c} ${n}`).join(", ") : ""}`, `<= ${lim} a minute (old tuning: kerbs 6.5-8.8, sand turning 1.5, bowl carving 1.0)`);
@@ -42,6 +42,16 @@ const T0 = performance.now();
   check("casual rider, the plaza (a wall, posts, a car, a log: real hits allowed)", P && P.crashes / (P.secs / 60) < 1, `${P?.crashes} crashes in ${P?.rides} rides (${f2(P?.crashes / (P?.secs / 60))} a minute): ${Object.entries(P?.causes || {}).map(([c, n]) => `${c} ${n}`).join(", ")}`, "< 1 a minute, only real hits (old tuning 1.50, 11 of them 'landed sideways')");
   const soft = Object.entries(T.causes).filter(([c]) => !/hit a (wall|car|post)|front wheel hit the kerb/.test(c)).reduce((a, [, n]) => a + n, 0);
   check("casual rider: no soft crash anywhere (landing / wash-out / endo / loop-out)", soft <= 1, `${soft} (all causes: ${Object.entries(T.causes).map(([c, n]) => `${c} ${n}`).join(", ") || "none"}; ${f2(T.perMin)} crashes a minute in all)`, "<= 1 over every ride");
+}
+
+// ---------------------------------------------------------------- 1a. the new surfaces: slower in mud / snow (owner 2026-11-26)
+{
+  // pedalling seated on each surface's flat ground: the cruise speed and the coast-down from 5 m/s
+  const on = (surf) => { const env = createBikeEnv({ ground: groundQuery(() => 0, () => surf) }); const a = spawn(env, 0, 0, 0); ride(a, env, () => ({ pedal: 1 }), 30); const b = spawn(env, 0, 0, 0); b.vz = 5; ride(b, env, () => ({}), 3); return [bikeSpeed(a), bikeSpeed(b)]; };
+  const R = { asphalt: on(SURF.asphalt), grass: on(SURF.grass), mud: on(SURF.mud), snow: on(SURF.snow) };
+  const ok = R.mud[0] < R.grass[0] && R.snow[0] < R.asphalt[0] * 0.8 && R.mud[0] < R.asphalt[0] * 0.6 && R.mud[1] < R.asphalt[1] && R.snow[1] < R.asphalt[1];
+  check("surfaces: pedalling is slower in mud and snow than on grass / asphalt; they coast down sooner", ok,
+    Object.entries(R).map(([k, [c, d]]) => `${k} ${f1(c * 3.6)} km/h (coast 5 -> ${f1(d)} m/s in 3 s)`).join("; "), "mud < 0.6 x asphalt, snow < 0.8 x, both coast down faster");
 }
 
 // ---------------------------------------------------------------- 1b. downhill speed is physical (owner 2026-11-26)

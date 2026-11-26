@@ -37,7 +37,7 @@ export const SURFACES = [
   { name: "asphalt", grip: 0.95, roll: 0.010, sink: 0.00, buzz: 0.002 },
   { name: "setts", grip: 0.72, roll: 0.024, sink: 0.00, buzz: 0.014 },
   { name: "dirt", grip: 0.70, roll: 0.018, sink: 0.00, buzz: 0.008 },
-  { name: "grass", grip: 0.55, roll: 0.060, sink: 0.06, buzz: 0.010 },
+  { name: "grass", grip: 0.55, roll: 0.035, sink: 0.03, buzz: 0.010 },   // (round 2: 62 W seated crawled at 6 km/h on 0.060 / 0.06; now ~10)
   { name: "sand", grip: 0.42, roll: 0.120, sink: 0.25, buzz: 0.003 },
   { name: "roots", grip: 0.50, roll: 0.045, sink: 0.03, buzz: 0.022 },
   // (the lab's new test surfaces, 2026-11-26: mud sticky and slippery - low grip, high rolling loss and sink; packed

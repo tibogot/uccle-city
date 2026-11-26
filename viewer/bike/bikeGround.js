@@ -50,7 +50,10 @@ STAIRS.z1 = STAIRS.z0 + STAIRS.n * STAIRS.run; STAIRS.h = STAIRS.n * STAIRS.rise
 STAIRS.zl = STAIRS.z1 + STAIRS.land; STAIRS.zr = STAIRS.zl + STAIRS.ramp;
 
 const F = [];
-const feature = (name, x0, x1, z0, z1, surf, h, res = 0.2, opt = null) => { const f = { name, x0, x1, z0, z1, surf, h, res, ...(opt || {}) }; F.push(f); return f; };
+// (owner round 2, z-fighting: every feature's rectangle on WHOLE METRES - the lab's base ground is a 1 m grid with the
+// cells under a feature cut out; a fractional edge left a cell that overlapped the feature's own mesh, coplanar where
+// both are at 0: flicker. Outside its shape every feature's height is 0. Checked: tools/bike/parkTest.mjs "ground")
+const feature = (name, x0, x1, z0, z1, surf, h, res = 0.2, opt = null) => { const f = { name, x0: Math.floor(x0), x1: Math.ceil(x1), z0: Math.floor(z0), z1: Math.ceil(z1), surf, h, res, ...(opt || {}) }; F.push(f); return f; };
 
 feature("kicker", -2, 2, 18, 24, SURF.asphalt, (x, z) => {
   const s = z - KICKER.z0;
@@ -90,7 +93,7 @@ feature("stairs", STAIRS.x0, STAIRS.x1, STAIRS.z0, STAIRS.zr, SURF.asphalt, (x, 
   const S = STAIRS;
   if (z < S.z1) return Math.min(S.n, Math.floor((z - S.z0) / S.run) + 1) * S.rise;
   if (z < S.zl) return S.h;
-  return S.h * (1 - (z - S.zl) / S.ramp);
+  return Math.max(0, S.h * (1 - (z - S.zl) / S.ramp));
 }, 0.05);
 // (forgiving falls, 2026-11-25) a cobbled lane, a field of dirt bumps and a lane of small drops: what a casual rider
 // must ride through without a crash (tools/bike/casualRide.mjs)
@@ -121,6 +124,18 @@ feature("drops", DROPS.x0, DROPS.x1, DROPS.z0, DROPS.z0 + DROPS.len, SURF.asphal
 }, 0.05);
 // THE BMX PARK (2026-11-25, viewer/bike/bikePark.js): z 116-232
 addParkFeatures(feature, SURF);
+// (owner round 2) NEW TEST SURFACES: a MUD patch (sticky, slow, slippery; shallow ruts) and a SNOW patch (the volumetric
+// snow layer drawn on it in the lab; the bike's grip / sink / tracks), and a big plain GRASS FIELD to ride on
+export const MUD = { x0: -46, x1: -32, z0: 10, z1: 30 };
+export const SNOW = { x: -64, z: 74, r: 9, x0: -74, x1: -54, z0: 64, z1: 84 };
+export const FIELD = { x0: -78, x1: -52, z0: 10, z1: 56 };
+feature("mud", MUD.x0, MUD.x1, MUD.z0, MUD.z1, SURF.mud, (x, z) => {
+  const e = smoothstep(MUD.x0, MUD.x0 + 1.5, x) * (1 - smoothstep(MUD.x1 - 1.5, MUD.x1, x)) * smoothstep(MUD.z0, MUD.z0 + 1.5, z) * (1 - smoothstep(MUD.z1 - 1.5, MUD.z1, z));
+  // a shallow hollow (6 cm) with two tyre ruts along z
+  const rut = Math.exp(-(((x - (MUD.x0 + MUD.x1) / 2 + 0.6) / 0.18) ** 2)) + Math.exp(-(((x - (MUD.x0 + MUD.x1) / 2 - 0.6) / 0.18) ** 2));
+  return -(0.06 + 0.03 * rut) * e;
+}, 0.1);
+feature("snow", SNOW.x0, SNOW.x1, SNOW.z0, SNOW.z1, SURF.snow, () => 0, 1);
 const slopeH = (s, G, run, flat) => G * (sm(s) - sm(s - run) - sm(s - run - flat) + sm(s - 2 * run - flat));
 // (owner 2026-11-26: "on a steep descent we are supposed to go way faster") two LONG descents along +x, a 10 m flat top
 // to start from, then 6 % over 220 m (13 m high) / 12 % over 160 m (19 m), a 60 m run-out: long enough to reach the coasting terminal speed
@@ -146,6 +161,7 @@ export function testHeight(x, z) {
 export function testSurface(x, z) {
   for (const f of F) if (x >= f.x0 && x < f.x1 && z >= f.z0 && z < f.z1) {
     if (f.name === "kicker" && !(x >= KICKER.x0 && x <= KICKER.x1)) break;
+    if (f.name === "snow" && (x - SNOW.x) ** 2 + (z - SNOW.z) ** 2 > SNOW.r * SNOW.r) break;     // (a round patch)
     if (f.name === "table" && !(x >= TABLE.x0 && x <= TABLE.x1)) break;
     if (f.name === "pump" && !(x >= PUMP.x0 - 0.5 && x <= PUMP.x1 + 0.5)) break;
     return f.surf;
@@ -223,7 +239,7 @@ export function testColliders(KIND) {
 /** where to start each test run / the lab's teleport buttons: [x, z, heading] */
 export const SPOTS = {
   start: [0, 0, 0], kicker: [0, 8, 0], table: [0, 32, 0], pump: [-15, 2, 0], roots: [-25, 0, 0], bowl: [-36, 55, 0],
-  kerb: [15, 12, 0], sand: [26, 30, 0], bench: [109.45, 38, 0], ledge: [117.6, 32, 0], stairs: [130, 79, Math.PI], slope: [30, 0, Math.PI / 2], "hill 6 %": [HILL6.x0 + 3, (HILL6.z0 + HILL6.z1) / 2, Math.PI / 2], "hill 12 %": [HILL12.x0 + 3, (HILL12.z0 + HILL12.z1) / 2, Math.PI / 2], steep: [30, 25, Math.PI / 2], wall: [0, -10, Math.PI], log: [-2.5, -6, Math.PI],
+  kerb: [15, 12, 0], sand: [26, 30, 0], bench: [109.45, 38, 0], ledge: [117.6, 32, 0], stairs: [130, 79, Math.PI], slope: [30, 0, Math.PI / 2], mud: [(MUD.x0 + MUD.x1) / 2, MUD.z0 - 6, 0], snow: [SNOW.x, SNOW.z - SNOW.r - 6, 0], "grass field": [(FIELD.x0 + FIELD.x1) / 2, FIELD.z0 + 2, 0], "hill 6 %": [HILL6.x0 + 3, (HILL6.z0 + HILL6.z1) / 2, Math.PI / 2], "hill 12 %": [HILL12.x0 + 3, (HILL12.z0 + HILL12.z1) / 2, Math.PI / 2], steep: [30, 25, Math.PI / 2], wall: [0, -10, Math.PI], log: [-2.5, -6, Math.PI],
 };
 /** the park's spots (bikePark.js PARK_SPOTS: [x, z, heading, speed]) - the lab's park menu (0 / N / B) */
 export { PARK_SPOTS, PARK_WALLRIDES };

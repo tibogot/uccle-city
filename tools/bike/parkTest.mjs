@@ -47,6 +47,21 @@ const pumper = (steer = () => 0) => (s) => {
   return { pedal: on && av >= -0.08 ? 1 : 0, pump: on && av < -0.08 ? 1 : 0, hop: s.air && s.vy < 0, steer: steer(s) };
 };
 
+// ---------------------------------------------------------------- the ground: no coplanar overlap (owner round 2, z-fighting)
+{
+  const { FEATURES, BOUNDS } = await import("../../viewer/bike/bikeGround.js");
+  const bad = [];
+  for (const f of FEATURES) {
+    if (![f.x0, f.x1, f.z0, f.z1].every(Number.isInteger)) bad.push(`${f.name}: not on whole metres`);
+    if (f.x0 < BOUNDS.x0 || f.x1 > BOUNDS.x1 || f.z0 < BOUNDS.z0 || f.z1 > BOUNDS.z1) bad.push(`${f.name}: outside the bounds`);
+  }
+  for (let i = 0; i < FEATURES.length; i++) for (let j = i + 1; j < FEATURES.length; j++) {
+    const a = FEATURES[i], b = FEATURES[j];
+    if (a.x0 < b.x1 && b.x0 < a.x1 && a.z0 < b.z1 && b.z0 < a.z1) bad.push(`${a.name} overlaps ${b.name}`);
+  }
+  check("lab ground: every feature on whole metres (the 1 m base grid cut out exactly under it), none overlapping: no coplanar faces", !bad.length, bad.join("; ") || `${FEATURES.length} features`, "0 overlaps, 0 fractional edges");
+}
+
 // ---------------------------------------------------------------- the spots
 {
   const bad = [];
