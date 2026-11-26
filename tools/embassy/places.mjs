@@ -51,17 +51,18 @@ function buildingOf(p) {
 }
 /** the distance from (x, z) to the nearest building wall of the tile (and its neighbours' when near an edge) */
 export function wallDistance(tile, x, z) {
-  let best = Infinity, inside = false;
+  let best = Infinity, inside = false, n = [0, 0];
   for (const b of blds(tile)) {
     if (pip(x, z, b.ring)) inside = true;
     const r = b.ring;
     for (let i = 0; i < r.length; i++) {
       const [ax, az] = r[i], [bx, bz] = r[(i + 1) % r.length], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1;
       const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
-      best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t));
+      const ex = x - ax - dx * t, ez = z - az - dz * t, e = Math.hypot(ex, ez);
+      if (e < best) { best = e; n = [ex / (e || 1), ez / (e || 1)]; }          // from the wall towards the point
     }
   }
-  return { d: best, inside };
+  return { d: best, inside, n };
 }
 const poles = [], problems = [];
 for (const p of places) {
@@ -71,16 +72,25 @@ for (const p of places) {
   if (!mounts.length) { problems.push(`${p.osm}: flag yes but no mount`); continue; }
   const { b } = buildingOf(p);
   const F = faces(p.tile).filter((f) => f.bu === b.bu && f.street);
-  const face = (c.face != null ? faces(p.tile).filter((f) => f.bu === b.bu)[c.face] : null) ?? F.find((f) => f.doorFace) ?? F.sort((u, v) => v.width - u.width)[0];
+  // the face: the door face (or the widest street face); c.face_n [nx, nz]: the building's face (street or not) whose
+  // normal is nearest that direction (a corner house whose flag stands on its other street)
+  const all = faces(p.tile).filter((f) => f.bu === b.bu && f.width >= 2);
+  const dotN = (f, fn) => f.nx * fn[0] + f.nz * fn[1];
+  const out = (f, fn) => ((f.a[0] + f.b[0]) / 2) * fn[0] + ((f.a[1] + f.b[1]) / 2) * fn[1];      // the outermost wall that way
+  const byN = (fn) => all.filter((f) => dotN(f, fn) >= 0.9 && f.width >= 4).sort((u, v) => out(v, fn) - out(u, fn) || v.width - u.width)[0] ?? all.slice().sort((u, v) => dotN(v, fn) - dotN(u, fn))[0];
+  const face0 = c.face_n ? byN(c.face_n) : F.find((f) => f.doorFace) ?? F.sort((u, v) => v.width - u.width)[0];
   mounts.forEach((m, k) => {
+    const face = m.face_n ? byN(m.face_n) : face0;
     const id = `${p.osm}#${k}`;
     let x, z, n = null;
     if (face) {
       const tx = (face.b[0] - face.a[0]) / face.width, tz = (face.b[1] - face.a[1]) / face.width;
       // the door (or the face's middle); "right seen from the street" = the face's own tangent turned to face the viewer
-      const d0 = face.door ? [face.door.x, face.door.z] : [(face.a[0] + face.b[0]) / 2, (face.a[1] + face.b[1]) / 2];
-      const rx = -face.nz, rz = face.nx;                           // right as seen from outside: (-n) x up
+      const rx = face.nz, rz = -face.nx;                           // right as seen from outside: (-n) x up = (n.z, -n.x)
       const sgn = rx * tx + rz * tz >= 0 ? 1 : -1;
+      // from the door (or the face's middle), or from the face's left / right end as seen from the street (m.end)
+      const left = sgn > 0 ? face.a : face.b, right = sgn > 0 ? face.b : face.a;
+      const d0 = m.end === "left" ? left : m.end === "right" ? right : face.door && !m.mid ? [face.door.x, face.door.z] : [(face.a[0] + face.b[0]) / 2, (face.a[1] + face.b[1]) / 2];
       const out = m.type === "bracket" ? 0 : (m.out ?? 3);
       x = d0[0] + tx * sgn * (m.along ?? 0) + face.nx * out; z = d0[1] + tz * sgn * (m.along ?? 0) + face.nz * out;
       n = [face.nx, face.nz];
@@ -89,12 +99,18 @@ for (const p of places) {
     if (m.n) n = m.n;
     if (x == null) { problems.push(`${id}: no street face and no at`); return; }
     const pole = { id, place: p.osm, tile: tileOf(x, z), type: m.type ?? "pole", design: m.design, x: +x.toFixed(2), z: +z.toFixed(2) };
-    if (pole.type === "bracket") Object.assign(pole, { n: n.map((v) => +v.toFixed(4)), y: m.y ?? 3.2 });
-    else if (m.h) pole.h = m.h;
+    if (pole.type === "bracket") {
+      Object.assign(pole, { n: n.map((v) => +v.toFixed(4)), y: m.y ?? 3.2 });
+      if (m.tilt) pole.tilt = m.tilt;
+      if (m.splay) pole.splay = m.splay;                              // degrees, + = to the right seen from the street
+      if (m.splay) pole.t = [n[1], -n[0]].map((v) => +v.toFixed(4));  // (the right as seen from outside)
+    } else if (m.h) pole.h = m.h;
     if (m.colour) pole.colour = m.colour;
     const w = wallDistance(p.tile, x, z);
     pole.wall_m = +w.d.toFixed(2);
-    if (pole.type !== "bracket" && (w.inside || w.d < 1.7)) problems.push(`${id}: free pole ${w.inside ? "INSIDE a building" : `${w.d.toFixed(2)} m from a wall (< 1.7: the cloth would reach it)`}`);
+    // a free pole within the cloth's reach of a wall flies its flag clear of that wall (a half-space, its own loop)
+    if (pole.type !== "bracket" && !w.inside && w.d < 1.7) pole.wall = { n: w.n.map((v) => +v.toFixed(4)), d: +w.d.toFixed(2) };
+    if (pole.type !== "bracket" && (w.inside || w.d < 0.5)) problems.push(`${id}: free pole ${w.inside ? "INSIDE a building" : `${w.d.toFixed(2)} m from a wall (< 0.5)`}`);
     poles.push(pole);
   });
 }

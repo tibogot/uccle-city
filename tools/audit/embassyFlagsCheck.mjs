@@ -9,8 +9,8 @@
 //      the construction it follows); every FLAG_DESIGNS key has one;
 //   4. no pole floating or in a wall: viewer/embassyFlags.js poleGeometry on a tilted, bumpy test ground: the footing's
 //      top over the highest ground under it, its foot under the lowest, the pole's foot on the footing's top; a free
-//      pole >= 1.7 m from every wall of its tile (the cloth's reach) and outside every footprint; a bracket's wall
-//      point <= 0.35 m from its building's wall line;
+//      pole outside every footprint and >= 0.5 m from walls; nearer than the cloth's reach (1.7 m) only with that
+//      wall's half-space (p.wall: its cloth kept clear); a bracket's wall point <= 0.35 m from its building's wall line;
 //   5. the cost: LIVE_MAX <= 6, LIVE_RADIUS <= 45 m, HIDE_DIST <= 700 m, the live pool built once at start (no LiveFlag
 //      made in the per-frame updater), one baked set for all the free poles (+ one per bracket), no light, no
 //      DynamicDrawUsage; the switch ?embassyflags=0 is a features.js row and main.js reads it.
@@ -97,9 +97,10 @@ for (const q of poles) {
     }
   }
   if (q.type === "bracket") { if (d > 0.35) wall.push(`${q.id}: bracket ${d.toFixed(2)} m off the wall`); }
-  else if (inside || d < 1.7) wall.push(`${q.id}: free pole ${inside ? "inside a footprint" : `${d.toFixed(2)} m from a wall`}`);
+  else if (inside || d < 0.5) wall.push(`${q.id}: free pole ${inside ? "inside a footprint" : `${d.toFixed(2)} m from a wall`}`);
+  else if (d < 1.7 && !(q.wall && Math.abs(q.wall.d - d) < 0.05)) wall.push(`${q.id}: free pole ${d.toFixed(2)} m from a wall with no wall half-space for its cloth`);
 }
-check("4. free poles >= 1.7 m from every wall and outside every footprint; brackets on their wall (<= 0.35 m)", !wall.length, wall.join("; ") || "ok");
+check("4. free poles outside every footprint, >= 0.5 m from walls, within the cloth's reach (1.7 m) only with the wall's half-space; brackets on their wall (<= 0.35 m)", !wall.length, wall.join("; ") || `${poles.filter((q) => q.wall).length} pole(s) near a wall flown clear of it`);
 
 // ---- 5. the cost
 const src = read("viewer/embassyFlags.js"), code = strip(src);

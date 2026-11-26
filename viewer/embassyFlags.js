@@ -76,13 +76,13 @@ function pushBlock(B, cx, cz, hx, hz, y0, y1, ux, uz, col) {
 /** one pole into B; ground(x, z) = the drawn ground. -> { base, tip, footTop, footLow } (city xyz) */
 export function poleGeometry(B, p, ground) {
   if (p.type === "bracket") {
-    // the wall point (on the drawn façade), the pole out along the face normal, tilted up
-    const [nx, nz] = p.n, g = ground(p.x, p.z), y = g + p.y, tl = (BRACKET_TILT * Math.PI) / 180;
+    // the wall point (on the drawn façade), the pole out of the wall (turned `splay` degrees sideways), tilted up
+    const [nx, nz] = p.n, g = ground(p.x, p.z), y = g + p.y, ax = bracketAxis(p);
     const a = [p.x + nx * 0.06, y, p.z + nz * 0.06];
-    const b = [a[0] + nx * Math.cos(tl) * BRACKET_LEN, y + Math.sin(tl) * BRACKET_LEN, a[2] + nz * Math.cos(tl) * BRACKET_LEN];
+    const b = [a[0] + ax[0] * BRACKET_LEN, y + ax[1] * BRACKET_LEN, a[2] + ax[2] * BRACKET_LEN];
     pushBlock(B, p.x + nx * 0.03, p.z + nz * 0.03, 0.03, 0.09, y - 0.14, y + 0.14, nx, nz, STEEL);          // the wall plate
     pushCyl(B, a, b, 0.025, 0.02, p.colour === "white" ? WHITE : STEEL, 10);
-    pushBall(B, [b[0] + nx * Math.cos(tl) * 0.04, b[1] + Math.sin(tl) * 0.04, b[2] + nz * Math.cos(tl) * 0.04], 0.04, GOLD);
+    pushBall(B, [b[0] + ax[0] * 0.04, b[1] + ax[1] * 0.04, b[2] + ax[2] * 0.04], 0.04, GOLD);
     return { base: a, tip: b, footTop: null, footLow: null };
   }
   // a free-standing pole on a footing: the footing's top 4 cm over the highest ground under it, its foot 30 cm under
@@ -95,6 +95,14 @@ export function poleGeometry(B, p, ground) {
   pushCyl(B, base, tip, 0.05, 0.035, col);
   pushBall(B, [p.x, tip[1] + 0.06, p.z], 0.07, GOLD);
   return { base, tip, footTop: top, footLow: low };
+}
+
+/** a bracket pole's unit axis: out of the wall (n), turned `splay` degrees towards t (the right seen from outside),
+ *  tilted `tilt` degrees above the horizontal */
+export function bracketAxis(p) {
+  const tl = ((p.tilt ?? BRACKET_TILT) * Math.PI) / 180, sp = ((p.splay ?? 0) * Math.PI) / 180, t = p.t ?? [p.n[1], -p.n[0]];
+  const hx = p.n[0] * Math.cos(sp) + t[0] * Math.sin(sp), hz = p.n[1] * Math.cos(sp) + t[1] * Math.sin(sp);
+  return [hx * Math.cos(tl), Math.sin(tl), hz * Math.cos(tl)];
 }
 
 const geometryOf = (B) => {
@@ -137,7 +145,8 @@ export const embassyFlags = {
     const keys = [...new Set(poles.map((p) => p.design))];
     const atlas = flagAtlas(keys, renderer);
     // the free-standing poles: one set; each bracket: its own set (its axis, its wall)
-    const free = poles.filter((p) => p.type !== "bracket"), brackets = poles.filter((p) => p.type === "bracket");
+    // (a free pole within the cloth's reach of a wall, p.wall, flies its own loop kept clear of that wall, as a bracket)
+    const free = poles.filter((p) => p.type !== "bracket" && !p.wall), brackets = poles.filter((p) => p.type === "bracket" || p.wall);
     const freeCloth = { width: FLAG_W, height: FLAG_H, axis: [0, 1, 0], out: dirOf(wind.deg), windDir: dirOf(wind.deg), fabric: FABRIC.polyester, planes: [] };
     const sets = [], flags = [];
     if (free.length) {
@@ -146,9 +155,10 @@ export const embassyFlags = {
       for (const p of free) flags.push({ p, set, i: set.add(0, -1e4, 0, { phase: Math.random(), scale: 0, cell: atlas.cellOf(p.design) }), cloth: freeCloth, top: new THREE.Vector3(), on: false, live: null, state: "baked", d: Infinity });
     }
     for (const p of brackets) {
-      const tl = (BRACKET_TILT * Math.PI) / 180, axis = [p.n[0] * Math.cos(tl), Math.sin(tl), p.n[1] * Math.cos(tl)];
-      // the wall as a half-space in the sim frame (relative to the hoist top), filled in once the tile placed the pole
-      const cloth = { width: BRACKET_FLAG[0], height: BRACKET_FLAG[1], axis, out: dirOf(wind.deg), windDir: dirOf(wind.deg), fabric: FABRIC.polyester, planes: [bracketPlane(p, axis)] };
+      const wallPole = p.type !== "bracket", axis = wallPole ? [0, 1, 0] : bracketAxis(p);
+      // the wall as a half-space in the sim frame (relative to the hoist top)
+      const size = wallPole ? [FLAG_W, FLAG_H] : BRACKET_FLAG;
+      const cloth = { width: size[0], height: size[1], axis, out: dirOf(wind.deg), windDir: dirOf(wind.deg), fabric: FABRIC.polyester, planes: [wallPole ? [p.wall.n[0], 0, p.wall.n[1], -p.wall.d + 0.04] : bracketPlane(p, axis)] };
       const set = await BakedFlags.create({ cloth, map: null, atlas, capacity: 1, speed: wind.speed });
       sets.push(set);
       flags.push({ p, set, i: set.add(0, -1e4, 0, { phase: Math.random(), scale: 0, cell: atlas.cellOf(p.design) }), cloth, top: new THREE.Vector3(), on: false, live: null, state: "baked", d: Infinity });
@@ -166,7 +176,7 @@ export const embassyFlags = {
       return lf;
     };
     for (let k = 0; k < Math.min(LIVE_MAX, free.length); k++) pool.push(liveOf(freeCloth));
-    for (const f of flags) if (f.p.type === "bracket") f.own = liveOf(f.cloth);
+    for (const f of flags) if (f.set !== sets[0] || !free.length) f.own = liveOf(f.cloth);
     let compile = compiler();
     while (!compile) { await new Promise((r) => setTimeout(r, 250)); compile = compiler(); }
     const probes = [...pool, ...flags.filter((f) => f.own).map((f) => f.own)];
@@ -193,7 +203,7 @@ export const embassyFlags = {
       // place / show each flag while its tile's pole is drawn; hidden beyond HIDE_DIST
       for (const f of flags) {
         const b = built.get(f.p.id), shown = !!b && isShown(b.group);
-        if (shown && f.top.y === 0) { f.top.set(b.tip[0], b.tip[1], b.tip[2]); placeHoist(f); f.set.setPlace(f.i, f.top.x, f.top.y, f.top.z); }
+        if (shown && !f.placed) { f.placed = true; f.top.set(b.tip[0], b.tip[1], b.tip[2]); placeHoist(f); f.set.setPlace(f.i, f.top.x, f.top.y, f.top.z); }
         f.d = shown ? camPos.distanceTo(f.top) : Infinity;
         const on = shown && f.d < HIDE_DIST;
         if (on !== f.on) { f.on = on; if (!f.live) f.set.setVisible(f.i, on); }
