@@ -149,6 +149,11 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [ ] Loading screen images: redo with the current city.
 
 **Reality check rounds (recurring, owner 2026-11-18):** one district at a time on Google Maps / Street View (look only, never stored or traced): what is missing, what is wrong, what looks nice and worth copying in spirit. Output: a short list per district into this TODO, then small jobs.
+  **Shop fronts (owner 2026-11-26):** each round also notes, per shop, the REAL NAME (plain lettering, our own font), the
+  real COLOURS (facade, awning, sign background + text) and the real SIGN TYPE (lit box, letters on the facade, hanging
+  sign, lettered awning, window lettering), look only. NO copied logos (trademark + artwork, and imagery is never
+  traced); big chains: name + colours with generic lettering, or an invented name (owner's call per chain); a small
+  shop's real logo only with its written OK (owner asks).
 
 **Step 3: places (compare with photos, look only)**
 - [x] MERGED 2026-11-23 (claude/parkfence) Wolvendael: big metal fences all round + several big gates (one at the Dieweg tram terminus).
