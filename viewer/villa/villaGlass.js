@@ -38,7 +38,7 @@ const hash1 = (x) => { const p = fract(x.mul(0.1031)); const q = p.mul(p.add(33.
 const noise1 = (x) => { const i = floor(x), f = fract(x), u = f.mul(f).mul(float(3).sub(f.mul(2))); return mix(hash1(i), hash1(i.add(1)), u); };
 
 /** the outdoor reflection (radiance, linear) along the reflected direction R (world, normalised) */
-function outdoor(R) {
+export function outdoor(R) {
   const n = env.uNight;
   const sky = mix(vec3(env.uSkyHorizon), vec3(env.uSkyTop), smoothstep(0.0, 0.65, R.y)).mul(float(1).sub(n.mul(0.9)));
   // the tree line: a ragged top (two octaves along the azimuth, 6-24 degrees up), dark green lit from above by the sky

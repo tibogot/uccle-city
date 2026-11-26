@@ -167,3 +167,16 @@ Budgets after job 1: download 6.75 MB (villa.glb 1.25 + interior.glb 4.53 + fabr
 
 Budgets after job 2: download 6.92 MB (villa.glb + interior.glb + fabrics.ktx2 + reflect.ktx2) <= 9; LOD0 61,410 tris /
 8 draws (<= 62k / 9); interior cell 201,038 tris / 14 draws (<= 230k / 16).
+
+## v3 job 3 (claude/villa3, 2026-11-26): the pool, and the mirror's day highlight
+
+| fix | why (cause) | what | rule / check |
+|---|---|---|---|
+| mirror by day | the probe bake clipped the window to white (Standard view, exposure 0): a light box in the mirror | the probes rendered one stop down (gain x2 in the shader) and a soft knee on the mirror's day reflection | villa-screens-mirror |
+| the water | milky, no reflection, giant caustics, steps invisible, a flat cyan sheet at night | viewer/villa/villaPool.js (one opaque material, 2 triangles): calm wind ripples (noise gradients, no mover), Fresnel F0 0.02 over the glass model's outdoor reflection + the HOUSE (ray-box on its masses: glazing low, cladding high, warm at night), the refracted basin traced to the floor, walls and the four ENTRY STEPS (dark nosing tiles), 2.5 cm mosaic, caustics at 0.15 m fading with depth, Beer-Lambert absorption (turquoise -> deep blue-green), four LED niches emissive at night, lit from below | villa-pool-v2 |
+| the dark stripe | round 2's "lane line" tested abs(w - mid w): a 24 cm bar ACROSS the 4.5 m width at mid-length, not along the length: a lap-pool marking a residential pool does not have | removed | villa-pool-v2 (no `lane` in the shader) |
+| coping | four long bars, no joint | ~0.6 m stones with 4 mm joints, a 15 mm round-over | villa-kit-near |
+| the kit | none | Villa_kit (near only, with LOD0; 10.5k tris, 4 draws): a stainless two-rail ladder over the coping, four aluminium loungers (two by the pool + a parasol, two under the pergola), three planters with clipped shrubs, a clipped hedge skirt on the lawn round the terrace (the deck stood as a 0.7 m black block); every piece within 0.4 mm of the deck; the skirt sunk 0.3 m | villa-kit-near, joins |
+
+Budgets after job 3: download 7.0 MB of 9; LOD0 (Villa) 60,978 tris / 8 draws of 62k / 9 (the old coping bars moved
+into the kit); Villa_kit 10,534 tris / 4 draws (its own cap, 12k / 4: asked of the owner); interior unchanged.

@@ -22,6 +22,7 @@ import { env } from "../lighting.js";
 import { fadeVariant, SMOOTH } from "../lodFade.js";
 import { libSource } from "../materials/libSwitch.js";
 import { GLASS_V3, farGlassMaterial, VILLA_DIR } from "./villaGlass.js";
+import { poolMaterialV3 } from "./villaPool.js";
 
 export const VILLA_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves"];
 export const VILLA_CODES = ["plain", "reveal", "plinth", "coping", "step", "slat", "frame", "door", "soffit", "roof", "garage", "led", "fire", "screen", "channel", "rug"];
@@ -80,7 +81,7 @@ const TEMP = {
     roughness: 0.62,
   }),
   // (villa3 job 2: the glazing gaskets / spacers, code plinth: a lighter grey line inside every frame, the edge of the unit)
-  metal_dark: () => std({ colorNode: mix(lin(0x2a2c2f), lin(0x8a8d90), isC(C.plinth)), roughness: 0.34, metalness: 0.55 }),
+  metal_dark: () => std({ colorNode: mix(mix(lin(0x2a2c2f), lin(0x8a8d90), isC(C.plinth)), lin(0xc4c8cb), isC(C.door)), roughnessNode: mix(float(0.34), float(0.22), isC(C.door)), metalnessNode: mix(float(0.55), float(0.95), isC(C.door)) }),   // (job 3: code door = the ladder's brushed stainless)
   // the far glass (the interior cell's own glass replaces it within 30 m): dark, reflective; lit windows at night
   glass_window: () => {
     if (GLASS_V3) return farGlassMaterial();          // villa3: the shared glass model (villaGlass.js); ?villa3=0 below
@@ -220,7 +221,7 @@ export function loadVilla() {
       fetch(base + "villa.json").then((r) => r.json()),
       SOURCE === "temp" ? null : import("../materials/shipped.js").catch((e) => { console.warn("[villa] material library not loaded:", e.message); return null; }),
     ]);
-    const names = [["Villa", "Villa_ivy"], ["Villa_lod1"], ["Villa_lod2"]];
+    const names = [["Villa", "Villa_ivy", "Villa_kit"], ["Villa_lod1"], ["Villa_lod2"]];     // (villa3 job 3: the pool kit, near only)
     const lods = names.map(() => []);
     const nodes = {};
     gltf.scene.traverse((o) => { if (o.name) nodes[o.name] = nodes[o.name] ?? o; });
@@ -271,7 +272,7 @@ export function loadVilla() {
       return g;
     };
     const inv = rootM.clone().invert();
-    const waterMat = poolMaterial(notes.pool, inv);
+    const waterMat = GLASS_V3 ? poolMaterialV3(notes.pool, inv, notes) : poolMaterial(notes.pool, inv);     // (villa3 job 3: villaPool.js)
     const waterNode = nodes.Villa_water;
     let water = null;
     waterNode?.traverse((o) => { if (o.isMesh && !water) { water = new THREE.Mesh(o.geometry, waterMat); water.name = "villa-water"; water.receiveShadow = false; } });

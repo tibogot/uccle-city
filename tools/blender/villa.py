@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import interior_kit as K
 import villa_bed as VB
 import villa_seating as VS
+import villa_pool as VP
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 def arg(k, d=None): return ARGS[ARGS.index(k) + 1] if k in ARGS else d
@@ -289,6 +290,8 @@ def frames(acc, axis, c, hole, mull=1.6, transom=None, t=0.06, d=0.14, slot="met
 
 # ================================================================================================ THE EXTERIOR (LOD0)
 EX = Acc("Villa", EXT_SLOTS)
+KIT = Acc("Villa_kit", EXT_SLOTS)                # villa3 job 3: the pool kit + the jointed coping (near only: shown with LOD0)
+KIT_CONTACT = []
 IVY = Acc("Villa_ivy", EXT_SLOTS)                # (the climbers' leaf cards: their own node, audited apart: cards overlap by design)
 GLS = Acc("Villa_glass_tmp", EXT_SLOTS)          # (merged into EX: kept apart only to count)
 ML = 0.7                                         # exterior densify (per-vertex AO)
@@ -560,10 +563,17 @@ def exterior():
     for (ax_, c, a0, a1, o) in (("u", t["u1"], t["w0"], t["w1"], 1), ("w", t["w0"], t["u0"], t["u1"], -1), ("w", t["w1"], t["u0"], t["u1"], 1)):
         wall(EX, ax_, c, a0, a1, plinth_bot(ax_, c, o), top_, [(-1.0, 5.0, -1e3, GL - rs)] if (ax_ == "u") else [], o, "stone_blue", C["plinth"], ML,
              extra=[p["w0"] - ci, p["w1"] + ci] if ax_ == "u" else [p["u0"] - ci, p["u1"] + ci])
-    # coping round the pool (bevelled, 2 cm proud, 3 cm over the water's edge)
+    # coping round the pool (2 cm proud, 3 cm over the water's edge). villa3 job 3: STONES, ~0.6 m with 4 mm joints, a
+    # 15 mm round-over (the bullnose reads at play distance), in the near-only kit node Villa_kit (round 2: four long
+    # bars, no joint)
     for (a, b, c_, d) in ((p["u0"] - cp, p["u1"] + cp, p["w0"] - cp, p["w0"] + 0.03), (p["u0"] - cp, p["u1"] + cp, p["w1"] - 0.03, p["w1"] + cp),
                           (p["u0"] - cp, p["u0"] + 0.03, p["w0"] + 0.03, p["w1"] - 0.03), (p["u1"] - 0.03, p["u1"] + cp, p["w0"] + 0.03, p["w1"] - 0.03)):
-        bbox(EX, a, b, c_, d, top_ - 0.04, top_ + 0.02, "stone_blue", C["coping"], 0.008, 2, False)
+        along_u = (b - a) > (d - c_)
+        L_ = (b - a) if along_u else (d - c_); n_ = max(1, round(L_ / 0.6)); st = L_ / n_
+        for k in range(n_):
+            s0 = (a if along_u else c_) + k * st; s1 = s0 + st - (0.004 if k < n_ - 1 else 0.0)
+            if along_u: bbox(KIT, s0, s1, c_, d, top_ - 0.04, top_ + 0.02, "stone_blue", C["coping"], 0.015, 1, False)
+            else: bbox(KIT, a, b, s0, s1, top_ - 0.04, top_ + 0.02, "stone_blue", C["coping"], 0.015, 1, False)
     # the basin's walls above the waterline (the water's own shader draws the basin below it)
     for (ax_, c, a0, a1, o) in (("u", p["u0"], p["w0"], p["w1"], 1), ("u", p["u1"], p["w0"], p["w1"], -1), ("w", p["w0"], p["u0"], p["u1"], 1), ("w", p["w1"], p["u0"], p["u1"], -1)):
         wall(EX, ax_, c, a0, a1, p["water"] - 0.06, top_ - 0.04, [], o, "stone_blue", C["coping"])
@@ -578,6 +588,27 @@ def exterior():
     for u in (39.5, 41.8):
         for w in (8.5, 11.0, 13.5):
             EX.rect(P(u - 0.07, w - 0.07, ph - 0.004), P(u + 0.07, w - 0.07, ph - 0.004), P(u + 0.07, w + 0.07, ph - 0.004), P(u - 0.07, w + 0.07, ph - 0.004), "glow", C["led"], (0, 0, -1))
+    # ---- villa3 job 3: THE POOL KIT (Villa_kit: near only, one draw per slot): a ladder, four loungers, a parasol, three
+    # planters, and a clipped hedge skirt on the lawn round the terrace (the deck stood as a 0.7 m black block in the lawn)
+    def kit_put(parts, u, w, h, face, foot=None):
+        M = M_at(u, w, h, face)
+        for bm, slot, code in parts: KIT.emit(bm, slot, code, M, slot in ("concrete_soffit", "hedge") or code == VP.STAINLESS)
+        if foot: KIT_CONTACT.append({"u": [round(u - foot[0], 3), round(u + foot[0], 3)], "w": [round(w - foot[1], 3), round(w + foot[1], 3)], "y": round(h - OY, 3)})
+    kit_put(VP.ladder(), p["u1"], -12.0, p["water"], (1, 0))
+    for w_ in (-11.5, -8.0): kit_put(VP.lounger(), 43.95, w_, GL, (0, 1), (0.31, 0.95))
+    kit_put(VP.parasol(), 43.95, -9.75, GL, (0, 1), (0.26, 0.26))
+    for w_ in (9.2, 10.4): kit_put(VP.lounger(), 40.8, w_, GL, (1, 0), (0.95, 0.31))
+    for (u_, w_) in ((36.5, -16.5), (44.05, -16.5), (44.05, 15.5)): kit_put(VP.planter(), u_, w_, GL, (0, 1), (0.26, 0.26))
+    for (axis, c, a0, a1) in (("u", t["u1"] + 0.38, t["w0"] - 0.68, -1.15), ("u", t["u1"] + 0.38, 5.15, t["w1"] + 0.68), ("w", t["w0"] - 0.38, t["u0"] + 0.5, t["u1"] + 0.08), ("w", t["w1"] + 0.38, t["u0"] + 0.5, t["u1"] + 0.08)):
+        nseg = max(1, math.ceil((a1 - a0) / 2.0))
+        for k in range(nseg):
+            x0, x1 = a0 + (a1 - a0) * k / nseg, a0 + (a1 - a0) * (k + 1) / nseg - 0.001
+            if axis == "u":
+                gb_ = gmin(c - 0.3, c + 0.3, x0, x1, pad=0.1) - SINK; gt = gmax(c - 0.3, c + 0.3, x0, x1) + 0.62
+                bbox(KIT, c - 0.3, c + 0.3, x0, x1, gb_, gt, "hedge", 0, 0.1, 1)
+            else:
+                gb_ = gmin(x0, x1, c - 0.3, c + 0.3, pad=0.1) - SINK; gt = gmax(x0, x1, c - 0.3, c + 0.3) + 0.62
+                bbox(KIT, x0, x1, c - 0.3, c + 0.3, gb_, gt, "hedge", 0, 0.1, 1)
     plot = SITE["plot"]
     hedge("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"])
     hedge("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"])
@@ -1486,7 +1517,7 @@ EX.v += GLS.v and []
 # the exterior glass into LOD0 (same object, its own slot)
 off = len(EX.v)
 EX.v.extend(GLS.v); EX.f.extend([tuple(i + off for i in f) for f in GLS.f]); EX.fs.extend(GLS.fs); EX.fc.extend(GLS.fc); EX.fuv.extend(GLS.fuv); EX.sm.extend(GLS.sm)
-ob_ext = make(EX, EXT_M); ob_far = make(FAR, EXT_M); ob_ivy = make(IVY, EXT_M); ob_lod1 = make(L1, EXT_M); ob_bay = make(BAY, EXT_M)
+ob_ext = make(EX, EXT_M); ob_kit = make(KIT, EXT_M); ob_far = make(FAR, EXT_M); ob_ivy = make(IVY, EXT_M); ob_lod1 = make(L1, EXT_M); ob_bay = make(BAY, EXT_M)
 ob_gl = make(GATE_L, EXT_M, GATE_L_O); ob_gr = make(GATE_R, EXT_M, GATE_R_O); ob_door = make(DOOR_A, EXT_M, DOOR_O); ob_water = make(WATER, EXT_M)
 # the soft furnishings (cushions, rugs, leather, plants: smooth-shaded) in their own node "Soft": the audit checks them
 # without the streak / bentflat checks (those guard architecture: a cushion's normals turn round its rounded edges by design)
@@ -1501,7 +1532,7 @@ cm = bpy.data.meshes.new("Collider")
 cm.from_pydata([tuple(v) for v in COL], [], [(i, i + 1, i + 2) for i in range(0, len(COL), 3)]); cm.update()
 ob_col = bpy.data.objects.new("Collider", cm); scn.collection.objects.link(ob_col); cm.materials.append(bpy.data.materials.new("collider"))
 tri = lambda o: sum(len(p.vertices) - 2 for p in o.data.polygons)
-print(f"meshes: LOD0 {tri(ob_ext)} tris, LOD1 {tri(ob_lod1)}, far {tri(ob_far)}, gate {tri(ob_gl) + tri(ob_gr)}, door {tri(ob_door)}, cell {tri(ob_cell)} + soft {tri(ob_soft)}, glass {tri(ob_iglass)} ({time.time() - T0:.1f}s)")
+print(f"meshes: LOD0 {tri(ob_ext)} tris, kit {tri(ob_kit)}, LOD1 {tri(ob_lod1)}, far {tri(ob_far)}, gate {tri(ob_gl) + tri(ob_gr)}, door {tri(ob_door)}, cell {tri(ob_cell)} + soft {tri(ob_soft)}, glass {tri(ob_iglass)} ({time.time() - T0:.1f}s)")
 
 def weld(objs):
     """merge the builder's duplicate corners (1e-4 m), then WEIGHTED NORMALS on the smooth (soft) faces: face-area
@@ -1550,7 +1581,7 @@ if BAKE:
     nt = glow.node_tree; nt.nodes.remove(nt.nodes["Principled BSDF"]); em = nt.nodes.new("ShaderNodeEmission")
     em.inputs["Color"].default_value = (1.0, 0.8, 0.55, 1); em.inputs["Strength"].default_value = 0.0
     nt.links.new(em.outputs[0], nt.nodes["Material Output"].inputs["Surface"])
-    for o in (ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy, ob_cell, ob_soft, ob_iglass):
+    for o in (ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy, ob_cell, ob_soft, ob_iglass):
         me = o.data
         for i, mt in enumerate(me.materials):
             nm = mt.name
@@ -1598,12 +1629,12 @@ if BAKE:
     hide = lambda objs, v: [setattr(o, "hide_render", v) for o in objs]
     hide([ob_cell, ob_soft, ob_iglass, ob_far, ob_lod1], True)
     scn.cycles.samples = min(SAMPLES, 128)
-    bake_vc([ob_ext, ob_bay, ob_gl, ob_gr, ob_door], "ao", "AO")
-    hide([ob_far], False); hide([ob_ext, ob_bay, ob_gl, ob_gr, ob_door], True)
+    bake_vc([ob_ext, ob_kit, ob_bay, ob_gl, ob_gr, ob_door], "ao", "AO")
+    hide([ob_far], False); hide([ob_ext, ob_kit, ob_bay, ob_gl, ob_gr, ob_door], True)
     bake_vc([ob_far], "ao", "AO")
     hide([ob_far], True); hide([ob_lod1], False)            # (villa2: the scripted LOD1 baked alone, as the far variant)
     bake_vc([ob_lod1], "ao", "AO")
-    hide([ob_ext, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft, ob_iglass], False); hide([ob_far, ob_lod1], True)
+    hide([ob_ext, ob_kit, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft, ob_iglass], False); hide([ob_far, ob_lod1], True)
     print(f"bake AO: {time.time() - t:.1f}s")
     def smooth_corners(me, name, iters=8):
         """per-corner bake noise -> one value per (vertex, shading normal), then Laplacian passes over the faces' corners
@@ -1631,8 +1662,8 @@ if BAKE:
             kv = np.where(deg > 0, 0.5 * kv + 0.5 * nb_ / np.maximum(deg, 1), kv)
         ca.data.foreach_set("color", kv[keys].astype(np.float32).ravel())
     # weld duplicates for the AO smoothing (the builder emits every face with its own corners)
-    weld([ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
-    for o in (ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door):
+    weld([ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
+    for o in (ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door):
         me = o.data
         smooth_corners(me, "ao", 3)
         a = np.zeros(len(me.loops) * 4, dtype=np.float32); me.color_attributes["ao"].data.foreach_get("color", a)
@@ -1724,7 +1755,7 @@ if BAKE:
         pco = bpy.data.objects.new("probe", pcd); scn.collection.objects.link(pco); scn.camera = pco
         pco.rotation_euler = (math.radians(90), 0, math.radians(-90))     # (Cycles' equirect: its own frame; the shader reads the same)
         scn.render.resolution_x, scn.render.resolution_y = 1024, 512; scn.cycles.samples = 64; scn.cycles.use_denoising = True   # (512 x 256 drew the mirror soft: 0.7 deg a texel)
-        scn.render.image_settings.file_format = "PNG"; scn.view_settings.view_transform = "Standard"; scn.view_settings.exposure = 0.0
+        scn.render.image_settings.file_format = "PNG"; scn.view_settings.view_transform = "Standard"; scn.view_settings.exposure = -1.0   # (job 3: one stop down, x2 in the shader: the day window no longer clips)
         ob_pb.hide_render = True
         os.makedirs(os.path.join(OUT, "_probe"), exist_ok=True)
         files = []
@@ -1766,10 +1797,10 @@ if BAKE:
     for o in list(scn.objects):
         if o.type in ("LIGHT", "CAMERA") or o.name in ("Ground", "Neighbours", "ProbeCubes"): bpy.data.objects.remove(o)
     # back to the named slots for export
-    for o, mats in ((ob_ext, EXT_M), (ob_far, EXT_M), (ob_lod1, EXT_M), (ob_bay, EXT_M), (ob_gl, EXT_M), (ob_gr, EXT_M), (ob_door, EXT_M), (ob_water, EXT_M), (ob_ivy, EXT_M), (ob_cell, INT_M), (ob_soft, INT_M), (ob_iglass, INT_M)):
+    for o, mats in ((ob_ext, EXT_M), (ob_kit, EXT_M), (ob_far, EXT_M), (ob_lod1, EXT_M), (ob_bay, EXT_M), (ob_gl, EXT_M), (ob_gr, EXT_M), (ob_door, EXT_M), (ob_water, EXT_M), (ob_ivy, EXT_M), (ob_cell, INT_M), (ob_soft, INT_M), (ob_iglass, INT_M)):
         for i in range(len(o.data.materials)): o.data.materials[i] = mats[i]
 else:
-    weld([ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
+    weld([ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
     for me in (ob_cell.data, ob_soft.data):
         for mode in ("SKY", "SUN", "NIGHT"):
             at = me.attributes.new("_L" + mode, "FLOAT_VECTOR", "CORNER")
@@ -1785,7 +1816,7 @@ def export(objs, path):
                               export_all_vertex_colors=False, export_attributes=True, export_materials="EXPORT", export_image_format="NONE", export_extras=False)
     print("exported", path, os.path.getsize(path) // 1024, "KB")
 # drop unused material slots per object (the exporter writes one primitive per used slot only)
-export([ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy], os.path.join(OUT, "villa.raw.glb"))
+export([ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy], os.path.join(OUT, "villa.raw.glb"))
 export([ob_cell, ob_soft, ob_iglass, ob_col], os.path.join(OUT, "interior.raw.glb"))
 
 def loc(u, w, h): return [u, h - OY, w]
@@ -1814,7 +1845,8 @@ notes = {
     "terrace": {**TER},
     "entrance_steps": STEPS_INFO,
     "bounds_uw": {"u": [WALL_U - 0.3, SITE["plot"]["u1"]], "w": [SITE["plot"]["w0"], SITE["plot"]["w1"]], "h": [GR and min(GR["h"]) - 1, PAR1 + 0.1]},
-    "tris": {"lod0": tri(ob_ext), "lod1": tri(ob_lod1), "far": tri(ob_far), "gate": tri(ob_gl) + tri(ob_gr), "door": tri(ob_door)},
+    "kit_contact": KIT_CONTACT,
+    "tris": {"lod0": tri(ob_ext), "kit": tri(ob_kit), "lod1": tri(ob_lod1), "far": tri(ob_far), "gate": tri(ob_gl) + tri(ob_gr), "door": tri(ob_door)},
 }
 json.dump(notes, open(os.path.join(OUT, "villa.json"), "w"), indent=1)
 info = {

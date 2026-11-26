@@ -133,7 +133,7 @@ const ALBEDO = {
 // draws) + the floors' contact shadow. CTX is filled by loadVillaInterior before any material is built.
 const CTX = { inv: uniform(new THREE.Matrix4()), rects: [], fabrics: null, tiles: [0.271, 0.268, 0.266, 0.3], reflect: null, refl: null };
 /** villa3 job 2: the reflection probes' mapping knobs (the Cycles equirect frame) and gains (uniforms: no recompile) */
-export const reflLook = { gain: uniform(1.0), flipV: uniform(0), uOff: uniform(0), tv: uniform(3.0), mirror: uniform(0.9), picture: uniform(0.22) };
+export const reflLook = { gain: uniform(2.0), flipV: uniform(0), uOff: uniform(0), tv: uniform(3.0), mirror: uniform(0.9), picture: uniform(0.22) };
 /** props codes 3.. (tools/blender/villa_bed.py): [tint, the scan layer (models/villa/fabrics.json order), the tile scale] */
 const PROPS = {
   3: [0xeeebe5, 0, 1.0],     // fitted sheet: white linen
@@ -228,7 +228,10 @@ function screenAndMirror(light) {
   const pq = uv().mul(1.3).add(vec2(time.mul(0.05), time.mul(0.031)));
   const pic = mix(lin(0x1d3550), lin(0x8a5a3a), vnoise(pq)).mul(vnoise(pq.mul(2.3).add(4.0)).mul(0.6).add(0.4));
   const tv = lin(0x020203).mul(light).add(room.mul(F.mul(reflLook.tv))).add(pic.mul(n).mul(reflLook.picture));
-  const mirror = room.mul(reflLook.mirror).mul(vec3(0.95, 0.97, 0.96));
+  // (job 3: by day the bake's window clipped to a white light box in the mirror: a soft knee caps the reflected
+  // radiance near the room's own brightest wall, the window still the brightest thing but with its slats readable)
+  const knee = room.div(room.mul(1.4).add(1.0)).mul(1.4);
+  const mirror = mix(knee, room, n).mul(reflLook.mirror).mul(vec3(0.95, 0.97, 0.96));
   return mix(tv, mirror, mirrorOn);
 }
 

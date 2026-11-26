@@ -144,6 +144,30 @@ check(unbaked.length === 0, "every interior primitive carries the sky / sun / ni
   }
   check(bad.length === 0, "the shipped UVs are the generator's metres (not Blender's default 0 / 1 per face)", bad.length ? bad.slice(0, 8).join(", ") : "");
 }
+// ---- 2f. villa3 job 3 (rules villa-pool-v2, villa-kit-near): the water = ONE material from villaPool.js (Fresnel over the
+// glass model's outdoor reflection + the house, the steps traced, no lane bar, the LED niches emissive), and the pool
+// kit node (Villa_kit, shown with LOD0) inside its own budget, every kit piece on the deck within 5 mm
+{
+  const pTxt = readFileSync(new URL("viewer/villa/villaPool.js", ROOT), "utf8"), mTxt = readFileSync(new URL("viewer/villa/villaModel.js", ROOT), "utf8");
+  const water = /import \{ outdoor \} from "\.\/villaGlass\.js"/.test(pTxt) && /slab\(p, R, houseA/.test(pTxt) && /for \(const s of steps\)/.test(pTxt)
+    && !/const lane =/.test(pTxt) && !/RenderTarget|Reflector|new THREE\.(Point|Spot|Rect)Light/.test(pTxt) && /GLASS_V3 \? poolMaterialV3\(/.test(mTxt);
+  check(water, "the pool water v2: Fresnel + outdoor / house reflection, the steps traced, no lane bar, no pass / light (villaPool.js)");
+  const kt = tri(ext.parts, "Villa_kit"), kd = draws(ext.parts, "Villa_kit");
+  const kit = ext.parts.filter((q) => q.node === "Villa_kit" && q.slot !== "hedge");
+  const rows3 = []; let bad3 = 0;
+  for (const r of notes.kit_contact || []) {
+    let lo = Infinity;
+    for (const q of kit) for (let k = 0; k < q.positions.length; k += 3) {
+      const u = q.positions[k], y = q.positions[k + 1], w = q.positions[k + 2];
+      if (u < r.u[0] + 0.01 || u > r.u[1] - 0.01 || w < r.w[0] + 0.01 || w > r.w[1] - 0.01 || y < r.y - 0.1 || y > r.y + 1.0) continue;
+      lo = Math.min(lo, y);
+    }
+    const gap = (lo - r.y) * 1000; if (!(Math.abs(gap) <= 5)) bad3++;
+    rows3.push(`${((r.u[0] + r.u[1]) / 2).toFixed(1)},${((r.w[0] + r.w[1]) / 2).toFixed(1)}: ${gap.toFixed(1)} mm`);
+  }
+  check(kt > 0 && kt <= 12000 && kd <= 4 && (notes.kit_contact || []).length >= 8 && bad3 === 0,
+    "the pool kit (Villa_kit, near only): <= 12k tris, <= 4 draws, every piece on the deck within 5 mm", `${kt} tris, ${kd} draws; ${rows3.join("; ")}`);
+}
 // ---- 2d. villa3 (rule villa-licences): every external asset the villa ships is listed with its licence and source page
 {
   let lic = ""; try { lic = readFileSync(new URL("models/villa/LICENCES.md", ROOT), "utf8"); } catch { /* missing */ }
@@ -163,7 +187,7 @@ const toWorld = (p) => {
   for (let i = 0; i < P.length; i += 3) { v.set(p.positions[i], p.positions[i + 1], p.positions[i + 2]).applyMatrix4(rootM); P[i] = v.x; P[i + 1] = v.y; P[i + 2] = v.z; }
   return { ...p, positions: P };
 };
-const model = ext.parts.filter((p) => ["Villa", "Villa_gateL", "Villa_gateR"].includes(p.node)).map(toWorld);
+const model = ext.parts.filter((p) => ["Villa", "Villa_kit", "Villa_gateL", "Villa_gateR"].includes(p.node)).map(toWorld);   // (villa3 job 3: the coping is the kit node's, drawn with LOD0)
 // the paved grounds as the viewer builds them (the same function, the tile's heightmap)
 const groundAt = (x, z) => hm.surface(x, z);
 const GG = await imp("viewer/villa/villaGroundsGeom.js");
