@@ -90,7 +90,7 @@ const T = c.argv.find((a) => /^[A-Z]\d+$/i.test(a)).toUpperCase();
 const t0 = Date.now();
 const manifest = JSON.parse(readFileSync(join(ROOT, "data/tiles/manifest.json"), "utf8"));
 const entries = JSON.parse(readFileSync(join(ROOT, "tools/boot3/entries.json"), "utf8"));
-const entry = { ...entries.find((e) => !e.lite).entry, ...manifest.tiles.find((t) => t.name === T), cache: false, keepNet: true, ...(OLD ? { movGround: false } : {}) };
+const entry = { ...entries.find((e) => !e.lite).entry, ...manifest.tiles.find((t) => t.name === T), cache: false, keepNet: true, ...(OLD ? { movGround: false } : {}), ...JSON.parse(process.env.BUILD_OVER || "{}") };   // (BUILD_OVER: entry switches, as lib_mesh.mjs buildTile)
 const realLog = console.log; console.log = () => {};
 let d;
 try { d = await buildTileData(entry, pathToFileURL(join(ROOT, "data/tiles") + "/").href); } finally { console.log = realLog; }
