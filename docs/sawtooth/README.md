@@ -24,7 +24,10 @@ every crease:
 solved TOGETHER: least squares of the drawn piecewise-planar surface itself to every street sample (1 m lattice, the same
 `groundAt` as before), + 2 x the corners' second differences (zero for any plane: no slope is flattened), + 0.02 x the
 pull to the per-corner value; Jacobi-preconditioned conjugate gradients from the per-corner values, the H_MARGIN clamp kept.
-60-100 ms a tile (worker only). Tuning (I6 H6 F2) is in the code comment: a weaker penalty follows the samples closer but
+Two exceptions keep a corner at its own value: the TRAM corridors (a corner carrying tramRoad / tramSite samples): the
+least-squares field cannot follow a crowned street inside a 6 m cell and sat 7-11 cm under the trams' rail profile (Av.
+Brugmann F2; moverground tram 1,414 -> 2,400 m with every corner joint, 1,418 with these kept); and a corner with almost no
+samples moves at most 15 cm (the penalty alone extrapolated one 1.5 m at F2). 60-100 ms a tile (worker only). Tuning (I6 H6 F2) is in the code comment: a weaker penalty follows the samples closer but
 leaves more saw-tooth; a robust (Huber) fit and taking the sidewalks' cross-fall out of the fit were tried and dropped.
 
 ## The detector: tools/audit/census/sawtooth.mjs (gate row `sawtooth`)
@@ -42,26 +45,30 @@ every time): a 3 cm 6 m saw on an 8 % grade is found; the smooth grade, a 12 cm 
 
 | | ?sawtooth=old | default | |
 |---|---|---|---|
-| places (built surfaces) | 1,191 | 267 | -78 % |
-| metres | 34,417 | 6,017 | -83 % |
-| sidewalk | 523 | 51 | -90 % |
-| road (carriageway, gutter) | 530 | 80 | -85 % |
+| places (built surfaces) | 1,191 | 356 | -70 % |
+| metres | 34,417 | 8,756 | -75 % |
+| sidewalk | 523 | 80 | -85 % |
+| road (carriageway, gutter) | 530 | 140 | -74 % |
 | square / other / tram | 9 | 6 | |
 | built terrain (`ground`) | 129 | 130 | another cause, below |
-| bare DTM micro-relief (`dtm`, not counted) | 759 | 762 | measured ground |
+| bare DTM micro-relief (`dtm`, not counted) | 759 | 761 | measured ground |
+
+(With every corner joint, the tram corridors included: 267 places / 6,017 m, sidewalk 51, road 80; the trams' rails then
+stood off the drawn street, see the fix.)
 
 The Saint-Job streets (Montagne de Saint-Job, Chaussée de Saint-Job, Rue Jean Benaets, Av. Latérale / Rue de l'Equateur
-along the tram climbing west of the place, H5 / H6 / I5 / I6): 21 places before, 2 after (H6 Rue Jean Benaets 79: a flat
-road meeting a 24 % side street inside one 6 m cell; I6 Chemin Avijl 32). Rue du Ham (the tram north-east past the church)
+along the tram climbing west of the place, H5 / H6 / I5 / I6): 21 places before, 3 after (H6 Rue Jean Benaets 89 sidewalk
+7 cm, where a flat road meets a 24 % side street inside one 6 m cell; I6 Chemin Avijl 32 road; H5 Av. Carsoel 55 sidewalk
+3.4 cm). Rue du Ham (the tram north-east past the church)
 showed no place before or after at 2.5 cm (its wobble was <= 2 cm).
 
 Worst before: F6 Rue du Repos 141 road 117 m, cycle 6.7 m, 23.8 cm; B4 sidewalk -2243, -456 20 cm; G3 road 15.7, -936 17 cm;
 F5 Rue du Repos 113; G2 Av. Adolphe Dupuich 32; D6 Rue François Vervloet 16. After: Rue du Repos 8.2 cm (was 23.8), B4
-8.7, Dupuich 6.3, Vervloet 7.4.
+8.7, Dupuich 6.3, Vervloet 7.4 (and 4-13 cm on six shorter runs there).
 
 ### What is left
 
-- **sidewalk / road 131**: places where the 6 m piecewise-planar field cannot follow a crease inside one cell (a junction
+- **sidewalk / road 220**: the tram corridors (their corners keep the per-corner fit, so their saw-tooth stays), and the places where the 6 m piecewise-planar field cannot follow a crease inside one cell (a junction
   with a steep side street, a sidewalk folding onto a ramp or a forecourt): the fit compromises and the compromise changes
   along the street. A finer cell (3 m) or a separate raised-surface field would take them; both change every street
   triangle (cost) and are left for a round 2.
@@ -74,11 +81,12 @@ F5 Rue du Repos 113; G2 Av. Adolphe Dupuich 32; D6 Rue François Vervloet 16. Af
 
 - kerb heights (H6, every kerb: p5 / p50 / p95 of the drawn raised top 0.3 m in minus the road top 0.3 m out): closer to
   13 cm and narrower (old p95 up to 22.9 cm -> 16.5).
-- |H - street ground| over the street samples (I6 H6 F2): p50 2.4 -> 2.6 cm, p99 17.1 -> 19.7 cm.
+- |H - street ground| over the street samples (I6 H6 F2, every corner joint): p50 2.4 -> 2.6 cm, p99 17.1 -> 19.7 cm.
 - tile seams (drawn street either side, same part): H6 | I6 p50 / p90 1.1 / 2.6 -> 1.6 / 4.2 cm; I6 | I7 3.2 / 20.2 -> 1.8
   / 12.0 cm (the per-corner fits differed on both sides too; the seam steps are an older, separate problem).
-- ground census (all tiles): sidewalk tilt 807 -> 386, road cross-fall 379 -> 221 (ceilings tightened), weld lumps 864 -> 943 groups (m2 +4 %), spikes 174 -> 198, bare banks 555 -> 614 (m2 +11 %), over 305 -> 306, stacked 0 -> 1 (J11 Av. des Sorbiers 24). The edge corners now extrapolate the street plane; anchoring them to their own value kept the weld as before but left the saw-tooth (65 of 66 places on K5 K6 G3 F4 F6 G8): the saw-tooth lives in those corners.
-- colliders (F1 E4 B6 D4): offset 17 -> 19 (D4 Av. Adolphe Wansart, 3.6 m2).
+- ground census (all tiles): sidewalk tilt 807 -> 598, road cross-fall 379 -> 269 (ceilings tightened), weld lumps 864 -> 930 groups (m2 +3 %), spikes 174 -> 199, bare banks 555 -> 611 (m2 +11 %), over 305 -> 307, stacked 0 -> 1 (J11 Av. des Sorbiers 24). The edge corners now extrapolate the street plane; anchoring them to their own value kept the weld as before but left the saw-tooth (65 of 66 places on K5 K6 G3 F4 F6 G8): the saw-tooth lives in those corners.
+- moverground (all tiles): traffic 2,913 -> 2,915 of 1,178,940 points, parked 127 -> 132 of 10,483 slots, tram 1,414 -> 1,418.
+- colliders (F1 E4 B6 D4): offset 17 -> 19 (D4 Av. Adolphe Wansart, 3.6 m2), measured with every corner joint.
 - the other street rows: see the merge gate run.
 
 Shots (grazing, before = ?sawtooth=old): C:\Users\tibog\Downloads\uccle-sawtooth\ (compare.html). Raw results:

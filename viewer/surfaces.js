@@ -85,6 +85,8 @@ export const GRID = 0.5;           // m: class raster
 // ---------------------------------------------------------------- the joint corner fit (claude/sawtooth)
 const JOINT_LAMBDA = 2;            // weight of one corner triple's second difference (a sample's residual weighs 1)
 const JOINT_MU = 0.02;             // pull of a corner to its own plane's value (anchors a corner with little data)
+const JOINT_TRAM = 0.5;            // a corner carrying more tram-track samples than this (barycentric weight) keeps its own value
+const JOINT_EMPTY = 3, JOINT_EMPTY_MAX = 0.15;   // a corner with less sample weight moves at most JOINT_EMPTY_MAX from its own value
 const JOINT_ITER = 300, JOINT_TOL = 1e-10;
 /**
  * The street height field's corners (cellKey -> value in `corner`, the per-corner fits) re-solved together: minimise
@@ -92,17 +94,18 @@ const JOINT_ITER = 300, JOINT_TOL = 1e-10;
  * + JOINT_LAMBDA * sum over corner triples in x, z and the split diagonal of (c[-1] - 2 c[0] + c[+1])^2
  * + JOINT_MU * sum of (c - c_own)^2
  * with H linear in each half-cell (split (i, j)-(i+1, j+1), as H). Sparse normal equations (a 5 x 5 stencil a corner),
- * Jacobi-preconditioned conjugate gradients from the per-corner values. With clamp: each corner within H_MARGIN of the
- * samples of its cells (as fitCorner's clampH).
- * (claude/sawtooth tuning on I6 H6 F2, tools/audit/census/sawtooth.mjs: LAMBDA 0.5 / 1 / 2 / 4 = 26 / 17 / 13 / 8 sidewalk +
- * road saw-tooth places (per corner: 60); |H - ground| over the street samples p50 / p99 2.0 / 14.3 cm at 0.5, 2.6 / 19.7
- * at 2 (per corner 2.4 / 17.1). A robust (Huber) fit left 4 places but p99 34 cm: junction creases drawn off their ground.
- * Taking the levelled sidewalks' cross-fall out of the fit and adding it back per vertex made it worse (22): the DTM's rise
- * sampled at the slab's sparse vertices is itself a 6 m saw. Anchoring the corners with < 36 street samples round them to
- * their own value (K5 K6 G3 F4 F6 G8) kept the terrain weld as before (ground lump 100 / bareBank 26 vs 103 / 26 per corner,
- * 133 / 45 joint) but left 65 saw-tooth places of 66: the saw-tooth lives in those edge corners. Cost of the joint fit
- * city-wide (tools/audit/census/ground.mjs): sidewalk tilt 807 -> 386, road tilt 379 -> 221, weld lumps 864 -> 943 groups
- * (m2 +4 %), bare banks 555 -> 614 (m2 +11 %), spikes 174 -> 198)
+ * Jacobi-preconditioned conjugate gradients from the per-corner values. Kept at their own value: the corners of the tram
+ * corridors (tramRoad / tramSite samples): the least-squares field cannot follow a street's crown inside a 6 m cell and sat
+ * up to 11 cm under the tram tracks' profile (Av. Brugmann, F2; moverground tram 1,414 -> 2,400 m city-wide); the per-corner
+ * planes, centred on the crown, stay on it. A corner with almost no samples (< JOINT_EMPTY) is extrapolated by the penalty
+ * alone (up to 1.5 m off at F2 Brugmann): held within JOINT_EMPTY_MAX. With clamp: within H_MARGIN of its cells' samples.
+ * Tuning (claude/sawtooth, tools/audit/census/sawtooth.mjs on I6 H6 F2): LAMBDA 0.5 / 1 / 2 / 4 = 26 / 17 / 13 / 8 sidewalk
+ * + road saw-tooth places (per corner: 60); |H - ground| over the samples p50 / p99 2.0 / 14.3 cm at 0.5, 2.6 / 19.7 at 2
+ * (per corner 2.4 / 17.1). Tried and dropped: a robust (Huber) fit (4 places, p99 34 cm: junction creases drawn off their
+ * ground); the levelled sidewalks' cross-fall out of the fit, added back per vertex (worse: the DTM's rise at the slab's
+ * sparse vertices is itself a 6 m saw); every corner with < 36 samples anchored (the terrain weld as before, but 65 of 66
+ * places left on K5 K6 G3 F4 F6 G8: the saw-tooth lives in the edge corners); a penalty weighted along the kerb, or scaled
+ * down with the corner's support (the crown error stays: it is the 6 m field's, not the penalty's)
  */
 function jointFit(street, corner, classAt, groundAt, clamp, bounds, fitCorner) {
   // the unknowns: every corner of every cell holding a street sample, not only the cells of the base triangles' centroids
@@ -114,7 +117,7 @@ function jointFit(street, corner, classAt, groundAt, clamp, bounds, fitCorner) {
   const keys = [...all], n = keys.length, id = new Map(keys.map((k, q) => [k, q]));
   for (const k of keys) if (!corner.has(k)) corner.set(k, fitCorner((Math.floor(k / 8192) - 4096) * CELL, ((k % 8192) - 4096) * CELL));
   const c0 = Float64Array.from(keys, (k) => corner.get(k));
-  const lo = new Float64Array(n).fill(Infinity), hi = new Float64Array(n).fill(-Infinity);
+  const lo = new Float64Array(n).fill(Infinity), hi = new Float64Array(n).fill(-Infinity), cnt = new Float64Array(n), tram = new Float64Array(n);
   const slot = (di, dj) => (di + 2) * 5 + (dj + 2);
   const ij = (k) => [Math.floor(k / 8192) - 4096, (k % 8192) - 4096];
   const M = new Float64Array(n * 25), rhs = new Float64Array(n);
@@ -125,12 +128,13 @@ function jointFit(street, corner, classAt, groundAt, clamp, bounds, fitCorner) {
     for (let a = 0.5; a < CELL; a += 1) for (let b = 0.5; b < CELL; b += 1) {
       const x = i * CELL + a, z = j * CELL + b, cls = classAt(x, z);
       if (cls < 0) continue;
-      const y = groundAt(x, z, cls), fx = a / CELL, fz = b / CELL;
+      const y = groundAt(x, z, cls), fx = a / CELL, fz = b / CELL, isTram = cls === SURF_CLASS.tramRoad || cls === SURF_CLASS.tramSite;
       const P = fx >= fz ? [[q00, 0, 0, 1 - fx], [q10, 1, 0, fx - fz], [q11, 1, 1, fz]] : [[q00, 0, 0, 1 - fz], [q01, 0, 1, fz - fx], [q11, 1, 1, fx]];
       for (const [qa, ia, ja, wa] of P) {
         rhs[qa] += wa * y;
         for (const [, ib, jb, wb] of P) M[qa * 25 + slot(ib - ia, jb - ja)] += wa * wb;
         if (y < lo[qa]) lo[qa] = y; if (y > hi[qa]) hi[qa] = y;
+        cnt[qa] += wa; if (isTram) tram[qa] += wa;
       }
     }
   }
@@ -144,7 +148,7 @@ function jointFit(street, corner, classAt, groundAt, clamp, bounds, fitCorner) {
       for (const [qa, sa, wa] of T) for (const [, sb, wb] of T) M[qa * 25 + slot((sb - sa) * di, (sb - sa) * dj)] += JOINT_LAMBDA * wa * wb;
     }
   }
-  for (let q = 0; q < n; q++) { M[q * 25 + 12] += JOINT_MU; rhs[q] += JOINT_MU * c0[q]; }
+  for (let q = 0; q < n; q++) { const mu = tram[q] > JOINT_TRAM ? 1e6 : JOINT_MU; M[q * 25 + 12] += mu; rhs[q] += mu * c0[q]; }
   const nb = new Int32Array(n * 25).fill(-1);
   keys.forEach((k, q) => { const [i, j] = ij(k); for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) { const r = id.get(cellKey(i + di, j + dj)); if (r !== undefined) nb[q * 25 + slot(di, dj)] = r; } });
   const mul = (v, out) => { for (let q = 0; q < n; q++) { let s = 0; const o = q * 25; for (let t = 0; t < 25; t++) { const r = nb[o + t]; if (r >= 0) s += M[o + t] * v[r]; } out[q] = s; } };
@@ -163,6 +167,7 @@ function jointFit(street, corner, classAt, groundAt, clamp, bounds, fitCorner) {
   keys.forEach((k, q) => {
     let v = x[q];
     if (!Number.isFinite(v)) return;
+    if (cnt[q] < JOINT_EMPTY) v = Math.min(c0[q] + JOINT_EMPTY_MAX, Math.max(c0[q] - JOINT_EMPTY_MAX, v));
     if (clamp && lo[q] <= hi[q]) v = Math.min(hi[q] + H_MARGIN, Math.max(lo[q] - H_MARGIN, v));
     corner.set(k, v);
   });

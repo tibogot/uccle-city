@@ -7,7 +7,8 @@ check: `sawtooth`: tools/audit/census/sawtooth.mjs (every kerb both sides, path 
 carriageway, the terrain the builder reshaped beside them) is drawn smooth along its length: no periodic up-down. The
 street height field H is ONE fit of the drawn surface to the street's samples (viewer/surfaces.js jointFit: the corners
 of the 6 m piecewise-planar field solved together, a second-difference penalty that is zero for any plane), never each
-grid corner its own plane extrapolated to it. Walked along any of those lines every 0.25 m, the drawn top shows no chain
+grid corner its own plane extrapolated to it (only the tram corridors keep their per-corner planes: the trams ride the
+crown the least-squares field cannot follow inside a 6 m cell). Walked along any of those lines every 0.25 m, the drawn top shows no chain
 of >= 5 regular swings (cycle 0.75-12 m, CV <= 0.4) of >= 2.5 cm against its local +-3 m line, outside real steps
 (a > 6 cm jump, a class change, a dropped kerb, a tree pit, a corner). The bare UrbIS DTM's own micro-relief (a lawn, an
 unpaved park path the builder did not touch) is reported, not counted. A new builder that sets heights on a grid shows the
@@ -20,4 +21,4 @@ extrapolating that plane from one side; along a street crossing the grid at an a
 changing with where the corner falls in the cross-section: road camber, the levelled sidewalk, a bank) alternate, and the
 drawn surface, linear in each half-cell, bends at every crease. Montagne de Saint-Job 42 (I6, 0.5 m behind the kerb):
 slopes 3.4 / 1.2 / 5.0 / 1.7 / 5.4 % in turn on a 3.2 % sidewalk, every kink on a 6 m grid line or split diagonal;
-city-wide the census found the before / after counts in docs/sawtooth/README.md (claude/sawtooth).
+city-wide 1,191 saw-tooth places / 34.4 km before, 356 / 8.8 km after (sidewalk 523 -> 80, road 530 -> 140), median cycle 7.0 m = the 6 m cell across the street angle (docs/sawtooth/README.md, claude/sawtooth).
