@@ -119,7 +119,7 @@ export function buildWalkGraph(o) {
     const lines = traceSkeleton(sk, W, H, SPUR / RAST);
     lap("trace");
     for (const L of lines) {
-      const P = L.map((k) => { const i = k % W, j = (k - i) / W; return [B.x0 + (i + 0.5) * RAST, B.z0 + (j + 0.5) * RAST, Math.max(0.8, 2 * dist[k] * RAST)]; });
+      const P = L.map((k) => { const i = k % W, j = (k - i) / W; return [B.x0 + (i + 0.5) * RAST, B.z0 + (j + 0.5) * RAST, Math.max(0.8, (2 * dist[k] - 1) * RAST)]; });
       let len = 0; for (let k = 1; k < P.length; k++) len += Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]);
       if (P.length < 2 || len < 1) continue;
       smoothRun(P);
