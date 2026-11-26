@@ -1,0 +1,10 @@
+{
+  "_doc": "claude/reality1 rule bldclass-evidence: real post-war balcony blocks seen on Google Street View 2026-11-26 (look only, nothing kept) that must stay balcony blocks (tools/audit/bldclassCheck.mjs F)",
+  "trueBlocks": [
+    {"id": "534086", "tile": "F2", "name": "Av. du Chateau de Walzin 13: 1970s-80s brown brick, continuous balconies on 5 floors, a steep tiled roof with dormers (the case that limits the steep-roof rule to row fronts / small blocks)"},
+    {"id": "555120", "tile": "G2", "name": "Av. Winston Churchill 123: a 9-storey stone-clad post-war block, a column of balconies, between two Beaux-Arts houses (its neighbour's inventory record must not date it)"},
+    {"id": "555004", "tile": "I2", "name": "Av. Winston Churchill 242 (Longchamp): an 8-storey block with full-width glass balconies (a bare 1913 inventory record sits inside its footprint)"},
+    {"id": "535480", "tile": "G2", "name": "Av. Messidor 206: the 1973 stepped brutalist blocks with continuous balcony terraces"},
+    {"id": "539036", "tile": "F5", "name": "Rue Colonel Chaltin 32: a 5-storey brick and concrete block with balconies on every floor (UrbIS reads its roof as steep: a free-standing block keeps the draw)"}
+  ]
+}

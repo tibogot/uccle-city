@@ -6,7 +6,7 @@
 import { carvePonds } from "./water/pondBed.js";
 import { Heightmap } from "./heightmap.js";
 import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
-import { classify, TYPE } from "./buildingTypes.js";
+import { classify, TYPE, applyBuildingEvidence } from "./buildingTypes.js";
 import { farBuildings } from "./farLookData.js";   // the far city's façades (docs/FARCITY.md), ?farlook=old = the flat solids
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
@@ -117,7 +117,7 @@ async function gardenDocNear(base, name, b, old = false) {
 }
 /** (claude/gates: old = entry.gatesOld, ?gates=old: the garden data before the front-gates job, data/gardens/old) */
 async function gardenDoc(base, name, old = false) {
-  const r = await fetch(new URL(`../gardens/${old ? "old/" : ""}${name}.json`, base)).catch(() => null);
+  const r = await fetch(new URL(`../gardens/${old === "fg" ? "fgold/" : old ? "old/" : ""}${name}.json`, base)).catch(() => null);   // (claude/reality1) "fg": ?frontgarden=old
   return r?.ok ? r.json().catch(() => null) : null;
 }
 async function streetlifeFronts(base, name) {
@@ -132,6 +132,8 @@ let streetVoteP = null;
 /** data/roads/streetVote.json (tools/build_street_vote.mjs): street key -> its city-wide OSM surface code (not asphalt) */
 const streetVote = (base) => (streetVoteP ??= fetch(new URL("../roads/streetVote.json", base)).then((r) => (r.ok ? r.json() : { exact: {}, loose: {} })).catch(() => ({ exact: {}, loose: {} })));
 /** data/overrides.json (hand corrections), fetched once per worker; {} if missing. */
+/** (claude/reality1, rule bldclass-evidence) the tile's building-class evidence (data/bldclass/<T>.json, tools/bldclass/build_evidence.py) */
+const bldEvidence = (base, name) => fetch(new URL(`../bldclass/${name}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 const overrides = (base) => (overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
 /** the curated building looks this build uses: an entry of a neighbourhood pass ("set": "cortenbosch") only with its
  *  switch on (?cortenbosch=old: none of them; ?looks=old drops every look) */
@@ -457,7 +459,7 @@ export async function buildTileData(entry, base) {
   // (claude/sidewalk round 2) the garden fronts, for the retaining walls behind levelled sidewalks (viewer/streets/retainWalls.js)
   // (round 5: + the garden pieces of the 4 neighbour tiles within 30 m of this one: a garden front belongs to its
   // building's tile and runs over the border (H6 Perelman 4: H5's gate 18 m into H6; the wall closed it off))
-  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, !!entry.gatesOld)) : null;
+  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, entry.gatesOld ? true : entry.frontgardenOld ? "fg" : false)) : null;
   const gardenNear = gardenDoc0 !== null || (entry.sidewalkLevel !== false && entry.retainWalls !== false && surf) ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true, span: !entry.gatesOld }) : null;
   // the street model's inputs (claude/street2, viewer/street/inputs.js: the network, the measured inputs of every tile
   // the model of this one reads, cached per worker; ?streetmodel=old: none, the step-1 lines)
@@ -575,6 +577,7 @@ export async function buildTileData(entry, base) {
   const nb = bDoc.buildings.length;
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;      // ?colfix=0: the old way
   hideBuildings(bDoc, entry.hide);
+  if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name));   // (rule bldclass-evidence; ?bldclass=old: off)
   roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));      // the falcon's collision (drawn roofs)
   // the railway for the car (viewer/rail/railData.js): fences along the line where it runs on the ground (not on bridges,
   // not over a tunnel, broken at road crossings), and below the line's own surface in the drive grid (rail top, shoulders)
@@ -714,6 +717,7 @@ export async function buildLiteData(entry, base) {
   await MeshoptSimplifier.ready;
   const [idxS] = MeshoptSimplifier.simplify(idx, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
   hideBuildings(bDoc, entry.hide);
+  if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name));   // (rule bldclass-evidence) the far tiles classify as the near
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T * 3);
   // (farcity, docs/FARCITY.md) the walls' face coordinates + the building type for viewer/farLook.js; entry.farLook ===
