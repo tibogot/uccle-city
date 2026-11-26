@@ -13,8 +13,8 @@
 // Vertical masts: the loop is baked with the wind along +x and each flag is turned to the wind (yaw). Fixed angled
 // poles (a balcony's) are baked in world space with the real wind (cloth.windDir, yaw 0): re-recorded on a change.
 import * as THREE from "three/webgpu";
-import { Fn, attribute, uniform, texture, textureLoad, ivec2, int, float, vec3, vec4, mix, floor, fract, mod, cos, sin,
-  normalLocal, time } from "three/tsl";
+import { Fn, attribute, uniform, texture, textureLoad, ivec2, int, float, vec2, vec3, vec4, mix, floor, fract, mod, cos, sin,
+  normalLocal, time, uv } from "three/tsl";
 import { FlagCloth, bakeLoop } from "./flagCloth.js";
 
 
@@ -31,9 +31,12 @@ export function bakeInWorker(job) {
   return new Promise((res) => { pending.set(id, res); worker.postMessage({ id, ...job }); });
 }
 
-/** the cloth material (double sided: a printed flag shows its mirror image from the back) */
-export function clothMaterial(map) {
-  const m = new THREE.MeshStandardNodeMaterial({ map, side: THREE.DoubleSide, roughness: 0.82, metalness: 0 });
+/** the cloth material (double sided: a printed flag shows its mirror image from the back). With `atlas` (a design
+ *  atlas, viewer/flags/flagAtlas.js: { map, uvOf(cellNode, uvNode) }) and `cell` (a float node: the cell index, an
+ *  instance attribute or a uniform), the colour is that cell of the atlas (embassy flags: one draw, many designs) */
+export function clothMaterial(map, { atlas = null, cell = null } = {}) {
+  const m = new THREE.MeshStandardNodeMaterial({ map: atlas ? null : map, side: THREE.DoubleSide, roughness: 0.82, metalness: 0 });
+  if (atlas) m.colorNode = texture(atlas.map, atlas.uvOf(cell, uv()));
   m.name = "flag_cloth";
   return m;
 }
@@ -58,7 +61,7 @@ export class BakedFlags {
     return f;
   }
 
-  constructor({ cloth, map, capacity = 64, levels = [5, 5], frames = 72, fps = 24, bakes = null }) {
+  constructor({ cloth, map, capacity = 64, levels = [5, 5], frames = 72, fps = 24, bakes = null, atlas = null }) {
     this.clothOpts = cloth; this.levels = levels.slice(0, 2);
     this.slot = 0; this.fade = null; this.busy = false; this.target = null;
     this.slotOpts = [cloth, cloth];
@@ -89,7 +92,7 @@ export class BakedFlags {
     g.setAttribute("aIdx", new THREE.BufferAttribute(idx, 1));
     g.setIndex(new THREE.BufferAttribute(grid.index, 1));
     this.pose = new Float32Array(capacity * 4);       // x, y, z, yaw
-    this.extra = new Float32Array(capacity * 4);      // phase (0..1), scale, -, -
+    this.extra = new Float32Array(capacity * 4);      // phase (0..1), scale, atlas cell (with o.atlas), -
     this.poseAttr = new THREE.InstancedBufferAttribute(this.pose, 4);
     this.extraAttr = new THREE.InstancedBufferAttribute(this.extra, 4);
     g.setAttribute("aPose", this.poseAttr); g.setAttribute("aExtra", this.extraAttr);
@@ -98,7 +101,7 @@ export class BakedFlags {
     // the wind level: two levels mixed (lo, hi, w)
     this.uLevel = uniform(new THREE.Vector3(0, 0, 0));
     this.uTime = uniform(0);
-    const mat = clothMaterial(map);
+    const mat = clothMaterial(map, atlas ? { atlas, cell: attribute("aExtra", "vec4").z } : {});
     const posT = texture(this.posTex), nrmT = texture(this.nrmTex), Fc = float(F), fpsU = float(this.fps);
     const self = this;
     mat.positionNode = Fn(() => {
@@ -153,12 +156,13 @@ export class BakedFlags {
   }
 
   /** add a flag at the top of its hoist (world), returns its index */
-  add(x, y, z, { yaw = 0, phase = Math.random(), scale = 1 } = {}) {
+  add(x, y, z, { yaw = 0, phase = Math.random(), scale = 1, cell = 0 } = {}) {
     const i = this.geometry.instanceCount++;
-    this.pose.set([x, y, z, yaw], i * 4); this.extra.set([phase, scale, 0, 0], i * 4);
+    this.pose.set([x, y, z, yaw], i * 4); this.extra.set([phase, scale, cell, 0], i * 4);
     this.poseAttr.needsUpdate = true; this.extraAttr.needsUpdate = true;
     return i;
   }
+  setPlace(i, x, y, z) { this.pose[i * 4] = x; this.pose[i * 4 + 1] = y; this.pose[i * 4 + 2] = z; this.poseAttr.needsUpdate = true; }
   setYaw(i, yaw) { this.pose[i * 4 + 3] = yaw; this.poseAttr.needsUpdate = true; }
   setVisible(i, on) { this.extra[i * 4 + 1] = on ? 1 : 0; this.extraAttr.needsUpdate = true; }
 
@@ -190,12 +194,15 @@ export class BakedFlags {
       }
       return out;
     };
-    return { pos: mixF(this._sp, "pos"), prev: mixF(this._sq, "prevOfFirst") };
+    const o = (this._so ??= { pos: null, prev: null });             // (one object: no allocation per call)
+    o.pos = mixF(this._sp, "pos"); o.prev = mixF(this._sq, "prevOfFirst");
+    return o;
   }
 }
 
 export class LiveFlag {
-  constructor({ cloth, map }) {
+  /** material: a shared / pooled cloth material to use instead of a new one (embassy flags: the atlas pool) */
+  constructor({ cloth, map, material = null }) {
     this.cloth = new FlagCloth(cloth);
     const c = this.cloth, n = c.count;
     const g = new THREE.BufferGeometry();
@@ -205,7 +212,7 @@ export class LiveFlag {
     g.setAttribute("uv", new THREE.BufferAttribute(c.uv, 2));
     g.setIndex(new THREE.BufferAttribute(c.index, 1));
     g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Math.hypot(c.width, c.height) * 1.2);
-    this.mesh = new THREE.Mesh(g, clothMaterial(map));
+    this.mesh = new THREE.Mesh(g, material ?? clothMaterial(map));
     this.mesh.castShadow = true; this.mesh.receiveShadow = true;
     this.mesh.name = "flag_live";
     this.blend = null;           // { target: Float32Array, t, dur } while handing back to the baked loop
@@ -229,7 +236,7 @@ export class LiveFlag {
     if (this.blend) {                         // hand-back: ease the vertices onto the (moving) baked pose
       const b = this.blend; b.t += dt;
       const w = Math.min(1, b.t / b.dur), s = w * w * (3 - 2 * w), P = this.posArr, st = b.get();
-      const cy = Math.cos(b.yaw), sy = Math.sin(b.yaw), v = [0, 0, 0];
+      const cy = Math.cos(b.yaw), sy = Math.sin(b.yaw), v = (this._v ??= [0, 0, 0]);
       for (let k = 0; k < P.length; k += 3) {
         yawVec(v, st.pos[k], st.pos[k + 1], st.pos[k + 2], cy, sy);
         P[k] += (v[0] - P[k]) * s; P[k + 1] += (v[1] - P[k + 1]) * s; P[k + 2] += (v[2] - P[k + 2]) * s;

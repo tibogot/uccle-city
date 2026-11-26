@@ -1,0 +1,235 @@
+{
+ "_doc": "Embassy flags (TODO 4b, rule docs/rules/embassy-flags.md). places: the OSM diplomatic places of the commune (pipeline/fetch_diplomatic.py), check = a look at street-level imagery (look only, never stored or traced); poles: written by tools/embassy/places.mjs from the 'yes' places' mounts. Only a real flag gets one.",
+ "osm_base": "2026-11-26T01:53:58Z",
+ "places": [
+  {
+   "osm": "node/12988144226",
+   "country": "ER",
+   "kind": "embassy",
+   "name": "Embassy of the State of Eritrea",
+   "tile": "E4",
+   "x": -595.11,
+   "z": -138.84,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/12145005092",
+   "country": "NI",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Nicaragua",
+   "tile": "E5",
+   "x": -515.59,
+   "z": 21.32,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/12145005091",
+   "country": "AF",
+   "kind": "embassy",
+   "name": "Embassy of the Islamic Repubic of Afghanistan",
+   "tile": "F5",
+   "x": -494.93,
+   "z": 51.97,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "way/224879849",
+   "country": "GA",
+   "kind": "embassy",
+   "name": "Embassy of the Gabonese Republic (Gabon)",
+   "tile": "G2",
+   "x": 288.64,
+   "z": -1491.92,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "way/31300004",
+   "country": "RU",
+   "kind": "embassy",
+   "name": "Embassy of the Russian Federation (Russia)",
+   "tile": "G3",
+   "x": 289.66,
+   "z": -727.55,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/13056896651",
+   "country": "GQ",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Equatorial Guinea",
+   "tile": "H1",
+   "x": 743.39,
+   "z": -1899.67,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/13056938125",
+   "country": "BF",
+   "kind": "embassy",
+   "name": "Embassy of Burkina Faso",
+   "tile": "H1",
+   "x": 812.94,
+   "z": -1802.21,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "way/224881413",
+   "country": "RO",
+   "kind": "embassy",
+   "name": "Embassy of Romania",
+   "tile": "H1",
+   "x": 726.73,
+   "z": -1508.88,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/12614266195",
+   "country": "AO",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Angola",
+   "tile": "H2",
+   "x": 806.64,
+   "z": -1181.87,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/13004253815",
+   "country": "KE",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Kenya",
+   "tile": "H2",
+   "x": 932.29,
+   "z": -1415.62,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/13841940487",
+   "country": "BG",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Bulgaria",
+   "tile": "H2",
+   "x": 943.13,
+   "z": -1092.36,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "way/224881475",
+   "country": "SZ",
+   "kind": "embassy",
+   "name": "Embassy of the Kingdom of Eswatini (Swaziland)",
+   "tile": "H2",
+   "x": 784.88,
+   "z": -1403.74,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "way/224917971",
+   "country": "GT",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Guatemala",
+   "tile": "H2",
+   "x": 930.28,
+   "z": -1349.46,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/8423674093",
+   "country": "KM",
+   "kind": "embassy",
+   "name": "Embassy of the Union of the Comoros",
+   "tile": "H3",
+   "x": 625.67,
+   "z": -983.04,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/12762027263",
+   "country": "UA",
+   "kind": "embassy",
+   "name": "Embassy of Ukraine",
+   "tile": "H5",
+   "x": 779.63,
+   "z": 400.74,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/12762050104",
+   "country": "HU",
+   "kind": "embassy",
+   "name": "Embassy of Hungary",
+   "tile": "I4",
+   "x": 1423.96,
+   "z": -203.17,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/12762057644",
+   "country": "IL",
+   "kind": "embassy",
+   "name": "Embassy of the State of Israel",
+   "tile": "J4",
+   "x": 1507.32,
+   "z": -460.28,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/12461850166",
+   "country": "KZ",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Kazakhstan",
+   "tile": "L7",
+   "x": 2514.77,
+   "z": 1426.35,
+   "check": {
+    "flag": "unseen"
+   }
+  },
+  {
+   "osm": "node/12869199203",
+   "country": "RU",
+   "kind": "embassy",
+   "name": "Représentation Commerciale de Russie en Belgique - Handeltvertegenwoordiging van Rusland in België",
+   "tile": "L8",
+   "x": 2566.41,
+   "z": 1683.43,
+   "check": {
+    "flag": "unseen"
+   }
+  }
+ ],
+ "poles": []
+}

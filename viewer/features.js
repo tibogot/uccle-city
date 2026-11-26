@@ -184,6 +184,7 @@ export const FEATURES = [
   on("stjob", "world", "Saint-Job church", "The scripted church (+ its colliders); off: the UrbIS block.", { sub: "Landmarks" }),
   on("townhall", "world", "town hall", "Maison communale (Place Jean Vander Elst).", { sub: "Landmarks" }),
   on("flags", "world", "cloth flags", "The cloth flags (viewer/flagsCity.js): the town hall's balcony, the Lycée Français's entrance, the police station's yard (police.json flag_poles). Every placed flag is a cloth flag (rule flags-are-cloth).", { sub: "Landmarks" }),
+  on("embassyflags", "world", "embassy flags", "The cloth flags in front of the embassies that really fly one (looked at per place on street-level imagery: data/places/embassy_flags.json, viewer/embassyFlags.js): scripted poles / façade brackets, one draw for the free poles' flags (a design atlas), live cloth for the nearest 6 within 45 m. Rule embassy-flags.", { sub: "Landmarks" }),
   on("observatory", "world", "Observatory", "Observatoire royal.", { sub: "Landmarks" }),
   on("wolvendael", "world", "Wolvendael château", "Château + pond.", { sub: "Landmarks" }),
   on("police", "world", "police station", "Police station (+ yard).", { sub: "Landmarks" }),
