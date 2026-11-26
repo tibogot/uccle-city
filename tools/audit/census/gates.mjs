@@ -128,6 +128,8 @@ let doc = json(join(ROOT, OLD ? "data/gardens/old" : "data/gardens", `${T}.json`
 const placed = { segs: doc.segs.length, pillars: doc.pillars.length, gates: doc.gates.length };
 const rs = restyleHedges(doc, overrides.gardenRestyle, blocked); if (rs) doc = rs.doc;
 const cl = clearRoads(doc, blocked, {}); const droppedDoc = doc; if (cl) doc = cl.doc;
+const garageRings = (doc.drives || []).map((d) => { const r = d.ring, cx = r.reduce((q, p) => q + p[0], 0) / r.length, cz = r.reduce((q, p) => q + p[1], 0) / r.length; return r.map(([x, z]) => { const L = Math.hypot(x - cx, z - cz) || 1; return [x + ((x - cx) / L) * 0.5, z + ((z - cz) / L) * 0.5]; }); });   // (grown 0.5 m: the ring stops 0.25 m short of the line)
+const inRingG = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
 const records = new Map(); for (const g of doc.gardens || []) { if (!records.has(g.bu)) records.set(g.bu, []); records.get(g.bu).push(g); }
 /** the build's record of this face: the one of its building with the nearest gap (a building has one per garden face) */
 const recordOf = (bu, gap) => (records.get(bu) || []).reduce((a, g) => (!a || Math.abs(g.gap - gap) < Math.abs(a.gap - gap) ? g : a), null);
@@ -234,7 +236,9 @@ for (const [bi, fl] of byB) {
   const linePts = hits.map((r) => [r.ox + nx * r.d, r.oz + nz * r.d]);
   const nearLine = (x, z, tol) => linePts.some(([px, pz]) => Math.hypot(px - x, pz - z) < tol);
   const myDrives = drives.filter((l) => l.some(([x, z]) => nearLine(x, z, 1.5)));
-  const onDrive = (x, z) => myDrives.some((l) => l.some((p, k) => k && segD(x, z, l[k - 1][0], l[k - 1][1], p[0], p[1]) < 0.8));
+  // (claude/reality2, rule garage-has-drive) a garage door's paved drive (data/gardens drives) is access by data too:
+  // the boundary opens in front of the door on purpose (?garagedrive / --garage old: none)
+  const onDrive = (x, z) => myDrives.some((l) => l.some((p, k) => k && segD(x, z, l[k - 1][0], l[k - 1][1], p[0], p[1]) < 0.8)) || garageRings.some((r) => inRingG(r, x, z));
   // what the line carries, ray by ray: a piece, else a driveway the data draws there (access by design), else open
   const meet = Object.fromEntries([...KINDS, "drive"].map((k) => [k, 0]));
   let closedN = 0, openN = 0;

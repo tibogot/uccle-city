@@ -720,7 +720,9 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                 q = q if q.geom_type == "Point" else q.centroid
                 sgar = ls.project(q)
                 gw = max(2.8, ga["w"] + 0.6)
-                if not any(o[0] - 0.2 <= sgar - gw / 2 and sgar + gw / 2 <= o[1] + 0.2 for o in ops if o[2] == "car"):
+                # (a driveway opening that already reaches the door's span serves it: no second car opening beside it, its gate and
+                # piers stay as the driveway rule drew them; gates census villaDriveGatedPm)
+                if not any(o[0] < sgar + gw / 2 and sgar - gw / 2 < o[1] for o in ops if o[2] == "car"):
                     ops.append([sgar - gw / 2, sgar + gw / 2, "car"]); stats["drive_garage"] += 1
                 ta = (f["b"][0] - f["a"][0], f["b"][1] - f["a"][1]); tl = math.hypot(*ta) or 1; tx, tz = ta[0] / tl, ta[1] / tl
                 hw = ga["w"] / 2 + 0.1                     # (inside the opening: the hedge ends and jamb piers stay out of the ring)

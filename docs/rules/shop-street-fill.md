@@ -9,7 +9,7 @@ on a stretch with >= 3 real shops of the same street within 45 m, with no shop o
 to the flats above): a trade word on the fascia in our own lettering (BOUTIQUE, COIFFURE, À LOUER, IMMOBILIER...), never an
 invented brand. A known shop wears its real name, its real colours and its real sign type from a look-only Street View
 check (data/shops/terraces.json: board / ink / lit box / blade / awning / letters on the facade), no copied logo; a big
-chain gets its name and colours in our own lettering and is listed for the owner's call (keep or invent). `--fill old`:
+chain (Kruidvat, TUI, Pearle and every future one) keeps its REAL name and its real colours in our own lettering, never its logo: owner decision 2026-11-26, settled, later rounds do not ask again. `--fill old`:
 no fill.
 
 **Why.** Reality round 2026-11-26 classes C2 and C3: on Rue Xavier De Bue, the Chaussée d'Alsemberg, the Chaussée de
