@@ -21,3 +21,10 @@ block), Av. Churchill 242 (a 2010s balcony block over a bare 1913 record: record
 Chateau de Walzin 13 (a 1970s-80s residence with balconies under a steep tiled roof: the steep-roof clause is for row
 fronts and small blocks only). Census after: balcony blocks 1,539, steep-roofed ones 17 (2 dated post-war, 15 big
 free-standing blocks left to the draw), 577 buildings changed type or wall.
+
+**Round 3 (the wall).** The evidence also dates the wall: an inventory style of the eclectic / Beaux-Arts / Flemish
+neo-Renaissance / regionalist families draws red brick with white stone bands (15 % the dark klinker), a neoclassical
+one pale stone (cream); a dated pre-1946 or old-street maison de maitre with no style word leans brick (60 % red, 15 %
+klinker, 25 % render). Street View (look only): Av. Churchill 4, Rue Alphonse Renard, Rue Edith Cavell 143 are the
+check's wall fixtures; Avenue Brugmann 291's turret house now brick; Avenue Brugmann 304 (1938 modernist, beige tile)
+still draws red (a modernist style dates no material: render or yellow brick).

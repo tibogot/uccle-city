@@ -86,6 +86,20 @@ def year_of(s):
     return None
 
 
+WALL_BRICK = ("clectisme", "Néo-Renaissance flamande", "Néo-gothique", "Néogothique", "Néo-roman", "Beaux-Arts", "Art nouveau", "régionaliste", "pittoresque", "rurale", "traditionaliste", "Cottage", "École d'Amsterdam")
+WALL_STONE = ("Néoclassicisme", "Classicisme", "Néo-Renaissance", "Louis XVI")
+
+
+def wall_of(style):
+    """(round 3, Street View 2026-11-26) the facade material an inventory style dates: the eclectic / Beaux-Arts /
+    Flemish neo-Renaissance / regionalist fronts of Uccle are red brick with white stone bands (Av. Churchill 4,
+    Rue Alphonse Renard), the neoclassical ones a pale stone (Rue Edith Cavell 143); Art Deco / modernist stays the
+    draw (white render or yellow brick); None = no word for it"""
+    if any(k in style for k in WALL_BRICK) and not style.startswith("Néoclassicisme"): return "brick"
+    if any(k in style for k in WALL_STONE): return "stone"
+    return None
+
+
 def era_of(year, style):
     if year:
         return "pre" if year < 1919 else "inter" if year < 1946 else "post"
@@ -204,6 +218,10 @@ def main():
                 if p["year"]:
                     e["year"] = p["year"]
                 src.append(f'inv:{p["id"]}')
+            wl = next((wall_of(p["style"]) for p in ps if wall_of(p["style"])), None)
+            if wl:
+                e["wall"] = wl
+                if not src: src.append(f'inv:{next(p for p in ps if wall_of(p["style"]))["id"]}')
             sch = [p for p in ps if "scolaire" in p["typo"]]
             if sch:
                 e["inst"] = "school"

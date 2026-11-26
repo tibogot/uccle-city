@@ -113,6 +113,7 @@ function mergeEv(a, b) {
   if (!a) return { ...b };
   const o = { ...a };
   if (b.inst && !o.inst) o.inst = b.inst;
+  if (b.wall && !o.wall) o.wall = b.wall;
   if (b.era && (!o.era || ERA_RANK[b.era] < ERA_RANK[o.era])) { o.era = b.era; o.year = b.year; }   // the oldest part dates the group
   if (!o.era && b.near && !o.near) o.near = b.near;
   return o;
@@ -276,9 +277,15 @@ export function classify(doc, P, I, legacyStyle) {
     // a garage door in the street front's ground floor: every bel-étage, 45 % of the villas
     // (rule bldclass-evidence) an institution drawn as an old type is face brick (the schools / convents / churches of
     // the commune: red, a few buff / brown), not the houses' render share
-    const styleI = BC && g.ev?.inst && type === TYPE.MAITRE ? pick(rs, [[0, 0.65], [2, 0.2], [1, 0.15]]) : null;
+    const styleI = BC && g.ev?.inst && type === TYPE.MAITRE && !g.ev.wall ? pick(rs, [[0, 0.65], [2, 0.2], [1, 0.15]]) : null;
+    // (round 3, rule bldclass-evidence) the wall the evidence dates: the inventory style's material (brick = red brick with
+    // white stone bands, 15 % the dark klinker; stone = a pale stone / cream render), and a dated pre-1946 maison de maitre
+    // with no style word leans brick (Uccle's 1900-1930 fronts: brick + stone far more than render)
+    const wl = BC && (type === TYPE.MAITRE || type === TYPE.DECO) ? g.ev?.wall : null;
+    const styleW = wl === "brick" ? (h01(key + "|klinker") < 0.15 ? 1 : 0) : wl === "stone" ? 4
+      : BC && type === TYPE.MAITRE && (g.ev?.era === "pre" || g.ev?.era === "inter" || g.ev?.near === "old") && !g.ev?.inst ? pick(rs, [[0, 0.6], [1, 0.15], [4, 0.15], [3, 0.1]]) : null;
     const garage = g.ev?.inst && BC ? 0 : type === TYPE.BELETAGE || (type === TYPE.VILLA && h01(key + "|gar") < 0.45) ? 1 : 0;
-    T.set(key, { type, style: styleI ?? style, garage, form, flat, steep, row: steepRow(g, partyShare), ev: BC ? g.ev : null });
+    T.set(key, { type, style: styleW ?? styleI ?? style, garage, form, flat, steep, row: steepRow(g, partyShare), ev: BC ? g.ev : null });
   }
   const type = new Uint8Array(n), style = new Float32Array(n), garage = new Uint8Array(n), form = new Array(n), steepS = new Float32Array(n), rowS = new Uint8Array(n);
   B.forEach((b, bi) => {

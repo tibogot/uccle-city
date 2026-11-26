@@ -11,7 +11,7 @@
 //    war (a big free-standing block under a steep roof keeps the draw: 1970s-90s residences have balconies and dormers);
 //    nothing dated pre-1946 and no institution drawn as the balcony block
 // F  fixtures (Street View 2026-11-26, look only): Institut Montjoie (506834) is not a balcony block and wears brick; the
-//    five real post-war balcony blocks below stay balcony blocks
+//    five real post-war balcony blocks below stay balcony blocks; the wall fixtures wear the material Street View shows
 // L  (--list N) the changed buildings, ranked (tallest first), with old -> new type and why; --json writes them all
 import { readFileSync, existsSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -82,7 +82,15 @@ for (const f of TRUE_BLOCKS) {
   if (!q) fail(`F true balcony block ${f.id} (${f.name}): not found`);
   else if (q.t !== TYPE.BLOCK) fail(`F true balcony block ${f.id} (${f.name}): drawn ${TYPE_NAMES[q.t]}, Street View shows balcony slabs`);
 }
-say(`ok   F Montjoie + ${TRUE_BLOCKS.length} true balcony blocks`);
+// (round 3) the wall the evidence dates, on the Street View fixtures (data/bldclass/fixtures.json walls): brick = red / dark
+// brick (style 0 / 1), stone = the pale stone / cream (style 3 / 4)
+const WALLS = JSON.parse(readFileSync(join(ROOT, "data/bldclass/fixtures.json"), "utf8")).walls || [];
+for (const f of WALLS) {
+  const q = typeOf.get(f.id), st = q ? Math.round(q.s) : null;
+  const ok = f.wall === "brick" ? st === 0 || st === 1 : f.wall === "stone" ? st === 3 || st === 4 : false;
+  if (!ok) fail(`F wall ${f.id} (${f.name}): drawn style ${st}, Street View shows ${f.wall}`);
+}
+say(`ok   F Montjoie + ${TRUE_BLOCKS.length} true balcony blocks + ${WALLS.length} wall fixtures`);
 
 rows.sort((a, b) => b.h - a.h);
 const N = +(arg("--list") || 0);
