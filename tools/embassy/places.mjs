@@ -101,6 +101,9 @@ for (const p of places) {
     const pole = { id, place: p.osm, tile: tileOf(x, z), type: m.type ?? "pole", design: m.design, x: +x.toFixed(2), z: +z.toFixed(2) };
     if (pole.type === "bracket") {
       Object.assign(pole, { n: n.map((v) => +v.toFixed(4)), y: m.y ?? 3.2 });
+      // the height is over the ground 1.2 m in front of the place's FIRST bracket, for all of its brackets (a pair level)
+      const first = poles.find((q) => q.place === p.osm && q.type === "bracket");
+      pole.ground_at = first ? first.ground_at : [+(x + n[0] * 1.2).toFixed(2), +(z + n[1] * 1.2).toFixed(2)];
       if (m.tilt) pole.tilt = m.tilt;
       if (m.splay) pole.splay = m.splay;                              // degrees, + = to the right seen from the street
       if (m.splay) pole.t = [n[1], -n[0]].map((v) => +v.toFixed(4));  // (the right as seen from outside)
@@ -109,7 +112,9 @@ for (const p of places) {
     const w = wallDistance(p.tile, x, z);
     pole.wall_m = +w.d.toFixed(2);
     // a free pole within the cloth's reach of a wall flies its flag clear of that wall (a half-space, its own loop)
-    if (pole.type !== "bracket" && !w.inside && w.d < 1.7) pole.wall = { n: w.n.map((v) => +v.toFixed(4)), d: +w.d.toFixed(2) };
+    // (m.wall_clear: the drawn front stands out that far from the wall line here, balconies: the half-space moves out
+    // with it, so the cloth keeps off the balconies' fronts too)
+    if (pole.type !== "bracket" && !w.inside && (w.d < 1.7 || m.wall_clear)) pole.wall = { n: w.n.map((v) => +v.toFixed(4)), d: +(w.d - (m.wall_clear ?? 0)).toFixed(2) };
     if (pole.type !== "bracket" && (w.inside || w.d < 0.5)) problems.push(`${id}: free pole ${w.inside ? "INSIDE a building" : `${w.d.toFixed(2)} m from a wall (< 0.5)`}`);
     poles.push(pole);
   });

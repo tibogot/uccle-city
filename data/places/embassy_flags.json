@@ -159,14 +159,14 @@
      "burkina_faso"
     ],
     "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
-    "note": "Rue de la Primevère 2 (corner): one pole in the garden along the side street, red over green",
+    "note": "Rue de la Primevère 2 (corner): one pole in the garden past the house's end along the side street, behind its hedge (set back from the house's front line), red over green",
     "mounts": [
      {
       "type": "pole",
       "design": "burkina_faso",
       "end": "left",
-      "along": -4,
-      "out": 2.5,
+      "along": -5,
+      "out": -2.5,
       "h": 7
      }
     ]
@@ -322,7 +322,7 @@
      "eswatini"
     ],
     "seen": "Google Street View Jun 2024 (look only, 2026-11-26)",
-    "note": "Av. Winston Churchill 188: one pole left of the middle, ~1 m in front of the wall, the flag furled on the imagery",
+    "note": "Av. Winston Churchill 188: one pole left of the middle, ~1 m in front of the wall, the flag furled on the imagery; placed 2.4 m out: the city draws balconies on this front (the real villa has none), the pole stands clear of them",
     "face_n": [
      -0.14,
      0.99
@@ -333,8 +333,9 @@
       "design": "eswatini",
       "mid": true,
       "along": -2.5,
-      "out": 1.1,
-      "h": 8
+      "out": 2.4,
+      "h": 8,
+      "wall_clear": 1.45
      }
     ]
    }
@@ -501,6 +502,10 @@
     -0.5133
    ],
    "y": 4.6,
+   "ground_at": [
+    -509.07,
+    16.5
+   ],
    "tilt": 60,
    "wall_m": 0
   },
@@ -517,6 +522,10 @@
     -0.543
    ],
    "y": 3.4,
+   "ground_at": [
+    -490.14,
+    47.8
+   ],
    "tilt": 60,
    "wall_m": 0
   },
@@ -526,10 +535,10 @@
    "tile": "H1",
    "type": "pole",
    "design": "burkina_faso",
-   "x": 802.23,
-   "z": -1807.86,
+   "x": 806.76,
+   "z": -1810.19,
    "h": 7,
-   "wall_m": 4.02
+   "wall_m": 1.79
   },
   {
    "id": "way/224881413#0",
@@ -544,6 +553,10 @@
     -0.2144
    ],
    "y": 5.6,
+   "ground_at": [
+    737.92,
+    -1514.84
+   ],
    "tilt": 40,
    "splay": -25,
    "t": [
@@ -565,6 +578,10 @@
     -0.2144
    ],
    "y": 5.6,
+   "ground_at": [
+    737.92,
+    -1514.84
+   ],
    "tilt": 40,
    "splay": 25,
    "t": [
@@ -586,6 +603,10 @@
     0.9684
    ],
    "y": 4.4,
+   "ground_at": [
+    803.34,
+    -1173.88
+   ],
    "tilt": 40,
    "wall_m": 0
   },
@@ -613,6 +634,10 @@
     -0.1875
    ],
    "y": 3.4,
+   "ground_at": [
+    950.96,
+    -1095.4
+   ],
    "tilt": 35,
    "splay": -20,
    "t": [
@@ -634,6 +659,10 @@
     -0.1875
    ],
    "y": 3.4,
+   "ground_at": [
+    950.96,
+    -1095.4
+   ],
    "tilt": 35,
    "splay": 20,
    "t": [
@@ -648,16 +677,16 @@
    "tile": "H2",
    "type": "pole",
    "design": "eswatini",
-   "x": 784.18,
-   "z": -1392.84,
+   "x": 784.2,
+   "z": -1391.54,
    "h": 8,
-   "wall_m": 1.1,
+   "wall_m": 2.4,
    "wall": {
     "n": [
      0.0168,
      0.9999
     ],
-    "d": 1.1
+    "d": 0.95
    }
   },
   {

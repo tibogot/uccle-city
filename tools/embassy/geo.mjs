@@ -39,3 +39,14 @@ export function tileBuildings(tile) {
   const d = JSON.parse(fs.readFileSync(path.join(ROOT, "data/tiles", tile, "buildings.json"), "utf8"));
   return d.buildings.map((b, i) => ({ i, ring: b.footprint[0], base: b.base, eaves: b.eaves, top: b.top, bu: String(b.attrs?.BU_ID || b.id) }));
 }
+
+/** the public street at (x, z) on a tile: the UrbIS street surface (carriageway S, sidewalk SW, island I) holding the
+ *  point, or null (data/tiles/<T>/surfaces.json) */
+export function streetSurfaceAt(tile, x, z) {
+  const f = path.join(ROOT, "data/tiles", tile, "surfaces.json");
+  if (!fs.existsSync(f)) return null;
+  const d = (surfCache[tile] ??= JSON.parse(fs.readFileSync(f, "utf8")));
+  for (const s of d.surfaces ?? []) if (["S", "SW", "I"].includes(s.type) && pip(x, z, s.rings[0]) && !s.rings.slice(1).some((h) => pip(x, z, h))) return s;
+  return null;
+}
+const surfCache = {};

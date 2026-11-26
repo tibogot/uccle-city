@@ -14,7 +14,11 @@
 //   5. the cost: LIVE_MAX <= 6, LIVE_RADIUS <= 45 m, HIDE_DIST <= 700 m, the live pool built once at start (no LiveFlag
 //      made in the per-frame updater), one baked set for all the free poles (+ one per bracket), no light, no
 //      DynamicDrawUsage; the switch ?embassyflags=0 is a features.js row and main.js reads it.
-//   node --import ./tools/christmas/hook.mjs tools/audit/embassyFlagsCheck.mjs [--quiet]
+//   6. against the drawn city (each pole's tile built as the city builds it, tools/embassy/clearance.mjs): the pole's
+//      axis meets no drawn triangle; the flag's swing (16 directions at 3 heights, as long as its fly; a wall's
+//      half-space excluded) meets nothing;
+//   node --import ./tools/christmas/hook.mjs --import ./tools/road_audit/register.mjs tools/audit/embassyFlagsCheck.mjs
+//        [--quiet] [--no-build (skip 6)]
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,7 +35,7 @@ const places = doc.places ?? [], poles = doc.poles ?? [];
 const byOsm = new Map(places.map((p) => [p.osm, p]));
 
 // ---- 1. the records
-const { communePlaces, tileBuildings, pip } = await import("../embassy/geo.mjs");
+const { communePlaces, tileBuildings, pip, streetSurfaceAt } = await import("../embassy/geo.mjs");
 if (fs.existsSync(path.join(ROOT, "data/raw/osm/diplomatic.json"))) {
   const osm = communePlaces().places, missing = osm.filter((q) => !byOsm.has(q.osm));
   check("1. every OSM diplomatic place of the commune has a record", !missing.length, `${osm.length} in OSM, ${places.length} records${missing.length ? `; missing ${missing.map((q) => q.osm).join(", ")}` : ""}`);
@@ -96,11 +100,22 @@ for (const q of poles) {
       if (e < d) { d = e; owner = b; }
     }
   }
+  const st = q.type === "bracket" ? null : streetSurfaceAt(q.tile, q.x, q.z);
+  if (st) wall.push(`${q.id}: free pole on the public street (UrbIS ${st.type === "SW" ? "sidewalk" : st.type === "S" ? "carriageway" : "island"} ${st.name ?? st.id})`);
   if (q.type === "bracket") { if (d > 0.35) wall.push(`${q.id}: bracket ${d.toFixed(2)} m off the wall`); }
   else if (inside || d < 0.5) wall.push(`${q.id}: free pole ${inside ? "inside a footprint" : `${d.toFixed(2)} m from a wall`}`);
-  else if (d < 1.7 && !(q.wall && Math.abs(q.wall.d - d) < 0.05)) wall.push(`${q.id}: free pole ${d.toFixed(2)} m from a wall with no wall half-space for its cloth`);
+  else if (d < 1.7 && !(q.wall && q.wall.d <= d + 0.05)) wall.push(`${q.id}: free pole ${d.toFixed(2)} m from a wall with no wall half-space for its cloth`);
+  else if (q.wall && !(q.wall.d >= 0.3 && q.wall.d <= d + 0.05)) wall.push(`${q.id}: its wall half-space ${q.wall.d} m off (the wall is ${d.toFixed(2)} m away)`);
 }
-check("4. free poles outside every footprint, >= 0.5 m from walls, within the cloth's reach (1.7 m) only with the wall's half-space; brackets on their wall (<= 0.35 m)", !wall.length, wall.join("; ") || `${poles.filter((q) => q.wall).length} pole(s) near a wall flown clear of it`);
+check("4. free poles off the public street (UrbIS carriageway / sidewalk / island), outside every footprint, >= 0.5 m from walls, within the cloth's reach (1.7 m) only with the wall's half-space; brackets on their wall (<= 0.35 m)", !wall.length, wall.join("; ") || `${poles.filter((q) => q.wall).length} pole(s) near a wall flown clear of it`);
+
+// ---- 6. against the drawn city (tools/embassy/clearance.mjs: each pole's tile built as the city builds it)
+if (!process.argv.includes("--no-build")) {
+  const { clearance } = await import("../embassy/clearance.mjs");
+  const r = await clearance(), badP = Object.entries(r).filter(([, v]) => v.pole), badC = Object.entries(r).filter(([, v]) => v.cloth);
+  check("6. every pole's axis clear of the drawn walls / details / roofs", !badP.length, badP.map(([id, v]) => `${id}: ${v.pole}`).join("; ") || `${Object.keys(r).length} pole(s) on ${new Set(Object.values(r).map((v) => v.tile)).size} tile(s)`);
+  check("6. every flag's swing (16 directions x 3 heights, the fly + 10 cm; not into its wall's half-space) clear of the drawn city", !badC.length, badC.map(([id, v]) => `${id}: ${v.cloth}`).join("; ") || "clear");
+}
 
 // ---- 5. the cost
 const src = read("viewer/embassyFlags.js"), code = strip(src);

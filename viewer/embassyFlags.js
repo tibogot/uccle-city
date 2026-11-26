@@ -77,7 +77,10 @@ function pushBlock(B, cx, cz, hx, hz, y0, y1, ux, uz, col) {
 export function poleGeometry(B, p, ground) {
   if (p.type === "bracket") {
     // the wall point (on the drawn façade), the pole out of the wall (turned `splay` degrees sideways), tilted up
-    const [nx, nz] = p.n, g = ground(p.x, p.z), y = g + p.y, ax = bracketAxis(p);
+    // (the height over the ground 1.2 m in front of the wall: at the wall's foot the drawn ground can step onto the
+    // plinth, and a pair of brackets came out at two heights)
+    // (p.ground_at: one point for every bracket of a place, so a pair hangs level)
+    const [nx, nz] = p.n, [gx, gz] = p.ground_at ?? [p.x + nx * 1.2, p.z + nz * 1.2], y = ground(gx, gz) + p.y, ax = bracketAxis(p);
     const a = [p.x + nx * 0.06, y, p.z + nz * 0.06];
     const b = [a[0] + ax[0] * BRACKET_LEN, y + ax[1] * BRACKET_LEN, a[2] + ax[2] * BRACKET_LEN];
     pushBlock(B, p.x + nx * 0.03, p.z + nz * 0.03, 0.03, 0.09, y - 0.14, y + 0.14, nx, nz, STEEL);          // the wall plate
