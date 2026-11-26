@@ -375,9 +375,11 @@ else {
           Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: 0, air: false, footDown: 0, wobbleNow: 0, wobbleW: 0, grindSeg: -1, grindBal: 0 }, mo);
           s.crank = c / 24 * Math.PI * 2; s.steerAngle = 0; s.prev.lean = s.lean; s.prev.pitch = s.pitch;
           bikePose(s, 1, pose); bm.update(s, pose, () => 0); rig?.update(s); bm.root.updateMatrixWorld(true);
-          rider.ride(E, s, holder, 0); gltf.scene.updateMatrixWorld(true);
+          const MM = rider.ride(E, s, holder, 0); gltf.scene.updateMatrixWorld(true);
+          (acc.slid ||= []).push(MM.slid || 0); (acc.fit ||= []).push(MM.fitted || 0);
           inv.copy(F.matrixWorld).invert();
-          const pel = P("pelvis"), nk = P("neck_01"), bbp = loc(E.bb.getWorldPosition(new THREE.Vector3()));
+          const pel = P("pelvis"), nk = P("neck_01"), bbp = loc(E.bb.getWorldPosition(new THREE.Vector3())), sea = loc(E.seat.getWorldPosition(new THREE.Vector3()));
+          (acc.hipUp ||= []).push(pel.y - sea.y);
           acc.torso.push(Math.atan2(nk.z - pel.z, nk.y - pel.y) * 57.3);                // forward lean from the frame's up
           // the head's facing: the Head bone's world rotation x its bind offset, +z (the model's forward) in the frame
           const hq = gltf.scene.getObjectByName("Head").getWorldQuaternion(new THREE.Quaternion()).multiply(rider.mq.Head.clone().invert());
@@ -400,9 +402,9 @@ else {
           acc.roll.push(mo.lean ? -rollW / mo.lean : 0);
         }
         const avg = (a) => a.reduce((x, y) => x + y, 0) / a.length, mn = (a) => Math.min(...a), mx = (a) => Math.max(...a);
-        RES[pn] = { torso: avg(acc.torso), head: avg(acc.head), elbow: avg(acc.elbow), kneeMin: mn(acc.knee), kneeMax: mx(acc.knee), foot: avg(acc.foot), hipX: avg(acc.hipX), elbowOut: avg(acc.elbowOut), kneeOut: avg(acc.kneeOut), roll: avg(acc.roll) };
+        RES[pn] = { torso: avg(acc.torso), head: avg(acc.head), elbow: avg(acc.elbow), kneeMin: mn(acc.knee), kneeMax: mx(acc.knee), foot: avg(acc.foot), hipX: avg(acc.hipX), elbowOut: avg(acc.elbowOut), kneeOut: avg(acc.kneeOut), roll: avg(acc.roll), hipUp: avg(acc.hipUp), slid: mx(acc.slid), fit: mx(acc.fit) };
       }
-      if (process.env.POSE_DEBUG || !quiet) for (const [k, r] of Object.entries(RES)) console.log(`  pose ${k}: torso ${r.torso.toFixed(0)} head ${r.head.toFixed(0)} elbow ${r.elbow.toFixed(0)} knee ${r.kneeMin.toFixed(0)}..${r.kneeMax.toFixed(0)} foot ${r.foot.toFixed(0)} hipX ${(r.hipX * 100).toFixed(0)} cm elbowOut ${(r.elbowOut * 100).toFixed(1)} kneeOut ${(r.kneeOut * 100).toFixed(1)} roll ${r.roll.toFixed(2)}`);
+      if (process.env.POSE_DEBUG || !quiet) for (const [k, r] of Object.entries(RES)) console.log(`  pose ${k}: torso ${r.torso.toFixed(0)} head ${r.head.toFixed(0)} elbow ${r.elbow.toFixed(0)} knee ${r.kneeMin.toFixed(0)}..${r.kneeMax.toFixed(0)} foot ${r.foot.toFixed(0)} hipX ${(r.hipX * 100).toFixed(0)} cm elbowOut ${(r.elbowOut * 100).toFixed(1)} kneeOut ${(r.kneeOut * 100).toFixed(1)} roll ${r.roll.toFixed(2)} hipUp ${(r.hipUp * 100).toFixed(0)} cm slid ${(r.slid * 100).toFixed(0)} fit ${(r.fit * 100).toFixed(0)}`);
       globalThis.__RIDE_POSES = RES;
       // the photo notes' ranges (docs/KIDCHAR.md phase 5; elbow / knee = interior angles, foot = the foot's pitch, 24 deg
       // = flat on the ground: less = heels down; hipX = the hips ahead of the bottom bracket; lean = body / bike lean)
@@ -410,7 +412,7 @@ else {
       const want = (pn, what, v, lo, hi) => { if (!(v >= lo && v <= hi)) bad.push(`${pn} ${what} ${typeof v === "number" ? v.toFixed(v < 2 && v > -2 ? 2 : 0) : v} (${lo}..${hi})`); };
       for (const pn of Object.keys(R)) want(pn, "head", R[pn].head, -8, 25);
       want("cruise", "torso", R.cruise.torso, 22, 50); want("cruise", "elbow", R.cruise.elbow, 110, 165); want("cruise", "foot", R.cruise.foot, 5, 35);
-      want("sprint", "torso", R.sprint.torso, 30, 60); want("sprint", "elbow", R.sprint.elbow, 85, 150); want("sprint", "elbowOut", R.sprint.elbowOut, 0.05, 0.2); want("sprint", "kneeOut", R.sprint.kneeOut, 0.02, 0.15);
+      want("sprint", "torso", R.sprint.torso, 30, 60); want("sprint", "hipUp", R.sprint.hipUp - R.cruise.hipUp, 0.05, 0.3); want("sprint", "kneeMax", R.sprint.kneeMax, 130, 170); want("sprint", "hipX", R.sprint.hipX, -0.08, 0.1); want("sprint", "elbow", R.sprint.elbow, 85, 150); want("sprint", "elbowOut", R.sprint.elbowOut, 0.05, 0.2); want("sprint", "kneeOut", R.sprint.kneeOut, 0.02, 0.15);
       want("descent", "hipX", R.descent.hipX, -0.35, -0.08); want("descent", "elbow", R.descent.elbow, 90, 150); want("descent", "foot", R.descent.foot, -10, 22);
       want("air", "elbow", R.air.elbow, 90, 150); want("air", "kneeMin", R.air.kneeMin, 60, 125);
       want("landing", "elbow", R.landing.elbow, 80, 130); want("landing", "kneeMin", R.landing.kneeMin, 40, 95); want("landing", "foot", R.landing.foot, -10, 22);

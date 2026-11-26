@@ -25,7 +25,7 @@ import * as THREE from "three/webgpu";
 export const RIDE_KIDA = { seatPost: 0.06, pelvisPitch: 0.6, ankling: 0.05, hipBack: -0.045,
   // round 6, against photos of kids on 20" BMXs (docs/KIDCHAR.md phase 5): long arms, heels down, the bike leaning
   // under him in a turn (the body less than the bike), the hips well back in a manual
-  reachArmMin: 0.9, reachArmCrouch: 0.14, reachArmManual: 0.02, spineMin: -0.4, standFwd: 0.0,
+  reachArmMin: 0.9, reachArmCrouch: 0.14, reachArmManual: 0.02, spineMin: -0.4, standFwd: 0.1, standPitch: 0.1,
   heelDrop: 0.12, heelDropStand: 0.2, leanExtra: -0.3, manualBack: 0.26 };
 export const RIDE = {
   hipUp: 0.075, hipBack: 0.0,                // seated: the pelvis joint above / behind the seat empty (m, frame axes)
@@ -240,7 +240,8 @@ export class RiderIK {
       const off = _e.copy(this.hipOff[k]).applyQuaternion(_q), hx = hip.x + off.x, hy = hip.y + off.y, hz = hip.z + off.z;
       const px = k === 0 ? pl.x : -pl.x;
       const reach = P.reachLeg * this.leg[k], dx = hx - px;
-      const lim = Math.sqrt(Math.max(1e-6, reach * reach - dx * dx)) - crank;
+      // (ankling lifts the ankle by P.ankling at the bottom of the stroke: the farthest point is that much nearer)
+      const lim = Math.sqrt(Math.max(1e-6, reach * reach - dx * dx)) - Math.max(0.05, crank - (P.ankling || 0));
       const dy = hy - cy, dz = hz - cz, dl = Math.hypot(dy, dz);
       if (dl > lim) { const f = lim / dl; hip.y = cy + dy * f - off.y; hip.z = cz + dz * f - off.z; fitted = Math.max(fitted, dl - lim); }
     }
