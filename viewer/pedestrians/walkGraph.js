@@ -387,6 +387,18 @@ export function buildWalkGraph(o) {
   for (const id of islands) { const live2 = adj[id].filter((q) => !E[q].dead); if (live2.length === 1) { E[live2[0]].dead = true; stats.crossingsLinked--; stats.crossingsUnlinked++; stats.islandDrop = (stats.islandDrop || 0) + 1; } }
   lap("rest");
   // ---------------------------------------------------------------- 7. clean: dead edges out, short pieces out, pack
+  // dead-end tails into a sidewalk narrower than a walker's room (< 1.0 m drawn): trimmed (people turning round there
+  // stepped onto the road: pedssim S2), up to 6 edges back
+  for (let it = 0; it < 6; it++) {
+    let cut = 0;
+    for (let n = 0; n < nx.length; n++) {
+      if (nk[n] !== NK.walk) continue;
+      let only = -1, c = 0; for (const id of adj[n]) if (!E[id].dead) { c++; only = id; }
+      if (c === 1 && E[only].k === EK.walk && E[only].w < 1.0) { E[only].dead = true; cut++; }
+    }
+    stats.tails = (stats.tails || 0) + cut;
+    if (!cut) break;
+  }
   const alive = E.map((e) => !e.dead && e.a !== e.b);
   // connected pieces (union-find over live edges); drop pieces with < KEEP_COMP m of walk (fragments), unless a border
   // node or a board is in them (the rest of them is on the next tile)
@@ -413,8 +425,8 @@ export function buildWalkGraph(o) {
   const BD = new Float32Array(boards.length * 4);
   boards.forEach((bd, k) => { BD[k * 4] = map[bd.n]; BD[k * 4 + 1] = bd.ux; BD[k * 4 + 2] = bd.uz; BD[k * 4 + 3] = bd.len; });
   stats.nodes = N; stats.edges = M; stats.lineM = Math.round(stats.lineM); stats.pathM = Math.round(stats.pathM);
-  lap("pack"); stats.t = T;
-  stats.ms = Math.round((globalThis.performance ?? Date).now() - t0);
+  // (no timings in the result: the build is byte for byte deterministic, rule tile-cache; the step time is in d.times)
+  if (o.debug) { lap("pack"); o.debug.t = T; o.debug.ms = Math.round((globalThis.performance ?? Date).now() - t0); }
   return { v: WALK_VERSION, x: X, z: Z, nk: NKa, ea: EA, eb: EB, ek: EKa, ew: EW, ep: EP, place: PL, boards: BD, stats, ...(o.debug ? { raster: R } : {}) };
 }
 
