@@ -170,8 +170,8 @@ export class Crowd {
   advance(p, dt) {
     const T = this.table, a = (p.anim ||= { loco: 0, idle: (p.seed * 7.31) % 1, turn: 0, act: 0, codeA: 0, codeB: 0, w: 0, live: null, liveW: 0, liveTarget: 0,
       // (all fields up front: one hidden class)
-      slowB: null, wasFast: false, gen: 0, pend: 0, held: false, warm: 0, ox: 0, oz: 0, dx: p.x, dy: p.y, dz: p.z, dyaw: p.yaw,
-      fprev: null, fpl0: 0, fpl1: 0, gL: undefined, gR: undefined, offL: 0, offR: 0, drawnPose: null });
+      slowB: null, slowAct: -1, wasFast: false, gen: 0, pend: 0, held: false, warm: 0, ox: 0, oz: 0, dx: p.x, dy: p.y, dz: p.z, dyaw: p.yaw,
+      fprev: null, fpOk: false, fpl0: 0, fpl1: 0, gL: undefined, gR: undefined, offL: 0, offR: 0, drawnPose: null });
     const v = p.speed, S = p.scale * (p.childK || 1);             // children: shorter legs, shorter strides
     const fam = T.fam(p.family), famName = T.families[p.family] ? p.family : "base";
     T.loco(Math.max(v, 0.7), p.sex, this._loco, famName);
@@ -187,16 +187,18 @@ export class Crowd {
     if (!fast) {
       if (a.wasFast) { a.slowB = "walk"; a.w = 1; }          // (walk070, walk100, ~0) == (idle, walk070, 1)
       // an action (sit, talk: the UAL clips) only once standing at its spot; else walking off or turning on the spot
-      const wantB = actClip !== undefined && v < 0.2 ? "act:" + actClip : turn > 0.25 && v < 0.3 ? (p.turnRate > 0 ? "turnL" : "turnR") : "walk";
-      if (!a.slowB) a.slowB = wantB;
+      // (claude/peds2, rule peds-no-alloc: the action as "act" + its clip index, no string built a frame)
+      const wantAct = actClip !== undefined && v < 0.2;
+      const wantB = wantAct ? "act" : turn > 0.25 && v < 0.3 ? (p.turnRate > 0 ? "turnL" : "turnR") : "walk", wantI = wantAct ? actClip : -1;
+      if (!a.slowB) { a.slowB = wantB; a.slowAct = wantI; }
       let target;
-      if (wantB !== a.slowB) { target = 0; if (a.w < 0.03) a.slowB = wantB; }
-      else target = a.slowB === "walk" ? smooth(0.08, 0.7, v) : a.slowB.startsWith("act:") ? 1 : smooth(0.25, 0.7, turn);
-      const rate = a.slowB.startsWith("act:") ? 1.6 : 3;               // sitting down / standing up over ~0.6 s
+      if (wantB !== a.slowB || wantI !== a.slowAct) { target = 0; if (a.w < 0.03) { a.slowB = wantB; a.slowAct = wantI; } }
+      else target = a.slowB === "walk" ? smooth(0.08, 0.7, v) : a.slowB === "act" ? 1 : smooth(0.25, 0.7, turn);
+      const rate = a.slowB === "act" ? 1.6 : 3;               // sitting down / standing up over ~0.6 s
       a.w += Math.max(-rate * dt, Math.min(rate * dt, target - a.w));
       const fi = fam.idle;
-      if (a.slowB.startsWith("act:")) {
-        a.codeA = fi + a.idle * 0.9999; a.codeB = +a.slowB.slice(4) + (a.act || 0) * 0.9999;
+      if (a.slowB === "act") {
+        a.codeA = fi + a.idle * 0.9999; a.codeB = a.slowAct + (a.act || 0) * 0.9999;
       } else if (a.slowB !== "walk") {
         const tc = a.slowB === "turnL" ? T.turnL : T.turnR, tpc = Math.abs(T.clips[tc].turnPerCycle[p.sex]);
         a.turn = (a.turn + (turn * dt) / tpc) % 1;
@@ -230,7 +232,7 @@ export class Crowd {
       const fx = Math.sin(p.yaw) * 0.3 * p.scale, fz = Math.cos(p.yaw) * 0.3 * p.scale, sx = fz * 0.4, sz = -fx * 0.4;
       a.dy = Math.max(this.ground(a.dx + fx + sx, a.dz + fz + sz), this.ground(a.dx + fx - sx, a.dz + fz - sz),
         this.ground(a.dx - fx + sx, a.dz - fz + sz), this.ground(a.dx - fx - sx, a.dz - fz - sz));   // (4 at 15 Hz)
-      a.offL = a.offR = 0; a.gL = a.gR = undefined; a.fprev = null;
+      a.offL = a.offR = 0; a.gL = a.gR = undefined; a.fpOk = false;
       return;
     }
     let ox = a.ox || 0, oz = a.oz || 0;
@@ -244,7 +246,7 @@ export class Crowd {
     const bits = c.plant[p.sex][Math.floor((pc % 1) * c.frames) % c.frames];
     const pl0 = bits & 1, pl1 = (bits >> 1) & 1;
     let n = 0, ex = 0, ez = 0;
-    if (a.fprev && dt > 0 && dt < 0.25) {
+    if (a.fpOk && dt > 0 && dt < 0.25) {
       for (let k = 0; k < 2; k++) {
         if (!(k ? pl1 && a.fpl1 : pl0 && a.fpl0)) continue;
         const o = k * 6;
@@ -259,7 +261,7 @@ export class Crowd {
     const dxo = ox - (a.ox || 0), dzo = oz - (a.oz || 0);
     for (let k = 0; k < 12; k += 3) { F[k] += dxo; F[k + 2] += dzo; }
     a.ox = ox; a.oz = oz; a.dx = p.x + ox; a.dz = p.z + oz; a.dyaw = p.yaw;
-    (a.fprev ||= new Float32Array(12)).set(F); a.fpl0 = pl0; a.fpl1 = pl1;
+    (a.fprev ||= new Float32Array(12)).set(F); a.fpOk = true; a.fpl0 = pl0; a.fpl1 = pl1;
     // per-foot ground: planted feet take their ground at once (they do not move), swinging ones ease over 60 ms
     // a foot across a kerb edge rests on the higher side (heel or ball): it may float a little, it never sinks
     const gl = pl0 ? Math.max(this.ground(F[0], F[2]), this.ground(F[3], F[5])) : this.ground((F[0] + F[3]) * 0.5, (F[2] + F[5]) * 0.5);
@@ -329,16 +331,16 @@ export class Crowd {
       const rate = p.dist > B.lod12 + B.lod12w ? B.farRate : p.dist > B.liveOut && !p.anim.live ? 2 : 1;     // 30 Hz past the live band
       if (rate > 1 && !p.anim.live && (p.id + this.frame) % rate) { p.anim.pend = (p.anim.pend || 0) + dt; }
       else { d2 = dt + (p.anim.pend || 0); this.advance(p, d2); p.anim.pend = 0; }
-      if (p.dist > B.end) { p.drawn = false; st.beyond++; p.anim.fprev = null; if (p.anim.live) this._free(p); continue; }
+      if (p.dist > B.end) { p.drawn = false; st.beyond++; p.anim.fpOk = false; if (p.anim.live) this._free(p); continue; }
       p.anim.held = d2 < 0;
       if (!p.anim.held || p.inView === undefined) {                // (held far / LOD1 people keep last step's culling)
         _sph.center.set(p.x, p.y + 0.9 * p.scale, p.z); _sph.radius = 1.1 * p.scale;
         p.inView = this.frustum.intersectsSphere(_sph);
       }
       p.drawn = p.inView || p.dist < B.shadow + B.shadoww;     // shadow casters behind the camera too
-      if (!p.drawn) { st.culled++; p.anim.fprev = null; if (p.anim.live && !allLive) this._free(p); continue; }
+      if (!p.drawn) { st.culled++; p.anim.fpOk = false; if (p.anim.live && !allLive) this._free(p); continue; }
       if (d2 >= 0 && !(p.anim.live && p.anim.liveW >= 1)) this.place(p, d2);
-      else if (d2 >= 0) { const a = p.anim; a.dx = p.x + (a.ox || 0); a.dz = p.z + (a.oz || 0); a.dyaw = p.yaw; a.fprev = null; }
+      else if (d2 >= 0) { const a = p.anim; a.dx = p.x + (a.ox || 0); a.dz = p.z + (a.oz || 0); a.dyaw = p.yaw; a.fpOk = false; }
       cand.push(p);
     }
     const tr = performance.now();
@@ -356,7 +358,7 @@ export class Crowd {
       // only the near ones (warm range, or still holding a rig) compete for the live rigs: sort just those
       const near = this._near || (this._near = []); near.length = 0;
       for (const p of cand) if (p.dist < B.liveWarm || p.anim.live) near.push(p);
-      near.sort((a, b) => a.dist - b.dist);
+      near.sort(byDist);
       let nLive = 0;
       for (const p of near) {
         const a = p.anim;
@@ -464,6 +466,7 @@ export class Crowd {
   }
 }
 const _sph = new THREE.Sphere();
+const byDist = (a, b) => a.dist - b.dist;
 function up(attr, n) { attr.clearUpdateRanges(); attr.addUpdateRange(0, n); attr.needsUpdate = true; }
 
 /** Turn the head of a world pose by `angle` (rad) about the vertical through its joint (a glance left / right). */
