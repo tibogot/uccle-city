@@ -8,6 +8,21 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 Older sections (per-branch notes from 2026-11-04 .. 11-13, labs, master list) moved UNCHANGED to **docs/TODO_ARCHIVE.md**
 on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QUALITY_RULES.md + merge gate + city tour.
 
+## ORDER (owner OK 2026-11-26) — read this first
+1. Finish the running jobs: peds2 (people in the city), xmasreview (before 1 Dec), villa3 job 1 (window glass + bed; plan
+   docs/VILLA_V3_PLAN.md on claude/villa3, owner approved the 5.5 -> 9 MB raise, textures fetched near only), kid A v4 on
+   claude/kid (posture, flat chest, knees, junior cranks, wheels on the ground), sawtooth (city-wide detector + builder
+   fix, rule no-sawtooth-surfaces). Next in line: the Montjoie school + a Street View reality round.
+2. Owner away = the perf wave: police game lag, time to play < 35 s, tile LRU, lamp light map, fade-hitch shader
+   sharing, quiet re-measures (peds, xmas, villa stream); refresh the data/raw backup (UAL restored 2026-11-26).
+3. Owner plays: falcon city (claude/falconfun, gate passes), BMX park + kid A (claude/kid), the Christmas sheet; merge
+   what the owner OKs.
+4. Defects (sections below) + reality rounds; villa V3 jobs 2+ alongside (sofa, TV, pool, sculptures, kitchen / bath,
+   night lamps, glassware).
+5. Later: TENNIS (owner 2026-11-26: 159 OSM tennis pitches in the area, drawn as ground only today: courts first (lines,
+   nets, wind-screen fences, instanced, near only), then an arcade tennis game lab (ball physics, AI, scoring), then E at
+   any court; swings: the owner checks Mixamo), then the ideas list.
+
 ## OWNER PLAYTEST 2026-11-18 (car, live site) — TOP PRIORITY
 Owner's point: don't fix these one by one; find the CLASS of each defect, fix it at the generator, and add a city-wide detector so it can't come back unseen.
 
