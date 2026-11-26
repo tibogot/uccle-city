@@ -1101,7 +1101,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (?cortenbosch=old: the Lycée's, ?forecourts=old: the church forecourts of claude/snow2)
   // (claude/reality2, rule garage-has-drive) + the paved drive in front of every garage door the facade draws (data/gardens
   // drives: tools/gardens/build_gardens.py, the boundary cut there too); ?garagedrive=old: none
-  const garageDrives = params.get("garagedrive") === "old" ? [] : ((await waitFor(gardensP))?.drives || []).map((d, i) => ({ id: `drive-${entry.name}-${i}`, surface: "pavers", courseDeg: 0, ring: d.ring, edge: 0.3, lift: 0.03 }));
+  const garageDrives = params.get("garagedrive") === "old" ? [] : ((await waitFor(gardensP))?.drives || []).map((d, i) => ({ id: `drive-${entry.name}-${i}`, surface: "pavers", courseDeg: 0, ring: d.ring, edge: 0.3, lift: 0.06 }));
   const grounds = buildGrounds([...((await loadOverrides(DATA)).grounds || []).filter(groundOn), ...garageDrives], bounds, (x, z) => hm.surface(x, z));
   if (grounds.mesh) { own.roads.add(grounds.mesh); say(`grounds: ${grounds.tris} triangles (data/overrides.json grounds)`); }
   R.textures.push(...terr.userData.textures);
