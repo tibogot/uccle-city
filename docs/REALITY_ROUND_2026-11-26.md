@@ -211,3 +211,30 @@ solid walls 4 %; post-war fronts hedges / low walls / modern railings; 1990s est
 budget). The old data is frozen in data/gardens/fgold. Not done: timber post-and-rail on station / park edges (a new kit
 piece); the Dieweg school's wall is not a garden piece (another kit). Seen while shooting: E3 near (-740, -670) floating
 wall fragments and missing walls, same with every switch old (an existing walls defect, not this job).
+
+## Round 3 (coordinator, owner away): A wall material, B timber fences, C shop fronts
+
+**A. The wall from the evidence (rule bldclass-evidence, round 3).** The inventory style now dates the wall: eclectic /
+Beaux-Arts / Flemish neo-Renaissance / regionalist -> red brick with white stone bands (15 % klinker), neoclassical ->
+pale stone (cream); a dated or old-street maison de maître with no style word leans brick. 800 buildings change type or
+wall (577 after C1). Street View spot-checks (look only, today): Av. Churchill 4 brick ✓, Rue Alphonse Renard corner
+brick ✓, Rue Edith Cavell 143 stone ✓ (the three are the check's wall fixtures), Avenue Brugmann 291's turret house brick
+✓, Avenue Brugmann 304 (1938 modernist, beige tile) still red ✗ (a modernist style dates no material).
+
+**B. Timber post-and-rail fences (rule timber-fence, row timberfence, `?timberfence=0`).** OSM wooden fences (15 ways; 10
+in the built tiles, 404 m, 212 posts) as weathered posts every 2.4 m (0.45 m footing in the drawn ground) with two rails
+following the slope; one shared material and box, two instanced meshes a tile, hashed-alpha fade at 110-160 m, colliders
+as a hero root per tile. The check: placed per the data, out of buildings, every footing under the ground, the low rail
+>= 0.1 m over the ground along every span. Not done: the Calevoet station edge is not a fence in OSM (needs an obs line
+from Street View); landuse edges are not fenced by rule.
+
+**C. Shop fronts (rule shop-street-fill, row shopfill).** C2: build_streetlife.py fills the other ground floors of shop
+streets (a building on the sidewalk, >= 3 real shops of the street within 45 m, no shop of its own, 85 %): 290 generic
+fronts with a trade word (BOUTIQUE, COIFFURE, À LOUER, IMMOBILIER...), never an invented brand, each picking a room its
+neighbours within 13 m do not show (rule shop-room-layers). Rue Xavier De Bue 9.6 -> 12.1 fronts per 100 m, the
+Chaussée d'Alsemberg 1.4 -> 3.5 and de Waterloo 2.9 -> 4.2 over their whole lengths. C3: real names, colours and sign
+types (Street View, look only, no logos): Bleus d'Encre, Vapshop, IMMO DUGO (letters on an anthracite fascia, new extra
+POI at Ch. de Waterloo 1167), traKKs (navy + orange, a vertical blade, new extra POI); **chains for the owner's call**
+(name + colours in our lettering, or an invented name): Kruidvat x 2 (red lit sign, red flag blades), TUI (sky-blue panel,
+flag blade), Pearle (green totem as a tall blade). Not done: MELINI, ambiance cuisine, Ma Poule (not in OSM; their
+address points not confirmed).
