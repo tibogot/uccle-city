@@ -343,6 +343,13 @@ const V = await v2grip();
 check("v2: the caught bird held IN its talons on its own foot bones (the real v2 rig, a 7 s carry): belly to the grip <= 4 cm, no v2 body vertex inside it, the blend with no step > 0.35 m a frame", V.toes && V.held > 200 && V.errMax <= 0.04 && V.inside === 0 && V.samples > 10 && V.step <= 0.35, `grip error max ${(V.errMax * 100).toFixed(1)} cm over ${V.held} frames, body vertices inside ${V.inside} (${V.samples} poses), blend step ${V.step.toFixed(2)} m`);
 check("v2 round 4: the caught pigeon is the model (models/bird/prey/pigeon_held.glb) at LIFE size (held / v2 length 0.7-0.9 all the carry), its head hanging below its body (>= 95 % of the level / gliding frames: |path| < 17 deg, bank < 34 deg)", V.model && V.rMin >= 0.7 && V.rMax <= 0.9 && V.heads > 30 && V.headBelow >= 0.95 * V.heads, `model ${V.model}, length ratio ${V.rMin.toFixed(2)}-${V.rMax.toFixed(2)}, head below ${V.headBelow} / ${V.heads} frames`);
 check("v2: the strike pose is its Talons clip (strike 1: the clip's weight), its far LOD on the same skeleton switched by the drawn span", V.strikeW > 0.8 && V.farBound && V.farLod === "far" && V.nearLod === "near", `Talons weight ${V.strikeW.toFixed(2)}, far LOD bound ${V.farBound}, at 200 m ${V.farLod}, at 4 m ${V.nearLod}`);
+{
+  // (round 5: main.js loadTile let go of `d` before its return read d.buildings: every tile load threw in the city)
+  const { readFileSync } = await import("node:fs");
+  const M = readFileSync(path.join(ROOT, "viewer/main.js"), "utf8"), i0 = M.indexOf("let d = await tileData(entry);"), iDrop = M.indexOf("d = null;", i0), iRet = M.indexOf("return { name: entry.name, hm,", i0);
+  const ret = M.slice(iRet, M.indexOf("\n", iRet)), kept = M.slice(i0, iDrop);
+  check("main.js: the tile keeps its kit and roof kit boxes for the falcon, read BEFORE the tile data is let go (d = null)", iDrop > 0 && iRet > iDrop && /kit: B\.kit/.test(ret) && /roofCols/.test(ret) && !/[^\w.]d\??\./.test(ret) && /const roofCols = d\.buildings/.test(kept), ret.slice(0, 80) + "...");
+}
 const bad = results.filter((r) => !r.ok);
 console.log(`falconcity: ${results.length - bad.length}/${results.length} PASS${bad.length ? ` (FAIL: ${bad.map((b) => b.name).join("; ")})` : ""}`);
 process.exit(bad.length ? 1 : 0);

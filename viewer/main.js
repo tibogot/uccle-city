@@ -1284,6 +1284,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // static meshes go once uploaded: the terrain (held for the Square des Heros' lawn until it is built: herosCity.js),
   // the façades, roofs and details; the roads / decks / plazas / grounds keep position + index (the third person's
   // collision world gathers them whenever a tile streams in: character/cityHook.js), the rest of theirs goes
+  const roofCols = d.buildings?.roofKit?.cols ?? null;    // (kept: the falcon's chimneys / stamped boxes, cityGymWorld.js)
   if (TILE_DROP) {
     d = null;
     dropAfterUpload(own.terrain, { tag: `terrain:${entry.name}`, filter: (o) => o.name === "terrain" });
@@ -1294,7 +1295,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (kit: the façade kit's placements, read-only: the falcon's perches on the sills / railings, viewer/falconFlight/cityGymWorld.js;
   // roofCols: the roof kit's stacks / housings as boxes [x0, z0, x1, z1, top]: its chimneys, and where the drawn roof grid's
   // stamps are a box's, not the roof's)
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, roofs: rf, drive, drawn, lift: fit?.lift, groups: Object.values(own), kit: B.kit ?? null, roofCols: d.buildings?.roofKit?.cols ?? null };
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, roofs: rf, drive, drawn, lift: fit?.lift, groups: Object.values(own), kit: B.kit ?? null, roofCols };
 }
 
 // ------------------------------------------------------------------ main
