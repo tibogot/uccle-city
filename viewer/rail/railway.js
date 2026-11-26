@@ -209,6 +209,22 @@ export function railTileMeshes(data) {
     dispose() { group.traverse((o) => { if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose(); }); group.removeFromParent(); },
   };
 }
+/** (claude/perf5 round 2, rule shared-node-graph; main.js ?railwarm=old) a one-triangle stand-in of every part a rail
+ *  tile can have, with the real parts' attributes: compiled under the play loader so the rail materials' first node
+ *  builds (40-61 ms, the first rail tile landing while driving) are done before the game starts */
+export function railWarmData() {
+  const tri = (n) => new Float32Array(9 * n / 3);
+  const P = () => new Float32Array([0, 0, 0, 1, 0, 0, 0, 0, 1]), N = () => new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0]);
+  const one = () => new Float32Array([0, 0.5, 1]), idx = () => new Uint32Array([0, 1, 2]);
+  const I = () => new THREE.Matrix4().toArray(new Float32Array(16));
+  return {
+    ballast: { position: P(), normal: N(), aU: one(), aS: one(), index: idx() }, rails: { position: P(), normal: N(), index: idx() },
+    sleepers: I(), masts: I(), shelters: I(),
+    wires: { position: P(), aTan: tri(9), aSide: one(), aR: one(), index: idx() },
+    fences: { position: P(), normal: N(), aS: one(), aH: one() }, platforms: { position: P(), normal: N(), aEdge: one() },
+    decks: { position: P(), normal: N() }, stats: {},
+  };
+}
 /** Data + meshes on the main thread (the Train Lab). */
 export function railTile(doc, bounds) { return railTileMeshes(railTileData(doc, bounds)); }
 
