@@ -148,7 +148,9 @@ export const cityPeds = {
         S.docked = false; S.n = 0;
         for (let i = 0; i < n; i++) {
           const o = i * 8, x0 = feed[o], z0 = feed[o + 1], x1 = feed[o + 3], z1 = feed[o + 4], doors = feed[o + 6];
-          const dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz) || 1, ux = dx / L, uz = dz / L;
+          const dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz);
+          if (!(L > 8) || (b.x - x0) ** 2 + (b.z - z0) ** 2 > (L + 10) ** 2) continue;            // (a body, near this stop)
+          const ux = dx / L, uz = dz / L;
           const t = (b.x - x0) * ux + (b.z - z0) * uz, lat = -(b.x - x0) * uz + (b.z - z0) * ux;
           if (t < -6 || t > L + 6 || Math.abs(lat) > 4.5 || doors < 0.5) continue;
           // four doors along the body, on the platform's side, 0.6 m out from the side of the car body (1.2 m)

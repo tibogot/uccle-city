@@ -178,7 +178,7 @@ export class CityGraph {
     const list = T.edges.slice();
     for (let i = 0; i < list.length; i++) {
       const e = list[i];
-      if (e.dead || e.kind === "cross" || e.kind === "zebra" || e.k === 7 && e.twin) continue;
+      if (e.dead || e.kind === "cross" || e.kind === "zebra" || e.kind === "platform" || e.k === 7 && e.twin) continue;   // (a platform: its people wait round the shelter, as at a real stop)
       // the samples on the line that meet something
       const n = Math.max(1, Math.ceil(e.len / 0.5));
       let first = -1, last = -1;

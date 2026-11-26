@@ -43,7 +43,7 @@ export class CitySim extends PedSim {
     this.cand = []; this.candW = new Float64Array(1024); this.candN = 0; this.candT = -1; this.candVer = -1; this.weighted = 0;
     this.frame = 0; this.scan = 0;
     this.counters.spawnFar = 0; this.counters.leftFar = 0; this.counters.tileDrop = 0; this.counters.carDives = 0; this.counters.carSteps = 0;
-    while (this.people.length < this.max) { const p = this._newPerson(); p._acc = 0; p._spotO = { x: 0, z: 0 }; p._kerbO = { e: null, node: null, into: 0, t0: 0, glanced: false, walkFor: 0 }; p.carStep = null; p._carStepO = { dx: 0, dz: 0, t: 0 }; this.people.push(p); }
+    while (this.people.length < this.max) { const p = this._newPerson(); p._acc = 0; p._spotO = { x: 0, z: 0 }; p._kerbO = { e: null, node: null, into: 0, t0: 0, glanced: false, walkFor: 0 }; p.carStep = null; p._carStepO = { dx: 0, dz: 0, t: 0 }; p.waitAt = null; this.people.push(p); }
     this.alive = 0;
   }
 
@@ -157,6 +157,7 @@ export class CitySim extends PedSim {
       }
     }
     this.scan = (this.scan + chunk) % Math.max(1, n);
+    if (this.frame % 60 === 0) this._stops();
     this._buildGrid();
     for (let i = 0; i < this.people.length; i++) {
       const p = this.people[i];
@@ -166,6 +167,30 @@ export class CitySim extends PedSim {
       const d = dt + p._acc; p._acc = 0;
       if (p.carStep) this._carStep(p, d);
       this._stepPerson(p, Math.min(d, 0.1));
+    }
+  }
+
+  /** the tram stops round the focus keep a few people waiting (by the transit hour curve): one more placed at a time,
+   *  out of view, straight into the wait (they came along the street before we looked) */
+  _stops() {
+    const g = this.w.graph, f = this.focus, want = Math.round(4 * lerpH(H_TRANSIT, this.hour) * this.densityK * (1 - 0.3 * this.rain));
+    if (want <= 0) return;
+    for (const T of g.tiles.values()) {
+      if (!T.ready) continue;
+      for (let k = 0; k < T.boards.length; k++) {
+        const b = T.boards[k];
+        if (b.dead || !b.edges.length || (b.x - f.x) ** 2 + (b.z - f.z) ** 2 > R_SPAWN * R_SPAWN) continue;
+        let n = 0; for (let i = 0; i < this.people.length; i++) { const p = this.people[i]; if (p.alive && p.tramWait && p.waitAt === b) n++; }
+        if (n >= want) continue;
+        const y = this.w.ground(b.x, b.z);
+        if (this.w.inView(b.x, y + 0.9, b.z) && this.w.camDist(b.x, y, b.z) < FADE_FROM) continue;
+        const p = this._free(); if (!p) return;
+        const e = b.edges[0];
+        this._placeOn(p, e, e.a === b ? 0.01 : e.len - 0.01, e.a === b ? -1 : 1);
+        p.x = b.x; p.z = b.z; p.fade = 1; this.alive++; this.counters.spawnHidden++;
+        p.holding = true; this._tram(p, b);
+        p.x = p.spot.x; p.z = p.spot.z; p.y = p.gy = this.w.ground(p.x, p.z); p.yaw = Math.atan2(-b.board.uz, b.board.ux);
+      }
     }
   }
 
@@ -241,7 +266,7 @@ export class CitySim extends PedSim {
   _tram(p, node) {
     const T = node.tram;                                // (cityPeds.js: { docked, doors: Float32Array x z, n })
     if (!p.tramWait) {
-      p.tramWait = true; p.state = "pause"; p.timer = 60 + this.r() * 240;
+      p.tramWait = true; p.waitAt = node; p.state = "pause"; p.timer = 60 + this.r() * 240;
       const B = node.board, along = (this.r() - 0.5) * (node.spreadZ ?? 10), across = (this.r() - 0.5) * 0.8;
       p.spot = p._spotO; p.spot.x = node.x + B.ux * along - B.uz * across; p.spot.z = node.z + B.uz * along + B.ux * across;
       p.face = null;
