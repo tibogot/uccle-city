@@ -55,16 +55,17 @@ export class CityGraph {
    * Add a tile (async, sliced). packed: the worker's walk graph; col: the tile's drive colliders (main set);
    * benches: the drawn benches [{ x, z, yaw }] (data/furniture, snapped); ground(x, z).
    */
-  async addTile(name, packed, { col = null, benches = [], live = () => true } = {}) {
+  async addTile(name, packed, { col = null, grid = null, benches = [], live = () => true } = {}) {
     if (!packed || this.tiles.has(name)) return null;
     const t0 = performance.now(), st = this.stats;
     const T = { name, nodes: [], edges: [], borders: [], boards: [], walk: [], len: 0, ready: false };
     this.tiles.set(name, T);
     let sliceT = performance.now();
-    const slice = async () => {
+    const slice = async (lbl = "") => {
       const dt = performance.now() - sliceT;
       if (dt < SLICE) return true;
-      st.worstSlice = Math.max(st.worstSlice, dt); st.slices++;
+      if (dt > st.worstSlice) { st.worstSlice = dt; st.worstAt = lbl; }
+      st.slices++;
       await yieldFrame(); sliceT = performance.now();
       return live() && this.tiles.get(name) === T;
     };
@@ -76,7 +77,7 @@ export class CityGraph {
       if (k === NK.pause) { n.pause = 0.25; n.minT = 2; n.maxT = 9; n.spread = 1.5; }          // a square's lattice pauses
       if (k === NK.border) T.borders.push(n);
       map[i] = n; T.nodes.push(n);
-      if ((i & 1023) === 1023 && !(await slice())) return null;
+      if ((i & 255) === 255 && !(await slice("nodes"))) return null;
     }
     for (let m = 0; m < P.ea.length; m++) {
       const k = P.ek[m], a = map[P.ea[m]], b = map[P.eb[m]];
@@ -84,7 +85,7 @@ export class CityGraph {
       if (P.ep[m] >= 0) e.signal = P.ep[m];
       if (k === 7) e.weight = 0.6;                       // (links: less taken than the line they join)
       T.edges.push(e);
-      if ((m & 1023) === 1023 && !(await slice())) return null;
+      if ((m & 255) === 255 && !(await slice("edges"))) return null;
     }
     for (let k = 0; k < P.boards.length; k += 4) {
       const n = map[P.boards[k]]; if (!n) continue;
@@ -93,7 +94,9 @@ export class CityGraph {
       T.boards.push(n);
     }
     // the drawn furniture / cars / lamps the worker did not know: bend or close the edges whose band meets one
-    if (col) await this._clear(T, col, slice);
+    if (!(await slice("boards"))) return null;
+    if (col) await this._clear(T, col, slice, grid);
+    if (!(await slice("clear"))) return null;
     // benches: two seats each, in front, off the nearest line within 6 m
     for (const b of benches) {
       const cs = Math.cos(b.yaw), sn = Math.sin(b.yaw);
@@ -114,6 +117,7 @@ export class CityGraph {
         T.edges.push(this.edge(L, s, "walk", 1.0, { k: 0, weight: 0.35, tile: name }));
         st.seats++;
       }
+      if (!(await slice("bench"))) return null;
     }
     // twins: a border node and a loaded neighbour's border node within TWIN_R: one link edge
     for (const n of T.borders) {
@@ -124,9 +128,10 @@ export class CityGraph {
       }
       if (best) { const e = this.edge(n, best, "walk", 1.2, { k: 7, tile: name, twin: true }); T.edges.push(e); this.tiles.get(best.tile)?.edges.push(e); st.twins++; continue; }
       this._stubLink(n, name);
+      if (!(await slice("twin"))) return null;
     }
     // the neighbours' border nodes with no twin yet (a crossing's end stub over the edge): onto this tile's lines
-    for (const [o, U] of this.tiles) if (o !== name && U.ready) for (const q of U.borders) if (!q.dead && q.edges.length === 1) this._stubLink(q, name);
+    for (const [o, U] of this.tiles) if (o !== name && U.ready) for (const q of U.borders) if (!q.dead && q.edges.length === 1) { this._stubLink(q, name); if (!(await slice("stub"))) return null; }
     // the edges people may be placed on (not crossings / seats)
     for (const e of T.edges) if (!e.dead && e.kind !== "cross" && e.kind !== "zebra" && !e.b.sit && !e.a.sit) { T.walk.push(e); T.len += e.len; }
     T.ready = true; T.readyAt = performance.now();
@@ -150,18 +155,22 @@ export class CityGraph {
     const e = this.edge(n, m, "walk", 1.2, { k: 7, tile: name, twin: true }); T.edges.push(e); this.stats.twins++;
   }
   /** the tile's edges against the drawn items of the main collider set: bend round, or close */
-  async _clear(T, col, slice) {
+  async _clear(T, col, slice, grid = null) {
+    // (x, z) on the drawn sidewalk / square / path / ramp of the tile's class raster (class + 1: 5, 6, 8, 9)
+    const onWalk = grid ? (x, z) => { const i = Math.floor((x - grid.x0) / grid.step), j = Math.floor((z - grid.z0) / grid.step); if (i < 0 || j < 0 || i >= grid.nx || j >= grid.nz) return true; const c = grid.data[j * grid.nx + i]; return c === 5 || c === 6 || c === 8 || c === 9; } : null;
     const out = this._out, st = this.stats;
+    let lastKind = -1;
     const hit = (x, z, r) => {
       out.length = 0; gather(col, x, z, r + 1.5, out);
-      for (const id of out) {
+      for (let k = 0; k < out.length; k++) {
+        const id = out[k];
         if (id < col.P) {
           if (!MAIN_KINDS[col.pkind[id]]) continue;
-          if (pointNearPoly(col, id, x, z, r)) return true;
+          if (pointNearPoly(col, id, x, z, r)) { lastKind = col.pkind[id]; return true; }
         } else {
           const c = id - col.P; if (!MAIN_KINDS[col.ckind[c]]) continue;
           const q = c * 3, dx = x - col.circ[q], dz = z - col.circ[q + 1], rr = col.circ[q + 2] + r;
-          if (dx * dx + dz * dz < rr * rr) return true;
+          if (dx * dx + dz * dz < rr * rr) { lastKind = col.ckind[c]; return true; }
         }
       }
       return false;
@@ -175,19 +184,25 @@ export class CityGraph {
       let first = -1, last = -1;
       for (let s = 0; s <= n; s++) { const t = (s / n) * e.len; if (hit(e.a.x + e.ux * t, e.a.z + e.uz * t, BODY)) { if (first < 0) first = s; last = s; } }
       if (first >= 0) {
-        // bend: the middle of the blocked stretch moved across until the stretch is clear (<= 1.4 m)
-        const tm = ((first + last) / 2 / n) * e.len, mx = e.a.x + e.ux * tm, mz = e.a.z + e.uz * tm, ox = -e.uz, oz = e.ux;
+        // bend: a detour parallel to the line past the blocked stretch [t0, t1] (two nodes, 0.6 m before / after it),
+        // 0.3-2.2 m to either side, on the drawn sidewalk (the tile's class raster) and clear at a walker's width
+        const t0 = Math.max(0, (first / n) * e.len - 0.6), t1 = Math.min(e.len, (last / n) * e.len + 0.6), ox = -e.uz, oz = e.ux;
+        const mx = e.a.x + e.ux * (t0 + t1) / 2, mz = e.a.z + e.uz * (t0 + t1) / 2;
         let done = false;
-        for (let d = 0.3; d <= 1.4 && !done; d += 0.2) for (const sg of [1, -1]) {
-          const x = mx + ox * d * sg, z = mz + oz * d * sg;
-          if (hit(x, z, BODY) || segHit(hit, e.a.x, e.a.z, x, z) || segHit(hit, x, z, e.b.x, e.b.z)) continue;
-          const m = this._split(e, x, z);
-          for (const f of m.edges) f.width = Math.min(f.width, 1.0);
+        for (let d = 0.3; d <= 2.21 && !done; d += 0.25) for (const sg of [1, -1]) {
+          const x0 = e.a.x + e.ux * t0 + ox * d * sg, z0 = e.a.z + e.uz * t0 + oz * d * sg, x1 = e.a.x + e.ux * t1 + ox * d * sg, z1 = e.a.z + e.uz * t1 + oz * d * sg;
+          if (onWalk && (!onWalk(x0, z0) || !onWalk(x1, z1) || !onWalk((x0 + x1) / 2, (z0 + z1) / 2))) continue;
+          if (hit(x0, z0, BODY) || hit(x1, z1, BODY) || segHit(hit, e.a.x, e.a.z, x0, z0) || segHit(hit, x0, z0, x1, z1) || segHit(hit, x1, z1, e.b.x, e.b.z)) continue;
+          const m0 = this._split(e, x0, z0), e2 = m0.edges.find((f) => f.a === m0 && !f.dead);
+          if (e2) { const m1 = this._split(e2, x1, z1); for (const f of m1.edges) f.width = Math.min(f.width, 1.0); }
+          for (const f of m0.edges) f.width = Math.min(f.width, 1.0);
           st.bent++; done = true; break;
         }
-        if (!done) { this._kill(e); st.closed++; }
+        // no room at a walker's width: a squeeze past (0.12 m body: the line only grazes it), else closed
+        if (!done && !segHit(hit, e.a.x, e.a.z, e.b.x, e.b.z, 0.12) && !hit(e.a.x, e.a.z, 0.12) && !hit(e.b.x, e.b.z, 0.12)) { e.width = Math.min(e.width, 0.8); st.squeezed = (st.squeezed || 0) + 1; done = true; }
+        if (!done) { hit(mx, mz, BODY); (st.closedBy ||= {})[lastKind] = (st.closedBy[lastKind] || 0) + 1; if ((st.closedAt ||= []).length < 200) st.closedAt.push([Math.round(mx), Math.round(mz), lastKind]); this._kill(e); st.closed++; }
       }
-      if (!(await slice())) return;
+      if (!(await slice("clearEdge"))) return;
     }
   }
 
@@ -210,9 +225,9 @@ export class CityGraph {
   }
 }
 
-function segHit(hit, ax, az, bx, bz) {
+function segHit(hit, ax, az, bx, bz, r = BODY) {
   const L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(L / 0.4));
-  for (let s = 1; s < n; s++) { const t = s / n; if (hit(ax + (bx - ax) * t, az + (bz - az) * t, BODY)) return true; }
+  for (let s = 1; s < n; s++) { const t = s / n; if (hit(ax + (bx - ax) * t, az + (bz - az) * t, r)) return true; }
   return false;
 }
 /** (x, z) inside polygon `id` of a collider set, or within r of its outline */

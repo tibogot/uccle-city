@@ -18,7 +18,7 @@ const FADE_FROM = 140;                              // m: a spawn in view is all
 const FAR = 90;                                     // m: people this far from the camera step at 20 Hz
 // people per metre of walk graph at the place's peak (weekday). Calibrated on Place de Saint-Job at 08:30 (~40-60 in view
 // on a weekday morning, the owner's figure): docs/PEDESTRIANS.md "City"
-export const DENSITY = { [PLACE.home]: 0.010, [PLACE.shop]: 0.040, [PLACE.transit]: 0.045, [PLACE.park]: 0.012, [PLACE.square]: 0.050 };
+export const DENSITY = { [PLACE.home]: 0.007, [PLACE.shop]: 0.028, [PLACE.transit]: 0.032, [PLACE.park]: 0.012, [PLACE.square]: 0.035 };
 // the share of the peak by hour (0-23) per place (weekday; shops shut after 19:00 and on Sunday mornings, parks fill in
 // the afternoon, transit has the two rush hours)
 const H_HOME = [0.03, 0.02, 0.01, 0.01, 0.02, 0.06, 0.2, 0.6, 0.9, 0.6, 0.45, 0.5, 0.6, 0.55, 0.45, 0.55, 0.75, 0.9, 0.8, 0.55, 0.35, 0.22, 0.12, 0.06];

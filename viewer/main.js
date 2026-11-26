@@ -1292,7 +1292,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (claude/peds2) the tile's walk graph to the people (viewer/pedestrians/cityPeds.js): cleared of the drawn furniture
   // (this drive set) in slices there; the drawn benches become seats
   if (PEDS && d.peds) {
-    const pt = { packed: d.peds, extra: { col: drive?.col ?? null, benches: (furnSnap?.benches || []).map((b) => ({ x: b.x, z: b.z, yaw: b.yaw })) } };
+    const pt = { packed: d.peds, extra: { col: drive?.col ?? null, grid: d.road?.surfaceData?.grid ?? null, benches: (furnSnap?.benches || []).map((b) => ({ x: b.x, z: b.z, yaw: b.yaw })) } };
     pedTiles.set(entry.name, pt); cityPeds?.addTile(entry.name, pt.packed, pt.extra);
   }
   log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); slices over 4 ms: ${slices.join(", ") || "none"}; ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);

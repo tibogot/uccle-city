@@ -29,6 +29,8 @@ const CN = { canGo: true, clear: true };
 
 export const cityPeds = {
   on: qs.get("peds") !== "0",
+  hour: qs.get("pedhour") != null ? +qs.get("pedhour") : null,
+  hidden: false,
   graph: new CityGraph(), sim: null, crowd: null, props: null, started: false,
   pending: new Map(),                 // tiles that came in before the start
   stats: { alive: 0, inView: 0, target: 0, drawn: 0, simMs: 0, crowdMs: 0, propsMs: 0, cpuMs: 0, cpuAvg: 0, bands: [0, 0, 0], live: 0 },
@@ -160,7 +162,10 @@ export const cityPeds = {
       }
     };
 
+    // an A/B switch for cost checks (cityPeds.hidden = true: no update, nothing drawn; the dev panel / the bench)
+    const hideAll = () => { for (const m of crowd.meshes) m.visible = false; for (const m of [props.prams.mesh, props.dogs.mesh, props.leashes.mesh]) m.visible = false; };
     this.update = (camPos, cam) => {
+      if (this.hidden) { hideAll(); last = performance.now(); return; }
       const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000);
       last = now; frame++;
       const c = cam || camera;
@@ -171,7 +176,7 @@ export const cityPeds = {
       if (now - clockT > 1000) {
         clockT = now;
         const tl = getTram(), d = new Date();
-        sim.hour = tl ? tl.clockSecs / 3600 : d.getHours() + d.getMinutes() / 60;
+        sim.hour = this.hour ?? (tl ? tl.clockSecs / 3600 : d.getHours() + d.getMinutes() / 60);   // (?pedhour= / cityPeds.hour: a fixed hour for checks)
         sim.weekend = d.getDay() === 0 || d.getDay() === 6;
         const m = d.getMonth(), season = [0.95, 0.9, 0.7, 0.5, 0.3, 0.1, 0.0, 0.05, 0.25, 0.5, 0.75, 0.9][m];
         const rain = Math.min(1, personUniforms.rain.value);
