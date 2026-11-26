@@ -53,6 +53,9 @@ const P = (s) => new URLSearchParams(s), U = (y, mo, d, h, mi = 0) => new Date(D
     `sun: winter "golden" at ${clock(gold).toFixed(2)} h clock, ${elev.toFixed(1)} deg up (a low golden sun), twilight after sunset, night unchanged`);
   const L = src("viewer/lighting.js"), M = src("viewer/main.js");
   out(/const DAY = SEASON\.day;/.test(L) && /presetHour\(/.test(L) && /if \(day !== SUMMER_DAY\)/.test(L), "sun: lighting.js takes SEASON.day and moves the presets only off the summer day (summer: as before)");
+  const G = src("viewer/ground.js");
+  out(/tone: uniformArray\(L\.map\(\(l\) => new THREE\.Vector3\(\.\.\.toneOf\(l\.cover\)\)\)/.test(G) && /SEASON\.winter \? TONE_WINTER\[cover\] : null/.test(G) && /uDry: uniform\(SEASON\.winter \? 0\.45 : 0\.3\)/.test(G),
+    "ground: the winter lawns duller and olive (the textured ground's per-cover tone x TONE_WINTER, more dry patches); summer: the tones of before");
   out(/setCityDay\(lighting\.day\)/.test(M), "season: main.js sets the season's uniforms (lawns, shrubs, hedges, ivy) on the lighting's day at boot");
 }
 // ---- trees

@@ -22,6 +22,7 @@ import * as THREE from "three/webgpu";
 import { Fn, If, float, int, vec2, vec3, vec4, color, mix, smoothstep, positionWorld, normalWorld, normalView, texture, uv, clamp, max, uniform, uniformArray,
   cameraPosition, cameraViewMatrix, length, floor, fract, dot, pow, cos, sin, select, normalize, fwidth } from "three/tsl";
 import { hash22 } from "./materials/antitile.js";
+import { SEASON } from "./seasons/seasonMode.js";
 import { addLampLight } from "./lampLight.js";
 import { noise2D, bumpNormal } from "./tslkit.js";
 
@@ -129,14 +130,19 @@ export function setGroundTextures(G) {
     invLum: uniformArray(L.map((l) => 0.5 / Math.max(0.02, lumOf(l)))),
     idx: Object.fromEntries(L.map((l) => [l.cover, l.layer])),
     // per-cover tone over the scan (set on screen against Brussels: the sunlit beech litter read orange, 2026-11-13)
-    tone: uniformArray(L.map((l) => new THREE.Vector3(...(TONE[l.cover] || [1, 1, 1]))), "vec3"),
+    tone: uniformArray(L.map((l) => new THREE.Vector3(...toneOf(l.cover))), "vec3"),
     // live tuning (viewer.groundLook()): ortho blend band (m), normal strength, macro tone, grass flavour shares
-    uOrthoNear: uniform(250), uOrthoFar: uniform(550), uNormal: uniform(1.0), uMacro: uniform(1.0), uRough: uniform(0.5), uDry: uniform(0.3),
+    uOrthoNear: uniform(250), uOrthoFar: uniform(550), uNormal: uniform(1.0), uMacro: uniform(1.0), uRough: uniform(0.5), uDry: uniform(SEASON.winter ? 0.45 : 0.3),
   };
 }
 export const groundLook = () => shared;
 
 const TONE = { forest: [0.52, 0.6, 0.62], dry: [0.92, 0.95, 0.95], gravel: [0.92, 0.92, 0.92] };
+// (claude/xmasreview, rule season-from-date) the WINTER ground of the Christmas season: lawns duller and olive (less
+// green, a little warmer: Brussels lawns stay green-ish in a mild wet winter, they do not go straw), more of the dull
+// dry / worn patches (uDry 0.3 -> 0.45). A per-cover tone x this; ?season=summer: as before
+const TONE_WINTER = { lawn: [1.0, 0.86, 0.8], rough: [0.98, 0.84, 0.78], dry: [1.0, 0.9, 0.84] };
+const toneOf = (cover) => { const t = TONE[cover] || [1, 1, 1], w = SEASON.winter ? TONE_WINTER[cover] : null; return w ? t.map((v, i) => v * w[i]) : t; };
 const SQ3x2 = 2 * Math.sqrt(3);
 const HEX = 1.3;                  // m: hex tile size of the anti-tiling grid (about one lawn repeat)
 // the cover weights' and the macro tone's noise as ONE small texture (3 taps instead of 6 value noises of sin hashes:
