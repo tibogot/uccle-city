@@ -16,3 +16,12 @@ shot never misses it.
 requested, wherever the spawn was: from 1 December every cold visit on the live site would have shared its bandwidth
 between the start tile and decorations that are kilometres away (PERF_RESEARCH idea 8, plan job 3). Nothing checked
 the priority of a fetch.
+
+**Extended (claude/xmasreview, 2026-11-26).** Outside the season the boot loads no Christmas CODE either: viewer/main.js
+imports viewer/christmas/xmasCity.js (and through it xmasKit.js, the GLTF / meshopt loaders) dynamically, after
+`whenXmasNeeded()`, only when `xmasActive` says on. The only static imports of the layer from outside viewer/christmas/
+are the three-free date switch (xmasDate.js, imports nothing) and the December windows' uniform (xmasWindows.js: three/tsl
++ xmasDate.js), which main.js and the facade shader need to decide. **Why.** main.js imported xmasCity.js statically: every
+visit all year fetched and parsed the layer's ~40 KB of modules before the cover. Check: gate row `xmas` "boot: no static
+import ..." and "boot: xmasDate.js imports nothing ...".
+

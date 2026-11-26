@@ -215,6 +215,43 @@ for n_ in numbers:
 
 
 # ------------------------------------------------------------------------------------------------ the market chalets (Place de Saint-Job)
+def street_furniture(tiles):
+    """(claude/xmasreview) the drawn street furniture a chalet must stand clear of: (x, z, radius) points. The same list
+    as tools/christmas/siteFit.mjs streetFurniture (the gate row's authority): street-name plate posts and postboxes
+    (data/streetlife), road-sign poles, plate posts and Villo pieces (data/streetkit), bins, boxes, hoops, benches
+    (data/furniture), bicycle parkings (the tiles' feature points). The first market put a chalet's roof through the
+    Place de Saint-Job plate post (1117.7, 538.3): the build only knew trees, walls, shops and the fir"""
+    out = []
+    def load(*parts):
+        fp = os.path.join(ROOT, "data", *parts)
+        return json.load(open(fp, encoding="utf-8")) if os.path.exists(fp) else {}
+    for t in tiles:
+        sl = load("streetlife", f"{t}.json")
+        out += [(q["x"], q["z"], 0.1) for q in sl.get("plates", []) if q.get("mount") == "post"]
+        out += [(q["x"], q["z"], 0.35) for q in sl.get("postboxes", [])]
+        out += [(q["x"], q["z"], 1.6 if q.get("shelter") else 0.3) for q in sl.get("stops", [])]
+        sk = load("streetkit", f"{t}.json")
+        out += [(q["x"], q["z"], 0.1) for q in sk.get("signs", []) + sk.get("posts", [])]
+        for v in sk.get("villo", []) if isinstance(sk.get("villo"), list) else []:
+            out += [(q["x"], q["z"], 0.5) for q in v.get("bikes", []) + v.get("docks", [])]
+            if v.get("totem"): out.append((v["totem"]["x"], v["totem"]["z"], 0.4))
+        fu = load("furniture", f"{t}.json")
+        for k in ("bins", "boxes", "hoops", "benches", "banks"):
+            out += [(q["x"], q["z"], 0.6) for q in fu.get(k) or [] if "x" in q]
+        fe = load("tiles", t, "features.json")
+        out += [(q["x"], q["z"], 0.8) for q in fe.get("points", []) if q.get("kind") == "bicycle_parking"]
+    return out
+
+
+FURNITURE_CLEAR = 0.5                                 # m: a chalet's footprint (roof + propped shutter) to any furniture
+CUSTOMER_DEPTH = 1.5                                  # m: the customers' strip in front of the hatch
+# the fir seen whole from the square's main approach: the default boot / tour spot (viewer/places.js stjob-street, the
+# Place de Saint-Job street view): no chalet within 0.5 m of the sightline to the fir's foot (the furniture fix first
+# put one right in front of it from there)
+FIR_VIEWS = [(1102.0, 542.0)]
+FIR_CROWN = 2.95                                      # m: the fir's lowest branches' reach (5.9 m wide, x the scale)
+
+
 def chalets_on_square():
     """4-8 chalets on the square's open paving (UrbIS surface "P"), in two rows facing a 4 m aisle along the square's long
     axis, beside the fir: each footprint (3.6 x 2.8 m: roof overhangs + the propped shutter in front) inside the paving
@@ -229,6 +266,7 @@ def chalets_on_square():
     for t in ("I6", "I5"):
         trees_ += [(q["x"], q["z"]) for q in json.load(open(os.path.join(ROOT, "data", "tiles", t, "features.json"), encoding="utf-8"))["trees"]]
     fir = TREES[0]
+    furn = street_furniture(("I6", "I5"))
     walls_ = [r for b in bld.values() for r in b["footprint"] if any(math.hypot(px - 1140, pz - 525) < 120 for px, pz in r)]
     wall_pts = []                                     # (the walls sampled every 0.25 m)
     for r in walls_:
@@ -263,6 +301,14 @@ def chalets_on_square():
             # walls (the square's pavilion, browser turn 2 / tools/audit/xmasCheck.mjs): no corner inside a building, 1 m clear
             if any(pip(qx, qz, r) for qx, qz in corners + [(x, z)] for r in walls_) or any(rect_d(wx, wz) < 1.0 for wx, wz in wall_pts): continue
             if rect_d(fir["x"], fir["z"]) < 1.4 + 3.0: continue
+            # (claude/xmasreview) street furniture clear of the footprint; the customers' strip in front of the hatch
+            # clear of the fir's crown (the first market had two hatches 1.3 m from its lowest branches)
+            if any(rect_d(fx_, fz_) < r_ + FURNITURE_CLEAR for fx_, fz_, r_ in furn): continue
+            def front_d(px, pz):
+                lx = (px - x) * ux + (pz - z) * uz; ly = (px - x) * fx + (pz - z) * fz
+                return math.hypot(max(abs(lx) - HW, 0), max(ly - (FR + CUSTOMER_DEPTH), FR - ly, 0))
+            if front_d(fir["x"], fir["z"]) < FIR_CROWN * fir["scale"] + 0.3: continue
+            if any(rect_d(vx_ + (fir["x"] - vx_) * k / 60, vz_ + (fir["z"] - vz_) * k / 60) < 0.5 for vx_, vz_ in FIR_VIEWS for k in range(61)): continue
             if any(rect_d(q["x"], q["z"]) < 4.0 for q in fronts): continue
             picks.append((math.hypot(x - fir["x"], z - fir["z"]), x, z, fx, fz, oo))
     picks.sort()

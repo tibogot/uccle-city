@@ -35,11 +35,16 @@ import { SunStepper, farPlane, FAR_FADE } from "./sunStep.js";
 // cumulus shadow at the point, scene.environment = the sky's environment, exposure 0.55 (Tidewater's
 // units). The presets are TIMES OF DAY on a real sun path (FIRM_TIMES). Not yet: the sky's haze /
 // sun-shaft pass and its eye adaptation (they run on the linear HDR frame inside our post chain).
+import { SEASON, SUMMER_DAY, presetHour } from "./seasons/seasonMode.js";
+import { sunInfo } from "./seasons/season.js";
 export const useFirmament = !/[?&]sky=old/.test(location.search);
 export const FIRMAMENT_EXPOSURE = 0.55;
 const BRUSSELS_LAT = 50.8;
 const qp = new URLSearchParams(location.search);
-const DAY = +(qp.get("day") ?? 200);                 // day of the year (200 = mid July: long golden evenings)
+// day of the year (200 = mid July: long golden evenings). (claude/xmasreview, rule season-from-date) from the season
+// resolver: in the Christmas season a December day in Brussels (viewer/seasons/seasonMode.js; ?season=summer: July)
+const DAY = SEASON.day;
+const SUN_SUMMER = sunInfo(SUMMER_DAY);
 // skyctl: the dev panel's sky look sliders as URL params (?sunbright=2 ...): [URL key, sky param (Firmament's own, or
 // viewer/skyExtras.js's)]. Absent = the defaults (the look as before); the panel mirrors a moved slider into its key (viewer/features.js rows)
 export const SKY_URL = [
@@ -616,6 +621,9 @@ export class Lighting {
     if (this.firmament) {
       const t = FIRM_TIMES[id] || FIRM_TIMES.golden;
       Object.assign(this.firm, t, { wetness: p.wetness });
+      // (rule season-from-date) a preset is a time of DAY: on another day it keeps its place against sunrise / sunset
+      const day = this.day ?? DAY;
+      if (day !== SUMMER_DAY) this.firm.hours = presetHour(FIRM_TIMES[id] ? id : "golden", t.hours, sunInfo(day), SUN_SUMMER);
       this.vfogOn = /[?&]vfog=1/.test(location.search);   // volumetric fog: opt-in only for now (owner, 2026-11-04)
       this.uFogDensity.value = p.fogDensity;
       if (NTE) {                                         // ?grade=nte: bigger cumulus, denser far air (viewer/lookNte.js)

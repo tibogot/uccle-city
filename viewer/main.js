@@ -32,7 +32,7 @@ import { addRussian } from "./russianCity.js";
 import { addHeros } from "./heros/herosCity.js";
 import { addPublicArt } from "./publicart/artCity.js";
 import { addPlaygrounds, playgroundRootNames } from "./playgroundCity.js";   // claude/places2: the playground kit in the city (claude/places3: the timber kit, its colliders)
-import { addChristmas, xmasActive } from "./christmas/xmasCity.js";
+import { xmasActive } from "./christmas/xmasDate.js";   // (claude/xmasreview: the layer's code itself is imported only when it is on: xmasCity.js below)
 import { addRosaire } from "./rosaireCity.js";
 import { addObservatory } from "./observatoryCity.js";
 import { addAugustin } from "./augustinCity.js";
@@ -52,7 +52,8 @@ import { loadTrackProfile, LIFT_CACHE } from "./trackProfile.js";   // (LIFT_CAC
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial, roadTextMaterial } from "./roadPaint.js";
 import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
-import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";   // (perfgame round 3: the sun's static shadow cache)
+import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";
+import { setDay as setCityDay } from "./seasons/season.js";   // (perfgame round 3: the sun's static shadow cache)
 import { createPipeline } from "./post.js";
 import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- upscale (docs/UPSCALE.md): TAAU + dynamic resolution
 import { buildTrees } from "./trees.js";
@@ -1401,6 +1402,9 @@ async function main() {
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   setTreeLighting(lighting);
+  // (claude/xmasreview, rule season-from-date) the season's uniforms (lawns, shrubs, hedges, ivy, the weather's crowns)
+  // on the lighting's day from the first frame (the weather sets them too, but only when it runs: ?weather=old / quick)
+  setCityDay(lighting.day);
   // --- perf4 (docs/perf/AUDIT.md step 13): the foliage materials (grass, plants, ivy) take the sun + hemisphere only
   setFoliageLights(lighting);
   setCellCullSun(lighting.sun?.shadow?.camera || null, lodEye);
@@ -1623,7 +1627,9 @@ async function main() {
   // at LOW fetch priority, and only after the cover when no decorated area is in the boot's ring (bootGate.js whenXmasNeeded)
   if (xmasActive(params)) heroes.push(() => {
     window.__xmasPending = true;                    // (?quick=1: quickReady waits until the layer is in or has failed)
-    whenXmasNeeded().then(() => addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }))
+    // (claude/xmasreview, rule xmas-low-priority) the layer's modules (xmasCity.js, xmasKit.js, the GLTF / meshopt
+    // loaders) are fetched only now: outside the season the boot loads no Christmas code beyond the date switch
+    whenXmasNeeded().then(() => import("./christmas/xmasCity.js")).then(({ addChristmas }) => addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }))
       .catch((e) => log(`christmas failed (${e.message}): reload with ?xmas=0`)).finally(() => { window.__xmasPending = false; });
   });
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)

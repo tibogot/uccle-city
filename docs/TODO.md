@@ -271,6 +271,13 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   BROWSER turn on GREEN (A/B ?firprepass=0, ?firshadow=cards at 8 / 21 / 45 m; holes / specks; the 30 -> 70 m walk;
   re-measure the whole layer, +0.33-0.59 ms on YELLOW vs +0.00 on GREEN before), then merge.
 - [ ] (Christmas 2+3, perf fix, pole garlands, December windows MERGED 2026-11-24) Owner review of the market + garlands + fir in game (?xmas=1); more decorations if the owner asks.
+- [ ] (claude/xmasreview, 2026-11-26) Game review done: market clear of street furniture + out of the fir's sightline,
+  the fir's foot on the planter's lowest ground, LED glow at night on the firs / baubles / chalet fronts (?firglow=0),
+  Brussels date, layer code lazy. OWNER: July sun + leafy plane trees under the Christmas layer? chalet goods / garland
+  (Blender) (docs/CHRISTMAS.md "ART-DIRECTOR REVIEW", C:/Users/tibog/Downloads/uccle-xmas/review_sheet.png).
+- [x] (claude/xmasreview) The WINTER LOOK for the season (owner 2026-11-26): December sun, bare trees (twig cards),
+  winter lawns, walker colliders on the fir + chalets (docs/CHRISTMAS.md "THE WINTER LOOK"; ?season=summer A/B).
+  Left: GPU timing winter vs summer on a quiet machine; optional fallen leaves / morning frost; the far orthophoto is leaf-on.
 
 **City content (open from the archive)**
 - [ ] Trains: more bridges (Rue de Stalle, Kauwberg, Linkebeek, Engeland, Moensberg), roads over the line as real decks,

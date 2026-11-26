@@ -259,6 +259,27 @@ function emptySpanGeometry() {
   g.computeBoundingSphere();
   return g;
 }
+/** (claude/xmasreview, rule joins) the fir's foot: the LOWEST drawn ground under its planter (the octagon's corners and
+ *  edge midpoints at 1.4 m x scale, and the centre), so the planter's skirt meets the paving all round. The centre alone
+ *  left the Place de Saint-Job planter 1.7 cm in the air on its downhill side (browser review 2026-11-26) */
+export const PLANTER_R = 1.4;
+export function treeFootY(t, walkY) {
+  let y = walkY(t.x, t.z);
+  for (let k = 0; k < 16; k++) { const a = (k * Math.PI) / 8, r = PLANTER_R * t.scale; y = Math.min(y, walkY(t.x + Math.cos(a) * r, t.z + Math.sin(a) * r)); }
+  return y;
+}
+/** (claude/xmasreview, rule walker-statics) the walker's colliders of a placed fir: the octagonal planter (body + camera,
+ *  0.55 m high: you cannot climb it) and the crown as a body-only circle of WALK_CROWN x scale up to 3 m (the needles
+ *  start at the planter's rim: the walker stops at the branch tips, never inside the tree where the LED beads read as
+ *  big flat hexagons) */
+export const WALK_CROWN = 2.4;
+export function walkerFir(t) {
+  const ring = Array.from({ length: 8 }, (_, k) => { const a = Math.PI / 8 + (k * Math.PI) / 4, r = PLANTER_R * t.scale; return [t.x + Math.cos(a) * r, t.z + Math.sin(a) * r]; });
+  return [
+    { id: `xmas fir ${t.id} planter`, polys: [{ rings: [ring], base: t.y - 0.5, top: t.y + 0.6 }], tag: 4, ray: true },
+    { id: `xmas fir ${t.id} crown`, circles: [{ x: t.x, z: t.z, r: WALK_CROWN * t.scale, base: t.y - 0.5, top: t.y + 3.0 }], tag: 5, ray: false },
+  ];
+}
 export const HOOK_TOL = 0.25;      // m: a listed lamp / tram-pole hook vs the pole the city draws (tools/christmas/xmasPoles.mjs)
 
 // ------------------------------------------------------------------------------------------------ the city layer
@@ -391,6 +412,7 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
       field.add("chalet", place(c.x, c.y, c.z, c.yaw), `chalet ${c.x},${c.z}`, c.tone);
       const cols = [{ rings: [ring] }];
       if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
+      (window.__walkerStatics ??= []).push({ id: `xmas chalet ${c.x},${c.z}`, polys: [{ rings: [ring], base: c.y - 0.5, top: c.y + 3.2 }], tag: 4, ray: true });
     }
     return changed;
   };
@@ -398,12 +420,15 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
     let changed = placeChalets();
     for (const t of trees) {
       if (t.placed || !world.tiles.some((T) => T.name === t.tile)) continue;
-      t.y = world.walkY(t.x, t.z) - 0.02; t.placed = true; changed = true;
+      t.y = treeFootY(t, (x, z) => world.walkY(x, z)) - 0.02; t.placed = true; changed = true;
       field.add("tree", place(t.x, t.y, t.z, t.yaw, t.scale, t.scale, t.scale), `tree ${t.id}`);
       // the octagonal planter (1.38 m) blocks the car (drive colliders, viewer/drive/driveMode.js addStatic)
       const ring = Array.from({ length: 8 }, (_, k) => { const a = Math.PI / 8 + (k * Math.PI) / 4, r = 1.4 * t.scale; return [t.x + Math.cos(a) * r, t.z + Math.sin(a) * r]; });
       const cols = [{ rings: [ring] }];
       if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
+      // (claude/xmasreview, rule walker-statics) the walker too: the planter (a wall for body and camera) and the crown
+      // (the body only, up to 3 m: the lowest branches reach 2.95 m; the camera may pass through the needles)
+      (window.__walkerStatics ??= []).push(...walkerFir(t));
     }
     return changed;
   };
