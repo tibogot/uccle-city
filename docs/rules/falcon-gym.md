@@ -246,3 +246,63 @@ Browser row `falconcity`.
 
 **One KTX2 loader (round 4).** v2's textures load through the page's own KTX2 loader (`viewer/materials/scans.js` ktxLoader). Its own second loader warned "Multiple active KTX2 loaders may cause performance issues". Check: browser row `falconcity`, no such warning.
 
+## Landing on what is drawn (round 5, 2026-11-26)
+
+**Rule.** Wherever the falcon lands, its toe pads rest on the DRAWN top. That means within -5..10 mm of the drawn top, its body upright (within 15 deg) and no body vertex inside a drawn solid. This holds for both controllers and both models, on every perch kind:
+
+- roof edges
+- ridges
+- chimneys
+- window sills
+- balcony railings
+- garden walls and pillars
+- lamps
+- the ground
+- crowns and the church's perches
+
+A spot with no real top is no perch. A sheer wall, a sloped roof under the tail, a window box, a narrow or basement window and a dormer's sill are each rejected before the approach (`cityGymWorld.js` perchOK: it stands on what is drawn there, it is level 0.2 m round, and the perched body's points are in free air).
+
+- **The world** (`cityStream.js`, both controllers):
+  - The drawn ground (the drive surface, not the DTM).
+  - The front gardens' and furniture kits' collision stand-ins, as boxes with their drawn tops.
+  - The falcon's roof grid, made from the drawn roofs (`tileData.js` roofSurfaceDrawn: 0.5 m, 5 mm steps, 20 m past the tile, read across tile edges). It is interpolated on a roof plane (bilinear / plane / along an edge).
+  - The roof kit's boxes (`tile.roofCols`).
+  - The ridge lines (`ridgeScan.js`, a worker job).
+  - Building footprints (the drive colliders) for parts thinner than the grid.
+- **The perches' heights** come from the pieces' own profiles:
+  - the sill's nose, 6.8 cm out, its top 7 mm under the opening line
+  - the handrail's top, 0.954 / 0.974 m
+  - the lantern's cap on its axis
+- **The current controller** lands on the same pool. A touch-down puts its feet on the floor under the contact.
+- **The gym bird** is drawn by its feet in every mode. Before, the flare ended 0.35 m over the perch and then dropped onto it.
+- **The current falcon perched:** its tail and folded wing tips are lifted off the surface. Its baked Perch held them 2 cm under the toes.
+- `?falconperch=old`: the world before.
+
+**Why.** Owner, 2026-11-26: "when landing on a house it's not really landing on it, it's like it's floating; no matter where we land it shouldn't float". His screenshot: the v2 hung flat against a garden wall's face under its coping. The causes, found on real tiles (`tools/falconPerchTest.mjs`):
+
+- **The garden walls were in no falcon world.** Its feet stood on the pavement inside the wall.
+- **The roof grid was buildings.bin's.** That is not the drawn roofs: up to 0.3 m off. It also used 1 m cells, 2 cm steps and its nearest sample (0.4 m off on a pitched roof), and was blind past the tile's edge.
+- **Grid ridges stood beside the ridge line**, the tail in the slope.
+- **The handrail perch was 6 cm too low**, and sills stood in their window boxes.
+- **The ground was the DTM**, up to 15 cm off the drawn street.
+- **The flare ended 0.35 m high.**
+
+**Check.** Gate row `falconperch`: I6, H6 and I5 built by the worker's own code, 18 perches of each kind, both controllers, both real rigs, 648 poses. Gap -0.4..0.2 cm, measured on each top's own geometry. 0 vertices inside, 0 deg tilt. Self-test: round 4's world fails 152 of 648.
+
+## Performance (round 5, structural; GPU timing on a quiet machine later)
+
+| | v2 near | v2 far | current |
+|---|---|---|---|
+| triangles | 7,268 (body 6,080, eyes 576, flight feathers 612) | 2,476 | 1,898 |
+| draws / shadow draws | 3 / 2 (the eyes cast none, round 5) | 3 / 0 (round 5) | 1 / 1 |
+| bones | 100 (GPU skinning; the CPU updates 100 matrices) | the same skeleton | 55 |
+| file | 3.2 MB (5 KTX2 textures, 2.8 MB) + 0.75 + 0.58 MB juvenile | 0.30 MB, no textures | 0.52 MB |
+
+- The far LOD is chosen by the drawn span: under 56 px, back over 68.
+- Every mesh is warmed with the falcon (`cityFlyer.js` warm, the far LOD and the held bird too).
+- One KTX2 loader per page.
+- 11 clips, the zero-weight ones not evaluated.
+- The held pigeon: 1,928 triangles, 1 draw while carried.
+- The roof grid at 0.5 m: ~2.3 MB a full tile on the main thread (0.5 MB before).
+- The perch pool is rebuilt in slices of <= 520 samples; the furniture boxes in slices of 300 instances.
+

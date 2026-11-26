@@ -18,6 +18,7 @@
 //                          ridges): small discs (r 0.35 m) the falcon stands on, in a 2 m bucket grid over the pool
 // No allocation per frame (one shared result object a query, the pools made once).
 import { sillHasBox } from "../plants/windowBoxRule.js";
+import { PERCH_OLD } from "./cityStream.js";
 const CAP = 512;                 // ledges in the pool
 const CAND = 4096;               // candidates a rebuild collects (the nearest CAP kept)
 const R_LEDGE = 70;              // m round the falcon: kit / roosts / trees / lamps
@@ -356,6 +357,7 @@ export class CityGymWorld {
    *  within 3 cm), room over it (0.6 m) and nothing beside the body (0.14 m round, 0.1-0.35 m up); a pad (a sill, a
    *  railing, a lamp, a church perch, a ridge) stands on its own drawn piece: only the room over it and its front */
   perchOK(x, y, z, yaw, k) {
+    if (PERCH_OLD) return true;
     const pad = PAD_KIND[k];
     // (a roof perch next to a roof-kit box: the drawn roof grid's cells there carry the box's stamp, not the roof's)
     if ((k === 0 || k === 1) && this.nearCol(x, z, 0.7)) return false;

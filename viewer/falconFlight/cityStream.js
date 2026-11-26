@@ -37,6 +37,9 @@ import { Vector3, Matrix4 } from "three/webgpu";
 import { driveHeight, gather, pointInBuilding } from "../drive/colliders.js";
 import { PLACE, churchTop } from "./church.js";
 
+/** ?falconperch=old: the falcon's world before round 5 (the DTM ground, no furniture, the nearest roof sample; the perch
+ *  pool unchecked): the owner's "it's floating" A/B */
+export const PERCH_OLD = typeof location !== "undefined" && /[?&]falconperch=old(&|$)/.test(location.search);
 const HEAT = { pitch: 0.85, playground: 0.8, grass: 0.7, park: 0.65, meadow: 0.7, garden: 0.55, recreation_ground: 0.75, wood: 0.35, scrub: 0.5, farmland: 0.7 };
 const SLOTS = 12;
 const LIFT = { step: 4, half: 400, rebuild: 140, rad: 3 };
@@ -100,7 +103,7 @@ export class CityFalconWorld {
     const t = this.tileAt(x, z) || this.nearest(x, z);
     if (!t) return 0;
     const g = t.drive?.ground;
-    return g && t.hm?.h && t.hm?.y ? driveHeight(t.hm, g, x, z) : t.hm.ground(x, z);
+    return g && t.hm?.h && t.hm?.y && !PERCH_OLD ? driveHeight(t.hm, g, x, z) : t.hm.ground(x, z);
   }
   /** the roof grid's cell (m TAW, 0 = none), the hero models' envelopes left out */
   roof(x, z) {
@@ -226,7 +229,7 @@ export class CityFalconWorld {
     if (this.city.decks?.length && !(o.open && y < o.ceil)) { const d = this.city.deckY(x, z); if (d != null && d > h) h = d; }
     // (round 5) the furniture: a box's drawn top is a floor under y (or the bird inside its height: its top, a wall), a box
     // over y a ceiling
-    for (let f = 0; f < this.furnList.length; f++) {
+    for (let f = 0, nf = PERCH_OLD ? 0 : this.furnList.length; f < nf; f++) {
       const F = this.furnList[f], G = F.grid;
       const ci = Math.floor((x - G.x0) / G.cell), cj = Math.floor((z - G.z0) / G.cell);
       if (ci < 0 || cj < 0 || ci >= G.nx || cj >= G.nz) continue;

@@ -105,6 +105,8 @@ export class GymBird {
     let mesh = null; const meshes = [];
     model.traverse((o) => { if (o.isSkinnedMesh) { mesh ??= o; meshes.push(o); o.castShadow = o.receiveShadow = true; o.frustumCulled = false; } if (o.isMesh && !o.isSkinnedMesh) o.visible = false; });
     this.meshes = meshes;                              // (v2 base B: the body, the eyes, the flight feathers)
+    // (round 5 perf: the eyes, 576 triangles inside the head, cast no shadow: one shadow draw less)
+    for (const m of meshes) if (/eye/i.test(m.material?.name || "")) m.castShadow = false;
     if (!src.v2) {
       const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.78, metalness: 0 });
       mat.colorNode = texture(A.juvTex, uv()).rgb;
@@ -191,7 +193,8 @@ export class GymBird {
       const nm = byMat.get(src.material.name) || near;
       const m = new THREE.SkinnedMesh(src.geometry, nm.material);
       m.name = `${nm.name}-far`; m.position.copy(nm.position); m.quaternion.copy(nm.quaternion); m.scale.copy(nm.scale);
-      m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.visible = false;
+      // (round 5 perf: the far LOD draws only under 56 px: its shadow is a few pixels, none cast)
+      m.castShadow = false; m.receiveShadow = true; m.frustumCulled = false; m.visible = false;
       nm.parent.add(m); m.updateMatrixWorld(true); m.bind(near.skeleton, nm.bindMatrix);
       this.far.push(m);
     }
