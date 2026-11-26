@@ -323,3 +323,94 @@ Renders: `C:\Users\tibog\Downloads\uccle-kidchar\v3\`.
 - `A_v3_{day,night}_*.png`: after.
 - `A_v2idle_*.png`: before.
 - Lab shots: `lab_*`.
+
+## Phase 4: owner feedback round (2026-11-26)
+The owner saw kid A standing next to the bike in the lab and said: "his shoulders are far backward, he looks like he has
+breasts, it doesn't look like a real person", and "the BMX wheels are inside the ground". They approved shorter cranks
+and asked for the knee marks to be fixed.
+
+### Posture (the root cause, measured bone by bone)
+**What was measured.** The same clips (Idle, Walk) on the UAL mannequin, the old kid and kid A, comparing world
+directions and lengths per bone (`spine_01..03`, the clavicles, the upper arms, the neck, the head).
+
+**Why it went wrong.** MPFB's spine joints sit low and straight:
+
+| from pelvis | to spine_01 | to spine_02 | to spine_03 | to neck_01 |
+|---|---|---|---|---|
+| MPFB, segment length | 8.0 cm | 6.2 cm | 5.1 cm | 27.8 cm |
+| UAL, segment length | 9.7 cm | 8.9 cm | 10.2 cm | 12.4 cm |
+| UAL, lean (+ forward) | 14 deg | 7 deg | -2 deg | -2 deg |
+
+The UAL's joints follow its back curve; MPFB's run straight up the torso. The phase-2 T-pose turned every bone onto its
+UAL direction, so it bent his trunk at the lower back, turned the neck forward and turned the clavicles back. In the
+Idle, his shoulders sat 7.3 cm behind the torso's middle, his torso was arched 20 deg, and his chest pushed out into the
+jacket: the "breasts".
+
+**The fix** is `respine` in tools/blender/kidGame.py, run before the T-pose:
+- The spine joints are placed along the UAL's own curve, scaled to his torso and ending at his own neck.
+- The head joint goes on the UAL's neck direction.
+- The clavicle roots are placed so the clavicles already point the UAL's way, with his shoulder joints left where they
+  are.
+- The torso's spine weights are re-made along the new joints (hat functions; the neck, arm and leg weights are left
+  untouched).
+
+The T-pose then turns no spine or clavicle bone, his torso keeps its own upright shape, and the clips mean the same
+thing on him as on the mannequin.
+
+**Rule posture-at-rest-match. Check:** kidTest rows in `kida` (Idle and Walk, side view, measured on the skinned
+mesh).
+- Posture: the shoulder joints are 1.2 cm off the torso's middle (v3: 7.3), and the torso and head lean within 4 deg and
+  2 cm of the UAL mannequin's.
+- Flat chest: no two mounds across the jacket's front, and a chest depth of 15-24 cm.
+
+### Chest and jacket
+At gender 1.0 the MakeHuman macros apply no breast volume (that target only acts on the female factor). The "breasts"
+were the arched pose. On top of the posture fix:
+- the jacket front is relaxed flat across the chest, so it never follows the pectorals;
+- the white tee strip is narrower (|x| < 4.2 cm) and kept 1 cm behind the jacket, so it can't poke through.
+
+### Knee marks and collar
+- **Knee marks.** The socks were built on the full-resolution leg, and the skin was decimated afterwards. Its facets sat
+  a few mm inside the old surface, which left a dark gap at the sock tops. The cuffs (the top 2.5 cm) are now snapped
+  onto the decimated skin, 1 mm out. A turned-in hem was tried first but folded into dark ticks at the sides.
+- **Collar.** The jagged edge was a navy band cut by height across the near-flat shoulder tops. The collar is now teal.
+
+### Kid cranks (owner approved)
+- The BMX now has 140 mm junior cranks (a 20" BMX sized for an 11-year-old of 1.45 m), set in tools/blender/bmx.py.
+- The crank arm's bend point scales with the crank length. Left at the old position, the LOD1 arm crossed its pedal
+  boss, which the mesh audit blocked.
+- `RIDE_KIDA` now has the seat post 6 cm up and ankling of 5 cm.
+- Result: his knee is at 72 deg at the top of the stroke and 118 at the bottom, he stays on the saddle, and his elbows
+  bend to at most 94 deg. The kidTest band is 68-85 deg.
+- The old kid still passes (47 deg at the top).
+- bmxCheck checks the 140 mm crank and passes 86/86. Pedalling uses the gear rollout, not the crank length.
+
+### Wheels on the ground
+**Rule wheels-on-ground. New gate row `wheels`:** tools/bike/wheelsTest.mjs measures the DRAWN tyres.
+
+**Root causes.** The drawn tyre radius is the physics' radius (0.254 m). But:
+- The physics' contacts are springs: each wheel penetrates by its compression (2.9 cm static sag, 6-8 cm on a landing),
+  and the rigid drawn bike sat that deep in the ground.
+- Parked, the bike's CoM was set 0.92 m over the ground; the rest height is 0.95. The bike sank 8.8 cm.
+- Lying, the CoM height of 0.25 m put the whole bike 72 cm under the ground.
+
+**Fixes:**
+- bikeModel draws the bike on its tyres. Each wheel's penetration is measured on the drawn pose, because the physics'
+  own value is one step old (1-1.5 cm on landings and kerbs). The frame is lifted and turned so both hubs sit at tyre
+  radius over their ground, solved in the pitched and leaned frame.
+- Parked or lying (`s.parked`), bmxModel sets the drawn bike down on its lowest point: tread, grip, pedal or saddle.
+- `pen` and `parked` are declared in createBikeState. Adding them later turned the state into a dictionary object, and
+  the sound mapping started allocating.
+
+**Check:** the drawn tread is within -0.5 .. +1.0 cm of the ground in every contact frame, in all 10 checks: flat,
+standing still, kerb, sand (a bite of up to 2 cm allowed), park kicker, quarter pipe, berm loop, pump track, parked
+standing, and lying (on its bar end, nothing under the ground).
+
+### Shots
+In `C:\Users\tibog\Downloads\uccle-kidchar\v4\`:
+- `A_v4_compare.png`
+- `A_v4_*` (after) and `A_v4_walk_*` (walking, after)
+- `A_v3_walk_*` (walking, before)
+- `knee_closeup_before_after.png`
+- `collar_closeup_before_after.png`
+- `lab_*`
