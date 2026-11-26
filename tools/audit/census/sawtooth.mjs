@@ -217,6 +217,8 @@ if (isMain && CHILD) {
     for (let i = 1; i < S.length; i++) {
       if (Math.abs(ys[i] - ys[i - 1]) > JUMP || cl[i] !== cl[i - 1] || sf[i] !== sf[i - 1]) ys[i] = NaN;
       if (i >= 4) { const a = S[i - 4], q = S[i]; if (a.ux * q.ux + a.uz * q.uz < Math.cos(35 * Math.PI / 180)) ys[i] = NaN; }
+      // (an offset line folds or jumps at the polyline's vertices: a sample not ~STEP from the one before is a cut)
+      { const dd = Math.hypot(S[i].x - S[i - 1].x, S[i].z - S[i - 1].z); if (dd > 1.5 * STEP || dd < 0.5 * STEP) ys[i] = NaN; }
     }
     for (const v of ys) if (!Number.isNaN(v)) walked += STEP;
     for (const ch of sawChains(ys)) {
