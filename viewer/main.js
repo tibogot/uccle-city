@@ -793,6 +793,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
     carrefour: params.get("carrefour") !== "old",                                                  // claude/carrefour: the Carrefour Market's retail-box look (buildingLooks set "carrefour"), ?carrefour=old = the generated block
     places2: params.get("places2") !== "old",                                                      // claude/places2: Le Pigeon Noir's ochre-mustard render + its white neighbour (buildingLooks set "places2"), ?places2=old = the generated look
+    montjoie: params.get("montjoie") !== "old",                                                    // claude/reality1: Institut Montjoie's red-brick neo-Gothic look (buildingLooks set "montjoie") + its asphalt yards (grounds, switch ?montjoie=old), ?montjoie=old = the generated block on a lawn
     cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2, vivier: VIVIER, footbridge: params.get("footbridge") !== "old",                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
     roadBend: params.get("roadbend") !== "old",                                                    // curvedroads: the engine strips trimmed at bends tighter than the road is wide (viewer/streets/roadBends.js, docs/roads/BENDS.md), ?roadbend=old = folded as built
     roadLines: params.get("roadlines") !== "old",                                                  // markings (census F, rule 33): the lane strips + their lines on the measured carriageway, clipped off sidewalks (viewer/streets/lineFit.js), ?roadlines=old = as the median width fit put them
@@ -1156,7 +1157,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const fuelCounts = cityFuel.addTile(entry.name, await fuelP, own.features);
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
   // (citydefects) no generated plant in a yard / gate mouth (data/overrides.json plantsClear; ?plantsclear=old)
-  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : [], villaClearRings());   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
+  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k, v]) => !k.startsWith("_") && !(v?.set === "montjoie" && params.get("montjoie") === "old")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : [], villaClearRings());   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
   const pfClear = PARKFENCE ? await parkFence.clearTest() : null;   // (parkfence) no garden piece / generated plant on a park's fence line
   // (allocrate, ?ringtest=old: the destructuring loop over every ring) index reads + a bounding box per ring (viewer/ringTest.js)
   const clearSet = RING_TEST ? ringSet(clearRings) : null;

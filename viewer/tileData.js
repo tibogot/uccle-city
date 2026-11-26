@@ -147,6 +147,7 @@ const lookSet = (looks, entry) => {
     if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
     if (entry.carrefour === false && v.set === "carrefour") continue;           // (claude/carrefour) ?carrefour=old
     if (entry.places2 === false && v.set === "places2") continue;               // (claude/places2) ?places2=old
+    if (entry.montjoie === false && v.set === "montjoie") continue;             // (claude/reality1) ?montjoie=old: Institut Montjoie generated
     out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
   }
   return out;
