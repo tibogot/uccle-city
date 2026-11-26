@@ -44,11 +44,13 @@ function outdoor(R) {
   // the tree line: a ragged top (two octaves along the azimuth, 6-24 degrees up), dark green lit from above by the sky
   // (crowns: ~2-4 degree bumps over a slow swell, not a mountain range)
   const az = atan(R.z, R.x).mul(9.0);
-  const top = noise1(az).mul(0.1).add(noise1(az.mul(4.3)).mul(0.06)).add(noise1(az.mul(13.0)).mul(0.03)).add(0.1);
+  const top = noise1(az).mul(0.09).add(noise1(az.mul(3.1)).mul(0.045)).add(0.1);       // (job 2: no spiky octave: it read as a mountain range)
   const trees = mix(lin(0x1d2a1a), lin(0x3c5232), smoothstep(-0.05, 0.25, R.y)).mul(mix(vec3(1.0), vec3(env.uSkyHorizon), 0.35)).mul(float(1).sub(n.mul(0.92)));
-  const lawn = mix(lin(0x36452b), lin(0x262b22), smoothstep(-0.02, -0.5, R.y)).mul(float(1).sub(n.mul(0.95)));
+  // (job 2: seen from high up the steep downward reflection read as brown wood: the ground reflected darker and
+  // neutral, the terrace's blue stone / the lawn's shade, cooled by the sky light it is lit by)
+  const lawn = mix(mix(lin(0x2b3329), lin(0x1c201c), smoothstep(-0.02, -0.5, R.y)), vec3(env.uSkyTop).mul(0.08), 0.25).mul(float(1).sub(n.mul(0.95)));
   const below = mix(trees, lawn, smoothstep(0.0, -0.06, R.y));
-  const scene = mix(below, sky, smoothstep(top.sub(0.012), top.add(0.012), R.y));
+  const scene = mix(below, sky, smoothstep(top.sub(0.03), top.add(0.03), R.y));
   // the sun's glint (a tight lobe; the sun's colour, bright: the TAAU and the bloom soften it)
   const sd = normalize(vec3(env.uSunDir));
   const glint = pow(max(dot(R, sd), 0.0), 900.0).mul(18.0).add(pow(max(dot(R, sd), 0.0), 60.0).mul(0.25));

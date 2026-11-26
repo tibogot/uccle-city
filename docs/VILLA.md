@@ -150,3 +150,20 @@ GLASS ("they looked very fake"). Job 1 = items 0 (glass) and 1 (bed).
 Budgets after job 1: download 6.75 MB (villa.glb 1.25 + interior.glb 4.53 + fabrics.ktx2 0.97) <= 9; LOD0 56,994 tris /
 8 draws (unchanged); interior cell 192,390 tris / 14 draws (was 179,420 / 16). Build: `python tools/villa/fabrics_ktx2.py
 <scan dir> 512` (once), then villa.py + pack.mjs as above; `tools/blender/villa_bed_preview.py` renders the bed alone.
+
+## v3 job 2 (claude/villa3, 2026-11-26): seating, TV, mirror, job-1 polish, and the UV bug
+
+| fix | why (cause) | what | rule / check |
+|---|---|---|---|
+| sofas (pit 6.0 m / 4.2 m, media lounge 4.6 m) + 7 armchairs | round 2: a radiator of 20-28 identical tubes on a soft slab, one plastic off-white (the pit's over-bright under the sun bake), no seams, floating on two black bars | tools/blender/villa_seating.py: recessed black plinth (shadow gap), upholstered deck between arms, a back frame; SEAT and BACK cushions are Blender CLOTH simulations with internal PRESSURE (a welted rounded core, shrunk 4 %, inflated, settled on the deck: bulge, sag, corner wrinkles; the backs with no gravity, leaning 14 deg); scatter cushions in two fabrics; one armchair simulated, its copies placed. The fabric = props codes 13 / 5 / 12 (oatmeal / greige weave, darker than the old white) | villa-props-contact (16 footprints, all within 0.4 mm of their floor) |
+| TV + media wall | a 2.8 x 1.6 m black box: a hole | an 85" TV (1.9 x 1.07 m, 3.5 cm body, 1 cm bezel), its glass reflects the lounge from a baked Cycles PANORAMA (Fresnel F0 0.04), a faint picture at night only; a soundbar; the media unit's three drawers with shadow gaps on a recessed plinth | villa-screens-mirror |
+| bathroom mirror | the same near-black screen code | silvered (88 %) reflection of the bathroom from its own panorama (day / night) | villa-screens-mirror |
+| probes | (new) | models/villa/reflect.ktx2: 4 layers (tv / mirror x day / night), 1024 x 512 equirect, UASTC + zstd, 0.73 MB, streamed with the interior; one lookup in the metal_black slot by face code: no render target, no light, no draw | villa-screens-mirror |
+| throw | the fleece scan alone read as a plain caramel slab | a chunky knit (2.4 x 2 cm V stitches, anti-aliased to its mean under ~2 px) over the scan | (props) |
+| rugs | blotchy value noise | the knit scan at rug scale, full relief, the contact shadow | (props) |
+| glass from high up | the steep downward reflection read as brown wood | the ground reflected darker, neutral, sky-cooled; the tree line rounder (no spiky octave) | villa-glass-v3 |
+| frame spacer / edge line | none | a glazing gasket round every field on both faces (8 mm, a light grey line 2 mm off the pane; 736 strips, ~4.4k triangles: LOD0 56,994 -> 61,410 of 62k) | villa-budgets |
+| **every villa UV** | **since round 1 villa.py make() wrote the UV through a layer reference taken BEFORE the colour attribute was added (which reallocates the mesh's attribute storage): the write went nowhere, every face kept Blender's default 0 / 1 unwrap; every metre pattern (oak planks, cladding boards, marble, tiles, the plaster's noise, the library scans, the fabric scans) was drawn once per face (the audit's "stripy oak", "fish-scale plaster")** | the layer fetched by name right before the write, read back (the build stops if it did not take); the marble's veins re-tuned for the real scale | **uv-written**, `villa` 2e |
+
+Budgets after job 2: download 6.92 MB (villa.glb + interior.glb + fabrics.ktx2 + reflect.ktx2) <= 9; LOD0 61,410 tris /
+8 draws (<= 62k / 9); interior cell 201,038 tris / 14 draws (<= 230k / 16).

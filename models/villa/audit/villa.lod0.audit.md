@@ -1,21 +1,21 @@
 # Mesh audit (before pack): villa.lod0
 
-58,886 triangles, 32,749 welded vertices, 3,998 open edges, 626,268 rays, 7957 ms.
+63,302 triangles, 37,165 welded vertices, 8,414 open edges, 1,137,492 rays, 13724 ms.
 
-**0 blocking**, 12553 warnings. Clean (no blocking item).
+**0 blocking**, 17337 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 11768 |
+| sliver | warn | 16184 |
 | nonmanifold | warn | 98 |
-| tjunction | warn | 687 |
-| seam | info | 756 |
+| tjunction | warn | 1055 |
+| seam | info | 757 |
 | opening | info | 1280 |
 | backtoback | info | 3189 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 11768)
+## sliver (warn, 16184)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -60,7 +60,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 12.20, 118.11, 9.00 | Villa/render_white | 282 | 3.193 |
 | 12.20, 117.04, 9.01 | Villa/render_white | 282 | 3.193 |
 
-(11728 more in the JSON)
+(16144 more in the JSON)
 
 ## nonmanifold (warn, 98)
 
@@ -109,7 +109,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (58 more in the JSON)
 
-## tjunction (warn, 687)
+## tjunction (warn, 1055)
 
 | at | part | edge_m |
 |---|---|---|
@@ -154,9 +154,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 35.70, 125.70, -22.00 | Villa/render_white | 14.7 |
 | 16.00, 125.70, -22.70 | Villa/render_white | 21.4 |
 
-(647 more in the JSON)
+(1015 more in the JSON)
 
-## seam (info, 756)
+## seam (info, 757)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -201,7 +201,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.15, 118.42, -21.14 | Villa/stone_blue + Villa/metal_dark | 2.52 | 25 | 90 |
 | 14.15, 118.42, -16.94 | Villa/stone_blue + Villa/metal_dark | 2.32 | 25 | 90 |
 
-(716 more in the JSON)
+(717 more in the JSON)
 
 ## opening (info, 1280)
 
@@ -268,13 +268,13 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 121.89, 5.66 | Villa/render_white + Villa/metal_dark | 0.03171 |
 | 14.00, 121.91, 6.23 | Villa/render_white + Villa/metal_dark | 0.03184 |
 | 14.00, 121.82, 6.03 | Villa/render_white + Villa/metal_dark | 0.00816 |
-| 14.00, 121.95, 6.08 | Villa/render_white + Villa/metal_dark | 0.0344 |
+| 14.00, 121.96, 6.12 | Villa/render_white + Villa/metal_dark | 0.0344 |
 | 14.00, 121.85, 5.94 | Villa/render_white + Villa/metal_dark | 0.0056 |
 | 14.00, 121.90, 6.90 | Villa/render_white + Villa/metal_dark | 0.04348 |
 | 14.00, 121.82, 6.53 | Villa/render_white + Villa/metal_dark | 0.02652 |
 | 14.00, 121.97, 6.73 | Villa/render_white + Villa/metal_dark | 0.03818 |
 | 14.00, 121.90, 6.41 | Villa/render_white + Villa/metal_dark | 0.03182 |
-| 14.00, 121.92, 7.62 | Villa/render_white + Villa/metal_dark | 0.04348 |
+| 14.00, 121.90, 7.60 | Villa/render_white + Villa/metal_dark | 0.04348 |
 | 14.00, 121.82, 7.22 | Villa/render_white + Villa/metal_dark | 0.02652 |
 | 14.00, 121.97, 7.43 | Villa/render_white + Villa/metal_dark | 0.03818 |
 | 14.00, 121.90, 7.11 | Villa/render_white + Villa/metal_dark | 0.03182 |

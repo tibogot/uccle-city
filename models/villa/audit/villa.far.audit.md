@@ -1,6 +1,6 @@
 # Mesh audit (before pack): villa.far
 
-170 triangles, 150 welded vertices, 178 open edges, 368,768 rays, 765 ms.
+170 triangles, 150 welded vertices, 178 open edges, 368,768 rays, 634 ms.
 
 **0 blocking**, 49 warnings. Clean (no blocking item).
 

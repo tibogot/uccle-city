@@ -1,18 +1,18 @@
 # Mesh audit (before pack): interior.cell
 
-107,172 triangles, 59,982 welded vertices, 9,116 open edges, 586,064 rays, 10438 ms.
+105,692 triangles, 59,234 welded vertices, 9,116 open edges, 584,300 rays, 10456 ms.
 
-**0 blocking**, 7441 warnings. Clean (no blocking item).
+**0 blocking**, 7176 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
 | near | warn | 387 |
-| sliver | warn | 6686 |
-| nonmanifold | warn | 135 |
+| sliver | warn | 6422 |
+| nonmanifold | warn | 134 |
 | tjunction | warn | 233 |
-| seam | info | 1908 |
-| opening | info | 653 |
-| backtoback | info | 6651 |
+| seam | info | 1898 |
+| opening | info | 655 |
+| backtoback | info | 6947 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -63,7 +63,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (347 more in the JSON)
 
-## sliver (warn, 6686)
+## sliver (warn, 6422)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -108,9 +108,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 22.54, 125.40, -7.99 | Cell/plaster_white | 42 | 0.42 |
 | 22.40, 125.40, -7.98 | Cell/plaster_white | 42 | 0.42 |
 
-(6646 more in the JSON)
+(6382 more in the JSON)
 
-## nonmanifold (warn, 135)
+## nonmanifold (warn, 134)
 
 | at | part | uses |
 |---|---|---|
@@ -155,7 +155,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 20.85, 119.95, -7.98 | Cell/plaster_white | 4 |
 | 20.85, 120.37, -7.98 | Cell/plaster_white | 4 |
 
-(95 more in the JSON)
+(94 more in the JSON)
 
 ## tjunction (warn, 233)
 
@@ -204,13 +204,13 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (193 more in the JSON)
 
-## seam (info, 1908)
+## seam (info, 1898)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
 | 14.50, 122.40, -7.98 | Cell/oak_plank + Glass/glass_window | 47.45 | 201 | 90 |
 | 12.30, 122.40, 11.34 | Cell/plaster_white + Cell/stone_floor | 38.7 | 194 | 45 |
-| 12.30, 122.40, 11.34 | Cell/oak_plank + Cell/stone_floor | 35.16 | 177 | 45 |
+| 12.30, 122.40, 11.34 | Cell/oak_plank + Cell/stone_floor | 35.16 | 178 | 45 |
 | 16.21, 118.43, -22.70 | Cell/plaster_white + Cell/marble_white | 31.52 | 158 | 22.5 |
 | 12.30, 122.65, 11.00 | Cell/plaster_white + Cell/marble_white | 27.16 | 139 | 90 |
 | 21.15, 118.44, -7.59 | Cell/plaster_white + Cell/walnut | 26.47 | 134 | 22.5 |
@@ -234,24 +234,24 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 29.40, 122.40, 11.15 | Cell/plaster_white + Cell/oak_plank | 16.2 | 78 | 90 |
 | 29.93, 122.40, 1.23 | Cell/plaster_white + Cell/oak_plank | 15.28 | 77 | 90 |
 | 22.60, 117.95, -20.39 | Cell/marble_white + Cell/stone_floor | 2.24 | 76 | 83.6 |
-| 12.57, 122.40, 11.00 | Cell/oak_plank + Cell/marble_white | 14.76 | 74 | 90 |
 | 29.61, 118.40, -5.48 | Cell/walnut + Cell/stone_floor | 14.35 | 74 | 22.5 |
 | 12.46, 122.41, 11.30 | Cell/marble_white + Cell/stone_floor | 14.53 | 74 | 45 |
 | 35.85, 118.69, -7.85 | Cell/plaster_white + Glass/glass_window | 30.03 | 72 | 90 |
+| 12.57, 122.40, 11.00 | Cell/oak_plank + Cell/marble_white | 14.34 | 72 | 90 |
 | 37.20, 122.40, 11.15 | Cell/plaster_white + Cell/plaster_white | 14.82 | 71 | 90 |
+| 23.57, 117.95, -13.05 | Cell/oak_plank + Cell/metal_black | 13.41 | 68 | 45 |
 | 15.11, 119.30, 4.15 | Cell/plaster_white + Cell/brass | 12.37 | 66 | 45 |
 | 22.60, 117.95, -12.89 | Cell/marble_white + Cell/stone_floor | 1.62 | 58 | 83.6 |
+| 23.82, 118.01, -12.60 | Cell/stone_floor + Cell/metal_black | 11.83 | 58 | 90 |
 | 29.93, 122.40, -5.48 | Cell/plaster_white + Cell/oak_plank | 11.3 | 56 | 90 |
 | 14.15, 119.11, 12.00 | Cell/plaster_white + Glass/glass_window | 22.68 | 54 | 90 |
+| 22.47, 118.40, 15.87 | Cell/oak_plank + Cell/metal_black | 10.61 | 54 | 45 |
 | 14.30, 118.47, -7.85 | Cell/plaster_white + Cell/plaster_white | 10.28 | 53 | 90 |
 | 26.41, 118.40, 22.18 | Cell/oak_plank + Cell/walnut | 9.55 | 52 | 22.5 |
-| 14.30, 118.73, -19.39 | Cell/plaster_white + Cell/walnut | 8.89 | 51 | 22.5 |
-| 29.93, 125.40, -5.48 | Cell/plaster_white + Cell/plaster_white | 10.17 | 51 | 90 |
-| 16.67, 119.48, 11.30 | Cell/marble_white + Cell/metal_black | 9.34 | 48 | 45 |
 
-(1868 more in the JSON)
+(1858 more in the JSON)
 
-## opening (info, 653)
+## opening (info, 655)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -296,9 +296,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.30, 118.40, 0.47 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
 | 14.30, 118.40, 0.89 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
 
-(613 more in the JSON)
+(615 more in the JSON)
 
-## backtoback (info, 6651)
+## backtoback (info, 6947)
 
 | at | parts | area |
 |---|---|---|
@@ -343,7 +343,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.30, 118.56, -17.13 | Cell/plaster_white + Cell/walnut | 0.01952 |
 | 14.30, 118.71, -17.17 | Cell/plaster_white + Cell/walnut | 0.02113 |
 
-(6611 more in the JSON)
+(6907 more in the JSON)
 
 
 Nodes: Cell, Glass. Distances: {"*":35}. Quantum 0.000 mm. Offset 0,100,0.

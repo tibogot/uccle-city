@@ -26,6 +26,7 @@ from mathutils import Vector, Matrix
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import interior_kit as K
 import villa_bed as VB
+import villa_seating as VS
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 def arg(k, d=None): return ARGS[ARGS.index(k) + 1] if k in ARGS else d
@@ -246,6 +247,7 @@ def pane(acc, axis, c, hole, out, slot, code=0):
     if axis == "u": acc.rect(P(c, a0, h0), P(c, a1, h0), P(c, a1, h1), P(c, a0, h1), slot, code, nrm)
     else: acc.rect(P(a0, c, h0), P(a1, c, h0), P(a1, c, h1), P(a0, c, h1), slot, code, nrm)
 
+GASKET = [0]
 def frames(acc, axis, c, hole, mull=1.6, transom=None, t=0.06, d=0.14, slot="metal_dark"):
     """an aluminium frame round a hole at the glass plane c, mullions every ~mull m, transoms at the given heights"""
     a0, a1, h0, h1 = hole
@@ -264,6 +266,26 @@ def frames(acc, axis, c, hole, mull=1.6, transom=None, t=0.06, d=0.14, slot="met
         for xa, xb in zip(xs[0::2], xs[1::2]):
             if axis == "u": bbox(acc, c - d * 0.42, c + d * 0.42, xa, xb, y - t / 2, y + t / 2, slot, C["frame"], bevel=0.004, seg=1, skip_down=False)
             else: bbox(acc, xa, xb, c - d * 0.42, c + d * 0.42, y - t / 2, y + t / 2, slot, C["frame"], bevel=0.004, seg=1, skip_down=False)
+    # villa3 job 2: the glazing GASKET round every field, both faces of the glass (an 8 mm dark line 2 mm off the pane,
+    # 1 mm clear of the frame): the line where a real unit meets its frame (the owner: no spacer / edge line). Plain
+    # strips, three faces each (the face to the glass and the ends are never seen): ~48 triangles a field
+    xs = [a0 + t] + [a0 + (a1 - a0) * k / n + s_ * t / 2 for k in range(1, n) for s_ in (-1, 1)] + [a1 - t]
+    ys = [h0 + t] + [y + s_ * t / 2 for y in (transom or []) for s_ in (-1, 1)] + [h1 - t]
+    g, e0, e1 = 0.008, 0.002, 0.007
+    for xa, xb in zip(xs[0::2], xs[1::2]):
+        for ya, yb in zip(ys[0::2], ys[1::2]):
+            xa_, xb_, ya_, yb_ = xa + 0.001, xb - 0.001, ya + 0.001, yb - 0.001
+            for sd in (1, -1):
+                d0, d1 = (c + e0, c + e1) if sd > 0 else (c - e1, c - e0)
+                near = ("-u" if sd > 0 else "+u") if axis == "u" else ("-w" if sd > 0 else "+w")
+                strips = [(xa_, xb_, ya_, ya_ + g, ("-a", "+a")), (xa_, xb_, yb_ - g, yb_, ("-a", "+a")),
+                          (xa_, xa_ + g, ya_ + g, yb_ - g, ("-h", "+h")), (xb_ - g, xb_, ya_ + g, yb_ - g, ("-h", "+h"))]
+                for (p0, p1, q0, q1, ends) in strips:
+                    along = "w" if axis == "u" else "u"
+                    sk = [near] + [s.replace("a", along) for s in ends]
+                    if axis == "u": box(acc, d0, d1, p0, p1, q0, q1, slot, C["plinth"], skip=tuple(sk))
+                    else: box(acc, p0, p1, d0, d1, q0, q1, slot, C["plinth"], skip=tuple(sk))
+                    GASKET[0] += 1
 
 # ================================================================================================ THE EXTERIOR (LOD0)
 EX = Acc("Villa", EXT_SLOTS)
@@ -566,6 +588,7 @@ exterior()
 for k in range(len(GLS.f)):            # the glass into the exterior object (its own slot: one primitive)
     pass
 print(f"exterior LOD0: {len(EX.f)} faces + glass {len(GLS.f)} ({time.time() - T0:.1f}s)")
+print(f"gasket strips: {GASKET[0]}")
 
 # ------------------------------------------------------------------------------------------------ the far variant
 FAR = Acc("Villa_far", EXT_SLOTS)
@@ -906,7 +929,12 @@ def put(parts, u, w, h, face=(0.0, 1.0), smooth=True, s=None, colb=None):
     if colb: colbox(u - colb[0], u + colb[0], w - colb[1], w + colb[1], h, h + colb[2])
 
 SOFT_SLOTS = ("props", "fabric_white", "fabric_grey", "leather", "plant", "glow", "ceramic_white")     # smooth-shaded; everything else flat
-CONTACT_SRC = []; CONTACT_ON = [False]               # villa3: the footprints the floors' contact shadow reads (interior.json contact)
+REFL_PROBES = []                                     # villa3 job 2: (name, (u, w, h)) panoramas for the TV / the mirror
+MIRROR = C["roof"]                                   # (metal_black's mirror code: viewer/villa/villaInterior.js)
+CONTACT_SRC = []; CONTACT_ON = [False]
+def put_c(parts, u, w, h, face=(0.0, 1.0), colb=None):
+    """put() + its footprint in interior.json contact (the floors' contact shadow, gate villa 2c)"""
+    CONTACT_ON[0] = True; put(parts, u, w, h, face, colb=colb); CONTACT_ON[0] = False               # villa3: the footprints the floors' contact shadow reads (interior.json contact)
 PLANTS = []                                          # the kit plants (their open leaves: listed in the audit's allow file)
 kit_piece = lambda parts: any(p[1] in ("Hard", "Wood", "Fabric", "Glow", "Plaster", "Glass", "plant") for p in parts)
 LIGHTS = []                                         # night bake: (name, pos, watts, colour, radius, aim or None)
@@ -1034,17 +1062,16 @@ def interior():
     credenza(IN, "u", IU0, 1, -19.4, -9.0, 0.5, 0.62)
     planter(26.6, -9.4, GL, 2.4, 11); planter(34.9, -9.6, GL, 1.8, 13)
     # the pit: cushions on the sofas, side tables with lamps, a throw
-    for (u_, w_, f) in ((23.4, PIT["w1"] - 1.15, (0, -1)), (24.2, PIT["w1"] - 1.15, (0, -1)), (29.0, PIT["w1"] - 1.15, (0, -1)), (PIT["u1"] - 1.15, -18.0, (-1, 0)), (PIT["u1"] - 1.15, -15.2, (-1, 0))):
-        cushion(u_, w_, PIT["h"] + 0.5, f)
+    # (villa3 job 2: the scatter cushions are the sofas' own, villa_seating.py)
     for (u_, w_) in ((PIT["u0"] + 0.55, PIT["w1"] - 0.9), (PIT["u0"] + 0.55, PIT["w0"] + 0.6)):
         side_table(u_, w_, PIT["h"]); table_lamp(u_, w_, PIT["h"] + 0.55)
     tufted = lambda w_, seats: channel_sofa(w_, seats)
-    put(channel_sofa(6.0, 4), 26.5, PIT["w1"] - 1.0, PIT["h"], (0, -1), colb=(3.0, 0.5, 0.75))
-    put(channel_sofa(4.2, 3), PIT["u1"] - 1.0, -16.5, PIT["h"], (-1, 0), colb=(0.5, 2.1, 0.75))
+    put_c(VS.sofa_v3(6.0, 4, seed=3), 26.5, PIT["w1"] - 1.0, PIT["h"], (0, -1), colb=(3.0, 0.5, 0.75))
+    put_c(VS.sofa_v3(4.2, 3, seed=4), PIT["u1"] - 1.0, -16.5, PIT["h"], (-1, 0), colb=(0.5, 2.1, 0.75))
     put(coffee_table_stone(2.2, 1.1), 25.5, -16.5, PIT["h"], (0, 1), colb=(1.1, 0.55, 0.38))
     put([(K.box(4.6, 0.012, 3.6, 0.004, 1), "fabric_grey", C["rug"])], 25.8, -16.3, PIT["h"], (0, 1), smooth=False)
     for w_ in (-19.0, -14.0):
-        put(lounge_chair(), PIT["u0"] + 1.0, w_, PIT["h"], (1, 0), colb=(0.45, 0.45, 0.8))
+        put_c(VS.armchair_v3(1), PIT["u0"] + 1.0, w_, PIT["h"], (1, 0), colb=(0.44, 0.43, 0.8))
     put(K.plant(2.2, 0.32, seed=7, kind="ficus", spread=1.0), 15.4, -21.5, GL, (0, 1), colb=(0.4, 0.4, 1.5))
     put(K.plant(1.9, 0.3, seed=11, kind="ficus", spread=0.9), 34.8, -21.4, GL, (0, 1), colb=(0.4, 0.4, 1.5))
     put(floor_lamp_arc(), 30.6, -20.6, PIT["h"], (0, 1))
@@ -1082,8 +1109,16 @@ def interior():
             u_ = a + (k + 0.5) * (b - a) / n_
             bbox(IN, u_ - 0.012, u_ + 0.012, IW1 - 0.63, IW1 - 0.6, GL + 0.95, GL + 1.55, "brass", 0, 0.003, 1, False)
     bbox(IN, 23.0, 26.4, IW1 - 0.25, IW1, GL, LOUNGE_CEIL - 0.02, "walnut", C["door"], 0.006, 2)        # the TV's panel
-    bbox(IN, 23.3, 26.1, IW1 - 0.3, IW1 - 0.25, GL + 1.0, GL + 2.6, "metal_black", C["screen"], 0.004, 1, False)
-    bbox(IN, 23.0, 26.4, IW1 - 0.6, IW1 - 0.25, GL, GL + 0.42, "walnut", C["door"], 0.006, 2)          # its low unit
+    # villa3 job 2: an 85" TV (1.9 x 1.07 m, not a 2.8 m black hole): a 3.5 cm body (its 1 cm bezel), the glass face
+    # (metal_black `screen`: glossy, the lounge's reflection probe, a faint picture at night only), a soundbar on the
+    # media unit (three drawers with 6 mm shadow gaps on a recessed black plinth)
+    bbox(IN, 23.75, 25.65, IW1 - 0.285, IW1 - 0.25, GL + 1.05, GL + 2.12, "metal_black", 0, 0.004, 1, False)
+    bbox(IN, 23.76, 25.64, IW1 - 0.293, IW1 - 0.285, GL + 1.06, GL + 2.11, "metal_black", C["screen"], 0.0015, 1, False)
+    bbox(IN, 23.05, 26.35, IW1 - 0.55, IW1 - 0.25, GL, GL + 0.06, "metal_black", 0, 0.003, 1, False)
+    for (a, b) in ((23.0, 24.13), (24.136, 25.264), (25.27, 26.4)):
+        bbox(IN, a, b, IW1 - 0.6, IW1 - 0.25, GL + 0.06, GL + 0.42, "walnut", C["door"], 0.004, 2, False)
+    bbox(IN, 24.1, 25.3, IW1 - 0.42, IW1 - 0.32, GL + 0.42, GL + 0.49, "metal_black", 0, 0.012, 2)        # the soundbar
+    REFL_PROBES.append(("tv", (24.7, IW1 - 0.35, GL + 1.58)))
     bbox(IN, 30.6, 32.6, IW1 - 0.6, IW1, GL, GL + 0.9, "walnut", C["door"], 0.006, 2)                  # the coffee niche
     bbox(IN, 30.6, 32.6, IW1 - 0.6, IW1, GL + 2.05, LOUNGE_CEIL - 0.02, "walnut", C["door"], 0.006, 2)
     bbox(IN, 30.6, 32.6, IW1 - 0.08, IW1, GL + 0.9, GL + 2.05, "marble_white", 0, 0.004, 1, False)
@@ -1099,12 +1134,11 @@ def interior():
         ibox(PU - 0.15, PU + 0.15, a, b, GL, LOUNGE_CEIL, "walnut", C["door"], skip=("-h", "+h"))
         for side in (-1, 1):
             shelves(IN, "u", PU + side * 0.15, side, a + 0.05, b - 0.05, GL + 0.35, LOUNGE_CEIL - 0.3, seed=int(a * 7 + side * 3))
-    put(channel_sofa(4.6, 3), 24.7, 16.2, GL, (0, 1), colb=(2.3, 0.5, 0.75))
-    for (u_, f) in ((23.6, (0, 1)), (24.4, (0, 1)), (25.9, (0, 1))): cushion(u_, 16.0, GL + 0.5, f)
+    put_c(VS.sofa_v3(4.6, 3, seed=5), 24.7, 16.2, GL, (0, 1), colb=(2.3, 0.5, 0.75))
     put(coffee_table_stone(1.6, 0.9), 24.7, 18.6, GL, (0, 1), colb=(0.8, 0.45, 0.38))
     put([(K.box(5.0, 0.012, 3.6, 0.004, 1), "fabric_grey", C["rug"])], 24.2, 18.0, GL, (0, 1), smooth=False)
     for w_ in (17.4, 19.6):
-        put(lounge_chair(), 20.8, w_, GL, (1, 0), colb=(0.45, 0.45, 0.8))
+        put_c(VS.armchair_v3(1), 20.8, w_, GL, (1, 0), colb=(0.44, 0.43, 0.8))
     for (u_, w_) in ((21.9, 15.9),):
         side_table(u_, w_, GL); table_lamp(u_, w_, GL + 0.55)
     put(floor_lamp_arc(), 20.0, 21.4, GL, (0, -1))
@@ -1167,9 +1201,9 @@ def interior():
     downlight(28.6, 8.8, C1, 10.0)
     # the study / library on the mezzanine: a desk to the front window, a chair, two armchairs on a rug, shelves
     put(desk_modern(2.2, 0.8), 13.6, 2.5, F1, (1, 0), colb=(0.4, 1.1, 0.76))
-    put(lounge_chair(), 14.7, 2.5, F1, (-1, 0), colb=(0.4, 0.4, 0.8))
+    put_c(VS.armchair_v3(1), 14.7, 2.5, F1, (-1, 0), colb=(0.44, 0.43, 0.8))
     for w_ in (-3.0, 0.0):
-        put(lounge_chair(), 20.0, w_, F1, (1, 0) if w_ < 0 else (1, 0), colb=(0.45, 0.45, 0.8))
+        put_c(VS.armchair_v3(1), 20.0, w_, F1, (1, 0), colb=(0.44, 0.43, 0.8))
     put([(K.box(3.0, 0.012, 4.0, 0.004, 1), "fabric_grey", C["rug"])], 21.0, -1.5, F1, (0, 1), smooth=False)
     put(coffee_table_stone(1.0, 1.0), 21.4, -1.5, F1, (0, 1), colb=(0.5, 0.5, 0.38))
     bbox(IN, JU0, JU0 + 0.4, -7.6, -6.4, F1, F1 + 2.4, "walnut", C["door"], 0.006, 2)
@@ -1190,7 +1224,7 @@ def interior():
         bbox(IN, 29.3, 29.8, w_ - 0.3, w_ + 0.3, F1 + 0.306, F1 + 0.5, "walnut", C["door"], 0.004, 2, False)
         CONTACT_SRC.append((29.55, w_, F1, (1, 0), (0.25, 0.3, 0.5)))
     put([(K.box(4.0, 0.012, 3.2, 0.004, 1), "fabric_grey", C["rug"])], 31.2, 17.4, F1, (1, 0), smooth=False)
-    put(lounge_chair(), 35.8, 21.6, F1, (-1, -1), colb=(0.45, 0.45, 0.8))
+    put_c(VS.armchair_v3(1), 35.7, 21.6, F1, (-1, 0), colb=(0.44, 0.43, 0.8))     # (facing the bed; the diagonal one had no plinth vertex inside its footprint box: gate villa 2c)
     # round 2: THE BATHROOM (u 12.3 .. 20.5, a partition with a doorway by the marble wall): stone floor, a freestanding
     # tub, a double basin on a walnut vanity with a mirror, a towel ladder, a plant
     ibox(20.4, 20.6, 13.3, JW1, F1, C1, "plaster_white", 0, skip=("-h", "+h"))
@@ -1207,7 +1241,9 @@ def interior():
         put([(K.lathe([(0.0, 0.0), (0.17, 0.005), (0.2, 0.12), (0.185, 0.125), (0.15, 0.03), (0.0, 0.03)], seg=28), "ceramic_white", 0)], u_, 22.86, F1 + 0.9, (0, -1))
         bbox(IN, u_ - 0.015, u_ + 0.015, 23.0, JW1, F1 + 0.9, F1 + 1.2, "brass", 0, 0.004, 1)
         bbox(IN, u_ - 0.011, u_ + 0.011, 22.95, 23.0, F1 + 1.165, F1 + 1.19, "brass", 0, 0.003, 1)
-    bbox(IN, 12.9, 15.3, JW1 - 0.03, JW1, F1 + 1.3, F1 + 2.4, "metal_black", C["screen"], 0.004, 1, False)
+    # villa3 job 2: the mirror (metal_black code MIRROR: the bathroom's reflection probe; it read as a black hole)
+    bbox(IN, 12.9, 15.3, JW1 - 0.03, JW1, F1 + 1.3, F1 + 2.4, "metal_black", MIRROR, 0.004, 1, False)
+    REFL_PROBES.append(("mirror", (14.1, JW1 - 0.08, F1 + 1.75)))
     led_strip(P(12.95, JW1 - 0.06, F1 + 2.43), P(15.25, JW1 - 0.06, F1 + 2.43), normal=(0, 0, -1), width=0.03)
     LIGHTS.append(("vanity", P(14.1, JW1 - 0.3, F1 + 2.3), 12.0, WARM, 0.15, None))
     for (u_, w_) in ((14.2, 19.0), (17.5, 19.0), (14.2, 14.0), (17.5, 14.0)): downlight(u_, w_, C1, 8.0)
@@ -1433,7 +1469,13 @@ def make(acc, mats, origin=None, link=True):
     for fi, f in enumerate(acc.f):
         for k in range(len(f)):
             uvd.extend(acc.fuv[fi][k]); cold.extend(((acc.fc[fi] + 0.5) / 16.0, 1.0, 0.5, 1.0))
-    uv.data.foreach_set("uv", uvd); col.data.foreach_set("color", cold)
+    # villa3 job 2 (rule uv-written): the UV layer is fetched AGAIN after the colour attribute is added: adding an
+    # attribute reallocates the mesh's attribute storage and the earlier `uv` reference wrote nowhere. Since round 1
+    # every villa UV was Blender's default 0 / 1 per face: the metre patterns (oak planks, boards, marble, tiles,
+    # the plaster's noise, the scans) were drawn per face, 0..1 (the "fish-scale" plaster, the stripy oak)
+    me.uv_layers["UVMap"].data.foreach_set("uv", uvd); me.color_attributes["Col"].data.foreach_set("color", cold)
+    chk = [0.0] * len(uvd); me.uv_layers["UVMap"].data.foreach_get("uv", chk)
+    if any(abs(a_ - b_) > 1e-4 for a_, b_ in zip(chk[:2000], uvd[:2000])): raise SystemExit(f"{acc.name}: the UV did not take")
     me.validate(clean_customdata=False); me.update()
     o = bpy.data.objects.new(acc.name, me)
     if origin is not None: o.location = origin
@@ -1662,6 +1704,48 @@ if BAKE:
             at.data.foreach_set("vector", d.reshape(-1, 4)[:, :3].ravel())
             me.color_attributes.remove(ca)
         me.color_attributes.active_color = me.color_attributes["Col"]
+    # ---- villa3 job 2: the reflection probes (the TV's glass, the bathroom mirror): equirectangular Cycles panoramas
+    # from each surface, day (sky + sun) and night (the lamps), the cell in plain tints per slot (a reflection must
+    # have colour; the surfaces themselves keep theirs in TSL), packed to models/villa/reflect.ktx2 (a 2D array)
+    if REFL_PROBES:
+        tint = {"plaster_white": 0.78, "oak_plank": (0.3, 0.21, 0.13), "walnut": (0.1, 0.06, 0.035), "marble_white": 0.78, "stone_floor": 0.5,
+                "props": (0.68, 0.64, 0.58), "brass": (0.55, 0.4, 0.17), "metal_black": 0.02, "plant": (0.08, 0.18, 0.06), "ceramic_white": 0.82,
+                "books": (0.25, 0.15, 0.1), "art": (0.5, 0.3, 0.2)}
+        pm = {}
+        for nm, c in tint.items():
+            m = bpy.data.materials.new("pr_" + nm); m.use_nodes = True; c = (c, c, c) if isinstance(c, float) else c
+            m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*c, 1); m.node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.6
+            pm[nm] = m
+        saved = {o.name: [m for m in o.data.materials] for o in (ob_cell, ob_soft)}
+        for o in (ob_cell, ob_soft):
+            for i, m in enumerate(INT_M):
+                if INT_M[i].name in pm: o.data.materials[i] = pm[INT_M[i].name]
+        pcd = bpy.data.cameras.new("probe"); pcd.type = "PANO"; pcd.panorama_type = "EQUIRECTANGULAR"
+        pco = bpy.data.objects.new("probe", pcd); scn.collection.objects.link(pco); scn.camera = pco
+        pco.rotation_euler = (math.radians(90), 0, math.radians(-90))     # (Cycles' equirect: its own frame; the shader reads the same)
+        scn.render.resolution_x, scn.render.resolution_y = 1024, 512; scn.cycles.samples = 64; scn.cycles.use_denoising = True   # (512 x 256 drew the mirror soft: 0.7 deg a texel)
+        scn.render.image_settings.file_format = "PNG"; scn.view_settings.view_transform = "Standard"; scn.view_settings.exposure = 0.0
+        ob_pb.hide_render = True
+        os.makedirs(os.path.join(OUT, "_probe"), exist_ok=True)
+        files = []
+        for (name, (u_, w_, h_)) in REFL_PROBES:
+            pco.location = P(u_, w_, h_)
+            for mode in ("day", "night"):
+                set_mode("sky" if mode == "day" else "night")
+                if mode == "day": so.hide_render = False
+                f = os.path.join(OUT, "_probe", f"{name}_{mode}.png"); scn.render.filepath = f; bpy.ops.render.render(write_still=True); files.append(f)
+        so.hide_render = True
+        import subprocess
+        KTX = "C:/Program Files/KTX-Software/bin/ktx.exe"
+        if os.path.exists(KTX):
+            subprocess.run([KTX, "create", "--format", "R8G8B8A8_SRGB", "--assign-tf", "srgb", "--layers", str(len(files)), "--encode", "uastc", "--uastc-quality", "2",
+                            "--uastc-rdo", "--uastc-rdo-l", "2.0", "--zstd", "18", "--generate-mipmap", *files, os.path.join(OUT, "reflect.ktx2")], check=True)
+            print("reflect.ktx2", os.path.getsize(os.path.join(OUT, "reflect.ktx2")) // 1024, "KB")
+        for o in (ob_cell, ob_soft):
+            for i, m in enumerate(saved[o.name]): o.data.materials[i] = m
+        bpy.data.objects.remove(pco)
+        REFL_INFO = {"file": "reflect.ktx2", "layers": [f"{n}_{m}" for (n, _) in REFL_PROBES for m in ("day", "night")],
+                     "at": {n: [p_[0], p_[2] - OY, p_[1]] for (n, p_) in REFL_PROBES}}
     if PREVIEW:
         os.makedirs(PREVIEW, exist_ok=True)
         camd = bpy.data.cameras.new("cam"); cam = bpy.data.objects.new("cam", camd); scn.collection.objects.link(cam); scn.camera = cam
@@ -1745,6 +1829,7 @@ info = {
     "spawn": {"gate_out": loc(7.0, 20.2, 115.6), "living": loc(27.0, -9.5, GL), "landing": loc(28.6, 5.0, F1), "terrace": loc(40.5, 6.0, GL), "lounge": loc(30.0, 15.0, GL)},
     "tris": {"cell": tri(ob_cell), "soft": tri(ob_soft), "glass": tri(ob_iglass), "collider": len(COL) // 3},
     "contact": CONTACT,
+    "reflect": globals().get("REFL_INFO"),
 }
 json.dump(info, open(os.path.join(OUT, "interior.json"), "w"), indent=1)
 # the mesh audit's allow list: the kit plants' leaves are open blades by design (leak / crossing / seam round them)

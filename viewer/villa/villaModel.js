@@ -79,7 +79,8 @@ const TEMP = {
     emissiveNode: lin(0xffc58a).mul(0.45).mul(env.uNight.mul(villaLook.windowsNight).mul(0.55)).mul(isC(C.channel)).mul(float(1).sub(slatCover(uv().x))),
     roughness: 0.62,
   }),
-  metal_dark: () => std({ color: new THREE.Color(0x2a2c2f), roughness: 0.34, metalness: 0.55 }),
+  // (villa3 job 2: the glazing gaskets / spacers, code plinth: a lighter grey line inside every frame, the edge of the unit)
+  metal_dark: () => std({ colorNode: mix(lin(0x2a2c2f), lin(0x8a8d90), isC(C.plinth)), roughness: 0.34, metalness: 0.55 }),
   // the far glass (the interior cell's own glass replaces it within 30 m): dark, reflective; lit windows at night
   glass_window: () => {
     if (GLASS_V3) return farGlassMaterial();          // villa3: the shared glass model (villaGlass.js); ?villa3=0 below

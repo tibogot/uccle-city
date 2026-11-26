@@ -49,7 +49,7 @@ check(Math.hypot(px - sx, pz - sz) < 1e-3, "villaPlot.toCity = site.json's axes"
 const { readGlb } = await imp("tools/mesh_audit/glb.mjs");
 const ext = await readGlb(new URL("models/villa/villa.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const cell = await readGlb(new URL("models/villa/interior.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
-const SHIP = ["models/villa/villa.glb", "models/villa/interior.glb", "models/villa/fabrics.ktx2"];
+const SHIP = ["models/villa/villa.glb", "models/villa/interior.glb", "models/villa/fabrics.ktx2", "models/villa/reflect.ktx2"];
 const mb = SHIP.reduce((s, f) => s + statSync(new URL(f, ROOT)).size, 0) / 1048576;
 check(mb <= B.mb, `download <= ${B.mb} MB`, `${mb.toFixed(2)} MB`);
 const tri = (parts, node) => parts.filter((p) => p.node === node).reduce((s, p) => s + p.index.length / 3, 0);
@@ -114,8 +114,35 @@ check(unbaked.length === 0, "every interior primitive carries the sky / sun / ni
     rowsC.push(`${((r.u[0] + r.u[1]) / 2).toFixed(1)},${((r.w[0] + r.w[1]) / 2).toFixed(1)}: ${gapMm.toFixed(1)} mm`);
   }
   const slots = new Set(cell.parts.map((p) => p.slot));
-  check(rects.length >= 5 && bad === 0 && slots.has("props") && !["fabric_white", "fabric_grey", "leather"].some((s) => slots.has(s)),
+  check(rects.length >= 15 && bad === 0 && slots.has("props") && !["fabric_white", "fabric_grey", "leather"].some((s) => slots.has(s)),
     "the re-made pieces sit on the floor (lowest vertex within 5 mm of it / the rug), fabrics in ONE props slot", `${rects.length} footprints: ${rowsC.join("; ")}`);
+}
+// ---- 2c'. villa3 job 2 (rule villa-screens-mirror): the TV glass and the bathroom mirror read the room from baked
+// reflection panoramas (models/villa/reflect.ktx2, interior.json reflect: tv + mirror, day + night), sampled by the
+// interior's metal_black material for the screen / mirror codes: no render target, no light, no extra draw
+{
+  const iTxt = readFileSync(new URL("viewer/villa/villaInterior.js", ROOT), "utf8");
+  const r = info.reflect;
+  const okInfo = r && r.file === "reflect.ktx2" && ["tv_day", "tv_night", "mirror_day", "mirror_night"].every((l) => r.layers.includes(l));
+  const okShader = /function screenAndMirror\(light\)/.test(iTxt) && /isC\(C\.screen\)\.add\(isC\(C\.roof\)\)/.test(iTxt) && !/RenderTarget|CubeCamera|PMREMGenerator/.test(iTxt);
+  const mb = cell.parts.find((p) => p.node === "Cell" && p.slot === "metal_black");
+  let mirrorV = 0, screenV = 0;
+  if (mb?.ao) for (let k = 0; k < mb.ao.length; k++) { const c = Math.floor(mb.ao[k] * 16); if (c === 9) mirrorV++; if (c === 13) screenV++; }   // (glb.mjs: ao = COLOR_0's first channel = the face code here)
+  check(okInfo && okShader && mirrorV >= 8 && screenV >= 8, "the TV glass and the mirror reflect the room (baked panoramas, one lookup, no render target / light / draw)",
+    `layers ${r?.layers?.join(",")}, shader ${okShader}, mirror verts ${mirrorV}, screen verts ${screenV}`);
+}
+// ---- 2e. villa3 job 2 (rule uv-written): the UV the generator wrote (metres) is the UV shipped: not Blender's default
+// 0 / 1 per face (since round 1 a stale layer reference in villa.py make() wrote nowhere: every metre pattern was
+// drawn per face). Every big slot primitive has UVs beyond 0..1 and fewer than 60 % of its values at exactly 0 or 1
+{
+  const bad = [];
+  for (const p of [...ext.parts, ...cell.parts]) {
+    if (!p.uv0 || p.index.length < 300 || /glass|glow|leaves|pool/.test(p.slot)) continue;
+    let mn = Infinity, mx = -Infinity, cornerish = 0;
+    for (const x of p.uv0) { mn = Math.min(mn, x); mx = Math.max(mx, x); if (x === 0 || x === 1) cornerish++; }
+    if (mx - mn <= 1.0001 || cornerish / p.uv0.length > 0.6) bad.push(`${p.node}/${p.slot}`);
+  }
+  check(bad.length === 0, "the shipped UVs are the generator's metres (not Blender's default 0 / 1 per face)", bad.length ? bad.slice(0, 8).join(", ") : "");
 }
 // ---- 2d. villa3 (rule villa-licences): every external asset the villa ships is listed with its licence and source page
 {
