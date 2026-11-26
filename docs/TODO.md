@@ -24,6 +24,11 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    a flag only where Street View shows a real pole / flag (look only); the existing cloth flags (viewer/flagsCity.js:
    baked loops, live cloth < 45 m, hidden > 700 m, rule flags-are-cloth); public-domain flag designs; check: one per
    real pole, no flag on a residence without a pole, cost structural (draws / live count).
+   **claude/flags3 (not merged):** pipeline/fetch_diplomatic.py -> 19 OSM places in the commune, each looked at (data/places/
+   embassy_flags.json): 11 fly a flag (14 poles / brackets: UA, HU+EU, BG+EU, RO+EU, KE, SZ, BF, ER, AF, NI, AO), 6 no,
+   2 unseen (blurred / not found); viewer/embassyFlags.js (?embassyflags=0), designs viewer/flags/embassyDesigns.js (PD,
+   emblems simplified), rule embassy-flags, gate row embassyflags. Left: the drawn buildings at several places are generic
+   blocks where the real ones are villas (Hungary, Eswatini: drawn balconies); Romania's garden pole not placed.
 5. Later: TENNIS (owner 2026-11-26: 159 OSM tennis pitches in the area, drawn as ground only today: courts first (lines,
    nets, wind-screen fences, instanced, near only), then an arcade tennis game lab (ball physics, AI, scoring), then E at
    any court; swings: the owner checks Mixamo), then the ideas list.
