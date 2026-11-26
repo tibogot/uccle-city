@@ -76,7 +76,7 @@ import { addLamps } from "./lampLight.js";
 import { installWgslIntern } from "./wgslIntern.js";
 import { installPinBuilds } from "./pinBuilds.js";   // perf5: the shared materials' builds kept (rule shared-node-graph)
 import { installHeapDrop, dropAfterUpload, dropTextureData, heapOn } from "./heapDrop.js";   // heap: CPU copies let go after their upload (docs/HEAP.md)
-import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp, RETIRE_WARM } from "./lodFade.js";
+import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp, RETIRE_WARM, fadeVariant } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
@@ -180,7 +180,8 @@ let compileFor = null;
 // of every rail part (viewer/rail/railway.js railWarmData) as soon as the precompile queue exists: the play loader waits
 // for the queue, so the rail materials' first node builds (40-61 ms, at the first rail tile landing ~7 s into a police
 // drive) are done before the game starts; the stand-in is never in the scene (roSweep releases it, its builds pinned)
-let railWarmed = false;
+let railWarmed = false, kitShadowWarmed = false;
+const KIT_SHADOW_WARM = params.get("kitshadowwarm") !== "old";
 const RAIL_WARM = GAME_START && params.get("railwarm") !== "old";
 const preCompile = async (roots, fading) => {
   if (!compileFor) return;
@@ -1282,6 +1283,16 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
   cityKit.addTile(entry.name, B.kit, B.kitWalls, !fadeIn);       // ?kit=1: its kit fades in with it
+  // (claude/perf6, rule shared-node-graph; ?kitshadowwarm=old: as before) the façade kit walls' FADING copies in the sun's
+  // shadow pass (both of its shared materials, the cut and the far one) were built on the first tile fade while driving
+  // (30-33 ms in that frame, police drive 2026-11-26): the first tile that has kit walls under the play loader warms
+  // them (two stand-ins far under the city, warmup.js warmShadows; the pins keep the builds)
+  if (KIT_SHADOW_WARM && !kitShadowWarmed && B.kitWalls && shadowWarm && playLoader.active) {
+    kitShadowWarmed = true;
+    const kg = new THREE.Group(); kg.name = "kit-walls-fade-warm";
+    for (const m of [B.kitWalls.userData.cutMat, B.kitWalls.userData.plainMat].filter(Boolean)) { const w = new THREE.Mesh(B.kitWalls.geometry, fadeVariant(m)); w.castShadow = true; w.name = "kit-walls-fade-warm"; kg.add(w); }
+    shadowWarm([kg]);
+  }
   const roofStats = cityRoofs.addTile(entry.name, B.roofKit, own.buildings);   // its roof pieces join the roof pools, fading with its buildings
   if (roofStats) say(`roofs: ${roofStats.stacks} stacks (${roofStats.pots} pots), ${Math.round(roofStats.parapetM)} m of parapet, ${roofStats.velux} roof windows, ${roofStats.pv} solar modules on ${roofStats.pvRoofs} roofs, ${roofStats.flatItems} flat-roof pieces`);
   const dispose = () => {
