@@ -24,6 +24,12 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    a flag only where Street View shows a real pole / flag (look only); the existing cloth flags (viewer/flagsCity.js:
    baked loops, live cloth < 45 m, hidden > 700 m, rule flags-are-cloth); public-domain flag designs; check: one per
    real pole, no flag on a residence without a pole, cost structural (draws / live count).
+4b2. ACTIVITIES, one at a time, each self-contained (loaded only where it happens, own perf budget + checks; owner
+   2026-11-26 agreed the order: core city perf + the three games first): (1) SNOOKER in the villa (mouse play: aim,
+   pull back, shoot; real ball physics: collisions, cushions, spin, pockets; no character; loads with the interior);
+   (2) TENNIS (see 5); (3) HORSE RIDING in the woods (Bois de la Cambre next door, Forêt de Soignes partly in the map:
+   extend the map + a forest pass), maybe with the owner's ARROW system: the owner shares the paths to their two
+   other projects (horse + arrows) so we check what can be reused (three.js code carries over, other engines: the logic).
 4c. LATER, after villa V3 is finished (owner 2026-11-26: "first finish the villa we do now to see how far we can go"):
    a BIGGER ESTATE villa with a large domain: from the street you see nothing but tall hedges and a big gate that opens
    onto a long drive up to a huge villa, with a large parking court and the rest of the domain. Reuse villa V3's
