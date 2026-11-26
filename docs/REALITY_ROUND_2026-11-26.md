@@ -185,3 +185,29 @@ flower beds and pollarded planes, hanging flower baskets.
 6. C7 lamp / pole kit, C8 kerb furniture.
 7. C10 1990s estates; C9 tram strip setts.
 8. Re-check the old panoramas (Calevoet 2013, Brugmann 2014, De Fré 2009, Stalle 2010) for newer dates first.
+
+## Follow-up jobs the owner approved ("go ahead with 1 and 3": C1 and C4)
+
+**C1, building types from evidence (`?bldclass=old`, rule bldclass-evidence, row `bldclass`).** data/bldclass/<T>.json
+(tools/bldclass/build_evidence.py) gives each UrbIS solid what open data knows: the Brussels heritage inventory
+(urban.brussels Irismonument, 2,847 Uccle records, CC BY 4.0, facts only: year, style, typology), OSM buildings /
+start_date / school, hospital, worship sites, and a street prior from dated neighbours. viewer/buildingTypes.js classify
+uses it first (near and far tiles): no balcony block for an institution, anything dated before 1946, or a row front /
+small block under a steep pitched roof. Census: balcony blocks 1,856 -> 1,539, steep-roofed 191 -> 17 (15 big free-
+standing blocks left to the draw, 2 dated post-war), 577 buildings change type or wall. Street View spot-check (look
+only), 10 changed buildings: Churchill 4 (1924 flats: maître ✓), Edith Cavell 143 (Beaux-Arts school ✓ after the dated-
+institution clause), Alphonse Renard corner (1925 ✓), Av. Molière 292 (1938 modernist: window bands ✓), Brugmann 304
+(1938 beige modernist ✓), Kinsendael 7 (old outbuilding ✓), Brugmann 291 turret house (✓); wrong and fixed by a clause:
+Churchill 123 (a post-war block took the house beside it), Churchill 242 (a bare 1913 record under a 2010s block),
+Château de Walzin 13 (a 1970s residence with balconies under a steep roof). Fixtures (true balcony blocks): 534086,
+555120, 555004, 535480, 539036. Seen and noted: Xavier De Bue 14 (1975 brutalist) has concrete bands, no balconies (a
+later "post-war bands" refinement). Shots + sheet: C:\Users\tibog\Downloads\uccle-reality\c1\c1_compare.png.
+
+**C4, front-garden boundaries by context (`?frontgarden=old`, rule frontgarden-by-context, row `frontgarden`).**
+tools/gardens/build_gardens.py takes the boundary mix from the house's family (tools/gardens/faces.mjs: the building type
+with the C1 evidence): pre-war rows a low plinth + black railing (+ gate, often a hedge behind) 82 % of their metres,
+solid walls 4 %; post-war fronts hedges / low walls / modern railings; 1990s estates hedges; 163 institution fronts a
+1.4-1.6 m steel bar fence. Family railings have piers at ends, corners and gates, panels up to 8 m (the per-tile pier
+budget). The old data is frozen in data/gardens/fgold. Not done: timber post-and-rail on station / park edges (a new kit
+piece); the Dieweg school's wall is not a garden piece (another kit). Seen while shooting: E3 near (-740, -670) floating
+wall fragments and missing walls, same with every switch old (an existing walls defect, not this job).

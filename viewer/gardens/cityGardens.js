@@ -41,7 +41,10 @@ const HEDGE_COL_OLD = qs.get("hedgecol") === "old";
  *  doors near a run end lost their gate, buildings with the door on a side face had no way in, two coplanar faces of one
  *  wall dropped each other's front, driveway gates 55 % everywhere and never open */
 export const GATES_OLD = qs.get("gates") === "old";
-const DATA = new URL(GATES_OLD ? "../../data/gardens/old/" : "../../data/gardens/", import.meta.url);
+/** ?frontgarden=old (claude/reality1, rule frontgarden-by-context): the garden data before the boundary was chosen by the
+ *  house's family (data/gardens/fgold/: one mix for all, solid walls on pre-war rows, no school fences) */
+export const FRONTGARDEN_OLD = qs.get("frontgarden") === "old";
+const DATA = new URL(GATES_OLD ? "../../data/gardens/old/" : FRONTGARDEN_OLD ? "../../data/gardens/fgold/" : "../../data/gardens/", import.meta.url);
 
 export const cityGardens = {
   on: qs.get("gardens") !== "0",          // ON by default again (2026-11-14, claude/gather-perf): the pools stream time-sliced (viewer/instanceStream.js; driving: gardens on = off within noise, docs/perf/AUDIT.md "instance pools"); ?gardens=0 off
