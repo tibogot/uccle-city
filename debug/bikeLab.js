@@ -533,7 +533,7 @@ renderer.setAnimationLoop(() => {
   physMs = physMs * 0.95 + (performance.now() - t0) * 0.05;
   bikePose(s, P.pause ? 1 : s.alpha, pose);
   model.update(s, pose, groundAt);
-  K.bmx?.update(s, camera.position.distanceTo(model.root.position));
+  K.bmx?.update(s, camera.position.distanceTo(model.root.position), groundAt);
   const tk = performance.now();
   if (K.on) {
     const tp = K.tp, root = tp.body.root, R = K.rider, st = mount.state;

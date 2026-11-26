@@ -101,8 +101,10 @@ export function parkStep(M, s, dt, groundY) {
   if (groundY !== undefined) {
     // (the CoM over the ground: upright = rest height, lying = on its side)
     const lieK = Math.min(1, Math.abs(s.lean) / 1.45);
-    s.y = groundY + (0.92 * (1 - lieK) + 0.25 * lieK);
+    s.y = groundY + (0.95 * (1 - lieK) + 0.25 * lieK);
   }
+  // (the drawn bike rests on its lowest points: viewer/kid/bmxModel.js grounds it while parked; no spring compression)
+  s.parked = true; if (s.comp) s.comp[0] = s.comp[1] = 0; if (s.pen) s.pen[0] = s.pen[1] = 0; if (s.contact) s.contact[0] = s.contact[1] = false;
   p.x = s.x; p.y = s.y; p.z = s.z; p.heading = s.heading; p.lean = s.lean; p.pitch = s.pitch;
   s.alpha = 1;
   return s;

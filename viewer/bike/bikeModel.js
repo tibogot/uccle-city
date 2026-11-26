@@ -127,8 +127,29 @@ export function createBikeModel(B = BIKE, { rider = true } = {}) {
       root.rotation.y = pose.heading;
       const tricked = s.trick;
       leanG.rotation.z = -pose.lean;
-      pitchG.rotation.x = -pose.pitch;
-      bikeG.position.y = -legs;
+      // (wheels-on-ground, owner 2026-11-26: "the BMX wheels are inside the ground". The physics' contacts are springs:
+      // each wheel PENETRATES the ground by its compression (2.9 cm static sag, more on a landing). The drawn bike is
+      // rigid, so it is drawn on its tyres: lifted by the mean compression, pitched by the difference)
+      // (solved exactly for the pitched, leaned frame: a lift l along the frame's up and a turn d about its origin raise
+      // the hubs by l cos(a) - z'_k d, z'_k the hub's forward offset; leaning shrinks both by cos(lean))
+      // (the penetration measured HERE, on the drawn pose: the step's own value is one 1/120 s step old, 1-1.5 cm on a
+      // landing or a kerb; with no ground function, the step's)
+      const cl = Math.max(0.2, Math.cos(pose.lean || 0));
+      const pt = Math.cos(pose.pitch), ps = Math.sin(pose.pitch), bH = -(H - R + legs), hS = Math.sin(pose.heading), hC = Math.cos(pose.heading);
+      const penAt = (k) => {
+        if (s.parked) return 0;
+        if (!groundAt || groundAt.length === 0) return s.contact?.[k] ? (s.pen?.[k] ?? s.comp?.[k] ?? 0) : 0;
+        const a = k === 0 ? L / 2 : -L / 2, rf = a * pt - bH * ps, hu = a * ps + bH * pt;
+        const g = groundAt(pose.x + hS * rf, pose.z + hC * rf);
+        const p = (g + R * (s.rk?.[k] ?? 1)) - (pose.y + hu);
+        return p > 0 && p < 0.3 ? p : 0;
+      };
+      const cF = penAt(0) / cl, cR = penAt(1) / cl;
+      const a0 = -pose.pitch, yh = -H + R - legs, ca = Math.cos(a0), sa = Math.sin(a0);
+      const zF = yh * sa + (L / 2) * ca, zR = yh * sa - (L / 2) * ca;
+      const dd = (cR - cF) / (zF - zR), lift = (cF + zF * dd) / Math.max(0.2, ca);
+      pitchG.rotation.x = a0 + dd;
+      bikeG.position.y = -legs + lift;
       // the trick (placeholder tabletop): the bike laid flat to one side under the kid
       bikeG.rotation.z = -tricked * 0.9;
       frontG.rotation.y = s.steerAngle;

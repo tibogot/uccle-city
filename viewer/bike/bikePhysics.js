@@ -244,7 +244,7 @@ export function createBikeState(x, z, heading, groundY = 0, B = BIKE) {
     vx: 0, vz: 0, vy: 0, pitch: 0, pitchVel: 0, yawVel: 0,
     lean: 0, leanTarget: 0, steerAngle: 0, legs: 0, legVel: 0, legSpeed: 0,
     // per wheel: [front, rear]
-    contact: [false, false], comp: [0, 0], wheelBot: [groundY, groundY], wheelPos: [x, z, x, z], ground: [0, 0], surf: [0, 0], slope: [0, 0], wheelY: [0, 0],
+    contact: [false, false], comp: [0, 0], pen: [0, 0], parked: false, wheelBot: [groundY, groundY], wheelPos: [x, z, x, z], ground: [0, 0], surf: [0, 0], slope: [0, 0], wheelY: [0, 0],
     spin: [0, 0],            // wheel rotation (rad), for the model
     crank: 0, cadence: 0, pedalling: 0, sprint: 0,
     preload: 0, hopHeld: false, hops: 0, pumps: 0, popT: 0, hopT: 9, sinceContact: 0,
@@ -488,7 +488,7 @@ function savePrev(s) { const p = s.prev; p.x = s.x; p.y = s.y; p.z = s.z; p.head
  */
 export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   const dt = DT, g = B.gravity;
-  s.t += dt; s.steps++;
+  s.t += dt; s.steps++; s.parked = false;
   savePrev(s);
   if (!(s._prepX === s._prepX) || Math.abs(s.x - s._prepX) + Math.abs(s.z - s._prepZ) > 1) {
     env.prepare?.(s);              // (its reach from s itself: no double argument to box)
@@ -709,7 +709,7 @@ function contactPhase(s, w, env, B, S) {
     // (the park) the wheel's touch on a slope: R / cos(slope) under the hub, eased (the step's own contacts keep this
     // step's value: wheelOffsets is re-run by the next step)
     { const rkT = Math.sqrt(1 + (sl > 3 ? 9 : sl < -3 ? 9 : sl * sl)); s.rk[i] += (rkT - s.rk[i]) * 0.25; }
-    if (pen <= 0) { s.comp[i] = 0; continue; }
+    if (pen <= 0) { s.comp[i] = 0; if (s.pen) s.pen[i] = 0; continue; }
     nCount++;
     const inv = 1 / Math.sqrt(1 + sl * sl), nF = -sl * inv, nU = inv;
     // the contact point's velocity: CoM + pitch rate x r + the legs
@@ -726,6 +726,7 @@ function contactPhase(s, w, env, B, S) {
     const surfP = S[q.surf] || S[0], mu = surfP.grip * B.grip;
     if (i === 0) { fnF = Fn; muF = mu; } else { fnR = Fn; muR = mu; }
     s.comp[i] = Math.min(pen, B.maxComp);
+    s.pen[i] = pen;            // (uncapped: the drawn bike rides on its tyres, viewer/bike/bikeModel.js)
     aF += Fn * nF; aY += Fn * nU;
     // (the park: the normal's SIDEWAYS part - a berm pushes the bike into its turn, a cross slope down itself)
     aL += Fn * (q.nx * lx + q.nz * lz);

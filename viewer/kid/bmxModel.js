@@ -79,8 +79,9 @@ export async function loadBmx(renderer, ph, { colourway = null } = {}) {
     root, empties, meta, mats, setColourway, setLod, setSeatPost,
     get lod() { return lod; },
     info: { tris: meta.lods?.triangles, colourways: Object.keys(meta.colourways || {}) },
-    update(s, camDist = 0) {
+    update(s, camDist = 0, groundAt = null) {
       rig.update(s);
+      rig.ground(s, groundAt);
       // LOD with hysteresis (1.5 m)
       const want = camDist < BMX_LOD[0] ? 0 : camDist < BMX_LOD[1] ? 1 : 2;
       if (want !== lod && Math.abs(camDist - BMX_LOD[Math.min(lod, want)]) > 1.5) setLod(want);
@@ -105,8 +106,30 @@ export function rigBmx(root, meta, ph) {
   const ch = meta?.chain || { ringPitchRadius: 0.08901, uvPerMetre: 39.1979 };
   let lastCrank = null;
   const rot = (p, axis, a) => { if (p) p.o.quaternion.copy(p.rest).multiply(_q.setFromAxisAngle(axis, a)); };
+  // (wheels-on-ground: parked or lying, the physics has no contacts: the drawn bike is set down so its lowest point -
+  // a tyre's tread, a grip, a pedal, the saddle - touches the ground under it: standing on its tyres, lying on its side
+  // on the bar end + pedal + tyre wall. Before: lying, its CoM height put the whole bike 72 cm under the ground)
+  const RW = meta?.dims?.wheelR || 0.254, wheelsN = [N("Wheel_F"), N("Wheel_R")], restPts = ["Grip_L", "Grip_R", "Foot_L", "Foot_R", "Seat"].map(N).filter(Boolean);
+  const _w = new THREE.Vector3();
+  const lowest = (groundAt) => {
+    let lo = Infinity;
+    for (const w of wheelsN) if (w) for (let a = 0; a < 24; a++) for (const x of [-0.025, 0.025]) {
+      const t = a / 24 * Math.PI * 2; _w.set(x, Math.cos(t) * RW, Math.sin(t) * RW).applyMatrix4(w.matrixWorld);
+      lo = Math.min(lo, _w.y - groundAt(_w.x, _w.z));
+    }
+    for (const o of restPts) { o.getWorldPosition(_w); lo = Math.min(lo, _w.y - groundAt(_w.x, _w.z)); }
+    return lo;
+  };
   const rig = {
     empties, parts, chainTex: null,
+    /** parked: set the drawn bike down on its lowest point (ph.root moved in y); call after ph.update + rig.update */
+    ground(s, groundAt) {
+      if (!s.parked || !groundAt) return 0;
+      let lift = 0;
+      for (let k = 0; k < 2; k++) { ph.root.updateMatrixWorld(true); const lo = lowest(groundAt); ph.root.position.y -= lo; lift -= lo; }
+      ph.root.updateMatrixWorld(true);
+      return lift;
+    },
     update(s) {
       rot(parts.Steer, _Y, s.steerAngle || 0);
       rot(parts.Wheel_F, _X, s.spin?.[0] || 0); rot(parts.Wheel_R, _X, s.spin?.[1] || 0);
