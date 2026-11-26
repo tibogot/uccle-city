@@ -41,7 +41,10 @@ const HEDGE_COL_OLD = qs.get("hedgecol") === "old";
  *  doors near a run end lost their gate, buildings with the door on a side face had no way in, two coplanar faces of one
  *  wall dropped each other's front, driveway gates 55 % everywhere and never open */
 export const GATES_OLD = qs.get("gates") === "old";
-const DATA = new URL(GATES_OLD ? "../../data/gardens/old/" : "../../data/gardens/", import.meta.url);
+/** ?frontgarden=old (claude/reality1, rule frontgarden-by-context): the garden data before the boundary was chosen by the
+ *  house's family (data/gardens/fgold/: one mix for all, solid walls on pre-war rows, no school fences) */
+export const FRONTGARDEN_OLD = qs.get("frontgarden") === "old";
+const DATA = new URL(GATES_OLD ? "../../data/gardens/old/" : FRONTGARDEN_OLD ? "../../data/gardens/fgold/" : "../../data/gardens/", import.meta.url);
 
 export const cityGardens = {
   on: qs.get("gardens") !== "0",          // ON by default again (2026-11-14, claude/gather-perf): the pools stream time-sliced (viewer/instanceStream.js; driving: gardens on = off within noise, docs/perf/AUDIT.md "instance pools"); ?gardens=0 off
@@ -87,6 +90,10 @@ export const cityGardens = {
     // Saint-Job station deck: the UrbIS street surfaces the build read predate the 2025 deck); ?gardenroad=old: as before
     const dropped = blocked && !GARDEN_ROAD_OLD ? yield* clearRoadsGen(doc, blocked, { old: GARDEN_LANE_OLD }) : 0;
     if (dropped) doc = dropped.doc;
+    // villa3 job 5: extra hedge runs a landmark brings (the villa's, viewer/villa/villaPlot.js VILLA_HEDGE_RUNS), added
+    // AFTER the clear rings / the carriageway test: the same modules, LODs, cards and colliders as every city hedge
+    const ex = this.extraHedges?.[name];
+    if (ex?.length) doc = { ...doc, hedges: [...(doc.hedges || []), ...ex] };
     yield;
     const g = yield* gardenInstancesGen(doc, groundAt, { hedgeFronts: this.hedges, hedges: this.hedges });
     yield;

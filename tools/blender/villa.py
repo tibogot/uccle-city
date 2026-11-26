@@ -25,6 +25,10 @@ import bpy, bmesh, math, os, sys, json, time, random
 from mathutils import Vector, Matrix
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import interior_kit as K
+import villa_bed as VB
+import villa_seating as VS
+import villa_pool as VP
+import villa_art as VA
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 def arg(k, d=None): return ARGS[ARGS.index(k) + 1] if k in ARGS else d
@@ -84,9 +88,12 @@ GATE = dict(w0=17.2, w1=23.2, h=1.9)
 STAIR = dict(u0=21.42, w0=9.8, w1=11.0, n=22, going=0.28)       # the hall's floating stair (22 risers GL -> F1)
 RISE = (F1 - GL) / STAIR["n"]
 
-EXT_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves"]
-INT_SLOTS = ["plaster_white", "oak_plank", "walnut", "marble_white", "stone_floor", "fabric_white", "fabric_grey", "leather", "brass",
+EXT_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves", "sculpture"]
+# villa3: the three fabric slots (fabric_white / fabric_grey / leather) merged into ONE textured slot `props` (the fabric
+# scans' KTX2 array, a tint + a scan layer per code: viewer/villa/villaInterior.js PROPS): 16 -> 14 interior draws
+INT_SLOTS = ["plaster_white", "oak_plank", "walnut", "marble_white", "stone_floor", "props", "brass",
              "metal_black", "glow", "plant", "ceramic_white", "books", "art", "glass_window"]
+PROPS_OLD = {"fabric_white": 0, "fabric_grey": 1, "leather": 2}          # their plain code in props (channel 14 / rug 15 kept)
 CODES = ["plain", "reveal", "plinth", "coping", "step", "slat", "frame", "door", "soffit", "roof", "garage", "led", "fire", "screen",
          "channel", "rug"]
 C = {n: i for i, n in enumerate(CODES)}
@@ -105,6 +112,8 @@ class Acc:
         self.name = name; self.slots = slots
         self.v = []; self.f = []; self.fs = []; self.fc = []; self.fuv = []; self.sm = []
     def poly(self, pts, slot, code=0, normal=None, uvs=None, smooth=False):
+        if isinstance(slot, str) and slot in PROPS_OLD and slot not in self.slots:
+            code = code if code in (C["channel"], C["rug"]) else PROPS_OLD[slot]; slot = "props"
         pts = [Vector(p) for p in pts]
         if len(pts) < 3: return
         n = (pts[1] - pts[0]).cross(pts[2] - pts[0])
@@ -130,10 +139,11 @@ class Acc:
                 self.poly([q(s0, t0), q(s1, t0), q(s1, t1), q(s0, t1)], slot, code, normal)
     def emit(self, bm, slot, code, M, smooth=False):
         """a kit piece (bmesh in its own frame) placed by M; UV0 box-projected in the piece frame"""
+        uvl = bm.loops.layers.uv.active          # (villa3: a piece with its own UV, metres: the cloth keeps it)
         for fa in bm.faces:
             n = fa.normal
             pts = [M @ l.vert.co for l in fa.loops]
-            uvs = [K.box_uv(l.vert.co, n) for l in fa.loops]
+            uvs = [tuple(l[uvl].uv) for l in fa.loops] if uvl is not None else [K.box_uv(l.vert.co, n) for l in fa.loops]
             sl = slot(fa) if callable(slot) else slot
             self.poly(pts, sl, code, None, uvs, smooth)
             # (winding kept as the piece's: recalc_face_normals made it outward)
@@ -239,12 +249,14 @@ def pane(acc, axis, c, hole, out, slot, code=0):
     if axis == "u": acc.rect(P(c, a0, h0), P(c, a1, h0), P(c, a1, h1), P(c, a0, h1), slot, code, nrm)
     else: acc.rect(P(a0, c, h0), P(a1, c, h0), P(a1, c, h1), P(a0, c, h1), slot, code, nrm)
 
-def frames(acc, axis, c, hole, mull=1.6, transom=None, t=0.06, d=0.10, slot="metal_dark"):
+GASKET = [0]
+def frames(acc, axis, c, hole, mull=1.6, transom=None, t=0.06, d=0.14, slot="metal_dark"):
     """an aluminium frame round a hole at the glass plane c, mullions every ~mull m, transoms at the given heights"""
     a0, a1, h0, h1 = hole
     def bx(x0, x1, y0, y1):
-        if axis == "u": bbox(acc, c - d / 2, c + d / 2, x0, x1, y0, y1, slot, C["frame"], bevel=0.004, seg=1, skip_down=False)
-        else: bbox(acc, x0, x1, c - d / 2, c + d / 2, y0, y1, slot, C["frame"], bevel=0.004, seg=1, skip_down=False)
+        # (villa3: 14 cm deep, an 8 mm chamfer: the profile reads as a solid aluminium section, its edges catch the light)
+        if axis == "u": bbox(acc, c - d / 2, c + d / 2, x0, x1, y0, y1, slot, C["frame"], bevel=0.008, seg=1, skip_down=False)
+        else: bbox(acc, x0, x1, c - d / 2, c + d / 2, y0, y1, slot, C["frame"], bevel=0.008, seg=1, skip_down=False)
     bx(a0, a0 + t, h0, h1); bx(a1 - t, a1, h0, h1)
     bx(a0 + t, a1 - t, h0, h0 + t); bx(a0 + t, a1 - t, h1 - t, h1)
     n = max(1, round((a1 - a0) / mull))
@@ -256,9 +268,33 @@ def frames(acc, axis, c, hole, mull=1.6, transom=None, t=0.06, d=0.10, slot="met
         for xa, xb in zip(xs[0::2], xs[1::2]):
             if axis == "u": bbox(acc, c - d * 0.42, c + d * 0.42, xa, xb, y - t / 2, y + t / 2, slot, C["frame"], bevel=0.004, seg=1, skip_down=False)
             else: bbox(acc, xa, xb, c - d * 0.42, c + d * 0.42, y - t / 2, y + t / 2, slot, C["frame"], bevel=0.004, seg=1, skip_down=False)
+    # villa3 job 2: the glazing GASKET round every field, both faces of the glass (an 8 mm dark line 2 mm off the pane,
+    # 1 mm clear of the frame): the line where a real unit meets its frame (the owner: no spacer / edge line). Plain
+    # strips, three faces each (the face to the glass and the ends are never seen): ~48 triangles a field
+    xs = [a0 + t] + [a0 + (a1 - a0) * k / n + s_ * t / 2 for k in range(1, n) for s_ in (-1, 1)] + [a1 - t]
+    ys = [h0 + t] + [y + s_ * t / 2 for y in (transom or []) for s_ in (-1, 1)] + [h1 - t]
+    g, e0, e1 = 0.008, 0.002, 0.007
+    for xa, xb in zip(xs[0::2], xs[1::2]):
+        for ya, yb in zip(ys[0::2], ys[1::2]):
+            xa_, xb_, ya_, yb_ = xa + 0.001, xb - 0.001, ya + 0.001, yb - 0.001
+            for sd in (1, -1):
+                d0, d1 = (c + e0, c + e1) if sd > 0 else (c - e1, c - e0)
+                near = ("-u" if sd > 0 else "+u") if axis == "u" else ("-w" if sd > 0 else "+w")
+                strips = [(xa_, xb_, ya_, ya_ + g, ("-a", "+a")), (xa_, xb_, yb_ - g, yb_, ("-a", "+a")),
+                          (xa_, xa_ + g, ya_ + g, yb_ - g, ("-h", "+h")), (xb_ - g, xb_, ya_ + g, yb_ - g, ("-h", "+h"))]
+                for (p0, p1, q0, q1, ends) in strips:
+                    along = "w" if axis == "u" else "u"
+                    sk = [near] + [s.replace("a", along) for s in ends]
+                    if axis == "u": box(acc, d0, d1, p0, p1, q0, q1, slot, C["plinth"], skip=tuple(sk))
+                    else: box(acc, p0, p1, d0, d1, q0, q1, slot, C["plinth"], skip=tuple(sk))
+                    GASKET[0] += 1
 
 # ================================================================================================ THE EXTERIOR (LOD0)
 EX = Acc("Villa", EXT_SLOTS)
+ART = [Acc("Villa_art", EXT_SLOTS), Acc("Villa_art_lod1", EXT_SLOTS), Acc("Villa_art_lod2", EXT_SLOTS)]   # villa3 job 4: the sculptures, per level
+ART_INFO = {"lights": [], "contact": []}
+KIT = Acc("Villa_kit", EXT_SLOTS)                # villa3 job 3: the pool kit + the jointed coping (near only: shown with LOD0)
+KIT_CONTACT = []
 IVY = Acc("Villa_ivy", EXT_SLOTS)                # (the climbers' leaf cards: their own node, audited apart: cards overlap by design)
 GLS = Acc("Villa_glass_tmp", EXT_SLOTS)          # (merged into EX: kept apart only to count)
 ML = 0.7                                         # exterior densify (per-vertex AO)
@@ -288,6 +324,9 @@ def plinth_bot(axis, c, out):
         return gmin(x0, x1, min(c, c - out * 0.6), max(c, c - out * 0.6), pad=0.05) - SINK
     return f
 
+# villa3 job 5 (rule villa-garden-city-kit): the villa's hedges are the CITY's hedge modules (viewer/villa/villaPlot.js
+# VILLA_HEDGE_RUNS -> viewer/gardens/gardenHedge.js); the owner: "big blocks, not natural". CITY_HEDGES = False = the boxes
+CITY_HEDGES = os.environ.get("VILLA_BOX_HEDGES") != "1"
 # ---- clipped hedges along the sides and the back of the plot (on the ground, sunk)
 def hedge(axis, c, a0, a1, thick=1.0, hgt=2.3):
     n_ = max(1, math.ceil((a1 - a0) / 2.0))
@@ -508,9 +547,9 @@ def exterior():
         else:           # the house number "18" (fictional) in bright bars on a dark plate
             bbox(EX, WALL_U - 0.13, WALL_U - 0.1, a + 0.05, b - 0.05, top - 0.95, top - 0.55, "metal_dark", C["frame"], 0.004, 1, False)
             digits(EX, WALL_U - 0.13, (a + b) / 2, top - 0.9, 0.3)
-    for (a, b) in ((-32.95, -0.9), (GATE["w1"] + 0.6, 28.95)):
+    for (a, b) in ((-32.95, -0.9), (GATE["w1"] + 0.6, 28.95)) if not CITY_HEDGES else ():
         hedge("u", WALL_U + 0.8, a, b, thick=0.9, hgt=1.9)
-    hedge("u", 13.55, -22.8, -1.2, thick=0.7, hgt=0.85)
+    if not CITY_HEDGES: hedge("u", 13.55, -22.8, -1.2, thick=0.7, hgt=0.85)
     for (w0_, w1_, ht) in ((-19.6, -17.3, 4.8), (-15.5, -12.9, 5.6), (-11.1, -8.4, 3.6)):
         climber(IVY, GF["u0"], w0_, w1_, GL - 0.1, GL + ht, seed=int(-w0_ * 10))
     # ---- the terrace (blue stone) with the pool, its steps down to the lawn, the pergola
@@ -530,10 +569,17 @@ def exterior():
     for (ax_, c, a0, a1, o) in (("u", t["u1"], t["w0"], t["w1"], 1), ("w", t["w0"], t["u0"], t["u1"], -1), ("w", t["w1"], t["u0"], t["u1"], 1)):
         wall(EX, ax_, c, a0, a1, plinth_bot(ax_, c, o), top_, [(-1.0, 5.0, -1e3, GL - rs)] if (ax_ == "u") else [], o, "stone_blue", C["plinth"], ML,
              extra=[p["w0"] - ci, p["w1"] + ci] if ax_ == "u" else [p["u0"] - ci, p["u1"] + ci])
-    # coping round the pool (bevelled, 2 cm proud, 3 cm over the water's edge)
+    # coping round the pool (2 cm proud, 3 cm over the water's edge). villa3 job 3: STONES, ~0.6 m with 4 mm joints, a
+    # 15 mm round-over (the bullnose reads at play distance), in the near-only kit node Villa_kit (round 2: four long
+    # bars, no joint)
     for (a, b, c_, d) in ((p["u0"] - cp, p["u1"] + cp, p["w0"] - cp, p["w0"] + 0.03), (p["u0"] - cp, p["u1"] + cp, p["w1"] - 0.03, p["w1"] + cp),
                           (p["u0"] - cp, p["u0"] + 0.03, p["w0"] + 0.03, p["w1"] - 0.03), (p["u1"] - 0.03, p["u1"] + cp, p["w0"] + 0.03, p["w1"] - 0.03)):
-        bbox(EX, a, b, c_, d, top_ - 0.04, top_ + 0.02, "stone_blue", C["coping"], 0.008, 2, False)
+        along_u = (b - a) > (d - c_)
+        L_ = (b - a) if along_u else (d - c_); n_ = max(1, round(L_ / 0.6)); st = L_ / n_
+        for k in range(n_):
+            s0 = (a if along_u else c_) + k * st; s1 = s0 + st - (0.004 if k < n_ - 1 else 0.0)
+            if along_u: bbox(KIT, s0, s1, c_, d, top_ - 0.04, top_ + 0.02, "stone_blue", C["coping"], 0.015, 1, False)
+            else: bbox(KIT, a, b, s0, s1, top_ - 0.04, top_ + 0.02, "stone_blue", C["coping"], 0.015, 1, False)
     # the basin's walls above the waterline (the water's own shader draws the basin below it)
     for (ax_, c, a0, a1, o) in (("u", p["u0"], p["w0"], p["w1"], 1), ("u", p["u1"], p["w0"], p["w1"], -1), ("w", p["w0"], p["u0"], p["u1"], 1), ("w", p["w1"], p["u0"], p["u1"], -1)):
         wall(EX, ax_, c, a0, a1, p["water"] - 0.06, top_ - 0.04, [], o, "stone_blue", C["coping"])
@@ -548,16 +594,58 @@ def exterior():
     for u in (39.5, 41.8):
         for w in (8.5, 11.0, 13.5):
             EX.rect(P(u - 0.07, w - 0.07, ph - 0.004), P(u + 0.07, w - 0.07, ph - 0.004), P(u + 0.07, w + 0.07, ph - 0.004), P(u - 0.07, w + 0.07, ph - 0.004), "glow", C["led"], (0, 0, -1))
+    # ---- villa3 job 3: THE POOL KIT (Villa_kit: near only, one draw per slot): a ladder, four loungers, a parasol, three
+    # planters, and a clipped hedge skirt on the lawn round the terrace (the deck stood as a 0.7 m black block in the lawn)
+    def kit_put(parts, u, w, h, face, foot=None):
+        M = M_at(u, w, h, face)
+        for bm, slot, code in parts: KIT.emit(bm, slot, code, M, slot in ("concrete_soffit", "hedge") or code == VP.STAINLESS)
+        if foot: KIT_CONTACT.append({"u": [round(u - foot[0], 3), round(u + foot[0], 3)], "w": [round(w - foot[1], 3), round(w + foot[1], 3)], "y": round(h - OY, 3)})
+    kit_put(VP.ladder(), p["u1"], -12.0, p["water"], (1, 0))
+    for w_ in (-11.5, -8.0): kit_put(VP.lounger(), 43.95, w_, GL, (0, 1), (0.31, 0.95))
+    kit_put(VP.parasol(), 43.95, -9.75, GL, (0, 1), (0.26, 0.26))
+    for w_ in (9.2, 10.4): kit_put(VP.lounger(), 40.8, w_, GL, (1, 0), (0.95, 0.31))
+    for (u_, w_) in ((36.5, -16.5), (44.05, -16.5), (44.05, 15.5)): kit_put(VP.planter(), u_, w_, GL, (0, 1), (0.26, 0.26))
+    # ---- villa3 job 4: THREE SCULPTURES (CC0 scans, tools/blender/villa_art.py) on pale stone plinths in the lawn, where
+    # they read from the house and the terrace (the pool's axis, the two lawn corners), clear of the steps' walk (w -1 .. 5)
+    # and of the hedges; a small ground uplight in front of each (metal_dark, its lens code led: emissive at night)
+    for (k, u_, w_, rot, (pa, pb, ph_)) in ((0, 47.6, 10.2, -90.0, (0.22, 0.22, 1.12)), (1, 50.8, -23.6, -60.0, (0.62, 0.42, 0.55)), (2, 54.2, -6.0, -90.0, (0.8, 0.8, 0.32))):
+        gb_ = gmin(u_ - pa, u_ + pa, w_ - pb, w_ + pb, pad=0.1) - SINK; top = gmax(u_ - pa, u_ + pa, w_ - pb, w_ + pb) + ph_
+        bbox(KIT, u_ - pa, u_ + pa, w_ - pb, w_ + pb, gb_, top - 0.04, "concrete_soffit", C["plinth"], 0.01, 1)
+        bbox(KIT, u_ - pa - 0.03, u_ + pa + 0.03, w_ - pb - 0.03, w_ + pb + 0.03, top - 0.04, top, "concrete_soffit", C["coping"], 0.008, 1, False)   # (a cap stone, 3 cm proud)
+        for lev in range(3):
+            bm = VA.statue(k, lev)
+            M = Matrix.Translation(P(u_, w_, top)) @ Matrix.Rotation(math.radians(rot), 4, "Z")
+            ART[lev].emit(bm, "sculpture", k, M, True)
+        su, sw = u_ - pa - 0.75, w_                                     # the uplight: 0.75 m in front (toward the house)
+        gl_ = gmax(su - 0.08, su + 0.08, sw - 0.08, sw + 0.08)
+        bbox(KIT, su - 0.07, su + 0.07, sw - 0.07, sw + 0.07, gmin(su - 0.07, su + 0.07, sw - 0.07, sw + 0.07, pad=0.05) - SINK, gl_ + 0.06, "metal_dark", 0, 0.006, 1)
+        KIT.rect(P(su - 0.05, sw - 0.05, gl_ + 0.061), P(su + 0.05, sw - 0.05, gl_ + 0.061), P(su + 0.05, sw + 0.05, gl_ + 0.061), P(su - 0.05, sw + 0.05, gl_ + 0.061), "metal_dark", C["led"], (0, 0, 1))
+        sx, sy, sz = VA.size(k)
+        ART_INFO["lights"].append({"at": [round(su, 3), round(gl_ + 0.07 - OY, 3), round(sw, 3)], "top": round(top - OY, 3), "h": round(sz, 3)})
+        rr = max(sx, sy) / 2 + 0.02                                       # (the statue's whole plan: the horse stands on its hooves, not its belly)
+        ART_INFO["contact"].append({"u": [round(u_ - rr, 3), round(u_ + rr, 3)], "w": [round(w_ - rr, 3), round(w_ + rr, 3)], "y": round(top - OY, 3), "k": k})
+    for (axis, c, a0, a1) in (("u", t["u1"] + 0.38, t["w0"] - 0.68, -1.15), ("u", t["u1"] + 0.38, 5.15, t["w1"] + 0.68), ("w", t["w0"] - 0.38, t["u0"] + 0.5, t["u1"] + 0.08), ("w", t["w1"] + 0.38, t["u0"] + 0.5, t["u1"] + 0.08)) if not CITY_HEDGES else ():
+        nseg = max(1, math.ceil((a1 - a0) / 2.0))
+        for k in range(nseg):
+            x0, x1 = a0 + (a1 - a0) * k / nseg, a0 + (a1 - a0) * (k + 1) / nseg - 0.001
+            if axis == "u":
+                gb_ = gmin(c - 0.3, c + 0.3, x0, x1, pad=0.1) - SINK; gt = gmax(c - 0.3, c + 0.3, x0, x1) + 0.62
+                bbox(KIT, c - 0.3, c + 0.3, x0, x1, gb_, gt, "hedge", 0, 0.1, 1)
+            else:
+                gb_ = gmin(x0, x1, c - 0.3, c + 0.3, pad=0.1) - SINK; gt = gmax(x0, x1, c - 0.3, c + 0.3) + 0.62
+                bbox(KIT, x0, x1, c - 0.3, c + 0.3, gb_, gt, "hedge", 0, 0.1, 1)
     plot = SITE["plot"]
-    hedge("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"])
-    hedge("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"])
-    hedge("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0)
+    if not CITY_HEDGES:
+        hedge("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"])
+        hedge("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"])
+        hedge("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0)
 
 STEPS_INFO = {}
 exterior()
 for k in range(len(GLS.f)):            # the glass into the exterior object (its own slot: one primitive)
     pass
 print(f"exterior LOD0: {len(EX.f)} faces + glass {len(GLS.f)} ({time.time() - T0:.1f}s)")
+print(f"gasket strips: {GASKET[0]}")
 
 # ------------------------------------------------------------------------------------------------ the far variant
 FAR = Acc("Villa_far", EXT_SLOTS)
@@ -609,7 +697,7 @@ def far():
     for (a, b) in ((-34.0, GATE["w0"] - 0.5), (GATE["w1"] + 0.5, 30.0)):
         box(FAR, WALL_U, WALL_U + 0.3, a, b, gmin(WALL_U, WALL_U + 0.3, a, b, 0.2) - SINK, gmax(WALL_U, WALL_U + 0.3, a, b) + 1.75, "render_white", 0, skip=("-h",))
     plot = SITE["plot"]
-    for (ax_, c, a0, a1) in (("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"]), ("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"]), ("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0)):
+    for (ax_, c, a0, a1) in (("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"]), ("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"]), ("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0)) if not CITY_HEDGES else ():
         if ax_ == "w": box(FAR, a0, a1, c - 0.5, c + 0.5, gmin(a0, a1, c - 0.5, c + 0.5, 0.1) - SINK, gmax(a0, a1, c - 0.5, c + 0.5) + 2.3, "hedge", 0, skip=("-h",))
         else: box(FAR, c - 0.5, c + 0.5, a0, a1, gmin(c - 0.5, c + 0.5, a0, a1, 0.1) - SINK, gmax(c - 0.5, c + 0.5, a0, a1) + 2.3, "hedge", 0, skip=("-h",))
 far()
@@ -776,13 +864,15 @@ def lod1():
     for (a, b) in ((GATE["w0"] - 0.5, GATE["w0"]), (GATE["w1"], GATE["w1"] + 0.5)):
         top = round(gmax(WALL_U, WALL_U + 0.3, a, b) + 2.05, 2)
         box(L1, WALL_U - 0.1, WALL_U + 0.4, a, b, gmin(WALL_U - 0.1, WALL_U + 0.4, a, b) - SINK, top, "stone_blue", C["plinth"], skip=("-h",))
-    for (a, b) in ((-32.95, -0.9), (GATE["w1"] + 0.6, 28.95)):
+    for (a, b) in ((-32.95, -0.9), (GATE["w1"] + 0.6, 28.95)) if not CITY_HEDGES else ():
         lbox_run("u", WALL_U + 0.8, a, b, 0.9, 1.9)
-    lbox_run("u", 13.55, -22.8, -1.2, 0.7, 0.85)
     plot = SITE["plot"]
-    lbox_run("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"], 1.0, 2.3)
-    lbox_run("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"], 1.0, 2.3)
-    lbox_run("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0, 1.0, 2.3)
+    if CITY_HEDGES: pass
+    else:
+      lbox_run("u", 13.55, -22.8, -1.2, 0.7, 0.85)
+      lbox_run("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"], 1.0, 2.3)
+      lbox_run("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"], 1.0, 2.3)
+      lbox_run("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0, 1.0, 2.3)
     # ---- the terrace, the pool's coping and basin rim, the steps to the lawn, the pergola
     t = TER; p = POOL; cp = 0.35; ci = 0.05
     for (a, b, c_, d) in ((t["u0"], p["u0"] - ci, t["w0"], t["w1"]), (p["u1"] + ci, t["u1"], t["w0"], -1.0), (p["u1"] + ci, t["u1"], -1.0, 5.0), (p["u1"] + ci, t["u1"], 5.0, t["w1"]),
@@ -893,10 +983,17 @@ def put(parts, u, w, h, face=(0.0, 1.0), smooth=True, s=None, colb=None):
             slot, code = KIT[slot], (0 if leafy else 1)
         if slot == "walnut" and kit_piece(parts): slot = "plant"
         IN.emit(bm, slot, code, M, smooth and slot in SOFT_SLOTS)
+    if colb and CONTACT_ON[0]: CONTACT_SRC.append((u, w, h, face, colb))
     if kit_piece(parts): PLANTS.append((u, w, h))
     if colb: colbox(u - colb[0], u + colb[0], w - colb[1], w + colb[1], h, h + colb[2])
 
-SOFT_SLOTS = ("fabric_white", "fabric_grey", "leather", "plant", "glow", "ceramic_white")     # smooth-shaded; everything else flat
+SOFT_SLOTS = ("props", "fabric_white", "fabric_grey", "leather", "plant", "glow", "ceramic_white")     # smooth-shaded; everything else flat
+REFL_PROBES = []                                     # villa3 job 2: (name, (u, w, h)) panoramas for the TV / the mirror
+MIRROR = C["roof"]                                   # (metal_black's mirror code: viewer/villa/villaInterior.js)
+CONTACT_SRC = []; CONTACT_ON = [False]
+def put_c(parts, u, w, h, face=(0.0, 1.0), colb=None):
+    """put() + its footprint in interior.json contact (the floors' contact shadow, gate villa 2c)"""
+    CONTACT_ON[0] = True; put(parts, u, w, h, face, colb=colb); CONTACT_ON[0] = False               # villa3: the footprints the floors' contact shadow reads (interior.json contact)
 PLANTS = []                                          # the kit plants (their open leaves: listed in the audit's allow file)
 kit_piece = lambda parts: any(p[1] in ("Hard", "Wood", "Fabric", "Glow", "Plaster", "Glass", "plant") for p in parts)
 LIGHTS = []                                         # night bake: (name, pos, watts, colour, radius, aim or None)
@@ -1024,17 +1121,16 @@ def interior():
     credenza(IN, "u", IU0, 1, -19.4, -9.0, 0.5, 0.62)
     planter(26.6, -9.4, GL, 2.4, 11); planter(34.9, -9.6, GL, 1.8, 13)
     # the pit: cushions on the sofas, side tables with lamps, a throw
-    for (u_, w_, f) in ((23.4, PIT["w1"] - 1.15, (0, -1)), (24.2, PIT["w1"] - 1.15, (0, -1)), (29.0, PIT["w1"] - 1.15, (0, -1)), (PIT["u1"] - 1.15, -18.0, (-1, 0)), (PIT["u1"] - 1.15, -15.2, (-1, 0))):
-        cushion(u_, w_, PIT["h"] + 0.5, f)
+    # (villa3 job 2: the scatter cushions are the sofas' own, villa_seating.py)
     for (u_, w_) in ((PIT["u0"] + 0.55, PIT["w1"] - 0.9), (PIT["u0"] + 0.55, PIT["w0"] + 0.6)):
         side_table(u_, w_, PIT["h"]); table_lamp(u_, w_, PIT["h"] + 0.55)
     tufted = lambda w_, seats: channel_sofa(w_, seats)
-    put(channel_sofa(6.0, 4), 26.5, PIT["w1"] - 1.0, PIT["h"], (0, -1), colb=(3.0, 0.5, 0.75))
-    put(channel_sofa(4.2, 3), PIT["u1"] - 1.0, -16.5, PIT["h"], (-1, 0), colb=(0.5, 2.1, 0.75))
+    put_c(VS.sofa_v3(6.0, 4, seed=3), 26.5, PIT["w1"] - 1.0, PIT["h"], (0, -1), colb=(3.0, 0.5, 0.75))
+    put_c(VS.sofa_v3(4.2, 3, seed=4), PIT["u1"] - 1.0, -16.5, PIT["h"], (-1, 0), colb=(0.5, 2.1, 0.75))
     put(coffee_table_stone(2.2, 1.1), 25.5, -16.5, PIT["h"], (0, 1), colb=(1.1, 0.55, 0.38))
     put([(K.box(4.6, 0.012, 3.6, 0.004, 1), "fabric_grey", C["rug"])], 25.8, -16.3, PIT["h"], (0, 1), smooth=False)
     for w_ in (-19.0, -14.0):
-        put(lounge_chair(), PIT["u0"] + 1.0, w_, PIT["h"], (1, 0), colb=(0.45, 0.45, 0.8))
+        put_c(VS.armchair_v3(1), PIT["u0"] + 1.0, w_, PIT["h"], (1, 0), colb=(0.44, 0.43, 0.8))
     put(K.plant(2.2, 0.32, seed=7, kind="ficus", spread=1.0), 15.4, -21.5, GL, (0, 1), colb=(0.4, 0.4, 1.5))
     put(K.plant(1.9, 0.3, seed=11, kind="ficus", spread=0.9), 34.8, -21.4, GL, (0, 1), colb=(0.4, 0.4, 1.5))
     put(floor_lamp_arc(), 30.6, -20.6, PIT["h"], (0, 1))
@@ -1072,8 +1168,16 @@ def interior():
             u_ = a + (k + 0.5) * (b - a) / n_
             bbox(IN, u_ - 0.012, u_ + 0.012, IW1 - 0.63, IW1 - 0.6, GL + 0.95, GL + 1.55, "brass", 0, 0.003, 1, False)
     bbox(IN, 23.0, 26.4, IW1 - 0.25, IW1, GL, LOUNGE_CEIL - 0.02, "walnut", C["door"], 0.006, 2)        # the TV's panel
-    bbox(IN, 23.3, 26.1, IW1 - 0.3, IW1 - 0.25, GL + 1.0, GL + 2.6, "metal_black", C["screen"], 0.004, 1, False)
-    bbox(IN, 23.0, 26.4, IW1 - 0.6, IW1 - 0.25, GL, GL + 0.42, "walnut", C["door"], 0.006, 2)          # its low unit
+    # villa3 job 2: an 85" TV (1.9 x 1.07 m, not a 2.8 m black hole): a 3.5 cm body (its 1 cm bezel), the glass face
+    # (metal_black `screen`: glossy, the lounge's reflection probe, a faint picture at night only), a soundbar on the
+    # media unit (three drawers with 6 mm shadow gaps on a recessed black plinth)
+    bbox(IN, 23.75, 25.65, IW1 - 0.285, IW1 - 0.25, GL + 1.05, GL + 2.12, "metal_black", 0, 0.004, 1, False)
+    bbox(IN, 23.76, 25.64, IW1 - 0.293, IW1 - 0.285, GL + 1.06, GL + 2.11, "metal_black", C["screen"], 0.0015, 1, False)
+    bbox(IN, 23.05, 26.35, IW1 - 0.55, IW1 - 0.25, GL, GL + 0.06, "metal_black", 0, 0.003, 1, False)
+    for (a, b) in ((23.0, 24.13), (24.136, 25.264), (25.27, 26.4)):
+        bbox(IN, a, b, IW1 - 0.6, IW1 - 0.25, GL + 0.06, GL + 0.42, "walnut", C["door"], 0.004, 2, False)
+    bbox(IN, 24.1, 25.3, IW1 - 0.42, IW1 - 0.32, GL + 0.42, GL + 0.49, "metal_black", 0, 0.012, 2)        # the soundbar
+    REFL_PROBES.append(("tv", (24.7, IW1 - 0.35, GL + 1.58)))
     bbox(IN, 30.6, 32.6, IW1 - 0.6, IW1, GL, GL + 0.9, "walnut", C["door"], 0.006, 2)                  # the coffee niche
     bbox(IN, 30.6, 32.6, IW1 - 0.6, IW1, GL + 2.05, LOUNGE_CEIL - 0.02, "walnut", C["door"], 0.006, 2)
     bbox(IN, 30.6, 32.6, IW1 - 0.08, IW1, GL + 0.9, GL + 2.05, "marble_white", 0, 0.004, 1, False)
@@ -1089,12 +1193,11 @@ def interior():
         ibox(PU - 0.15, PU + 0.15, a, b, GL, LOUNGE_CEIL, "walnut", C["door"], skip=("-h", "+h"))
         for side in (-1, 1):
             shelves(IN, "u", PU + side * 0.15, side, a + 0.05, b - 0.05, GL + 0.35, LOUNGE_CEIL - 0.3, seed=int(a * 7 + side * 3))
-    put(channel_sofa(4.6, 3), 24.7, 16.2, GL, (0, 1), colb=(2.3, 0.5, 0.75))
-    for (u_, f) in ((23.6, (0, 1)), (24.4, (0, 1)), (25.9, (0, 1))): cushion(u_, 16.0, GL + 0.5, f)
+    put_c(VS.sofa_v3(4.6, 3, seed=5), 24.7, 16.2, GL, (0, 1), colb=(2.3, 0.5, 0.75))
     put(coffee_table_stone(1.6, 0.9), 24.7, 18.6, GL, (0, 1), colb=(0.8, 0.45, 0.38))
     put([(K.box(5.0, 0.012, 3.6, 0.004, 1), "fabric_grey", C["rug"])], 24.2, 18.0, GL, (0, 1), smooth=False)
     for w_ in (17.4, 19.6):
-        put(lounge_chair(), 20.8, w_, GL, (1, 0), colb=(0.45, 0.45, 0.8))
+        put_c(VS.armchair_v3(1), 20.8, w_, GL, (1, 0), colb=(0.44, 0.43, 0.8))
     for (u_, w_) in ((21.9, 15.9),):
         side_table(u_, w_, GL); table_lamp(u_, w_, GL + 0.55)
     put(floor_lamp_arc(), 20.0, 21.4, GL, (0, -1))
@@ -1157,23 +1260,30 @@ def interior():
     downlight(28.6, 8.8, C1, 10.0)
     # the study / library on the mezzanine: a desk to the front window, a chair, two armchairs on a rug, shelves
     put(desk_modern(2.2, 0.8), 13.6, 2.5, F1, (1, 0), colb=(0.4, 1.1, 0.76))
-    put(lounge_chair(), 14.7, 2.5, F1, (-1, 0), colb=(0.4, 0.4, 0.8))
+    put_c(VS.armchair_v3(1), 14.7, 2.5, F1, (-1, 0), colb=(0.44, 0.43, 0.8))
     for w_ in (-3.0, 0.0):
-        put(lounge_chair(), 20.0, w_, F1, (1, 0) if w_ < 0 else (1, 0), colb=(0.45, 0.45, 0.8))
+        put_c(VS.armchair_v3(1), 20.0, w_, F1, (1, 0), colb=(0.44, 0.43, 0.8))
     put([(K.box(3.0, 0.012, 4.0, 0.004, 1), "fabric_grey", C["rug"])], 21.0, -1.5, F1, (0, 1), smooth=False)
     put(coffee_table_stone(1.0, 1.0), 21.4, -1.5, F1, (0, 1), colb=(0.5, 0.5, 0.38))
     bbox(IN, JU0, JU0 + 0.4, -7.6, -6.4, F1, F1 + 2.4, "walnut", C["door"], 0.006, 2)
     colbox(JU0, JU0 + 0.4, -7.6, -6.4, F1, F1 + 2.4)
     # bedroom 2 (back): a bed to the glass
-    put(bed_modern(1.8), 33.0, -1.6, F1, (1, 0), colb=(1.1, 1.0, 0.6))
+    CONTACT_ON[0] = True
+    put(VB.bed_v3(1.8, seed=2, master=False), 33.0, -1.6, F1, (1, 0), colb=(1.12, 0.97, 0.6))
+    CONTACT_ON[0] = False
     # the master suite: a king bed to the back glass, a walnut headboard wall, bedsides, a lounge chair, a rug
     bbox(IN, 29.0, 29.25, 13.2, 21.6, F1, F1 + 1.5, "walnut", C["door"], 0.006, 2)
     colbox(29.0, 29.25, 13.2, 21.6, F1, F1 + 1.5)
-    put(bed_modern(2.0), 30.45, 17.4, F1, (1, 0), colb=(1.15, 1.1, 0.6))
-    for w_ in (15.6, 19.2):
-        bbox(IN, 29.3, 29.8, w_ - 0.3, w_ + 0.3, F1, F1 + 0.5, "walnut", C["door"], 0.006, 2)
+    CONTACT_ON[0] = True
+    put(VB.bed_v3(2.0, seed=1, master=True), 30.45, 17.4, F1, (1, 0), colb=(1.16, 1.07, 0.6))
+    CONTACT_ON[0] = False
+    for w_ in (15.6, 19.2):         # villa3: the bedsides with a drawer (a 6 mm shadow gap), on a recessed black plinth
+        bbox(IN, 29.34, 29.76, w_ - 0.26, w_ + 0.26, F1, F1 + 0.04, "metal_black", 0, 0.003, 1, False)
+        bbox(IN, 29.3, 29.8, w_ - 0.3, w_ + 0.3, F1 + 0.04, F1 + 0.3, "walnut", C["door"], 0.004, 2, False)
+        bbox(IN, 29.3, 29.8, w_ - 0.3, w_ + 0.3, F1 + 0.306, F1 + 0.5, "walnut", C["door"], 0.004, 2, False)
+        CONTACT_SRC.append((29.55, w_, F1, (1, 0), (0.25, 0.3, 0.5)))
     put([(K.box(4.0, 0.012, 3.2, 0.004, 1), "fabric_grey", C["rug"])], 31.2, 17.4, F1, (1, 0), smooth=False)
-    put(lounge_chair(), 35.8, 21.6, F1, (-1, -1), colb=(0.45, 0.45, 0.8))
+    put_c(VS.armchair_v3(1), 35.7, 21.6, F1, (-1, 0), colb=(0.44, 0.43, 0.8))     # (facing the bed; the diagonal one had no plinth vertex inside its footprint box: gate villa 2c)
     # round 2: THE BATHROOM (u 12.3 .. 20.5, a partition with a doorway by the marble wall): stone floor, a freestanding
     # tub, a double basin on a walnut vanity with a mirror, a towel ladder, a plant
     ibox(20.4, 20.6, 13.3, JW1, F1, C1, "plaster_white", 0, skip=("-h", "+h"))
@@ -1190,15 +1300,18 @@ def interior():
         put([(K.lathe([(0.0, 0.0), (0.17, 0.005), (0.2, 0.12), (0.185, 0.125), (0.15, 0.03), (0.0, 0.03)], seg=28), "ceramic_white", 0)], u_, 22.86, F1 + 0.9, (0, -1))
         bbox(IN, u_ - 0.015, u_ + 0.015, 23.0, JW1, F1 + 0.9, F1 + 1.2, "brass", 0, 0.004, 1)
         bbox(IN, u_ - 0.011, u_ + 0.011, 22.95, 23.0, F1 + 1.165, F1 + 1.19, "brass", 0, 0.003, 1)
-    bbox(IN, 12.9, 15.3, JW1 - 0.03, JW1, F1 + 1.3, F1 + 2.4, "metal_black", C["screen"], 0.004, 1, False)
+    # villa3 job 2: the mirror (metal_black code MIRROR: the bathroom's reflection probe; it read as a black hole)
+    bbox(IN, 12.9, 15.3, JW1 - 0.03, JW1, F1 + 1.3, F1 + 2.4, "metal_black", MIRROR, 0.004, 1, False)
+    REFL_PROBES.append(("mirror", (14.1, JW1 - 0.08, F1 + 1.75)))
     led_strip(P(12.95, JW1 - 0.06, F1 + 2.43), P(15.25, JW1 - 0.06, F1 + 2.43), normal=(0, 0, -1), width=0.03)
     LIGHTS.append(("vanity", P(14.1, JW1 - 0.3, F1 + 2.3), 12.0, WARM, 0.15, None))
     for (u_, w_) in ((14.2, 19.0), (17.5, 19.0), (14.2, 14.0), (17.5, 14.0)): downlight(u_, w_, C1, 8.0)
     put(K.plant(1.4, 0.24, seed=23, kind="ficus", spread=0.6), 19.7, 22.5, F1, (0, 1), colb=(0.3, 0.3, 1.1))
     # the bed set: cushions, a folded throw, a leather bench at its foot, lamps on the bedsides, art
-    for (w_, f) in ((16.7, (1, 0)), (17.4, (1, 0)), (18.1, (1, 0))): cushion(30.15, w_, F1 + 0.8, f)
-    put([(K.soft(2.1, 0.05, 0.55, r=0.02, n=(8, 2, 4), puff=0.01, seed=9, oy=0.62), "leather", 0)], 31.6, 17.4, F1, (1, 0))
-    put([(K.soft(0.45, 0.42, 1.5, r=0.05, n=(3, 4, 7), puff=0.01, oy=0.02), "leather", 0)], 32.9, 17.4, F1, (0, 1), colb=(0.23, 0.75, 0.42))
+    # villa3: the pillows, cushion and the (cloth-simulated) throw are the bed's own (villa_bed.py); the bench re-made
+    CONTACT_ON[0] = True
+    put(VB.bench_v3(1.5, 0.45, 0.44), 32.95, 17.4, F1, (1, 0), colb=(0.23, 0.75, 0.44))     # (kit x = its length: along w)
+    CONTACT_ON[0] = False
     for w_ in (15.6, 19.2): table_lamp(29.55, w_, F1 + 0.5)
     art(IN, "w", 11.3, 1, 31.0, 33.6, F1 + 1.0, F1 + 2.4, code=2)
     put(K.plant(1.4, 0.24, seed=29, kind="ficus", spread=0.6), 36.4, -6.8, F1, (0, 1), colb=(0.3, 0.3, 1.1))
@@ -1383,6 +1496,13 @@ def bed_modern(w):
 interior()
 print(f"interior: {len(IN.f)} faces, glass {len(IG.f)}, collider {len(COL) // 3} tris, {len(LIGHTS)} lamps ({time.time() - T0:.1f}s)")
 
+# villa3: the contact-shadow footprints (the floors' TSL darkens round them: no decal, no draw): plan rectangles (u, w)
+# and the floor level (three local y) in the villa frame
+CONTACT = []
+for (u_, w_, h_, face_, cb) in CONTACT_SRC:
+    du, dw = (cb[0], cb[1])
+    CONTACT.append({"u": [round(u_ - du, 3), round(u_ + du, 3)], "w": [round(w_ - dw, 3), round(w_ + dw, 3)], "y": round(h_ - OY, 3)})
+print("contact footprints:", len(CONTACT))
 # ================================================================================================ meshes
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scn = bpy.context.scene
@@ -1408,7 +1528,13 @@ def make(acc, mats, origin=None, link=True):
     for fi, f in enumerate(acc.f):
         for k in range(len(f)):
             uvd.extend(acc.fuv[fi][k]); cold.extend(((acc.fc[fi] + 0.5) / 16.0, 1.0, 0.5, 1.0))
-    uv.data.foreach_set("uv", uvd); col.data.foreach_set("color", cold)
+    # villa3 job 2 (rule uv-written): the UV layer is fetched AGAIN after the colour attribute is added: adding an
+    # attribute reallocates the mesh's attribute storage and the earlier `uv` reference wrote nowhere. Since round 1
+    # every villa UV was Blender's default 0 / 1 per face: the metre patterns (oak planks, boards, marble, tiles,
+    # the plaster's noise, the scans) were drawn per face, 0..1 (the "fish-scale" plaster, the stripy oak)
+    me.uv_layers["UVMap"].data.foreach_set("uv", uvd); me.color_attributes["Col"].data.foreach_set("color", cold)
+    chk = [0.0] * len(uvd); me.uv_layers["UVMap"].data.foreach_get("uv", chk)
+    if any(abs(a_ - b_) > 1e-4 for a_, b_ in zip(chk[:2000], uvd[:2000])): raise SystemExit(f"{acc.name}: the UV did not take")
     me.validate(clean_customdata=False); me.update()
     o = bpy.data.objects.new(acc.name, me)
     if origin is not None: o.location = origin
@@ -1419,12 +1545,12 @@ EX.v += GLS.v and []
 # the exterior glass into LOD0 (same object, its own slot)
 off = len(EX.v)
 EX.v.extend(GLS.v); EX.f.extend([tuple(i + off for i in f) for f in GLS.f]); EX.fs.extend(GLS.fs); EX.fc.extend(GLS.fc); EX.fuv.extend(GLS.fuv); EX.sm.extend(GLS.sm)
-ob_ext = make(EX, EXT_M); ob_far = make(FAR, EXT_M); ob_ivy = make(IVY, EXT_M); ob_lod1 = make(L1, EXT_M); ob_bay = make(BAY, EXT_M)
+ob_ext = make(EX, EXT_M); ob_kit = make(KIT, EXT_M); ob_art = [make(a_, EXT_M) for a_ in ART]; ob_far = make(FAR, EXT_M); ob_ivy = make(IVY, EXT_M); ob_lod1 = make(L1, EXT_M); ob_bay = make(BAY, EXT_M)
 ob_gl = make(GATE_L, EXT_M, GATE_L_O); ob_gr = make(GATE_R, EXT_M, GATE_R_O); ob_door = make(DOOR_A, EXT_M, DOOR_O); ob_water = make(WATER, EXT_M)
 # the soft furnishings (cushions, rugs, leather, plants: smooth-shaded) in their own node "Soft": the audit checks them
 # without the streak / bentflat checks (those guard architecture: a cushion's normals turn round its rounded edges by design)
 SOFT = Acc("Soft", INT_SLOTS); HARD = Acc("Cell", INT_SLOTS)
-SOFT_IDX = {INT_SLOTS.index(n) for n in ("fabric_white", "fabric_grey", "leather", "plant", "ceramic_white")}
+SOFT_IDX = {INT_SLOTS.index(n) for n in ("props", "plant", "ceramic_white")}
 for fi, f in enumerate(IN.f):
     A_ = SOFT if IN.fs[fi] in SOFT_IDX else HARD
     b = len(A_.v); A_.v.extend(IN.v[i] for i in f); A_.f.append(tuple(range(b, b + len(f))))
@@ -1434,7 +1560,7 @@ cm = bpy.data.meshes.new("Collider")
 cm.from_pydata([tuple(v) for v in COL], [], [(i, i + 1, i + 2) for i in range(0, len(COL), 3)]); cm.update()
 ob_col = bpy.data.objects.new("Collider", cm); scn.collection.objects.link(ob_col); cm.materials.append(bpy.data.materials.new("collider"))
 tri = lambda o: sum(len(p.vertices) - 2 for p in o.data.polygons)
-print(f"meshes: LOD0 {tri(ob_ext)} tris, LOD1 {tri(ob_lod1)}, far {tri(ob_far)}, gate {tri(ob_gl) + tri(ob_gr)}, door {tri(ob_door)}, cell {tri(ob_cell)} + soft {tri(ob_soft)}, glass {tri(ob_iglass)} ({time.time() - T0:.1f}s)")
+print(f"meshes: LOD0 {tri(ob_ext)} tris, kit {tri(ob_kit)}, LOD1 {tri(ob_lod1)}, far {tri(ob_far)}, gate {tri(ob_gl) + tri(ob_gr)}, door {tri(ob_door)}, cell {tri(ob_cell)} + soft {tri(ob_soft)}, glass {tri(ob_iglass)} ({time.time() - T0:.1f}s)")
 
 def weld(objs):
     """merge the builder's duplicate corners (1e-4 m), then WEIGHTED NORMALS on the smooth (soft) faces: face-area
@@ -1483,7 +1609,7 @@ if BAKE:
     nt = glow.node_tree; nt.nodes.remove(nt.nodes["Principled BSDF"]); em = nt.nodes.new("ShaderNodeEmission")
     em.inputs["Color"].default_value = (1.0, 0.8, 0.55, 1); em.inputs["Strength"].default_value = 0.0
     nt.links.new(em.outputs[0], nt.nodes["Material Output"].inputs["Surface"])
-    for o in (ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy, ob_cell, ob_soft, ob_iglass):
+    for o in (ob_ext, ob_kit, *ob_art, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy, ob_cell, ob_soft, ob_iglass):
         me = o.data
         for i, mt in enumerate(me.materials):
             nm = mt.name
@@ -1531,12 +1657,12 @@ if BAKE:
     hide = lambda objs, v: [setattr(o, "hide_render", v) for o in objs]
     hide([ob_cell, ob_soft, ob_iglass, ob_far, ob_lod1], True)
     scn.cycles.samples = min(SAMPLES, 128)
-    bake_vc([ob_ext, ob_bay, ob_gl, ob_gr, ob_door], "ao", "AO")
-    hide([ob_far], False); hide([ob_ext, ob_bay, ob_gl, ob_gr, ob_door], True)
+    bake_vc([ob_ext, ob_kit, ob_bay, ob_gl, ob_gr, ob_door], "ao", "AO")
+    hide([ob_far], False); hide([ob_ext, ob_kit, ob_bay, ob_gl, ob_gr, ob_door], True)
     bake_vc([ob_far], "ao", "AO")
     hide([ob_far], True); hide([ob_lod1], False)            # (villa2: the scripted LOD1 baked alone, as the far variant)
     bake_vc([ob_lod1], "ao", "AO")
-    hide([ob_ext, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft, ob_iglass], False); hide([ob_far, ob_lod1], True)
+    hide([ob_ext, ob_kit, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft, ob_iglass], False); hide([ob_far, ob_lod1], True)
     print(f"bake AO: {time.time() - t:.1f}s")
     def smooth_corners(me, name, iters=8):
         """per-corner bake noise -> one value per (vertex, shading normal), then Laplacian passes over the faces' corners
@@ -1564,8 +1690,8 @@ if BAKE:
             kv = np.where(deg > 0, 0.5 * kv + 0.5 * nb_ / np.maximum(deg, 1), kv)
         ca.data.foreach_set("color", kv[keys].astype(np.float32).ravel())
     # weld duplicates for the AO smoothing (the builder emits every face with its own corners)
-    weld([ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
-    for o in (ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door):
+    weld([ob_ext, ob_kit, *ob_art, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
+    for o in (ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door):
         me = o.data
         smooth_corners(me, "ao", 3)
         a = np.zeros(len(me.loops) * 4, dtype=np.float32); me.color_attributes["ao"].data.foreach_get("color", a)
@@ -1637,6 +1763,48 @@ if BAKE:
             at.data.foreach_set("vector", d.reshape(-1, 4)[:, :3].ravel())
             me.color_attributes.remove(ca)
         me.color_attributes.active_color = me.color_attributes["Col"]
+    # ---- villa3 job 2: the reflection probes (the TV's glass, the bathroom mirror): equirectangular Cycles panoramas
+    # from each surface, day (sky + sun) and night (the lamps), the cell in plain tints per slot (a reflection must
+    # have colour; the surfaces themselves keep theirs in TSL), packed to models/villa/reflect.ktx2 (a 2D array)
+    if REFL_PROBES:
+        tint = {"plaster_white": 0.78, "oak_plank": (0.3, 0.21, 0.13), "walnut": (0.1, 0.06, 0.035), "marble_white": 0.78, "stone_floor": 0.5,
+                "props": (0.68, 0.64, 0.58), "brass": (0.55, 0.4, 0.17), "metal_black": 0.02, "plant": (0.08, 0.18, 0.06), "ceramic_white": 0.82,
+                "books": (0.25, 0.15, 0.1), "art": (0.5, 0.3, 0.2)}
+        pm = {}
+        for nm, c in tint.items():
+            m = bpy.data.materials.new("pr_" + nm); m.use_nodes = True; c = (c, c, c) if isinstance(c, float) else c
+            m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*c, 1); m.node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.6
+            pm[nm] = m
+        saved = {o.name: [m for m in o.data.materials] for o in (ob_cell, ob_soft)}
+        for o in (ob_cell, ob_soft):
+            for i, m in enumerate(INT_M):
+                if INT_M[i].name in pm: o.data.materials[i] = pm[INT_M[i].name]
+        pcd = bpy.data.cameras.new("probe"); pcd.type = "PANO"; pcd.panorama_type = "EQUIRECTANGULAR"
+        pco = bpy.data.objects.new("probe", pcd); scn.collection.objects.link(pco); scn.camera = pco
+        pco.rotation_euler = (math.radians(90), 0, math.radians(-90))     # (Cycles' equirect: its own frame; the shader reads the same)
+        scn.render.resolution_x, scn.render.resolution_y = 1024, 512; scn.cycles.samples = 64; scn.cycles.use_denoising = True   # (512 x 256 drew the mirror soft: 0.7 deg a texel)
+        scn.render.image_settings.file_format = "PNG"; scn.view_settings.view_transform = "Standard"; scn.view_settings.exposure = -1.0   # (job 3: one stop down, x2 in the shader: the day window no longer clips)
+        ob_pb.hide_render = True
+        os.makedirs(os.path.join(OUT, "_probe"), exist_ok=True)
+        files = []
+        for (name, (u_, w_, h_)) in REFL_PROBES:
+            pco.location = P(u_, w_, h_)
+            for mode in ("day", "night"):
+                set_mode("sky" if mode == "day" else "night")
+                if mode == "day": so.hide_render = False
+                f = os.path.join(OUT, "_probe", f"{name}_{mode}.png"); scn.render.filepath = f; bpy.ops.render.render(write_still=True); files.append(f)
+        so.hide_render = True
+        import subprocess
+        KTX = "C:/Program Files/KTX-Software/bin/ktx.exe"
+        if os.path.exists(KTX):
+            subprocess.run([KTX, "create", "--format", "R8G8B8A8_SRGB", "--assign-tf", "srgb", "--layers", str(len(files)), "--encode", "uastc", "--uastc-quality", "2",
+                            "--uastc-rdo", "--uastc-rdo-l", "2.0", "--zstd", "18", "--generate-mipmap", *files, os.path.join(OUT, "reflect.ktx2")], check=True)
+            print("reflect.ktx2", os.path.getsize(os.path.join(OUT, "reflect.ktx2")) // 1024, "KB")
+        for o in (ob_cell, ob_soft):
+            for i, m in enumerate(saved[o.name]): o.data.materials[i] = m
+        bpy.data.objects.remove(pco)
+        REFL_INFO = {"file": "reflect.ktx2", "layers": [f"{n}_{m}" for (n, _) in REFL_PROBES for m in ("day", "night")],
+                     "at": {n: [p_[0], p_[2] - OY, p_[1]] for (n, p_) in REFL_PROBES}}
     if PREVIEW:
         os.makedirs(PREVIEW, exist_ok=True)
         camd = bpy.data.cameras.new("cam"); cam = bpy.data.objects.new("cam", camd); scn.collection.objects.link(cam); scn.camera = cam
@@ -1657,10 +1825,10 @@ if BAKE:
     for o in list(scn.objects):
         if o.type in ("LIGHT", "CAMERA") or o.name in ("Ground", "Neighbours", "ProbeCubes"): bpy.data.objects.remove(o)
     # back to the named slots for export
-    for o, mats in ((ob_ext, EXT_M), (ob_far, EXT_M), (ob_lod1, EXT_M), (ob_bay, EXT_M), (ob_gl, EXT_M), (ob_gr, EXT_M), (ob_door, EXT_M), (ob_water, EXT_M), (ob_ivy, EXT_M), (ob_cell, INT_M), (ob_soft, INT_M), (ob_iglass, INT_M)):
+    for o, mats in ((ob_ext, EXT_M), (ob_kit, EXT_M), *((a_, EXT_M) for a_ in ob_art), (ob_far, EXT_M), (ob_lod1, EXT_M), (ob_bay, EXT_M), (ob_gl, EXT_M), (ob_gr, EXT_M), (ob_door, EXT_M), (ob_water, EXT_M), (ob_ivy, EXT_M), (ob_cell, INT_M), (ob_soft, INT_M), (ob_iglass, INT_M)):
         for i in range(len(o.data.materials)): o.data.materials[i] = mats[i]
 else:
-    weld([ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
+    weld([ob_ext, ob_kit, *ob_art, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
     for me in (ob_cell.data, ob_soft.data):
         for mode in ("SKY", "SUN", "NIGHT"):
             at = me.attributes.new("_L" + mode, "FLOAT_VECTOR", "CORNER")
@@ -1676,7 +1844,7 @@ def export(objs, path):
                               export_all_vertex_colors=False, export_attributes=True, export_materials="EXPORT", export_image_format="NONE", export_extras=False)
     print("exported", path, os.path.getsize(path) // 1024, "KB")
 # drop unused material slots per object (the exporter writes one primitive per used slot only)
-export([ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy], os.path.join(OUT, "villa.raw.glb"))
+export([ob_ext, ob_kit, *ob_art, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy], os.path.join(OUT, "villa.raw.glb"))
 export([ob_cell, ob_soft, ob_iglass, ob_col], os.path.join(OUT, "interior.raw.glb"))
 
 def loc(u, w, h): return [u, h - OY, w]
@@ -1705,7 +1873,9 @@ notes = {
     "terrace": {**TER},
     "entrance_steps": STEPS_INFO,
     "bounds_uw": {"u": [WALL_U - 0.3, SITE["plot"]["u1"]], "w": [SITE["plot"]["w0"], SITE["plot"]["w1"]], "h": [GR and min(GR["h"]) - 1, PAR1 + 0.1]},
-    "tris": {"lod0": tri(ob_ext), "lod1": tri(ob_lod1), "far": tri(ob_far), "gate": tri(ob_gl) + tri(ob_gr), "door": tri(ob_door)},
+    "kit_contact": KIT_CONTACT,
+    "art": ART_INFO,
+    "tris": {"lod0": tri(ob_ext), "kit": tri(ob_kit), "art": [tri(a_) for a_ in ob_art], "lod1": tri(ob_lod1), "far": tri(ob_far), "gate": tri(ob_gl) + tri(ob_gr), "door": tri(ob_door)},
 }
 json.dump(notes, open(os.path.join(OUT, "villa.json"), "w"), indent=1)
 info = {
@@ -1719,6 +1889,8 @@ info = {
     "sun_dir_uwh": list(SUN_DIR), "samples": SAMPLES,
     "spawn": {"gate_out": loc(7.0, 20.2, 115.6), "living": loc(27.0, -9.5, GL), "landing": loc(28.6, 5.0, F1), "terrace": loc(40.5, 6.0, GL), "lounge": loc(30.0, 15.0, GL)},
     "tris": {"cell": tri(ob_cell), "soft": tri(ob_soft), "glass": tri(ob_iglass), "collider": len(COL) // 3},
+    "contact": CONTACT,
+    "reflect": globals().get("REFL_INFO"),
 }
 json.dump(info, open(os.path.join(OUT, "interior.json"), "w"), indent=1)
 # the mesh audit's allow list: the kit plants' leaves are open blades by design (leak / crossing / seam round them)

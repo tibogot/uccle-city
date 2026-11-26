@@ -81,6 +81,20 @@ export function measuredBridgeLanes(r, m) {
   return { center: { ...(src.center || { width: 0, kind: "none" }) }, left: side("left"), right: side("right") };
 }
 
+// (claude/footbridge, rule deck-covers-street) a hand plan's sidewalks over the bank: the Carsoel deck's hand ring
+// (citydefects A) stopped at the abutment line, while UrbIS draws the Rue de la Pecherie / Carsoel sidewalks on past it
+// over the cutting's bank (the street stage gave them the bare DTM there: a paving strip sagging 1-5 m down the slope,
+// "a paving slab with a tree pit hanging over the slope"). plan.bank = { ring, free, why }: the ring widened to every
+// UrbIS street surface that continues off the deck at its level (a wing slab with its wall into the bank and a railing
+// over the drop). ?footbridge=old (setBankOld): the hand ring as before.
+let BANK_OLD = false;
+export const setBankOld = (v) => { BANK_OLD = !!v; };
+/** a bridgePlans entry with its bank widening applied (plan.bank: ring / free / walls replace the hand ones) */
+export function planOf(plan) {
+  if (!plan || BANK_OLD || !plan.bank?.ring?.length) return plan;
+  return { ...plan, ring: plan.bank.ring, free: plan.bank.free ?? plan.free, walls: plan.bank.walls ?? plan.walls };
+}
+
 /** the road's centre line as [[x, z], ...] from roads.json (node a, control points, node b) */
 function centreLine(r, nodes) {
   const a = nodes.get(r.a), b = nodes.get(r.b);
@@ -135,7 +149,7 @@ export function bridgeDescriptors(roadsDoc, ground, plans = null, profiles = nul
     // a measured PLAN (data/overrides.json bridgePlans, keyed by the OSM way): the deck's real outline instead of the
     // road's band (citydefects 2026-11-16: the new Carsoel deck over Saint-Job station is ~45 x 35 m with the tram stop,
     // sidewalks and squares on it; the road band left the platforms and shelters hanging over the cutting)
-    const plan = plans?.[String(r.meta?.osm)];
+    const plan = planOf(plans?.[String(r.meta?.osm)]);
     if (plan?.ring?.length >= 3) {
       d.plan = { ring: plan.ring, free: plan.free || [], walls: plan.walls || [], under: plan.under || null, ...(plan.urbis ? { urbis: plan.urbis } : {}) };
       for (const [x, z] of plan.ring) { d.box[0] = Math.min(d.box[0], x); d.box[1] = Math.min(d.box[1], z); d.box[2] = Math.max(d.box[2], x); d.box[3] = Math.max(d.box[3], z); }

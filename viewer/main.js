@@ -22,7 +22,7 @@ import { addStalle } from "./stalleCity.js";
 import { addTownHall } from "./townhallCity.js";
 import { addVanBuuren } from "./vanbuurenCity.js";
 import { addVilla } from "./villa/villaCity.js";
-import { VILLA_ON, villaClearRings, villaTreesClear, villaGrassSolid } from "./villa/villaPlot.js";   // the villa on Av. du Prince d'Orange (claude/villa1; ?villa=0 off)
+import { VILLA_ON, villaClearRings, villaTreesClear, villaGrassSolid, VILLA_GARDEN_V3, VILLA_HEDGE_RUNS, villaShrubRows } from "./villa/villaPlot.js";   // the villa on Av. du Prince d'Orange (claude/villa1; ?villa=0 off)
 import { addWolvendael } from "./wolvendaelCity.js";
 import { addPolice } from "./policeCity.js";
 import { addCalevoet } from "./calevoetCity.js";
@@ -32,7 +32,7 @@ import { addRussian } from "./russianCity.js";
 import { addHeros } from "./heros/herosCity.js";
 import { addPublicArt } from "./publicart/artCity.js";
 import { addPlaygrounds, playgroundRootNames } from "./playgroundCity.js";   // claude/places2: the playground kit in the city (claude/places3: the timber kit, its colliders)
-import { addChristmas, xmasActive } from "./christmas/xmasCity.js";
+import { xmasActive } from "./christmas/xmasDate.js";   // (claude/xmasreview: the layer's code itself is imported only when it is on: xmasCity.js below)
 import { addRosaire } from "./rosaireCity.js";
 import { addObservatory } from "./observatoryCity.js";
 import { addAugustin } from "./augustinCity.js";
@@ -52,7 +52,8 @@ import { loadTrackProfile, LIFT_CACHE } from "./trackProfile.js";   // (LIFT_CAC
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial, roadTextMaterial } from "./roadPaint.js";
 import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
-import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";   // (perfgame round 3: the sun's static shadow cache)
+import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";
+import { setDay as setCityDay } from "./seasons/season.js";   // (perfgame round 3: the sun's static shadow cache)
 import { createPipeline } from "./post.js";
 import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- upscale (docs/UPSCALE.md): TAAU + dynamic resolution
 import { buildTrees } from "./trees.js";
@@ -63,7 +64,9 @@ import { setCompileFlush, openBootPipelines, warmBoot, precompile, shareShadowNo
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { buildGrounds } from "./grounds.js";
 import { lyceeFront } from "./lyceeFront.js";
+import { embassyFlags, loadEmbassyFlags } from "./embassyFlags.js";
 import { parkFence, PARKFENCE } from "./parkFence.js";
+import { timberFence, TIMBER } from "./fences/timberFence.js";   // (claude/reality1 round 3, rule timber-fence) wooden post-and-rail fences from OSM, ?timberfence=0 none
 import { billboards, BILLBOARDS } from "./billboards.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -71,6 +74,7 @@ import { Driver, tileDrive } from "./drive/driveMode.js";
 import { moverGroundY, tileMoverGround } from "./drive/moverGround.js";
 import { addLamps } from "./lampLight.js";
 import { installWgslIntern } from "./wgslIntern.js";
+import { installPinBuilds } from "./pinBuilds.js";   // perf5: the shared materials' builds kept (rule shared-node-graph)
 import { installHeapDrop, dropAfterUpload, dropTextureData, heapOn } from "./heapDrop.js";   // heap: CPU copies let go after their upload (docs/HEAP.md)
 import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp, RETIRE_WARM } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
@@ -101,6 +105,8 @@ import { setCellCullSun } from "./cellCull.js";                 // perf4: tile m
 import { freeze } from "./staticFreeze.js";                       // perf4: ?freeze=1 the tile layers' world matrices computed once (opt-in)
 import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
+import { footTop, footColliders } from "./rail/footbridge.js";            // (claude/footbridge) the station footbridges (tile worker built)
+import { footMaterials } from "./rail/footbridgeLook.js";
 import { cityGrass } from "./grass/cityGrass.js";
 import { cityBirds } from "./birds/cityBirds.js";
 import { liteShown } from "./liteShown.js";
@@ -170,6 +176,12 @@ const fader = new Fader();
 /** compileFor(roots): build the shaders of streamed objects before they show (warmup.js precompile; set once the
  *  render pipeline exists). Not under the boot cover: the warm-up draws those itself. */
 let compileFor = null;
+// (claude/perf5 round 2, rule shared-node-graph; ?railwarm=old: as before) a game start compiles a one-triangle stand-in
+// of every rail part (viewer/rail/railway.js railWarmData) as soon as the precompile queue exists: the play loader waits
+// for the queue, so the rail materials' first node builds (40-61 ms, at the first rail tile landing ~7 s into a police
+// drive) are done before the game starts; the stand-in is never in the scene (roSweep releases it, its builds pinned)
+let railWarmed = false;
+const RAIL_WARM = GAME_START && params.get("railwarm") !== "old";
 const preCompile = async (roots, fading) => {
   if (!compileFor) return;
   // under the boot cover the warm-up draws the tile with its fading copies (it holds its fade): its OWN materials
@@ -203,13 +215,12 @@ const getBin = async (p) => { const r = await fetch(new URL(p, DATA)); if (!r.ok
 
 // ------------------------------------------------------------------ terrain grid
 
-function terrainMesh(t, contourOn, feats, bounds, coverData, ortho) {
-  const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.BufferAttribute(t.pos, 3));
-  g.setAttribute("normal", new THREE.BufferAttribute(t.nrm, 3));
-  g.setIndex(new THREE.BufferAttribute(t.idx, 1));
-
-  // TSL ground: OSM land cover mask + procedural grass (viewer/ground.js); optional 1 m / 5 m contour lines
+// (claude/perf5 round 2, rule shared-node-graph) the contour lines' graph ONCE per switch uniform (it has nothing per
+// tile): the terrain's shared template (viewer/ground.js GROUND_SHARE) is keyed by this function
+const contourFns = new WeakMap();
+function contourFn(contourOn) {
+  let fn = contourFns.get(contourOn);
+  if (fn) return fn;
   const h = positionWorld.y;
   const line = (period, width) => {
     const f = fract(h.div(period));
@@ -217,9 +228,20 @@ function terrainMesh(t, contourOn, feats, bounds, coverData, ortho) {
     return float(1).sub(smoothstep(float(0), fwidth(h).mul(width), d));
   };
   const lines = mix(line(1, 1.0).mul(0.35), float(0.8), line(5, 1.4));
+  fn = (col) => mix(col, color(0x2b2418), lines.mul(contourOn));
+  contourFns.set(contourOn, fn);
+  return fn;
+}
+function terrainMesh(t, contourOn, feats, bounds, coverData, ortho) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(t.pos, 3));
+  g.setAttribute("normal", new THREE.BufferAttribute(t.nrm, 3));
+  g.setIndex(new THREE.BufferAttribute(t.idx, 1));
+
+  // TSL ground: OSM land cover mask + procedural grass (viewer/ground.js); optional 1 m / 5 m contour lines
   const cover = landCoverTexture(feats, bounds, coverData);
   cover.ortho = ortho;            // the tile's orthophoto: the textured ground's far colour (the far-LOD tiles' own)
-  const contour = (col) => mix(col, color(0x2b2418), lines.mul(contourOn));
+  const contour = contourFn(contourOn);
   const m = groundMaterial(cover, bounds, contour);
   const mesh = new THREE.Mesh(g, m);
   // (A/B, viewer.groundAB(): the procedural ground built lazily on the same mask)
@@ -459,12 +481,13 @@ window.__carriage = carriageRefs;
 function addBridgeDecks(decks, hm) {
   for (const d of decks || []) {
     let e = bridgeDeckRefs.get(d.id);
-    if (!e) { e = { fn: Object.assign(deckHeight(d, (x, z) => (worldRef?.tiles.length ? worldRef.at(x, z).hm.ground(x, z) : hm.ground(x, z)), { drawn: true }), { osm: true }), n: 0 };   // (the nearest tile's ground: a deck may cross a tile edge, road fix round 2; before the first tile is in world.tiles, e.g. ?tile=H6 whose bridge deck is asked during its own build, this tile's hm)
+    if (!e) { e = { fn: d.fn ? Object.assign(d.fn, { osm: true }) : Object.assign(deckHeight(d, (x, z) => (worldRef?.tiles.length ? worldRef.at(x, z).hm.ground(x, z) : hm.ground(x, z)), { drawn: true }), { osm: true }), n: 0 };   // (the nearest tile's ground: a deck may cross a tile edge, road fix round 2; before the first tile is in world.tiles, e.g. ?tile=H6 whose bridge deck is asked during its own build, this tile's hm)
      bridgeDeckRefs.set(d.id, e); worldRef?.decks.push(e.fn); }
     e.n++;
   }
 }
 let bridgeDeckMat = null;
+const footCols = new Set();           // (claude/footbridge) the footbridges whose car walls are in (driver.addStatic, once)
 // the plan decks' look (citydefects 2026-11-16; ?decklook=old: vertex colours): the streets' own asphalt and sidewalk /
 // kerb materials (roadPaint.js: the same tone and texture as the street the deck carries), the library's cast concrete
 // on the fascia, walls, upstands and soffit, dark steel rails; one draw per slot (streets/bridgeDecks.js PLAN_SLOTS)
@@ -478,6 +501,7 @@ function deckMaterials() {
   const brick = libMaterial("brick_red_brussels", { mapping: "world" }), stone = libMaterial("stone_blue", { mapping: "world" });
   deckLookMats = [asphaltMaterial(null), concreteMaterial(), concreteMaterial(), conc, steel, brick, stone];
   deckLookMats.forEach((m, i) => { m.userData.shared = true; m.name = `road-bridge-deck ${["asphalt", "paving", "kerb", "concrete", "steel", "brick", "stone"][i]}`; });
+  deckLookMats.push(...footMaterials());     // (claude/footbridge) slots 7 / 8: the footbridges' resin deck and galvanised steel
   return deckLookMats;
 }
 function bridgeDeckMesh(bd) {
@@ -524,6 +548,7 @@ const BRIDGES2 = params.get("bridges2") !== "0";
 // CLASS T (rule 39, docs/RAIL_T.md; ?rail=old: as before): the track bed in the drive surface under road bridges too, the
 // line's fences closed but at level crossings (panels per post bay, walls as drawn), nothing placed on a track bed
 const RAIL_T = params.get("rail") !== "old";
+const UNDERPASS = params.get("underpass") !== "0";    // ?underpass=0: no Calevoet pedestrian underpass U1 (viewer/underground/, docs/CALEVOET_UNDERPASS_PLAN.md): the UrbIS kiosks, no wells
 const TUNNELS = params.get("tunnels") !== "0";          // ?tunnels=0: no road tunnels (docs/trains/TUNNELS.md): no model, no cut through the embankments        // ?bridges2=0: no round-2 hero bridges (docs/trains/BRIDGES_ROUND2.md): the track crosses those gaps on its ballast
 const railP = TRAINS ? import("./rail/railway.js").then(async (m) => ({ m, doc: await m.loadRail() })).catch((e) => { log(`railway: ${e.message}`); return null; }) : null;
 // (CLASS T, rule 39) the track beds for the data layers' props (viewer/rail/railData.js railBed) + the hero road decks
@@ -540,6 +565,11 @@ const TRAFFIC = params.get("traffic") !== "0";   // round 4: on by default (?tra
 const trafficTiles = new Map();
 window.__trafficTiles = trafficTiles;            // (debug: the lane graphs, for checks in the console)
 let cityTraffic = null;
+// ?peds=0: no people (claude/peds2, viewer/pedestrians/cityPeds.js); each full tile's walk graph is kept here until they
+// start, then added / removed with its tile
+const PEDS = params.get("peds") !== "0";
+const pedTiles = new Map();
+let cityPeds = null;
 let cityNight = null;                         // ?night=1 (viewer/nightLights/cityNight.js): lamps + cars as pool lights
 let falconsReady = null, falconsOn = true;   // the Saint-Job peregrines (viewer/falcons.js), once loaded       // per-frame updates (tree LOD, lamp lights) of every loaded tile
 
@@ -755,6 +785,8 @@ const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("pai
  *  houses' and the school's looks, the school's yards and courts, its front (fence, gate, flags, lettering);
  *  ?cortenbosch=old: the neighbourhood as before */
 const CORTENBOSCH = params.get("cortenbosch") !== "old";
+/** (TODO 4b, rule embassy-flags) the cloth flags in front of the embassies that really fly one (data/places/embassy_flags.json) */
+const EMBASSYFLAGS = params.get("embassyflags") !== "0";
 /** a hard ground's own switch (data/overrides.json grounds[].switch "?key=old") is on */
 const groundOn = (g) => { const k = /^\?(\w+)=old$/.exec(g?.switch ?? "")?.[1]; return !k || (k === "cortenbosch" ? CORTENBOSCH : params.get(k) !== "old"); };
 /** (claude/carrefour2, rule curated-shed-look) no LiDAR "tree" under a curated canopy: a hard ground's chmClear rings drop
@@ -779,6 +811,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     cellar: params.get("cellar") !== "0",                                                           // cellar lights / a lower-ground floor in tall downhill plinths (viewer/facades.js CELLAR, docs/JOINS2.md), ?cellar=0 = plain blue stone
     sidewalkFill: params.get("sidewalkfill") !== "0",                                               // the sidewalk paving carried on to the façade where UrbIS stops short of it (viewer/surfaces.js, docs/JOINS2.md), ?sidewalkfill=0 = none
     sidewalkLevel: params.get("sidewalk") !== "old",                                                // sidewalks level with the kerb (<= 4 % cross-fall), the bank behind from their back edge (viewer/surfaces.js groundAt, viewer/heightmap.js clampUnder bank, docs/SIDEWALK.md), ?sidewalk=old = on the DTM (up the bank)
+    sawtooth: params.get("sawtooth") !== "old",                                                     // street height field corners solved together (viewer/surfaces.js jointFit, rule no-sawtooth-surfaces), ?sawtooth=old = each corner its own plane (a 6-8 m saw-tooth along sloping sidewalks)
     surfH: params.get("surfh") !== "old",                                                           // street heights fitted within 0.6 m of their own ground (viewer/surfaces.js fitCorner, docs/JOINS2.md), ?surfh=old = unclamped (path spikes)
     groundWeld: params.get("groundweld") !== "old",                                                 // the terrain beside a street / path banks on its NEAREST edge (viewer/heightmap.js weld, docs/JOINS2.md), ?groundweld=old = the highest edge within reach (saw-tooth over climbing paths)
     clampTop: params.get("clamptop") !== "old",                                                     // fix3: stacked surfaces hold the terrain under the TOP one (viewer/heightmap.js clampUnder, docs/FIX3.md), ?clamptop=old = under the lowest (joins2: the top one floated)
@@ -788,7 +821,9 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
     carrefour: params.get("carrefour") !== "old",                                                  // claude/carrefour: the Carrefour Market's retail-box look (buildingLooks set "carrefour"), ?carrefour=old = the generated block
     places2: params.get("places2") !== "old",                                                      // claude/places2: Le Pigeon Noir's ochre-mustard render + its white neighbour (buildingLooks set "places2"), ?places2=old = the generated look
-    cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2, vivier: VIVIER,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
+    montjoie: params.get("montjoie") !== "old",                                                    // claude/reality1: Institut Montjoie's red-brick neo-Gothic look (buildingLooks set "montjoie") + its asphalt yards (grounds, switch ?montjoie=old), ?montjoie=old = the generated block on a lawn
+    bldclass: params.get("bldclass") !== "old",                                                    // claude/reality1 (rule bldclass-evidence): building types from open-data evidence (dates, institutions, steep roofs: data/bldclass), ?bldclass=old = the form-only draw (balcony blocks under steep roofs)
+    cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2, vivier: VIVIER, footbridge: params.get("footbridge") !== "old",                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
     roadBend: params.get("roadbend") !== "old",                                                    // curvedroads: the engine strips trimmed at bends tighter than the road is wide (viewer/streets/roadBends.js, docs/roads/BENDS.md), ?roadbend=old = folded as built
     roadLines: params.get("roadlines") !== "old",                                                  // markings (census F, rule 33): the lane strips + their lines on the measured carriageway, clipped off sidewalks (viewer/streets/lineFit.js), ?roadlines=old = as the median width fit put them
     streetInv: params.get("streetinv") !== "old",                                                  // claude/street1 (rule street-invariants): no line rather than a wrong line (edge lines only as offsets of measured kerbs, none at confidence X, unmeasured roads unpainted at any length: viewer/streets/lineFit.js), ?streetinv=old = as before
@@ -798,10 +833,11 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     surfVote: params.get("surfvote") !== "old",                                                    // the street-surface name vote with repaired / normalised names (viewer/streetNames.js, docs/SURFVOTE.md), ?surfvote=old = the raw names (never matched: asphalt)
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
+    peds: PEDS && !lite,                                                                             // claude/peds2: the walk graph (viewer/pedestrians/walkGraph.js), ?peds=0 none
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", railT: RAIL_T, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
-    roughLanes: params.get("roughlanes") !== "0", edgeLift: params.get("edgelift") !== "old", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", bridgeProf: params.get("bridgeprof") !== "old", deckWidth: params.get("deckwidth") !== "old", bridgeLook: params.get("bridgelook") !== "old", wallFix: params.get("wallfix") !== "old", feetFix: params.get("feet") !== "old", wallEmpty: params.get("wallempty") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", movGround: params.get("movground") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    roughLanes: params.get("roughlanes") !== "0", edgeLift: params.get("edgelift") !== "old", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", bridgeProf: params.get("bridgeprof") !== "old", deckWidth: params.get("deckwidth") !== "old", bridgeLook: params.get("bridgelook") !== "old", wallFix: params.get("wallfix") !== "old", feetFix: params.get("feet") !== "old", wallEmpty: params.get("wallempty") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", movGround: params.get("movground") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS, underpass: UNDERPASS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
     deckLanes: params.get("decklanes") !== "old",                                                    // claude/drivecheck round 2: the traffic lanes over a hero road deck held clear of its parapets (rail/roadDeck.js squeezeDeckLanes), ?decklanes=old = as before
@@ -812,6 +848,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     zfight: params.get("zfight") !== "old",                                                         // claude/zfight (rule 34): overlapping coplanar UrbIS triangles cut, the steps' buried soffits left out (facadeGeom.js, viewer/coplanarClean.js), the ivy off the shopfronts; ?zfight=old = as before (z-fighting roofs / walls)
     colFeet: params.get("colfeet") !== "old",                                                       // claude/collisions (rule 25): the walls' feet sunk onto the drawn ground BEFORE the building colliders are traced from them (tileData.js), ?colfeet=old = after (colliders from the floating solids)
     gatesOld: params.get("gates") === "old",                                                        // claude/gates (rule house-front-garden-closed): the garden data before the front-gates job (data/gardens/old: the retaining walls' gates / steps read it too), docs/GATES.md
+    frontgardenOld: params.get("frontgarden") === "old",                                           // claude/reality1 (rule frontgarden-by-context): the garden data before the boundary followed the house family (data/gardens/fgold)
     roadsR: ROADS_R,                                                                                 // claude/roads (rule 38): smooth lane offsets, the band only off measured streets, restricted service roads out of the traffic (docs/ROADS_R.md), ?roads=old = before
     tramFit: params.get("tramfit") !== "old",                                                       // claude/tramfit (rule 32): the tram tracks fitted to the measured street (data/tramfit, viewer/track.js tramTracks), ?tramfit=old = the OSM ways as they are (rails under the kerb / on the sidewalk)
     cache: params.get("tilecache") !== "0",
@@ -988,13 +1025,14 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const furnP = cityFurniture.fetchTile(entry.name);    // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
   const skP = cityStreetKit.fetchTile(entry.name);      // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
   const twP = cityTwoWheelers.fetchTile(entry.name);    // (motorbike round 2: the shops the parked two-wheelers gather near)
+  if (VILLA_GARDEN_V3) cityGardens.extraHedges = { H9: VILLA_HEDGE_RUNS };   // (villa3 job 5: the villa's hedges are the city's modules)
   const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
   const ivyP = cityIvy.fetchTile(entry.name);           // ivy on walls, climbers on railings (viewer/plants/cityIvy.js), ?ivy=0 off
   const plantsP = cityPlants.fetchTile(entry.name);     // shrubs, bed plants, beds, window boxes (viewer/plants/), on by default, ?plants=0 off
   // the orthophoto for the textured ground's far blend (docs/materials/GROUND.md), fetched alongside the tile data
   const orthoP = groundLook() && F.ortho ? texLoader.loadAsync(new URL(F.ortho, DATA).href).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }).catch(() => null) : null;
   let d = await tileData(entry);                    // (heap: let go at the end, docs/HEAP.md: only what the tile keeps stays)
-  const decks = d.bridgeDecks;
+  const decks = d.bridgeDecks, footRefs = (d.footbridges || []).map((fb) => ({ id: `foot:${fb.id}` }));
   let busy = 0, longest = 0, mark = performance.now(), worst = "";
   const slices = [];
   const frame = (label = "") => { const dt = performance.now() - mark; busy += dt; if (dt > 4) slices.push(`${label} ${dt.toFixed(0)}`); if (dt > longest) { longest = dt; worst = label; }
@@ -1004,6 +1042,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (falconstutter, ?slicesplit=old: one slice) the "tram" step also placed the stops, furniture, street kit, fuel, gardens and
   // plants: 25-90 ms in one frame for every streamed tile (measured while flying): a frame between them
   const split = (label) => (SPLIT_SLICES ? frame(label) : null);
+  // (claude/perf5 round 2) a wait for one of the tile's other files inside a slice is not main-thread work: it is left out
+  // of the slice (the falcon boot's "grass field" 1.4-3.6 s and "show" 3.6 s slices were the plants / street-life fetches)
+  const waitFor = async (p) => { const t = performance.now(); const v = await p; mark += performance.now() - t; return v; };
 
   const hm = Heightmap.from(d.hdr, d.y, d.orig);
   addBridgeDecks(d.bridgeDecks, hm);
@@ -1018,13 +1059,23 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // the OSM road bridges' decks this tile carries (viewer/streets/bridgeDecks.js): drawn here, walked / driven via world.decks
   // (before the grass: a deck is a solid for it, no blades through the Carsoel deck's slab; citydefects 2026-11-16)
   const deckMeshes = (d.bridgeDecks || []).map(bridgeDeckMesh);
+  // (claude/footbridge, rule footbridge-built; ?footbridge=old: none) the station footbridges this tile holds: drawn with
+  // the decks' materials (one mesh, slot groups), in the roads group (the third person's BVH: real treads), walked via
+  // world.decks, their stair walls / girder ends at the ground in the car's walls
+  for (const fb of d.footbridges || []) {
+    deckMeshes.push(Object.assign(bridgeDeckMesh(fb), { name: `footbridge ${fb.id}` }));
+    addBridgeDecks([{ id: `foot:${fb.id}`, fn: footTop(fb) }], hm);
+    const cols = footCols.has(fb.id) ? [] : footColliders(fb, (x, z) => hm.surface(x, z));     // (once: the car's static walls stay)
+    footCols.add(fb.id);
+    if (cols.length) { if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols); }
+  }
   if (deckMeshes.length) own.roads.add(...deckMeshes);
   await frame("roads");
-  const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover, await orthoP);
+  const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover, await waitFor(orthoP));
   own.terrain.add(terr);
   if (d.rail && railP) {       // ?trains=1: carved + built in the tile worker (viewer/rail/railData.js), wrapped here
     await frame("terrain mesh");
-    const rail = await railP;
+    const rail = await waitFor(railP);
     const rt = rail.m.railTileMeshes(d.rail);
     if (rt.group.children.length) own.features.add(rt.group);
     const st = rt.stats;
@@ -1045,7 +1096,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys, ${B.stats.eaves || 0} eaves, ${B.stats.shops} shopfronts (OSM shops)`);
   own.buildings.add(...B.meshes);
   // ?grass=1: our grass (viewer/grass/) reads this tile's terrain, street surfaces and buildings (docs/GRASS.md)
-  let plantDoc = await plantsP;
+  let plantDoc = await waitFor(plantsP);
   if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: [...R.meshes, ...deckMeshes], buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc, (x, z) => hm.surface(x, z)), grounds.mesh, villaGrassSolid(THREE, (x, z) => hm.surface(x, z), bounds)].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
   await frame("buildings");
   // rails 1.2 cm above the road; with ?roads=surface 2 cm above H (the engine's markings layer sits up to 1.8 cm above it)
@@ -1062,7 +1113,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fo.userData.update) ups.push(fo.userData.update);
   await frame("trees");
   // ?roads=surface: lamps, parked cars, the walker and the bollards on the measured street (viewer/streetFit.js)
-  const stopsDoc = await stopsP, furnDoc = await furnP, skDoc = await skP;
+  const stopsDoc = await waitFor(stopsP), furnDoc = await waitFor(furnP), skDoc = await waitFor(skP);
   // claude/tramfit: a STIB pole on a tram platform moves with the platform (viewer/streets/tramPlatforms.js: the
   // platforms beside their fitted tracks); ?tramfit=old: no platform moved, nothing to follow
   if (stopsDoc?.stops) { const n = platformFollow(stopsDoc.stops.map((s) => (s.pole?.platform ? s.pole : null)), feats); if (n) say(`tram platforms: ${n} stop pole(s) moved with their platform`); }
@@ -1114,7 +1165,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const tracksAt = STREET_PROPS && lanesAt ? trackIndex((feats.lines || []).filter((l) => l.kind === "tram").map((l) => l.line)) : null;
   // (CLASS T, rule 39; ?rail=old: none) no prop on a track bed (moved off it as off a tram track); a point the data put
   // inside a hero ROAD bridge's footprint: its model draws the deck's furniture (dropped), signs / poles go up on its deck
-  const railBedT = railBedP ? await railBedP : null;
+  const railBedT = railBedP ? await waitFor(railBedP) : null;
   const bed = railBedT ? railBedT.rd.railBed(railBedT.doc, bounds, railBedT.heroes) : null;
   const heroDeckY = railBedT?.decks.length ? (x, z) => { for (const f of railBedT.decks) { const y = f(x, z); if (y != null) return y; } return null; } : null;
   const propOpt = STREET_PROPS ? { osm: true, far: PROP_REACH, tram: tracksAt, ground: (x, z) => hm.ground(x, z), ...(bed ? { rail: bed } : {}) } : {};
@@ -1133,15 +1184,16 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (the STIB stops: not the tram test: a tram-island stop's pole and shelter stand beside the track by design; a pole the
   // stops builder put on an OSM tram platform (pole.platform: on the slab tram.js draws, UrbIS calls it tram road) stays)
   const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]], STREET_PROPS ? { ...propOpt, tram: null, keep: (p) => p.platform } : {}), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
-  const furnCounts = cityFurniture.addTile(entry.name, snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]], bed ? { ...propOpt, drop: (p) => bed.inHero(p.x, p.z) } : propOpt), own.features);
+  const furnSnap = snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]], bed ? { ...propOpt, drop: (p) => bed.inHero(p.x, p.z) } : propOpt);
+  const furnCounts = cityFurniture.addTile(entry.name, furnSnap, own.features);
   const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, STREET_PROPS ? [["signs"]] : [["signs"], ["posts"]]), own.features);
   await split("stops, furniture, street kit");
   if (snapMoved) say(`street furniture: ${snapMoved} data-layer points moved out of a driven lane onto the sidewalk (?furnsnap=old)`);
   if (skCounts) say(`streetkit: ${Object.entries(skCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/streetkit, viewer/streetkit)`);
-  const fuelCounts = cityFuel.addTile(entry.name, await fuelP, own.features);
+  const fuelCounts = cityFuel.addTile(entry.name, await waitFor(fuelP), own.features);
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
   // (citydefects) no generated plant in a yard / gate mouth (data/overrides.json plantsClear; ?plantsclear=old)
-  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : [], villaClearRings());   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
+  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k, v]) => !k.startsWith("_") && !(v?.set === "montjoie" && params.get("montjoie") === "old")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : [], villaClearRings());   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
   const pfClear = PARKFENCE ? await parkFence.clearTest() : null;   // (parkfence) no garden piece / generated plant on a park's fence line
   // (allocrate, ?ringtest=old: the destructuring loop over every ring) index reads + a bounding box per ring (viewer/ringTest.js)
   const clearSet = RING_TEST ? ringSet(clearRings) : null;
@@ -1160,20 +1212,26 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   };
   // (claude/places2) the restyles by switch: the Cortenbosch pass's (no set) with ?cortenbosch, set "places2" with ?places2
   const restyleFor = (rs) => rs && Object.fromEntries(Object.entries(rs).filter(([k, v]) => k.startsWith("_") || (v?.set === "places2" ? params.get("places2") !== "old" : CORTENBOSCH)));
-  const gardenCounts = await (GARDEN_SLICE ? cityGardens.addTileSliced : cityGardens.addTile).call(cityGardens, entry.name, await gardensP, own.features, gardenGround, (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z), restyleFor((await loadOverrides(DATA)).gardenRestyle));   // (cortenbosch: the lane's beech hedges, gardenRestyle; claude/places2: the Papenkasteel's hedge, set places2)
+  const gardenCounts = await (GARDEN_SLICE ? cityGardens.addTileSliced : cityGardens.addTile).call(cityGardens, entry.name, await waitFor(gardensP), own.features, gardenGround, (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z), restyleFor((await loadOverrides(DATA)).gardenRestyle));   // (cortenbosch: the lane's beech hedges, gardenRestyle; claude/places2: the Papenkasteel's hedge, set places2)
   await split("gardens");
   // (cortenbosch) the Lycée Français's front: railing, gate, flag poles, lettering (viewer/lyceeFront.js; tile F7)
   const lycee = CORTENBOSCH ? lyceeFront.tile(entry.name, own.features, (x, z) => hm.surface(x, z)) : null;
   if (lycee) say(`lycée front: ${lycee.panels} railing panels, ${lycee.tris} triangles (viewer/lyceeFront.js)`);
+  // (TODO 4b) the embassy flag poles on this tile's drawn ground (viewer/embassyFlags.js; ?embassyflags=0 none)
+  if (EMBASSYFLAGS) { await loadEmbassyFlags(); const ef = embassyFlags.tile(entry.name, own.features, (x, z) => hm.surface(x, z)); if (ef) say(`embassy flag poles: ${ef.poles}, ${ef.tris} triangles (viewer/embassyFlags.js)`); }
   // (parkfence) the Parc de Wolvendael's and the Parc de la Sauvagère's fences and gates on this tile's drawn ground
   // (viewer/parkFence.js: instanced, the colliders a hero root per park and tile; ?parkfence=0 none)
   if (PARKFENCE) parkFence.tile(entry.name, gardenGround).then((c) => { if (c) say(`park fences: ${Object.entries(c).map(([k, v]) => `${k} ${Object.entries(v).filter(([, n]) => n).map(([q, n]) => `${n} ${q}`).join(" ")}`).join("; ")} (viewer/parkFence.js)`); }).catch((e) => say(`park fences failed: ${e.message}`));
+  // (claude/reality1 round 3, rule timber-fence) OSM wooden post-and-rail fences on this tile's drawn ground (viewer/fences/timberFence.js: 2 instanced meshes a tile, the colliders a hero root a tile; ?timberfence=0 none)
+  if (TIMBER) timberFence.tile(entry.name, own.features, gardenGround).then((c) => { if (c) say(`timber fences: ${c.posts} posts, ${c.rails} rails (viewer/fences/timberFence.js)`); }).catch((e) => say(`timber fences failed: ${e.message}`));
   if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
   // (vivier) no generated plant on a road deck: the bank under the Vivier d'Oie deck grew box balls up through its slab
   if (VIVIER && bridgeDeckRefs.size && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (deckY(P[o], P[o + 1]) == null) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
   if (VIVIER && bridgeDeckRefs.size && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (deckY(B[o], B[o + 1]) == null) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
   if (clearRings.length && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (!inClear(P[o], P[o + 1])) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
   if (clearRings.length && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (!inClear(B[o], B[o + 1])) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
+  // villa3 job 5: the villa's shrubs from the city's plant kit (viewer/villa/villaPlot.js), after the plot's clear ring
+  if (VILLA_GARDEN_V3 && entry.name === "H9" && plantDoc?.plants) plantDoc.plants = plantDoc.plants.concat(villaShrubRows(plantDoc.types || ["box_ball", "laurel", "rhododendron", "hydrangea", "rose", "lavender", "bulbs", "geranium"]));
   // claude/roads (rule 38): no shrub / bed standing in, or hanging its crown over, the drawn carriageway (viewer/plants/plantsClear.js;
   // ?roads=old: as before)
   if (ROADS_R && plantDoc) { const r = plantsOffCarriageway(plantDoc, drivenAt); if (r.plants || r.beds) { plantDoc = r.doc; say(`plants: ${r.plants} shrub(s), ${r.beds} bed(s) off the carriageway (rule 38)`); } }
@@ -1213,7 +1271,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`buildings: ${d.buildingCount} (${B.triangles} triangles), roads: ${d.road.triangles} triangles in tile, terrain cells carved: ${d.road.carvedCells}; tile ready in ${(performance.now() - t0).toFixed(0)} ms`);
 
   await frame("bollards");
-  const sl = await streetLifeP;
+  const sl = await waitFor(streetLifeP);
   cityNight?.addShops(entry.name, cityStreetLife.layer?.tiles.get(entry.name)?.night?.lights);   // ?night=1: its shop windows + signs join the night pool (fading in)
   if (sl) say(`street life: ${sl.boxes} boxes, ${sl.windows} windows, ${Object.values(sl.props).reduce((a, b) => a + b, 0)} props, ${sl.labels} labels (${sl.labelPages} atlas page(s)); worker ${sl.worker.total} ms, main thread ${sl.mainMs} ms`);
   if (fadeIn) { const tc = performance.now(); await preCompile(Object.values(own), true); mark += performance.now() - tc; }   // shaders + fading copies built before it shows (not counted as a slice)
@@ -1229,6 +1287,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const dispose = () => {
     cityProps.removeTile(entry.name);               // (props: its knocked-over props back to rest, forgotten)
     removeBridgeDecks(decks);
+    removeBridgeDecks(footRefs);
     cityKit.removeTile(entry.name);
     cityRoofs.removeTile(entry.name);               // its instances leave the roof pools
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
@@ -1252,6 +1311,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     for (const t of R.textures) t.dispose();
     if (trafficTiles.delete(entry.name)) cityTraffic?.removeTile(entry.name);
+    if (pedTiles.delete(entry.name)) cityPeds?.removeTile(entry.name);
   };
   await frame("show");
   tramLine?.snapTile(entry.name, feats, bounds);
@@ -1265,6 +1325,12 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (bollards && cityProps.on) bollards.userData.refs = drawn.bollards.map((q) => q.ref);   // (props: the walker's bollard posts follow a snapped / bent one, cityHook.js)
   const drive = tileDrive(d.drive, roads, bounds, drawn, COLFIX ? own.features : null);
   frame("drive colliders");
+  // (claude/peds2) the tile's walk graph to the people (viewer/pedestrians/cityPeds.js): cleared of the drawn furniture
+  // (this drive set) in slices there; the drawn benches become seats
+  if (PEDS && d.peds) {
+    const pt = { packed: d.peds, extra: { col: drive?.col ?? null, grid: d.road?.surfaceData?.grid ?? null, benches: (furnSnap?.benches || []).map((b) => ({ x: b.x, z: b.z, yaw: b.yaw })) } };
+    pedTiles.set(entry.name, pt); cityPeds?.addTile(entry.name, pt.packed, pt.extra);
+  }
   log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); slices over 4 ms: ${slices.join(", ") || "none"}; ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);
   // roof heights (m TAW, 0 = none) for fly-mode collision: the max of the 2 m cells around the point, so the bird
   // keeps clear of a roof edge it is about to cross
@@ -1367,6 +1433,7 @@ async function main() {
   setAORenderer(renderer);                          // fix3: the AO maps as BC4 KTX2 when the GPU samples BC (viewer/aoTexture.js, ?aoktx2=0 = the PNGs)
   if (params.get("buildaudit") === "1") (await import("./buildAudit.js")).installBuildAudit(renderer);   // perf9: every node build timed (debug/buildAudit.js)
   if (params.get("wgslintern") !== "old") installWgslIntern(renderer);   // perf9: one copy of each WGSL text on the heap (viewer/wgslIntern.js)
+  if (params.get("pinbuilds") !== "old") window.__pinBuilds = installPinBuilds(renderer);   // perf5 round 2: a shared material's node build / pipelines never released with the last tile using them (viewer/pinBuilds.js)
   if (params.get("heapdrop") !== "old") installHeapDrop(renderer, { log });   // heap: the drops' renderer hooks + guards (viewer/heapDrop.js); window.__heapDrop
   if (params.get("shadowshare") !== "0") shareShadowNodes(renderer);   // one shadow shader per vertex code, not per material (warmup.js; ?shadowshare=0: three's own)
   // the material library's SHIPPED textures (viewer/materials/textures/scans.json: the default look of every library
@@ -1389,6 +1456,9 @@ async function main() {
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   setTreeLighting(lighting);
+  // (claude/xmasreview, rule season-from-date) the season's uniforms (lawns, shrubs, hedges, ivy, the weather's crowns)
+  // on the lighting's day from the first frame (the weather sets them too, but only when it runs: ?weather=old / quick)
+  setCityDay(lighting.day);
   // --- perf4 (docs/perf/AUDIT.md step 13): the foliage materials (grass, plants, ivy) take the sun + hemisphere only
   setFoliageLights(lighting);
   setCellCullSun(lighting.sun?.shadow?.camera || null, lodEye);
@@ -1472,6 +1542,8 @@ async function main() {
     if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
     if (params.get("precompile") !== "0") compileFor = (roots, o) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null, first: !!o?.first, names: o?.names ?? null, last: !!o?.last });   // ?precompile=0: A/B
     else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
+    // (perf5: AFTER the precompile if / else above: inserted between them it took that else and set the tone-mapping exposure on every page)
+    if (compileFor && RAIL_WARM && TRAINS && !railWarmed) { railWarmed = true; railP?.then((rail) => { if (!rail) return; const st = rail.m.railTileMeshes(rail.m.railWarmData()); st.group.name = "rail-warm"; return preCompile(st.group, TILE_FADE); }).catch((e) => log(`rail warm: ${e.message}`)); }
   };
 
   setLampPool(scene, updaters);                       // perfgame round 6: one city-wide lamp pool (?lamppool=old: per tile)
@@ -1569,6 +1641,9 @@ async function main() {
   if (params.get("police") !== "0") heroes.push(() => addPolice({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
   // The Uccle-Calevoet station building (tools/blender/calevoet_station.py, viewer/calevoetCity.js) in place of UrbIS
   // solid 534568, behind ?calevoet=1 for now
+  // the Calevoet pedestrian underpass U1 (tools/blender/underpass.py, viewer/underground/underpassCity.js): its two kiosks
+  // in place of UrbIS solids 525169 + 519275, the wells cut in the tile worker, the streamed inside; ?underpass=0 off
+  if (UNDERPASS) heroes.push(() => import("./underground/underpassCity.js").then((m) => m.addUnderpass({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer, getThird: () => third })).catch((e) => log(`underpass: ${e.message}`)));
   if (params.get("calevoet") !== "0") heroes.push(() => addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
   // The Papenkasteel / Chateau de Stalle, the castle on the Geleytsbeek (tools/blender/papenkasteel.py, viewer/papenkasteelCity.js)
   // in place of UrbIS solids 528339 + 528019; ?papenkasteel=0 (alias ?geleytsbeek=0) = the UrbIS solids
@@ -1608,13 +1683,17 @@ async function main() {
   // at LOW fetch priority, and only after the cover when no decorated area is in the boot's ring (bootGate.js whenXmasNeeded)
   if (xmasActive(params)) heroes.push(() => {
     window.__xmasPending = true;                    // (?quick=1: quickReady waits until the layer is in or has failed)
-    whenXmasNeeded().then(() => addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }))
+    // (claude/xmasreview, rule xmas-low-priority) the layer's modules (xmasCity.js, xmasKit.js, the GLTF / meshopt
+    // loaders) are fetched only now: outside the season the boot loads no Christmas code beyond the date switch
+    whenXmasNeeded().then(() => import("./christmas/xmasCity.js")).then(({ addChristmas }) => addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }))
       .catch((e) => log(`christmas failed (${e.message}): reload with ?xmas=0`)).finally(() => { window.__xmasPending = false; });
   });
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   // ... and the Lycée Français's three (viewer/lyceeFront.js: once tile F7 has built the poles; ?cortenbosch=old none)
   if (CORTENBOSCH && params.get("flags") !== "0") lyceeFront.flags({ scene, updaters, renderer, compiler: heroCompiler, params, log }).catch((e) => log(`lycée flags failed: ${e.message}`));
+  if (EMBASSYFLAGS) embassyFlags.start({ scene, updaters, renderer, compiler: heroCompiler, params, log }).catch((e) => log(`embassy flags failed: ${e.message} (?embassyflags=0: none)`));
+  if (TIMBER) timberFence.start(scene);
   if (PARKFENCE) parkFence.start({ scene, updaters, world, compiler: heroCompiler, log }).catch((e) => log(`park fences failed: ${e.message} (?parkfence=0: none)`));
   // (billboards) the big ad boards on gables and roofs, invented posters, the trivision prisms turning (viewer/billboards.js; ?billboards=0 none)
   if (BILLBOARDS) billboards.start({ scene, updaters, compiler: heroCompiler, log }).catch((e) => log(`billboards failed: ${e.message} (?billboards=0: none)`));
@@ -1827,7 +1906,7 @@ async function main() {
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
   // (cortenbosch2) the Lycée Français's railing, sliding gate and flag poles (viewer/lyceeFront.js, tile F7) collide like the
   // landmarks: car blocks from their triangles in the 0.3-1.3 m band, the triangles for walk / third person
-  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); if (PARKFENCE) for (const n of await parkFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (params.get("places2") !== "old") for (const n of playgroundRootNames(await loadOverrides(DATA), params)) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
+  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); if (PARKFENCE) for (const n of await parkFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (EMBASSYFLAGS) for (const n of await embassyFlags.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (TIMBER) for (const n of await timberFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (params.get("places2") !== "old") for (const n of playgroundRootNames(await loadOverrides(DATA), params)) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
   else {
     if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});
     for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);
@@ -1958,6 +2037,27 @@ async function main() {
       window.__traffic = cityTraffic;
       log(`traffic: on (?traffic=1), ${trafficTiles.size} tile graphs; ?trafficdebug=1 draws the lane graph`);
     } catch (e) { log(`traffic: ${e.message}`); console.error(e); }
+  }
+  // ?peds=0 off: the people (viewer/pedestrians/cityPeds.js) on the walk graphs, after the traffic (their crossings are
+  // its obstacles), updated after it
+  if (PEDS) {
+    try {
+      const m = await import("./pedestrians/cityPeds.js");
+      const fp = { x: 0, z: 0 };
+      const pedFocus = () => {
+        if (third?.on) { fp.x = third.tp.ctl.pos[0]; fp.z = third.tp.ctl.pos[2]; }
+        else if (flyer.on) { fp.x = flyer.x; fp.z = flyer.z; }
+        else if (driver.on) { fp.x = driver.x; fp.z = driver.z; }
+        else if (walker.on) { fp.x = walker.x; fp.z = walker.z; }
+        else { fp.x = controls.target.x; fp.z = controls.target.z; }
+        return fp;
+      };
+      await m.cityPeds.start({ scene, renderer, camera, ground: movingGround, focus: pedFocus, driver, getThird: () => third, getTram: () => tramLine, getTraffic: () => cityTraffic, log });
+      cityPeds = m.cityPeds;
+      for (const [n, t] of pedTiles) cityPeds.addTile(n, t.packed, t.extra);
+      const ti = cityTraffic ? updaters.indexOf(cityTraffic.update) : -1;
+      updaters.splice(ti >= 0 ? ti + 1 : updaters.length, 0, (camPos, cam) => cityPeds.update(camPos, cam));
+    } catch (e) { log(`people: ${e.message}`); console.error(e); }
   }
   // (villamark) ?at=x,z&view=third: the character AT x, z facing ?heading / ?look (?atthird=old: the road start as before)
   const AT0 = parseAt(params);
@@ -2285,7 +2385,9 @@ async function main() {
   if (params.get("compileboost") !== "old") boostCompile(renderer, () => playLoader.active);   // perfgame round 2
   if (params.get("compileslice") !== "old") window.__fineCompile = fineCompile(renderer, () => playLoader.active, Math.max(1, +(params.get("compileslicems") ?? 4) || 4));   // falconstutter
   // perf8 (?compileflush=old): under the play loader the queued compile jobs are done together in one forced frame (warmup.js)
-  setCompileFlush({ active: () => playLoader.active, render: () => (pipe ? pipe.render(null) : renderer.render(scene, camera)), renderer, scene });
+  setCompileFlush({ active: () => playLoader.active, render: () => (pipe ? pipe.render(null) : renderer.render(scene, camera)), renderer, scene, shadowDirty: (objs) => markSunShadowDirty(objs),
+    // (perf5 round 2, flushalone) a flush chunk draws the scene pass alone (its MRT target: the same build keys), not the post chain
+    renderScene: () => { if (!pipe?.passTarget) return renderer.render(scene, camera); const rt = renderer.getRenderTarget(), mrt = renderer.getMRT(); renderer.setRenderTarget(pipe.passTarget); renderer.setMRT(pipe.passMRT); try { renderer.render(scene, camera); } finally { renderer.setRenderTarget(rt); renderer.setMRT(mrt); } } });
   // perfgame round 3 (?readysweep=old): the landmarks' pipeline windows (vendor/engine/parallelPipelines.js) wrap three's
   // Pipelines.isReady (called on EVERY draw) and restore what they saw at their open: windows that overlap out of order
   // leave a closed window's wrapper in place for good (~0.1 ms a frame, measured in the drive trace). isReady is only

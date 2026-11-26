@@ -8,6 +8,47 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 Older sections (per-branch notes from 2026-11-04 .. 11-13, labs, master list) moved UNCHANGED to **docs/TODO_ARCHIVE.md**
 on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QUALITY_RULES.md + merge gate + city tour.
 
+## ORDER (owner OK 2026-11-26) — read this first
+1. Finish the running jobs: peds2 (people in the city), xmasreview (before 1 Dec), villa3 job 1 (window glass + bed; plan
+   docs/VILLA_V3_PLAN.md on claude/villa3, owner approved the 5.5 -> 9 MB raise, textures fetched near only), kid A v4 on
+   claude/kid (posture, flat chest, knees, junior cranks, wheels on the ground), sawtooth (city-wide detector + builder
+   fix, rule no-sawtooth-surfaces). Next in line: the Montjoie school + a Street View reality round.
+2. Owner away = the perf wave: police game lag, time to play < 35 s, tile LRU, lamp light map, fade-hitch shader
+   sharing, quiet re-measures (peds, xmas, villa stream); refresh the data/raw backup (UAL restored 2026-11-26).
+3. Owner plays: falcon city (claude/falconfun, gate passes), BMX park + kid A (claude/kid), the Christmas sheet; merge
+   what the owner OKs.
+4. Defects (sections below) + reality rounds; villa V3 jobs 2+ alongside (sofa, TV, pool, sculptures, kitchen / bath,
+   night lamps, glassware).
+4b. EMBASSY FLAGS (owner 2026-11-26, small job when a slot frees): fetch OSM office=diplomatic (+ country) for Uccle
+   (today's OSM pull has only the Russian embassy); embassies / chancelleries vs residences (residences rarely fly a flag):
+   a flag only where Street View shows a real pole / flag (look only); the existing cloth flags (viewer/flagsCity.js:
+   baked loops, live cloth < 45 m, hidden > 700 m, rule flags-are-cloth); public-domain flag designs; check: one per
+   real pole, no flag on a residence without a pole, cost structural (draws / live count).
+   **MERGED 2026-11-26 (claude/flags3):** 19 OSM places in the commune looked at: 11 fly a flag (14 poles / brackets:
+   UA, HU+EU, BG+EU, RO+EU, KE, SZ, BF, ER, AF, NI, AO), 6 no, 2 unseen; the real Commons flags (PD) in one atlas, real
+   proportions, a local wind along the front; rule embassy-flags, row embassyflags. Left: generic blocks where the real
+   embassies are villas (Hungary, Eswatini, Afghanistan); Romania's garden pole not placed.
+4b2. ACTIVITIES, one at a time, each self-contained (loaded only where it happens, own perf budget + checks; owner
+   2026-11-26 agreed the order: core city perf + the three games first): (1) SNOOKER in the villa (mouse play: aim,
+   pull back, shoot; real ball physics: collisions, cushions, spin, pockets; no character; loads with the interior);
+   (2) TENNIS (see 5); (3) HORSE RIDING in the woods (Bois de la Cambre next door, Forêt de Soignes partly in the map:
+   extend the map + a forest pass), maybe with the owner's ARROW system: the owner shares the paths to their two
+   other projects (horse + arrows) so we check what can be reused (three.js code carries over, other engines: the logic).
+4b3. FALCON RINGS (owner 2026-11-26, "not realistic but it's about controlling the falcon well; the goal: the game
+   not boring"): flight courses through rings over the real city (between the Saint-Job and Saint-Pierre spires, down
+   streets, under the tram wires, a stoop gate off the Observatory), timed, with medals; plus my ideas to pick from:
+   stoop gates (dive through a falling line of rings), a slalom down an avenue of plane trees, a race against a
+   pigeon flock, a "thread the needle" between chimneys, ghost replay of your best run. Rings: one instanced mesh,
+   a few draws, only the active course loaded. After the falcon's landing fix + perf audit, before the merge.
+4c. LATER, after villa V3 is finished (owner 2026-11-26: "first finish the villa we do now to see how far we can go"):
+   a BIGGER ESTATE villa with a large domain: from the street you see nothing but tall hedges and a big gate that opens
+   onto a long drive up to a huge villa, with a large parking court and the rest of the domain. Reuse villa V3's
+   methods / kit (glass model, cloth-sim props, shared KTX2 sheet, streamed interior); pick a real-sized plot (look
+   at Uccle's big estates on the aerial / Street View, look only) when we get there.
+5. Later: TENNIS (owner 2026-11-26: 159 OSM tennis pitches in the area, drawn as ground only today: courts first (lines,
+   nets, wind-screen fences, instanced, near only), then an arcade tennis game lab (ball physics, AI, scoring), then E at
+   any court; swings: the owner checks Mixamo), then the ideas list.
+
 ## OWNER PLAYTEST 2026-11-18 (car, live site) — TOP PRIORITY
 Owner's point: don't fix these one by one; find the CLASS of each defect, fix it at the generator, and add a city-wide detector so it can't come back unseen.
 
@@ -134,6 +175,13 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [ ] Loading screen images: redo with the current city.
 
 **Reality check rounds (recurring, owner 2026-11-18):** one district at a time on Google Maps / Street View (look only, never stored or traced): what is missing, what is wrong, what looks nice and worth copying in spirit. Output: a short list per district into this TODO, then small jobs.
+  **Shop fronts (owner 2026-11-26):** each round also notes, per shop, the REAL NAME (plain lettering, our own font), the
+  real COLOURS (facade, awning, sign background + text) and the real SIGN TYPE (lit box, letters on the facade, hanging
+  sign, lettered awning, window lettering), look only. NO copied logos (trademark + artwork, and imagery is never
+  traced); big chains: name + colours with generic lettering, or an invented name (owner's call per chain); a small
+  shop's real logo only with its written OK (owner asks).
+
+- [ ] REALITY ROUND 1 done 2026-11-26 (claude/reality1, not merged): 14 spots, docs/REALITY_ROUND_2026-11-26.md (classes C1-C15, later jobs in its last section), owner sheet C:\Users\tibog\Downloads\uccle-reality\round1_sheet.png. Montjoie school fixed (?montjoie=old, rule institution-not-balcony-block, row montjoie); Bleus d'Encre sign fixed.
 
 **Step 3: places (compare with photos, look only)**
 - [x] MERGED 2026-11-23 (claude/parkfence) Wolvendael: big metal fences all round + several big gates (one at the Dieweg tram terminus).
@@ -155,7 +203,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [ ] FALCON FUN (claude/falconfun, owner playtest 2026-11-24: "too hard, not funny"): lock-on auto-dive, 5.5 m catch, arcade stoop (150 m -> 258 km/h), sprint, easy / racer pigeons, dodge warning, tame first pigeon, camera keeps the falcon in frame, flock markers; row falconfun. Owner testing on localhost:8839; then tune, tour, merge. Left: the perched-in-a-crown camera sits in the leaves (older code).
 - [ ] WALLS (claude/walls2, rule walls-closed-from-street, row walls): the wall feet no longer tear walls, empty UrbIS edges rebuilt; buildings open >= 1 m2 1,261 -> 389. Before merge, on a quiet machine: re-run gates + ground + trafmix, city tour. Left (Street View first): E3 open-low (maybe real arcades), E4 short walls, E5 inward walls, R 138 down-facing roofs; OSM way 307954781 runs 2.5 m inside building 729885 (F1, -218, -1637): the road data is wrong; colliders item 529646 (E4, -696.5, -6.1) not traced.
 
-- [ ] CALEVOET STATION PEDESTRIAN UNDERPASS (owner 2026-11-24): the passage under the rails for people (no cars). Find it (OSM footway tunnel=yes near Calevoet, Street View look only); build walk-only (stairs / ramps, lit, tiled) with the tunnels.js ground cut; interior streamed in only near; check: walkable through, welded joins, colliders, no hole in the platform.
+- [ ] CALEVOET STATION PEDESTRIAN UNDERPASS (owner 2026-11-24): the passage under the rails for people (no cars). Find it (OSM footway tunnel=yes near Calevoet, Street View look only); build walk-only (stairs / ramps, lit, tiled) with the tunnels.js ground cut; interior streamed in only near; check: walkable through, welded joins, colliders, no hole in the platform. **PLAN: docs/CALEVOET_UNDERPASS_PLAN.md (claude/underpass-plan, 2026-11-24): two stair underpasses exist, U1 the public one (OSM 640826544, Rue Engeland / Dieweg to Rue Égide Van Ophem, ~42 m) to build first, U2 the platforms' subway (OSM 384677494) optional; 3 small jobs (~1.5 agent-days); owner questions in §10.** **ROUND 2 (claude/underpass1, 2026-11-25, not merged): stream-in hitch fixed (the kiosks' static shadow pass warmed: 0 frames over 34 ms in 3 runs, YELLOW), own painted mural, weathered kiosks + downpipes / bollard bands / underpass sign, panes glow at night, heroshell L0 9.9 -> 0 m2, signs un-mirrored; rules pane-faces-apart, sign-uv-reads-right, ao-ktx2, shadow-warm-static-pass; ?underpass=old = round 1; plan doc "Round 2".**
 - [x] Sun shadow past-far dark band (found by claude/renders 2026-11-24): r187's reversed-depth shadow test only checks z <= 1, so every receiver past the sun shadow's far plane reads as shadowed. At a low sun (golden, 9 deg) from 300 m up, the foreground past the far plane (box x 1.42 + 110 m) is a dark band (far-300m tour view). Fix: a far plane or box fade sized by the sun elevation (perf cost at a low sun); do it with the sun-step shadow job (docs/SHADOWS_RESEARCH_2026-11.md). Notes in docs/rules/renders-per-frame.md. DONE claude/sunstep (2026-11-24): far = light distance + box / tan(e) + down / sin(e), receivers past it fade to lit, bias kept in metres (`?sunfar=old`); with the moving-sun step (`?sunstep=old`). Rule docs/rules/sun-shadow-step.md.
 - [x] MERGED 2026-11-24 (claude/carrefour2; the real store is Rue Gatti de Gamond 60 / Av. Docteur Decroly; the OSM underground node 9627537495 stands at n. 333 by the Centre administratif: likely a REAL public underground car park, owner to confirm) Carrefour Rue Gatti de Gamond / Rue de Stalle (owner 2026-11-24): same design as Carrefour Market Marlow (claude/carrefour: shed:true box, glazed front + canopy, red sign, its surface car park with bays). Curate it the same way; its car park is at ground level (the OSM parking=underground node 9627537495 is wrong, docs/UNDERGROUND_PLAN.md). **claude/carrefour2 (2026-11-24, not merged): the store is the Carrefour Market Rue Gatti de Gamond 60 at Avenue Docteur Decroly (UrbIS solid 558122, OSM shop node 13192287981; Street View Apr 2024 + ortho 2024, look only): a pale grey panel box, the front facing south across its car park. Cause: the generator drew a greige block with a row of house windows, a 6.5 m shop slot and a lawn with paths. Now: the shed look (set carrefour), a 19 m glazed run under a 34.6 m canopy along the whole hall (new data-driven canopy.du), the red line (plaque dz) and 'Carrefour' / 'market' letters, the asphalt lot carrefour_gatti_lot with its 12 bay rows, the 4 LiDAR 'trees' under the canopy dropped (grounds chmClear, viewer/main.js groundTreesClear), osmWrong recorded on the lot. Check: curatedplaces S now walks every look with store {front, sign, lot, bays} (bays inside the lot, no LiDAR tree under a canopy). Found: node 9627537495 stands ~830 m south, at Rue Gatti de Gamond 333 by the Centre administratif (Rue de Stalle 77), where Street View shows a P sign and a ramp down under the building: owner to confirm whether that node is really wrong. Left: the glazed barrel vestibule at the entrance, the two red-and-white trolley shelters, the lot's fence + hedge, lamp posts, the brand mark.**
 - [ ] Stunt area + invented abandoned underground car park (owner 2026-11-24 chose this: both together on empty land around Stalle, docs/UNDERGROUND_PLAN.md). Stunt area (owner 2026-11-22, for later): a construction site or waste ground with ramps, pipes, sand piles, containers, scaffolding for stunts with the car, the moto and the bike. Place not chosen: candidates to check on Google Maps / Street View (look only): the Calevoet / Stalle industrial and rail-side land, open or vacant plots in the Kauwberg / Engeland area (next to the kid game's sand quarries and the Dieweg bike park, docs/KIDGAME.md), any real building site. Pick one that is real and drivable; scripted props only.
@@ -215,7 +263,10 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 
 **Defects found 2026-11-17**
 - [~] Wire clearance too low under Av. des Tilleuls / Hospices / Carsoel bridges. **claude/places1: decks on their DSM-measured profile (rule deck-profile-measured): Tilleuls over the L26/5 chord 81.16 -> 82.09 m, wire 3.64 -> 4.54 m over the rail. Left: Hospices 2.9 m (DSM = deck top, so the L124 rail heights / the 0.9 m slab under that old bridge are the suspects) and Carsoel 4.54 m (hand-measured plan deck).**
-- [ ] Vivier d'Oie station footbridges (UrbIS 751 / 752); Saint-Job deck sidewalks over the bank.
+- [x] Vivier d'Oie station footbridges (UrbIS 751 / 752); Saint-Job deck sidewalks over the bank. (claude/footbridge 2026-11-25: both footbridges built, viewer/rail/footbridge.js + data/rail/footbridges.json, rule footbridge-built, gate row footbridge; the Carsoel ring widened to its bank sidewalks, rule deck-covers-street, deckjoins H; ?footbridge=old. Left: the Carsoel hand plan top 0.26-0.40 m over the at-grade street along its SW abutment, deckJoins allow list)
+- [ ] Vivier d'Oie: a steep earth MOUND (terrain data) beside stair 533 / the east footbridge's NW end, seen from the
+  street (uccle-footbridge east_street_*.png, there before the footbridges too); the red resin forecourts at the
+  bridge ends.
 - [ ] Sharp leftovers: pedestrians / flags / grass motion vectors, window-mosaic repro, car streaking at 0.6 res.
 - [ ] Cobble junction pads.
 
@@ -226,6 +277,13 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   BROWSER turn on GREEN (A/B ?firprepass=0, ?firshadow=cards at 8 / 21 / 45 m; holes / specks; the 30 -> 70 m walk;
   re-measure the whole layer, +0.33-0.59 ms on YELLOW vs +0.00 on GREEN before), then merge.
 - [ ] (Christmas 2+3, perf fix, pole garlands, December windows MERGED 2026-11-24) Owner review of the market + garlands + fir in game (?xmas=1); more decorations if the owner asks.
+- [ ] (claude/xmasreview, 2026-11-26) Game review done: market clear of street furniture + out of the fir's sightline,
+  the fir's foot on the planter's lowest ground, LED glow at night on the firs / baubles / chalet fronts (?firglow=0),
+  Brussels date, layer code lazy. OWNER: July sun + leafy plane trees under the Christmas layer? chalet goods / garland
+  (Blender) (docs/CHRISTMAS.md "ART-DIRECTOR REVIEW", C:/Users/tibog/Downloads/uccle-xmas/review_sheet.png).
+- [x] (claude/xmasreview) The WINTER LOOK for the season (owner 2026-11-26): December sun, bare trees (twig cards),
+  winter lawns, walker colliders on the fir + chalets (docs/CHRISTMAS.md "THE WINTER LOOK"; ?season=summer A/B).
+  Left: GPU timing winter vs summer on a quiet machine; optional fallen leaves / morning frost; the far orthophoto is leaf-on.
 
 **City content (open from the archive)**
 - [ ] Trains: more bridges (Rue de Stalle, Kauwberg, Linkebeek, Engeland, Moensberg), roads over the line as real decks,

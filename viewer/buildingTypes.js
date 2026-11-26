@@ -97,6 +97,57 @@ function period(r, sh, w) {
   return 3;
 }
 
+// ---- BUILDING-CLASS EVIDENCE (claude/reality1, rule bldclass-evidence, class C1 of docs/REALITY_ROUND_2026-11-26.md).
+// The draw above only knows form; 194 steep-roofed solids came out as the post-war balcony block (Institut Montjoie).
+// A balcony block now needs evidence; a steep tile roof or a date / an institution says otherwise:
+//   - own date (data/bldclass/<T>.json era from the Irismonument inventory / OSM start_date): pre -> MAITRE, inter ->
+//     DECO when flat-roofed or modernist else MAITRE, post -> as drawn among the post-war types (DECO / BLOCK)
+//   - an institution (OSM building / amenity site, the inventory's "etablissement scolaire"): never BLOCK; steep roof ->
+//     MAITRE in face brick, else DECO (window bands, no balconies)
+//   - no date: a steep pitched roof (>= 70 % of the roof's plan area at >= 35 deg) never takes BLOCK; the street / neighbour
+//     prior (near old / new: >= 3 dated inventory buildings within 40 m, >= 80 % one era) shifts the period weights
+// doc._bldclass === true turns it on (viewer/tileData.js applyBuildingEvidence; ?bldclass=old: never set).
+export const STEEP_COS = Math.cos((35 * Math.PI) / 180), STEEP_SHARE = 0.7;
+const ERA_RANK = { pre: 0, inter: 1, post: 2 };
+function mergeEv(a, b) {
+  if (!a) return { ...b };
+  const o = { ...a };
+  if (b.inst && !o.inst) o.inst = b.inst;
+  if (b.wall && !o.wall) o.wall = b.wall;
+  if (b.era && (!o.era || ERA_RANK[b.era] < ERA_RANK[o.era])) { o.era = b.era; o.year = b.year; }   // the oldest part dates the group
+  if (!o.era && b.near && !o.near) o.near = b.near;
+  return o;
+}
+function evWeights(w, ev, steep, h = 0, row = true) {
+  if (ev?.era || ev?.inst) return w;                    // decided by evType
+  const o = w.slice();
+  // (a steep roof dates a ROW front or a small block; a big free-standing block under a steep roof is as often a 1970s-90s
+  // residence with balconies and dormers: Av. du Chateau de Walzin 13, Street View 2026-11-26)
+  if (steep >= STEEP_SHARE && row) { o[0] = Math.max(o[0], 2); o[2] = 0; o[3] = 0; o[1] *= 0.05; }   // no post-war draw under a steep pitched roof; the interwar flat-banded front rare under one (the flats share of 1919-45 is 7x the pre-1919 one: ~80 % maison de maitre)
+  if (ev?.near === "old" && h <= 20) { o[2] *= 0.25; o[3] *= 0.25; }       // (a tower over 20 m among old houses is still post-war)
+  else if (ev?.near === "new") { o[0] *= 0.25; o[1] *= 0.5; }
+  if (o.every((v) => v === 0)) o[0] = 1;
+  return o;
+}
+/** a front a steep roof can date: built against its neighbours, or a small block (< 350 m2) */
+export const steepRow = (g, partyShare) => partyShare > 0.15 || g.area < 350;
+function evType(p, ev, flat, steep) {
+  if (ev?.inst) return ev.era === "pre" || ev.era === "inter" || (steep >= 0.5 && ev.era !== "post") ? TYPE.MAITRE : TYPE.DECO;   // (Edith Cavell 143: a dated Beaux-Arts school under a mansard)
+  if (ev?.era === "pre") return TYPE.MAITRE;
+  if (ev?.era === "inter") return flat > 0.6 ? TYPE.DECO : TYPE.MAITRE;
+  if (ev?.era === "post") return p === 1 ? TYPE.DECO : TYPE.BLOCK;
+  return p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
+}
+/** (rule bldclass-evidence) the tile's evidence (data/bldclass/<T>.json solids) onto its buildings: b.attrs._ev, and
+ *  doc._bldclass = true; on === false (?bldclass=old): nothing (the draw as before) */
+export function applyBuildingEvidence(doc, ev, on = true) {
+  if (on === false || !doc?.buildings) return doc;
+  doc._bldclass = true;
+  const S = ev?.solids || {};
+  for (const b of doc.buildings) { const e = S[String(b.id).split("/").pop()]; if (e) b.attrs = { ...(b.attrs || {}), _ev: e }; }
+  return doc;
+}
+
 /**
  * Types and wall materials of every building of a tile.
  * doc: buildings.json; P / I: the solids' vertices / triangles (buildings.bin). -> { type: Uint8Array, style:
@@ -106,6 +157,7 @@ function period(r, sh, w) {
  */
 export function classify(doc, P, I, legacyStyle) {
   const B = doc.buildings, n = B.length;
+  const BC = doc._bldclass === true;                   // (claude/reality1, rule bldclass-evidence; ?bldclass=old: off)
   const keyOf = (b) => String(b.attrs?.BU_ID ?? b.id);
   // footprint grid (25 m cells) for the party probes
   const cell = 25, grid = new Map();
@@ -132,8 +184,9 @@ export function classify(doc, P, I, legacyStyle) {
   B.forEach((b, bi) => {
     const key = keys[bi];
     let g = G.get(key);
-    if (!g) G.set(key, (g = { area: 0, per: 0, party: 0, pn: [], h: 0, eaves: 0, flat: 0, roof: 0, cx: 0, cz: 0, w: 0, landmark: false, main: 0 }));
+    if (!g) G.set(key, (g = { area: 0, per: 0, party: 0, pn: [], h: 0, eaves: 0, flat: 0, steep: 0, roof: 0, cx: 0, cz: 0, w: 0, landmark: false, main: 0, ev: null }));
     if (b.attrs?._landmark) g.landmark = true;
+    if (BC && b.attrs?._ev) g.ev = mergeEv(g.ev, b.attrs._ev);   // (rule bldclass-evidence) what open data knows
     const ring = b.footprint[0];
     let a = 0;
     for (let k = 0; k < ring.length; k++) { const [x0, z0] = ring[k], [x1, z1] = ring[(k + 1) % ring.length]; a += (x0 * z1 - x1 * z0) / 2; }
@@ -159,12 +212,12 @@ export function classify(doc, P, I, legacyStyle) {
       const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx, L = Math.hypot(cx, cy, cz);
       if (L < 1e-9) continue;
       const ar = Math.abs(cy) / 2;                                // its plan area
-      g.roof += ar; if (Math.abs(cy) / L > 0.97) g.flat += ar;
+      g.roof += ar; if (Math.abs(cy) / L > 0.97) g.flat += ar; else if (Math.abs(cy) / L < STEEP_COS) g.steep += ar;
     }
   });
   const T = new Map();
   for (const [key, g] of G) {
-    const flat = g.roof > 0 ? g.flat / g.roof : 0;
+    const flat = g.roof > 0 ? g.flat / g.roof : 0, steep = g.roof > 0 ? g.steep / g.roof : 0;
     const cx = g.w ? g.cx / g.w : 0, cz = g.w ? g.cz / g.w : 0;
     // opposite party walls (both sides built against): terraced
     let opp = false;
@@ -187,12 +240,13 @@ export function classify(doc, P, I, legacyStyle) {
       // weights: pitched-roof blocks lean older, very tall ones are post-war (Uccle's towers: 1960s-70s)
       const w = flat > 0.6 ? [0.5, 1, 1.2, 1.2] : [2, 1.5, 0.7, 0.6];
       if (g.h > 24) { w[0] = 0; w[1] *= 0.15; }
-      const p = period(r, SH.flats, w);
-      type = p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
+      const p = period(r, SH.flats, BC ? evWeights(w, g.ev, steep, g.h, steepRow(g, partyShare)) : w);
+      type = BC ? evType(p, g.ev, flat, steep) : p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
     } else if ((form === "terraced" || form === "semi") && g.eaves >= 11) {
       // a terraced front of 4+ storeys is a block of flats ("immeuble de rapport"), not a bel-étage house: the flats' shares
-      const p = period(r, SH.flats, flat > 0.6 ? [0.5, 1, 1.2, 1.2] : [2, 1.5, 0.7, 0.6]);
-      type = p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
+      const w = flat > 0.6 ? [0.5, 1, 1.2, 1.2] : [2, 1.5, 0.7, 0.6];
+      const p = period(r, SH.flats, BC ? evWeights(w, g.ev, steep, g.h, steepRow(g, partyShare)) : w);
+      type = BC ? evType(p, g.ev, flat, steep) : p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
     } else if (form === "terraced" || (form === "semi" && g.area < 110)) {
       const sh = form === "terraced" ? SH.closed : SH.semi;
       const w = [1, 1, 1, 1];
@@ -221,16 +275,25 @@ export function classify(doc, P, I, legacyStyle) {
       [TYPE.VILLA]: [[3, 0.45], [4, 0.15], [0, 0.35], [2, 0.05]],
     }[type]);
     // a garage door in the street front's ground floor: every bel-étage, 45 % of the villas
-    const garage = type === TYPE.BELETAGE || (type === TYPE.VILLA && h01(key + "|gar") < 0.45) ? 1 : 0;
-    T.set(key, { type, style, garage, form, flat });
+    // (rule bldclass-evidence) an institution drawn as an old type is face brick (the schools / convents / churches of
+    // the commune: red, a few buff / brown), not the houses' render share
+    const styleI = BC && g.ev?.inst && type === TYPE.MAITRE && !g.ev.wall ? pick(rs, [[0, 0.65], [2, 0.2], [1, 0.15]]) : null;
+    // (round 3, rule bldclass-evidence) the wall the evidence dates: the inventory style's material (brick = red brick with
+    // white stone bands, 15 % the dark klinker; stone = a pale stone / cream render), and a dated pre-1946 maison de maitre
+    // with no style word leans brick (Uccle's 1900-1930 fronts: brick + stone far more than render)
+    const wl = BC && (type === TYPE.MAITRE || type === TYPE.DECO) ? g.ev?.wall : null;
+    const styleW = wl === "brick" ? (h01(key + "|klinker") < 0.15 ? 1 : 0) : wl === "stone" ? 4
+      : BC && type === TYPE.MAITRE && (g.ev?.era === "pre" || g.ev?.era === "inter" || g.ev?.near === "old") && !g.ev?.inst ? pick(rs, [[0, 0.6], [1, 0.15], [4, 0.15], [3, 0.1]]) : null;
+    const garage = g.ev?.inst && BC ? 0 : type === TYPE.BELETAGE || (type === TYPE.VILLA && h01(key + "|gar") < 0.45) ? 1 : 0;
+    T.set(key, { type, style: styleW ?? styleI ?? style, garage, form, flat, steep, row: steepRow(g, partyShare), ev: BC ? g.ev : null });
   }
-  const type = new Uint8Array(n), style = new Float32Array(n), garage = new Uint8Array(n), form = new Array(n);
+  const type = new Uint8Array(n), style = new Float32Array(n), garage = new Uint8Array(n), form = new Array(n), steepS = new Float32Array(n), rowS = new Uint8Array(n);
   B.forEach((b, bi) => {
     const t = T.get(keys[bi]);
-    type[bi] = t.type; garage[bi] = t.garage; form[bi] = t.form;
+    type[bi] = t.type; garage[bi] = t.garage; form[bi] = t.form; steepS[bi] = t.steep; rowS[bi] = t.row ? 1 : 0;
     style[bi] = t.style ?? legacyStyle(b, keys[bi]);
   });
-  return { type, style, garage, form };
+  return { type, style, garage, form, steep: steepS, row: rowS };
 }
 
 // ---- THE WINDOW GRID PER TYPE (KEEP IN SYNC: viewer/interior/facadeWindows.js faceOpenings, viewer/facades.js

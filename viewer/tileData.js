@@ -6,7 +6,7 @@
 import { carvePonds } from "./water/pondBed.js";
 import { Heightmap } from "./heightmap.js";
 import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
-import { classify, TYPE } from "./buildingTypes.js";
+import { classify, TYPE, applyBuildingEvidence } from "./buildingTypes.js";
 import { farBuildings } from "./farLookData.js";   // the far city's façades (docs/FARCITY.md), ?farlook=old = the flat solids
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
@@ -16,7 +16,7 @@ import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { streetModelInputs } from "./street/inputs.js";
 import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
-import { bridgeDecks, setDeckWidthOld, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, meshTopNodes, onCarriageway, deckContinuation, markRailCuts, parapetStyle } from "./streets/bridgeDecks.js";
+import { bridgeDecks, setDeckWidthOld, setBankOld, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, meshTopNodes, onCarriageway, deckContinuation, markRailCuts, parapetStyle } from "./streets/bridgeDecks.js";
 import { tramTracks } from "./track.js";
 import { fitPlatforms } from "./streets/tramPlatforms.js";
 import { kitCollector } from "./facadeKit/placement.js";
@@ -31,8 +31,11 @@ import { paintedLaneCentre, roadFrameOf } from "./streets/lineFit.js";
 import { squeezeDeckLanes } from "./rail/roadDeck.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
+import { tileFootbridges, meshFootbridges, carveUnder, footSoffitCap, footFootprint, endGround } from "./rail/footbridge.js";
 import { applyParkSquares, carveFlights, withoutLines } from "./heros/herosSurface.js";
+import { loadUnderpass, underpassTerrain, underpassSurfaces, underpassLines } from "./underground/underpass.js";
 import { drawnGround, sinkFeet, footprintIndex } from "./groundFit.js";
+import { buildWalkGraph } from "./pedestrians/walkGraph.js";   // (claude/peds2) the walk graph
 
 let railP = null;
 let grassKindsP = null;
@@ -43,6 +46,9 @@ const railDocs = (base, round2 = true) => (railP ??= Promise.all([
   fetch(new URL("../rail/rail.json", base)).then((r) => r.json()).then(prepRail),
   Promise.all(heroBridgeNames(round2).map((n) => fetch(new URL(`../../models/rail/${n}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null))).then((a) => a.filter(Boolean)),
 ]).then(([doc, heroes]) => ({ doc, heroes })));
+// (claude/footbridge) the station footbridges over the railway (data/rail/footbridges.json, viewer/rail/footbridge.js)
+let footP = null;
+const footDoc = (base) => (footP ??= fetch(new URL("../rail/footbridges.json", base)).then((r) => (r.ok ? r.json() : null)).catch(() => null));
 
 export { CARVE };                  // terrain is pushed this far under any road surface (viewer/roadBuild.js)
 // The 1 m terrain grid is 500k triangles a tile (half the scene); seen from above, 1 m triangles cover
@@ -112,7 +118,7 @@ async function gardenDocNear(base, name, b, old = false) {
 }
 /** (claude/gates: old = entry.gatesOld, ?gates=old: the garden data before the front-gates job, data/gardens/old) */
 async function gardenDoc(base, name, old = false) {
-  const r = await fetch(new URL(`../gardens/${old ? "old/" : ""}${name}.json`, base)).catch(() => null);
+  const r = await fetch(new URL(`../gardens/${old === "fg" ? "fgold/" : old ? "old/" : ""}${name}.json`, base)).catch(() => null);   // (claude/reality1) "fg": ?frontgarden=old
   return r?.ok ? r.json().catch(() => null) : null;
 }
 async function streetlifeFronts(base, name) {
@@ -122,11 +128,22 @@ async function streetlifeFronts(base, name) {
   return (doc.pois || []).filter((p) => p.face && !["atm", "school", "civic"].includes(p.kind)).map(({ face: f }) => ({ x: f.x, z: f.z, nx: f.nx, nz: f.nz, w: f.w }));
 }
 
+/** (claude/peds2) the street-life layer's points of interest of a tile, every kind (shops, cafés, schools ...): [{ x, z,
+ *  kind }] for the people's density by place (viewer/pedestrians/walkGraph.js placeOf); [] when the tile has none */
+async function streetlifePois(base, name) {
+  const r = await fetch(new URL(`../streetlife/${name}.json`, base)).catch(() => null);
+  if (!r?.ok) return [];
+  const doc = await r.json().catch(() => null);
+  return (doc?.pois || []).map((p) => ({ x: p.face?.x ?? p.x, z: p.face?.z ?? p.z, kind: p.kind })).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.z));
+}
+
 let overridesP = null;
 let streetVoteP = null;
 /** data/roads/streetVote.json (tools/build_street_vote.mjs): street key -> its city-wide OSM surface code (not asphalt) */
 const streetVote = (base) => (streetVoteP ??= fetch(new URL("../roads/streetVote.json", base)).then((r) => (r.ok ? r.json() : { exact: {}, loose: {} })).catch(() => ({ exact: {}, loose: {} })));
 /** data/overrides.json (hand corrections), fetched once per worker; {} if missing. */
+/** (claude/reality1, rule bldclass-evidence) the tile's building-class evidence (data/bldclass/<T>.json, tools/bldclass/build_evidence.py) */
+const bldEvidence = (base, name) => fetch(new URL(`../bldclass/${name}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 const overrides = (base) => (overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
 /** the curated building looks this build uses: an entry of a neighbourhood pass ("set": "cortenbosch") only with its
  *  switch on (?cortenbosch=old: none of them; ?looks=old drops every look) */
@@ -142,6 +159,7 @@ const lookSet = (looks, entry) => {
     if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
     if (entry.carrefour === false && v.set === "carrefour") continue;           // (claude/carrefour) ?carrefour=old
     if (entry.places2 === false && v.set === "places2") continue;               // (claude/places2) ?places2=old
+    if (entry.montjoie === false && v.set === "montjoie") continue;             // (claude/reality1) ?montjoie=old: Institut Montjoie generated
     out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
   }
   return out;
@@ -348,6 +366,12 @@ export async function buildTileData(entry, base) {
   // ?trains=1 (viewer/rail/): no LiDAR "trees" on rail bridge decks, platforms or the ballast; the line's verges as
   // undergrowth in the land cover
   const rail = entry.rail ? await step("rail fetch", () => railDocs(base, entry.bridges2 !== false)) : null;
+  // (claude/footbridge, rule footbridge-built; entry.footbridge === false = ?footbridge=old: none) the footbridges near
+  // this tile: their OSM footways / steps leave the ground's gravel stripes and the grass (they are built, not painted
+  // down the banks and across the ballast), the LiDAR trees in them go
+  const foot = rail && entry.footbridge !== false ? await footDoc(base) : null;
+  const footIds = foot ? foot.bridges.flatMap((b) => b.osm || []) : [];
+  if (footIds.length) { const ids = new Set(footIds); feats.lines = (feats.lines || []).filter((l) => !ids.has(l.id)); }
   let railDropped = 0;
   if (rail) {
     const clear = railKeepClear(rail.doc, bounds, rail.heroes), n = feats.trees?.length || 0;
@@ -383,6 +407,10 @@ export async function buildTileData(entry, base) {
   // Square des Heros (viewer/heros/herosSurface.js; ?heros=old: the setts plaza as before): the UrbIS square surface minus
   // the park, as sidewalk paving; the park is the hero place's own ground
   if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
+  // the Calevoet pedestrian underpass U1 (viewer/underground/underpass.js; ?underpass=0: none): its stair wells as holes
+  // in the street surfaces round them, its tunnel ways out of the land cover's paths, the drawn terrain cut at the wells
+  const upass = entry.underpass && bounds.x0 <= -1150 && bounds.x1 >= -1250 && bounds.z0 <= 900 && bounds.z1 >= 830 ? await step("underpass fetch", () => loadUnderpass(base)) : null;
+  const upassSurf = upass && surf ? underpassSurfaces(surf, upass) : null;
   // (cortenbosch) the surface of single UrbIS street surfaces a local knows (data/overrides.json streetSurfaces: the
   // Chemin privé 't Cortenbosch, grey concrete pavers on its 1990s part, setts on the old lane; the name vote of
   // surfaces.js never matches it: UrbIS names are French only, OSM's bilingual), read by surfaces.js as s.surface;
@@ -441,6 +469,7 @@ export async function buildTileData(entry, base) {
   const plans = entry.bridgePlan === false ? null : entry.vivier !== false && rail ? ringPlans(ov.bridgePlans, roads, rail.doc, baseGround, surf) : ov.bridgePlans;
   // (claude/places1, rule deck-profile-measured; ?bridgeprof=old: the straight line) the band decks' measured tops
   setDeckWidthOld(entry.deckWidth === false);                  // (claude/places2) ?deckwidth=old: every lane-less deck 12 m wide
+  setBankOld(entry.footbridge === false);                      // (claude/footbridge) ?footbridge=old: the Carsoel deck's hand ring without its bank sidewalks
   const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans, entry.bridgeProf === false ? null : ov.bridgeProfiles);
   osmBridges.decks = osmBridges.decks.filter((d) => { const m = d.pts[Math.floor(d.pts.length / 2)]; return Number.isNaN(heroDeck(m[0], m[1])); });
   // (claude/chenaie) the band decks' parapet style (data/overrides.json bridgeLooks; ?bridgelook=old: vertex colours, concrete)
@@ -468,12 +497,14 @@ export async function buildTileData(entry, base) {
   // (claude/sidewalk round 2) the garden fronts, for the retaining walls behind levelled sidewalks (viewer/streets/retainWalls.js)
   // (round 5: + the garden pieces of the 4 neighbour tiles within 30 m of this one: a garden front belongs to its
   // building's tile and runs over the border (H6 Perelman 4: H5's gate 18 m into H6; the wall closed it off))
-  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, !!entry.gatesOld)) : null;
+  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, entry.gatesOld ? true : entry.frontgardenOld ? "fg" : false)) : null;
   const gardenNear = gardenDoc0 !== null || (entry.sidewalkLevel !== false && entry.retainWalls !== false && surf) ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true, span: !entry.gatesOld }) : null;
   // the street model's inputs (claude/street2, viewer/street/inputs.js: the network, the measured inputs of every tile
   // the model of this one reads, cached per worker; ?streetmodel=old: none, the step-1 lines)
   const streetModel = surf && paint === "v2" && entry.streetModel !== false ? await step("street model inputs", () => streetModelInputs({ base, name: entry.name, bounds, overrides: ov, ver: (entry.files.surfaces || "").split("?")[1] || "" })) : null;
-  const rd = await step("roads", () => buildRoadData({ streetModel, roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, edgeLift: entry.edgeLift !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, roadLines: entry.roadLines !== false, streetInv: entry.streetInv !== false, laneFit: entry.laneFit !== false, bikeMark: entry.bikeMark !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false, kerbLevel: entry.sidewalkLevel !== false, gardenNear, gateNear, publicAt: gardenNear ? publicAreas(feats) : null,
+  // (claude/sawtooth) the tram tracks' smooth profile: the joint street height fit takes the rails as samples
+  const tramProfile = entry.sawtooth !== false && surf ? await step("tram profile", () => fetch(new URL("../transit/tram_profile.json", base)).then((r) => (r.ok ? r.json() : null)).catch(() => null)) : null;
+  const rd = await step("roads", () => buildRoadData({ streetModel, roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, edgeLift: entry.edgeLift !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, roadLines: entry.roadLines !== false, streetInv: entry.streetInv !== false, laneFit: entry.laneFit !== false, bikeMark: entry.bikeMark !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false, kerbLevel: entry.sidewalkLevel !== false, jointFit: entry.sawtooth !== false, tramProfile, gardenNear, gateNear, publicAt: gardenNear ? publicAreas(feats) : null,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
     deckLevel: entry.vivier !== false ? planLevel : null,   // (vivier: junctions on a measured deck at its level)
@@ -527,12 +558,20 @@ export async function buildTileData(entry, base) {
   if (entry.heros?.carves?.length) await step("heros steps", () => carveFlights(hm, entry.heros.carves));
   // ?trains=1: the terrain under the ballast / platforms / hero arches, the fills at viaduct ends; then the tile's rail
   // geometry as typed arrays (viewer/rail/railData.js; the main thread only wraps them in buffers)
-  let railOut = null;
+  let railOut = null, footBuilt = [];
   if (rail) {
     const c = await step("rail carve", () => carveGrid(rail.doc, hm.y, tHdr, bounds, rail.heroes, { platformEdge: entry.platformEdge !== false }));
+    // (claude/footbridge) the footbridges' levels from the drawn ground at their ends (before their own carve), then the
+    // terrain lowered under their stairs and decks (the bank covered the treads)
+    if (foot) { footBuilt = tileFootbridges(foot, bounds, endGround(foot, bounds, road.parts, (x, z) => hm.surface(x, z))); c.moved += carveUnder(footBuilt, hm.y, hm.h, (x, z) => hm.surface(x, z));
+      const inFoot = footBuilt.map(footFootprint), n0 = feats.trees?.length || 0;                         // (no LiDAR crown standing in a stair)
+      if (n0) { feats.trees = feats.trees.filter((t) => !inFoot.some((f) => f(t.x, t.z))); railDropped += n0 - feats.trees.length; } }
     // (vivier: the catenary under the OSM decks' soffits, no UrbIS slab where a deck is drawn or in the cutting)
     const vv = entry.vivier !== false, foots = osmBridges.decks.map(deckFootprint);
-    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes, vv ? { deckCap: deckSoffitCap(osmBridges.decks), skipDeck: (b) => foots.some((f) => f(b.centre[0], b.centre[1])) } : {}));
+    // (claude/footbridge) + under the footbridges' decks (their resolved levels: the drawn ground at their ends)
+    const fbCap = footBuilt.length ? footSoffitCap(footBuilt) : null, osmCap = vv ? deckSoffitCap(osmBridges.decks) : null;
+    const cap = fbCap && osmCap ? (x, z) => Math.min(osmCap(x, z), fbCap(x, z)) : fbCap || osmCap;
+    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes, vv ? { deckCap: cap, skipDeck: (b) => foots.some((f) => f(b.centre[0], b.centre[1])) } : fbCap ? { deckCap: fbCap } : {}));
     railOut.stats.carved = c.moved; railOut.stats.treesDropped = railDropped;
   }
   if (tcut) tcut.recut = tunnelRecut(tcut, hm);        // the rail's embankment fill does not fill the bores again
@@ -566,6 +605,7 @@ export async function buildTileData(entry, base) {
   const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   // the tunnels: the drawn earth over the bores (the lid) and the ground clipped at the walls (tunnels.js)
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
+  if (upass) netInfo.underpass = { ...await step("underpass wells", () => underpassTerrain(upass, terrain)), surfaces: upassSurf };
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
     const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
@@ -577,6 +617,7 @@ export async function buildTileData(entry, base) {
   const nb = bDoc.buildings.length;
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;      // ?colfix=0: the old way
   hideBuildings(bDoc, entry.hide);
+  if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name));   // (rule bldclass-evidence; ?bldclass=old: off)
   roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));      // the falcon's collision (drawn roofs)
   // the railway for the car (viewer/rail/railData.js): fences along the line where it runs on the ground (not on bridges,
   // not over a tunnel, broken at road crossings), and below the line's own surface in the drive grid (rail top, shoulders)
@@ -643,7 +684,7 @@ export async function buildTileData(entry, base) {
   // (round 5) the falcon's drawn-roof grid from the roofs as drawn (entry.surfDrawn === false = ?falconroof=old: buildings.bin's)
   if (entry.surfDrawn !== false && buildings.roofs?.position?.length && roofs.surf) roofs.surf = await step("roof surface (drawn)", () => roofSurfaceDrawn(buildings.roofs.position, bounds));
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
-  const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));   // joins2: distance-field edges, ?groundsdf=old the coverage mask   // (Square des Heros: its paths are the hero ground's)
+  const cover = await step("land cover", () => landCoverData(withoutLines(upass ? underpassLines(feats) : feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));   // joins2: distance-field edges, ?groundsdf=old the coverage mask   // (Square des Heros: its paths are the hero ground's)
   // (vivier) the drawn street's top near (x, z): the nearest road-surface cell of the drive raster within 2 m (a plan
   // deck's paving between the UrbIS surfaces sits a kerb over the street beside it, not on its own plane up to 0.35 m off)
   const streetTop = (x, z) => {
@@ -667,7 +708,15 @@ export async function buildTileData(entry, base) {
     const v = drive.ground.delta[r * H.cols + c];
     return v > 0 && v !== 65535 && Math.abs(hm.y[r * H.cols + c] + v / 100 - roadGround(x, z)) < 0.6;    // (not the rail's surface under the deck)
   };
-  return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
+  // (claude/footbridge) the footbridges this tile holds (levels resolved and terrain carved at the rail carve): walls
+  // and piers into the drawn terrain
+  const footbridges = footBuilt.length ? await step("footbridges", () => meshFootbridges(footBuilt, (x, z) => hm.surface(x, z), (rail?.doc.platforms || []).map((q) => ({ ring: q.ring, top: q.top })))) : [];
+  // (claude/peds2, rule peds-walk-graph) the pedestrians' walk graph: the drawn sidewalks (street model kerbs through the
+  // class raster), corners, the drawn crossings (signalled ones with their phase), paths, platforms, squares, clear of
+  // the drive colliders' walls / trunks and the bollards (viewer/pedestrians/walkGraph.js); entry.peds === false: none
+  const peds = entry.peds !== false && road.surfaceData?.grid ? await step("walk graph", async () => buildWalkGraph({ bounds, model: net.streetModel, grid: road.surfaceData.grid, roofs, col: drive.col,
+    crossings: road.inventory?.crossings, roads, feats, bollards: road.surfaceData.bollards, pois: await streetlifePois(base, entry.name) })) : null;
+  return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive, footbridges, peds,
     netInfo, road, terrain, buildings, cover, traffic, parked: parked ? { sites: parked.sites, stats: parked.stats } : null, times, rail: railOut, grassTypes,
     bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => { const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || (onCarriageway(d, x, z) && drawnAt(x, z)) : measuredAt, mesh = deckMesh(d, hm.ground, cov, v ? streetTop : null);
       // (claude/ground, rule mover-ground; entry.movGround === false = ?movground=old: the fitted top only) the walked top never under the drawn slab
@@ -715,6 +764,7 @@ export async function buildLiteData(entry, base) {
   await MeshoptSimplifier.ready;
   const [idxS] = MeshoptSimplifier.simplify(idx, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
   hideBuildings(bDoc, entry.hide);
+  if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name));   // (rule bldclass-evidence) the far tiles classify as the near
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T * 3);
   // (farcity, docs/FARCITY.md) the walls' face coordinates + the building type for viewer/farLook.js; entry.farLook ===

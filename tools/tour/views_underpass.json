@@ -1,0 +1,50 @@
+{
+ "about": "The Calevoet pedestrian underpass U1 (claude/underpass1, rule underpass-wells, docs/CALEVOET_UNDERPASS_PLAN.md §8): the east kiosk from the Rue Engeland / Dieweg sidewalk and the inside of the corridor (h is over the drawn ground: -1.8 = 1.6 m over the corridor floor; the inside streams in within 50 m). Run: debug/tour.html?run=<name>&views=/tools/tour/views_underpass.json",
+ "common": {
+  "quick": "1",
+  "quality": "native",
+  "rscale": "1",
+  "dynres": "0",
+  "still": "1",
+  "xmas": "0",
+  "time": "golden"
+ },
+ "size": [
+  1280,
+  720
+ ],
+ "settle": {
+  "minFrames": 60,
+  "minMs": 2000,
+  "maxMs": 25000,
+  "exposureTol": 0.004,
+  "tslTime": 12.5
+ },
+ "readyLimitMs": 150000,
+ "thresholds": {
+  "pixel": 24,
+  "pixels": 0.5,
+  "cell": 10,
+  "ssim": 0.985
+ },
+ "views": [
+  {
+   "id": "calevoet-underpass-east",
+   "what": "U1 east kiosk (replaces UrbIS 525169) from the Rue Engeland / Dieweg sidewalk, ~13 m: roof, fascia, frosted bays, the mouth, bollards",
+   "q": {
+    "at": "-1202.0,839.4,1.7",
+    "look": "-1196.9,852.0,1.2",
+    "radius": "250"
+   }
+  },
+  {
+   "id": "calevoet-underpass-inside",
+   "what": "U1 inside the corridor, looking east: mural, tiles, box lights, the east stair at the end (baked light, streamed)",
+   "q": {
+    "at": "-1212.5,869.4,-1.8",
+    "look": "-1196.5,861.2,-2.0",
+    "radius": "250"
+   }
+  }
+ ]
+}

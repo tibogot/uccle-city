@@ -182,6 +182,33 @@
    },
    "_moves": "n4388790239",
    "_source": "claude/places2 (owner playtest: 'Le Pigeon Noir: entrance on the wrong side'): Street View Apr 2024 (looked at, not kept): the restaurant's door, its navy awning with LE PIGEON NOIR in white and its windows are on the house's NORTH face, on Rue Geleytsbeek (its address, Rue Geleytsbeek 2: the UrbIS address point of building 1713722 faces that street); the east gable on Avenue de la Chênaie only carries a pigeon emblem plaque. OSM's point has no addr:street, so the façade attach took the nearest wall (the Chênaie gable). Moved 1 m out from the north face, 5 m along it from its west end (local -90.6, 775.9), with the address"
+  },
+  {
+   "type": "node",
+   "id": "immo-dugo",
+   "lon": 4.3741745,
+   "lat": 50.7965601,
+   "tags": {
+    "office": "estate_agent",
+    "shop": "estate_agent",
+    "name": "IMMO DUGO",
+    "addr:street": "Chaussée de Waterloo - Waterloosesteenweg",
+    "addr:housenumber": "1167"
+   },
+   "_source": "claude/reality1 round 3 (reality round 2026-11-26, Street View Jul 2024, look only): the estate agency at Ch. de Waterloo 1167 (Vivier d'Oie), its 1167 plate beside the door; position = the UrbIS address point (CC0). Not in OSM yet."
+  },
+  {
+   "type": "node",
+   "id": "traks-vivier",
+   "lon": 4.3743652,
+   "lat": 50.7967543,
+   "tags": {
+    "shop": "sports",
+    "name": "traKKs",
+    "addr:street": "Chaussée de Waterloo - Waterloosesteenweg",
+    "addr:housenumber": "1165"
+   },
+   "_source": "claude/reality1 round 3 (Street View Jul 2024, look only): the running shop next to IMMO DUGO (navy fascia, orange lettering, a vertical blade); Google Maps names it TraKKs at this spot; the house number 1165 is the next address point north (to confirm); position = the UrbIS address point (CC0). Not in OSM yet."
   }
  ]
 }

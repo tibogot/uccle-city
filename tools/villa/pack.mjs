@@ -11,7 +11,7 @@ const ARGV = process.argv.slice(2);
 const EXT = {
   name: "villa",
   groups: [{ name: "lod0", nodes: ["Villa", "Villa_gateL", "Villa_gateR", "Villa_door", "Villa_water", "Villa_bay"] }, { name: "lod1", nodes: ["Villa_lod1"] }, { name: "far", nodes: ["Villa_far"] }],
-  range: { Villa_ivy: 80, Villa: 80, Villa_bay: 80, Villa_gateL: 80, Villa_gateR: 80, Villa_door: 80, Villa_water: 400, Villa_far: 2000, Villa_lod1: 260, Villa_lod2: 2000 },
+  range: { Villa_ivy: 80, Villa: 80, Villa_kit: 80, Villa_art: 80, Villa_art_lod1: 260, Villa_art_lod2: 2000, Villa_bay: 80, Villa_gateL: 80, Villa_gateR: 80, Villa_door: 80, Villa_water: 400, Villa_far: 2000, Villa_lod1: 260, Villa_lod2: 2000 },
   ignoreBelow: GROUND_MIN, offset: [0, OY, 0], reportDir: "models/villa/audit", allowFile: "models/villa/audit/villa.allow.json",
 };
 const INT = {
@@ -24,6 +24,10 @@ if (!ARGV.includes("--no-audit")) {
   await auditGroups("models/villa/interior.raw.glb", INT);
   // the climbers' leaf cards (round 3): overlapping, crossing cards by design; checked for normals / flips only
   await auditGroups("models/villa/villa.raw.glb", { ...EXT, name: "ivy", groups: [{ name: "ivy", nodes: ["Villa_ivy"] }], skip: ["crossing", "coplanar", "near", "leak", "depth", "seam", "opening", "backtoback", "sliver", "tjunction", "nonmanifold"] });
+  // villa3 job 4: the sculptures (CC0 scans, smooth by design, LOD0 / LOD1 / LOD2): every check but streak / bentflat / sliver
+  await auditGroups("models/villa/villa.raw.glb", { ...EXT, name: "art", groups: [{ name: "art", nodes: ["Villa_art"] }, { name: "art1", nodes: ["Villa_art_lod1"] }, { name: "art2", nodes: ["Villa_art_lod2"] }], skip: ["streak", "bentflat", "sliver"] });
+  // villa3 job 3: the pool kit (cushions, tubes, shrubs: smooth by design): every check but streak / bentflat, as Soft
+  await auditGroups("models/villa/villa.raw.glb", { ...EXT, name: "kit", groups: [{ name: "kit", nodes: ["Villa_kit"] }], skip: ["streak", "bentflat", "sliver"] });
   // the soft furnishings (smooth by design): every check but streak / bentflat (they guard flat architecture)
   await auditGroups("models/villa/interior.raw.glb", { ...INT, name: "soft", groups: [{ name: "soft", nodes: ["Soft"] }], skip: ["streak", "bentflat", "sliver"], set: { maxItemsPerCheck: 1e6 } });
 }

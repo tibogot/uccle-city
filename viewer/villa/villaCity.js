@@ -19,6 +19,7 @@ import { drivePlane, LIFT } from "./villaGroundsGeom.js";
 import { VILLA_DECK, makeDriveDeck } from "./villaDeck.js";
 import { buildVillaCars } from "./villaCars.js";
 import { villaInLook } from "./villaInterior.js";
+import { VILLA_DIR } from "./villaGlass.js";
 import { SMOOTH, fadeProxies } from "../lodFade.js";
 import { openParallelPipelines } from "../../vendor/engine/parallelPipelines.js";
 import { Heightmap } from "../heightmap.js";
@@ -49,7 +50,7 @@ async function warmShadowPass(renderer, scene, meshes, perFrame = 3) {
 
 export async function addVilla({ scene, updaters, hide, world, manifest, log, compiler, renderer, getView, getThird }) {
   const t0 = performance.now();
-  const base = new URL("../../models/villa/", import.meta.url);
+  const base = new URL(VILLA_DIR, import.meta.url);
   const notes = await fetch(new URL("villa.json", base)).then((r) => r.json()).catch(() => null);
   if (!notes) { log("Villa: models/villa/villa.json missing, the UrbIS solid stays"); return; }
   hide.push(...notes.placement.hides_bu_ids, ...notes.placement.hides_solids);
@@ -61,7 +62,7 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
     const hm = new Heightmap(hdr, buf);
     return (x, z) => hm.surface(x, z);
   })();
-  Promise.all([whenNeeded("villa").then(() => loadVilla()), groundP]).then(async ([m, groundAt]) => {
+  Promise.all([whenNeeded("villa").then(() => loadVilla({ renderer })), groundP]).then(async ([m, groundAt]) => {
     const tLoad = performance.now() - t0;
     const root = new THREE.Group(); root.name = "villa";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
@@ -171,6 +172,7 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
       if (cars && !carsSet && window.__driver) carsSet = window.__driver.addStatic(cars.rings.map((r) => ({ rings: [r] })));
       const d = m.distance(camPos);
       state.d = d;
+
       if (SMOOTH) { const s = villaLodState(d); setLodFades(levels, s.shown, s.fades); state.shown = s.shown; state.fades = s.fades; }
       else { const k = VILLA_LODS.findIndex((l) => d < l.until); levels.forEach((lv, i) => { lv.visible = i === k; }); }
       if (bay) bay.visible = levels[0].visible;
@@ -204,7 +206,7 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
       try {
         mod = await import("./villaInterior.js");
         chr = await import("../character/index.js");
-        const cell = await mod.loadVillaInterior({ placement: m.placement });
+        const cell = await mod.loadVillaInterior({ placement: m.placement, renderer });
         st.t.loaded = performance.now();
         cell.root.visible = false;
         scene.add(cell.root);

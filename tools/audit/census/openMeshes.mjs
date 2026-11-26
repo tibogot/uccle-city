@@ -36,11 +36,11 @@ const MIN_CLUSTER = 1.0;  // m2: a hole cluster smaller than this is not listed
 export const HERO_LIST = ["augustin/augustin", "calevoet_station/calevoet", "latourdefrein/latourdefrein", "observatory/observatory", "papenkasteel/papenkasteel",
   "police_rouge/police", "rosaire/rosaire", "russian/russian", "sacrecoeur/sacrecoeur", "saintmarc/saintmarc", "stalle/stalle", "stjob/stjob",
   "stpierre/stpierre", "townhall/townhall", "vanbuuren/vanbuuren", "wolvendael_chateau/wolvendael",
-  "heros/heros", "villa/villa"];          // heroshell 2026-11-18: the Square des Heros monument (it hides solid 534309) was never probed
+  "heros/heros", "villa/villa", "underpass/calevoet"];          // heroshell 2026-11-18: the Square des Heros monument (it hides solid 534309) was never probed; underpass/calevoet: the U1 kiosks (claude/underpass1)
 /** LOD level of a GLB node: 0 the model (+ its _door / _slates / _courses), 1 _lod1 (else _far), 2 _lod2 / _xfar */
 export function levelsOf(nodes) {
   const has = (re) => nodes.some((n) => re.test(n));
-  const L = { 0: (n) => !/_(far|xfar|lod\d)$/.test(n) };
+  const L = { 0: (n) => !/_(far|xfar|lod[1-9])$/.test(n) && !/_collision$/.test(n) };   // (a scripted "_lod0" node is level 0; a never-drawn "_collision" mesh is no level: claude/underpass1)
   if (has(/_lod1$/)) L[1] = (n) => /_lod1$/.test(n); else if (has(/_far$/)) L[1] = (n) => /_far$/.test(n);
   if (has(/_lod2$/)) L[2] = (n) => /_lod2$/.test(n); else if (has(/_xfar$/)) L[2] = (n) => /_xfar$/.test(n);
   return L;

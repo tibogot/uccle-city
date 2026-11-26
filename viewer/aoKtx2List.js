@@ -33,6 +33,7 @@ export const AO_KTX2 = {
  "models/stpierre/stpierre_ao.png": "74a6c4e7bc",
  "models/townhall/townhall_ao.png": "933a80b6ed",
  "models/tram2/t3000_ao.png": "2f5816c0e2",
+ "models/underpass/calevoet_ao.png": "163ad1ba31",
  "models/vanbuuren/vanbuuren_ao.png": "bc5c17671a",
  "models/wolvendael_chateau/wolvendael_ao.png": "fa2faf33cc"
 };

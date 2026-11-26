@@ -313,3 +313,22 @@ Licences read on 2026-11-25: the Sketchfab rows from the public API (`https://ap
 | **Mesh2Motion** bird rig + clips (`static/assets/bird/`: model, skeleton, flap, glide, idle, walk, hop, take-off, land), https://github.com/Mesh2Motion/mesh2motion-app commit `2609e034` | Scott Petrovic and contributors (mesh2motion.org) | art assets **CC0 1.0** (`LICENSE-CC0.MD`: "All 3d models, blend files, rigs, animations"); code **MIT** (`LICENSE-MIT.MD`) | the bird rig's bone names the v2 is named after; `models/bird/v2/m2m/*.glb` (decoded copies of the clips, played on the current falcon in the gym). `models/bird/peregrine.glb` has the same 55-bone bird rig (the fly-mode bird's source, see models/bird/README.md) | 2026-11-25, both licence files and the README |
 
 Credit to show (CC BY): "Falcon_ Merged Animations by Hector Bonada (Sketchfab), CC BY 4.0", in the game's credits wherever v2 ships (the Falcon Gym's title line shows it). Changes made: re-rigged onto our bone names, its idle / take-off / glide / landing re-timed into clips, new clips (walk, hop, stoop, talons, flare), the eyes darkened, a juvenile plumage painted, textures resized, a simplified far version. The earlier v2 base, "Peregrine Falcon" by Joacooficial (Sketchfab, CC BY 4.0), is no longer shipped (2026-11-25: its separate feather cards opened gaps when folded); its build script tools/blender/falconV2.py is kept.
+
+## National flags (the embassy flags, viewer/flags/atlas/embassy_flags.png)
+
+The national flags flown in front of the embassies (rule embassy-flags) are the Wikimedia Commons SVGs below, rasterised at build time into one atlas by `tools/flags/build_atlas.mjs` (sources: `data/flags/embassy_sources.json`, the files in `data/raw/flags/commons/`, not committed). Every one is in the **public domain** (official national symbols), as its file page says; no credit is required, the authors are listed for the record.
+
+| Flag | File (Wikimedia Commons) | Author (file page) | Licence |
+|---|---|---|---|
+| eu | [Flag of Europe.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Europe.svg) | User:Verdy p, User:-xfi-, User:Paddu, User:Nightstallion, User:Funakoshi, User:Jeltz, User:Dbenbenn, User:Zscout370 | Public domain (pd) |
+| hungary | [Flag of Hungary.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Hungary.svg) | SKopp | Public domain (pd) |
+| bulgaria | [Flag of Bulgaria.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Bulgaria.svg) | SKopp | Public domain (pd) |
+| romania | [Flag of Romania.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Romania.svg) | AdiJapan | Public domain (pd) |
+| ukraine | [Flag of Ukraine.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Ukraine.svg) | Government of Ukraine | Public domain (pd) |
+| burkina_faso | [Flag of Burkina Faso.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Burkina_Faso.svg) | Drawn by SKopp, rewritten by Gabbe and Андрей Перцев | Public domain (pd) |
+| eritrea | [Flag of Eritrea.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Eritrea.svg) | Unknown authorUnknown author | Public domain (pd) |
+| kenya | [Flag of Kenya.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Kenya.svg) | User:Pumbaa80 | Public domain (pd) |
+| angola | [Flag of Angola.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Angola.svg) | Original: Henrique de Carvalho Santos Vector: SKopp | Public domain (pd) |
+| nicaragua | [Flag of Nicaragua.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Nicaragua.svg) | C records | Public domain (pd) |
+| afghanistan | [Flag of Afghanistan (2013–2021).svg](https://commons.wikimedia.org/wiki/File:Flag_of_Afghanistan_(2013%E2%80%932021).svg) | Unknown authorUnknown author | Public domain (pd) |
+| eswatini | [Flag of Eswatini.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Eswatini.svg) | Sobhuza II | Public domain (pd) |

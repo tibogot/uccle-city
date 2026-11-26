@@ -14,12 +14,13 @@ import * as THREE from "three/webgpu";
 import { KIND } from "./drive/colliders.js";
 import { TUNNEL_ROOTS } from "./rail/tunnels.js";
 import { ART_ROOTS } from "./publicart/artRoots.js";
+import { UNDERPASS_ROOT } from "./underground/underpass.js";
 import { sliced } from "./slices.js";
 
 export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "villa", "wolvendael", "police", "calevoet", "papenkasteel", "stpierre", "observatory", "augustin", "russian", "rosaire", "sacrecoeur", "saintmarc", "latourdefrein", "heros",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
   "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek",
-  ...TUNNEL_ROOTS, ...ART_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js), the public art (viewer/publicart/)
+  ...TUNNEL_ROOTS, ...ART_ROOTS, UNDERPASS_ROOT];                   // the road tunnels (viewer/rail/tunnels.js), the public art (viewer/publicart/), the Calevoet underpass (viewer/underground/)
 const CELL = 0.25, STEP = 0.12, BAND = [0.30, 1.30];
 const SLICE_OLD = new URLSearchParams(location.search).get("heroslice") === "old";
 const BAND_OLD = new URLSearchParams(location.search).get("colband") === "old";

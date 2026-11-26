@@ -201,7 +201,19 @@ for (const [i, c] of (site.chalets ?? []).entries()) standsWell(`chalet ${i}`, r
   out(!bad.length, `boot: every Christmas fetch / loader at low priority${bad.length ? `: ${bad.join("; ")}` : ""}`);
   const main = fs.readFileSync(path.join(ROOT, "viewer/main.js"), "utf8"), gate = fs.readFileSync(path.join(ROOT, "viewer/bootGate.js"), "utf8");
   const calls = [...main.matchAll(/addChristmas\(\{/g)].map((m) => main.slice(Math.max(0, m.index - 160), m.index));
-  out(calls.length > 0 && calls.every((c) => /whenXmasNeeded\(\)\.then\(\(\) => $/.test(c)), "boot: main.js starts addChristmas only after bootGate.js whenXmasNeeded()");
+  out(calls.length > 0 && calls.every((c) => /whenXmasNeeded\(\)\.then\(\(\) => import\("\.\/christmas\/xmasCity\.js"\)\)\.then\(\(\{ addChristmas \}\) => $/.test(c)), "boot: main.js imports xmasCity.js and starts addChristmas only after bootGate.js whenXmasNeeded()");
+  // (claude/xmasreview) outside the season the boot fetches no Christmas code: no STATIC import of the layer's modules
+  // anywhere in the viewer outside viewer/christmas/ but the three-free date switch and the December windows' uniform
+  // (xmasDate.js, xmasWindows.js: ~3 KB, the facade shader and main.js need them to decide)
+  {
+    const stat = [];
+    const walk = (d) => { for (const f of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, f.name); if (f.isDirectory()) { if (f.name !== "christmas" && f.name !== "node_modules") walk(p); } else if (f.name.endsWith(".js")) for (const m of fs.readFileSync(p, "utf8").matchAll(/^\s*import\s[^;]*?from\s+"([^"]*christmas\/[^"]+)"/gm)) if (!/christmas\/(xmasDate|xmasWindows)\.js$/.test(m[1])) stat.push(`${path.relative(ROOT, p)}: ${m[1]}`); } };
+    walk(path.join(ROOT, "viewer"));
+    out(!stat.length, `boot: no static import of the layer's modules outside viewer/christmas/ (only xmasDate.js / xmasWindows.js)${stat.length ? ": " + stat.join("; ") : ""}`);
+    const win = src["xmasWindows.js"] ?? "", date = src["xmasDate.js"] ?? "";
+    const imps = (t) => [...t.matchAll(/^\s*import\s[^;]*?from\s+"([^"]+)"/gm)].map((m) => m[1]);
+    out(imps(date).length === 0 && imps(win).every((u) => u === "three/tsl" || u === "./xmasDate.js"), "boot: xmasDate.js imports nothing, xmasWindows.js only three/tsl + xmasDate.js (no kit, no loaders before the cover)");
+  }
   const am = /export const XMAS_AREAS = (\[\[[^;]*\]\]);/.exec(gate);
   const areas = am ? JSON.parse(am[1]) : [];
   const want = (site.select?.areas ?? []).map((a) => [a.centre[0], a.centre[1], a.radius]);
