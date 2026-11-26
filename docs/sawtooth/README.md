@@ -77,7 +77,9 @@ F5 Rue du Repos 113; G2 Av. Adolphe Dupuich 32; D6 Rue François Vervloet 16. Af
 - |H - street ground| over the street samples (I6 H6 F2): p50 2.4 -> 2.6 cm, p99 17.1 -> 19.7 cm.
 - tile seams (drawn street either side, same part): H6 | I6 p50 / p90 1.1 / 2.6 -> 1.6 / 4.2 cm; I6 | I7 3.2 / 20.2 -> 1.8
   / 12.0 cm (the per-corner fits differed on both sides too; the seam steps are an older, separate problem).
-- the gate rows over the drawn street (ground, moverground, markings, streetlanes, ...): see the merge gate run.
+- ground census (all tiles): sidewalk tilt 807 -> 386, road cross-fall 379 -> 221 (ceilings tightened), weld lumps 864 -> 943 groups (m2 +4 %), spikes 174 -> 198, bare banks 555 -> 614 (m2 +11 %), over 305 -> 306, stacked 0 -> 1 (J11 Av. des Sorbiers 24). The edge corners now extrapolate the street plane; anchoring them to their own value kept the weld as before but left the saw-tooth (65 of 66 places on K5 K6 G3 F4 F6 G8): the saw-tooth lives in those corners.
+- colliders (F1 E4 B6 D4): offset 17 -> 19 (D4 Av. Adolphe Wansart, 3.6 m2).
+- the other street rows: see the merge gate run.
 
 Shots (grazing, before = ?sawtooth=old): C:\Users\tibog\Downloads\uccle-sawtooth\ (compare.html). Raw results:
 docs/sawtooth/sawtooth_old.json / sawtooth_new.json, maps map_old.svg / map_new.svg.

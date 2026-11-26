@@ -98,7 +98,11 @@ const JOINT_ITER = 300, JOINT_TOL = 1e-10;
  * road saw-tooth places (per corner: 60); |H - ground| over the street samples p50 / p99 2.0 / 14.3 cm at 0.5, 2.6 / 19.7
  * at 2 (per corner 2.4 / 17.1). A robust (Huber) fit left 4 places but p99 34 cm: junction creases drawn off their ground.
  * Taking the levelled sidewalks' cross-fall out of the fit and adding it back per vertex made it worse (22): the DTM's rise
- * sampled at the slab's sparse vertices is itself a 6 m saw)
+ * sampled at the slab's sparse vertices is itself a 6 m saw. Anchoring the corners with < 36 street samples round them to
+ * their own value (K5 K6 G3 F4 F6 G8) kept the terrain weld as before (ground lump 100 / bareBank 26 vs 103 / 26 per corner,
+ * 133 / 45 joint) but left 65 saw-tooth places of 66: the saw-tooth lives in those edge corners. Cost of the joint fit
+ * city-wide (tools/audit/census/ground.mjs): sidewalk tilt 807 -> 386, road tilt 379 -> 221, weld lumps 864 -> 943 groups
+ * (m2 +4 %), bare banks 555 -> 614 (m2 +11 %), spikes 174 -> 198)
  */
 function jointFit(street, corner, classAt, groundAt, clamp, bounds, fitCorner) {
   // the unknowns: every corner of every cell holding a street sample, not only the cells of the base triangles' centroids
