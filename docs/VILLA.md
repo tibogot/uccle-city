@@ -186,3 +186,16 @@ into the kit); Villa_kit 10,534 tris / 4 draws (its own cap, 12k / 4: asked of t
 - The owner approved the Villa_kit cap (12k tris / 4 draws, near only, outside the 9-draw level cap): recorded in rule villa-budgets.
 - **Caustics** (the owner: "I've seen way better caustics in games"): BAKED, tools/villa/caustics_bake.py: a tileable periodic wave surface refracts a sun bundle onto a floor 1.1 m down, photons splatted into a 256 px tile, R / G / B at n 1.327 / 1.333 / 1.341 (the rainbow edges in ONE lookup), 12 looping frames, ETC1S: models/villa/caustics.ktx2, 162 KB. The water's shader samples it twice (two scales / scroll directions / frame phases) and keeps the MIN (the sharp web), projects it along the refracted sun onto the floor, the treads and the walls, moves it with the ripples, fades it with depth, and drops it where the coping shades the entry point: 2 lookups, no extra pass. The first wiring swapped a placeholder texture after the material was built: it did not rebind (a flat brightening): the texture now loads with the model, before the water's material (rule villa-caustics-baked).
 - **Night** (job 3 read black-blue; a first pass before it blew out white): the LED niches light the basin with an exponential falloff into the deep end, the walls and floor lit from below with the same caustic web, the water faintly luminous; constants in villaPool.js POOL_NIGHT, read by the gate's tone check (peak <= 0.9, mean >= 0.12, deep end >= 0.02: now 0.43 / 0.18 / 0.088).
+
+## v3 job 4 (2026-11-26): the sculptures
+
+Three real CC0 scans (Poly Haven; models/villa/LICENCES.md; downloads untouched in data/raw/villa_sculptures/): a
+classical marble bust on a 1.1 m column (u 47.6, w 10.2), a rearing marble horse (scaled x6, its wooden display base
+dropped, u 50.8, w -23.6), a bronze whale at the end of the pool's axis (u 54.2, w -6.0); pale stone plinths with cap
+stones, a ground uplight in front of each (metal_dark lens code led: emissive at night; the statue's night wash in
+its material, no light). tools/blender/villa_art.py: LOD0 = the scan (welded, the horse's open base filled), LOD1 /
+LOD2 = a voxel remesh, decimated, UV transferred back; ONE material for all (two KTX2 arrays, a layer per statue:
+models/villa/art_col.ktx2 + art_dat.ktx2, 1.2 MB, tools/villa/art_ktx2.py; loaded with the model). The first look
+read as chrome (the scans' glossy roughness under the sky env): roughness >= 0.48, metal x 0.85. The first packs
+had 220 / 8 / 2 blocking mesh-audit items (decimation slits and folds, the x6 horse's seams): fixed by cause (rule
+villa-sculptures). Budgets: Villa_art 41,135 / 7,474 / 782 tris, 1 draw a level; download 8.82 MB of 9.

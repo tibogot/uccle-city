@@ -10,6 +10,9 @@ licence page read before use).
 | knitted_fleece (Knitted Fleece, 1k diffuse / AO / normal) | CC0 (Poly Haven) | https://polyhaven.com/a/knitted_fleece | fabrics.ktx2 layer 1: the throw | 2026-11-26 |
 | terlenka (Terlenka, 1k diffuse / AO / normal) | CC0 (Poly Haven) | https://polyhaven.com/a/terlenka | fabrics.ktx2 layer 2: headboard, platform, cushion (a fine weave: the first pick, wool_boucle, read as a check pattern at bed size) | 2026-11-26 |
 | leather_white (Leather White, 1k diffuse / AO / normal) | CC0 (Poly Haven) | https://polyhaven.com/a/leather_white | fabrics.ktx2 layer 3: the bench | 2026-11-26 |
+| marble_bust_01 (Marble Bust 01 by Rico Cilliers, glTF 1k + diffuse / normal / roughness) | CC0 (Poly Haven: "Our assets are all licensed as CC0", https://polyhaven.com/license) | https://polyhaven.com/a/marble_bust_01 | the garden bust (Villa_art layer 0), its maps in art_col / art_dat.ktx2 | 2026-11-26 |
+| horse_statue_01 (Horse Statue 01 by Rico Cilliers, glTF 1k + diffuse / normal / ARM; its wooden display base dropped) | CC0 (Poly Haven) | https://polyhaven.com/a/horse_statue_01 | the marble horse, scaled x6 (Villa_art layer 1) | 2026-11-26 |
+| bronze_whale_statue (Bronze Whale Statue by Tina, glTF 1k + diffuse / normal / ARM) | CC0 (Poly Haven) | https://polyhaven.com/a/bronze_whale_statue | the bronze whale at the end of the pool's axis (Villa_art layer 2) | 2026-11-26 |
 
-The scans are re-packed by tools/villa/fabrics_ktx2.py (luminance detail, AO, normal; no colour baked: the tint is the
+The fabric scans are re-packed by tools/villa/fabrics_ktx2.py, the sculptures' maps by tools/villa/art_ktx2.py and their meshes decimated by tools/blender/villa_art.py (the downloads in data/raw/villa_sculptures/<id>/ are never modified) (luminance detail, AO, normal; no colour baked: the tint is the
 `props` slot's TSL). The source JPGs are not in the repository (downloaded to a work folder outside git).

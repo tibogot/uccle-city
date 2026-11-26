@@ -1,6 +1,6 @@
 # Mesh audit (packed): villa.lod0
 
-62,870 triangles, 36,937 welded vertices, 8,394 open edges, 1,164,264 rays, 20362 ms.
+62,870 triangles, 36,937 welded vertices, 8,394 open edges, 1,164,264 rays, 17536 ms.
 
 **0 blocking**, 17176 warnings. Clean (no blocking item).
 
@@ -298,4 +298,4 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 (3219 more in the JSON)
 
 
-Nodes: Villa, Villa_bay, Villa_gateL, Villa_gateR, Villa_door, Villa_water. Distances: {"Villa_ivy":80,"Villa":80,"Villa_kit":80,"Villa_bay":80,"Villa_gateL":80,"Villa_gateR":80,"Villa_door":80,"Villa_water":400,"Villa_far":2000,"Villa_lod1":260,"Villa_lod2":2000}. Quantum 0.443 mm. Offset 0,100,0.
+Nodes: Villa, Villa_bay, Villa_gateL, Villa_gateR, Villa_door, Villa_water. Distances: {"Villa_ivy":80,"Villa":80,"Villa_kit":80,"Villa_art":80,"Villa_art_lod1":260,"Villa_art_lod2":2000,"Villa_bay":80,"Villa_gateL":80,"Villa_gateR":80,"Villa_door":80,"Villa_water":400,"Villa_far":2000,"Villa_lod1":260,"Villa_lod2":2000}. Quantum 0.443 mm. Offset 0,100,0.

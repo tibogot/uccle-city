@@ -1,6 +1,6 @@
 # Mesh audit (before pack): soft.soft
 
-95,346 triangles, 52,729 welded vertices, 7,820 open edges, 199,188 rays, 10707 ms.
+95,346 triangles, 52,729 welded vertices, 7,820 open edges, 199,188 rays, 8822 ms.
 
 **0 blocking**, 806 warnings. Clean (no blocking item).
 

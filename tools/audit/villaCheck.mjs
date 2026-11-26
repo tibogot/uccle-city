@@ -49,7 +49,7 @@ check(Math.hypot(px - sx, pz - sz) < 1e-3, "villaPlot.toCity = site.json's axes"
 const { readGlb } = await imp("tools/mesh_audit/glb.mjs");
 const ext = await readGlb(new URL("models/villa/villa.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const cell = await readGlb(new URL("models/villa/interior.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
-const SHIP = ["models/villa/villa.glb", "models/villa/interior.glb", "models/villa/fabrics.ktx2", "models/villa/reflect.ktx2", "models/villa/caustics.ktx2"];
+const SHIP = ["models/villa/villa.glb", "models/villa/interior.glb", "models/villa/fabrics.ktx2", "models/villa/reflect.ktx2", "models/villa/caustics.ktx2", "models/villa/art_col.ktx2", "models/villa/art_dat.ktx2"];
 const mb = SHIP.reduce((s, f) => s + statSync(new URL(f, ROOT)).size, 0) / 1048576;
 check(mb <= B.mb, `download <= ${B.mb} MB`, `${mb.toFixed(2)} MB`);
 const tri = (parts, node) => parts.filter((p) => p.node === node).reduce((s, p) => s + p.index.length / 3, 0);
@@ -137,7 +137,7 @@ check(unbaked.length === 0, "every interior primitive carries the sky / sun / ni
 {
   const bad = [];
   for (const p of [...ext.parts, ...cell.parts]) {
-    if (!p.uv0 || p.index.length < 300 || /glass|glow|leaves|pool/.test(p.slot)) continue;
+    if (!p.uv0 || p.index.length < 300 || /glass|glow|leaves|pool|sculpture/.test(p.slot)) continue;   // (the sculptures' UVs are their scans' 0..1 atlases, by design)
     let mn = Infinity, mx = -Infinity, cornerish = 0;
     for (const x of p.uv0) { mn = Math.min(mn, x); mx = Math.max(mx, x); if (x === 0 || x === 1) cornerish++; }
     if (mx - mn <= 1.0001 || cornerish / p.uv0.length > 0.6) bad.push(`${p.node}/${p.slot}`);
@@ -187,10 +187,29 @@ check(unbaked.length === 0, "every interior primitive carries the sky / sun / ni
   const mx = Math.max(...L), mn = Math.min(...L), mean = L.reduce((s, x) => s + x, 0) / L.length;
   check(mx <= 0.9 && mean >= 0.12 && mn >= 0.02, "the pool's night glow inside its tone range (peak <= 0.9, mean >= 0.12, deep end >= 0.02)", `peak ${mx.toFixed(2)}, mean ${mean.toFixed(2)}, min ${mn.toFixed(3)} over ${L.length} points`);
 }
+// ---- 2h. villa3 job 4 (rule villa-sculptures): the three CC0 sculptures: one material (one draw a level), LOD0 <= 46k
+// triangles (~15k each), LOD1 <= 12k, LOD2 <= 1.5k, each standing on its plinth (lowest vertex within 5 mm of the cap)
+{
+  const a0 = tri(ext.parts, "Villa_art"), a1 = tri(ext.parts, "Villa_art_lod1"), a2 = tri(ext.parts, "Villa_art_lod2");
+  const d0 = draws(ext.parts, "Villa_art");
+  const rows4 = []; let bad4 = 0;
+  for (const r of notes.art?.contact || []) {
+    let lo = Infinity;
+    for (const q of ext.parts.filter((q) => q.node === "Villa_art")) for (let i = 0; i < q.positions.length; i += 3) {
+      const u = q.positions[i], y = q.positions[i + 1], w = q.positions[i + 2];
+      if (u < r.u[0] || u > r.u[1] || w < r.w[0] || w > r.w[1]) continue;
+      lo = Math.min(lo, y);
+    }
+    const g = (lo - r.y) * 1000; if (!(Math.abs(g) <= 5)) bad4++;
+    rows4.push(`#${r.k} ${g.toFixed(1)} mm`);
+  }
+  check(a0 > 0 && a0 <= 46000 && a1 <= 12000 && a2 <= 1500 && d0 === 1 && (notes.art?.contact || []).length === 3 && bad4 === 0,
+    "the sculptures: one draw a level, LOD0 <= 46k / LOD1 <= 12k / LOD2 <= 1.5k triangles, each on its plinth within 5 mm", `${a0} / ${a1} / ${a2} tris, ${d0} draw; ${rows4.join(", ")}`);
+}
 // ---- 2d. villa3 (rule villa-licences): every external asset the villa ships is listed with its licence and source page
 {
   let lic = ""; try { lic = readFileSync(new URL("models/villa/LICENCES.md", ROOT), "utf8"); } catch { /* missing */ }
-  const fab = J("models/villa/fabrics.json").layers.map((l) => l.id);
+  const fab = [...J("models/villa/fabrics.json").layers.map((l) => l.id), "marble_bust_01", "horse_statue_01", "bronze_whale_statue"];
   const missing = fab.filter((id) => !lic.split(/\r?\n/).some((ln) => ln.includes(id) && ln.includes("CC0") && ln.includes(`polyhaven.com/a/${id}`)));
   check(lic.length > 0 && missing.length === 0, "every external asset listed in models/villa/LICENCES.md (licence + source page)", missing.length ? `missing: ${missing.join(", ")}` : `${fab.length} fabric scans, CC0`);
 }

@@ -28,6 +28,7 @@ import interior_kit as K
 import villa_bed as VB
 import villa_seating as VS
 import villa_pool as VP
+import villa_art as VA
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 def arg(k, d=None): return ARGS[ARGS.index(k) + 1] if k in ARGS else d
@@ -87,7 +88,7 @@ GATE = dict(w0=17.2, w1=23.2, h=1.9)
 STAIR = dict(u0=21.42, w0=9.8, w1=11.0, n=22, going=0.28)       # the hall's floating stair (22 risers GL -> F1)
 RISE = (F1 - GL) / STAIR["n"]
 
-EXT_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves"]
+EXT_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves", "sculpture"]
 # villa3: the three fabric slots (fabric_white / fabric_grey / leather) merged into ONE textured slot `props` (the fabric
 # scans' KTX2 array, a tint + a scan layer per code: viewer/villa/villaInterior.js PROPS): 16 -> 14 interior draws
 INT_SLOTS = ["plaster_white", "oak_plank", "walnut", "marble_white", "stone_floor", "props", "brass",
@@ -290,6 +291,8 @@ def frames(acc, axis, c, hole, mull=1.6, transom=None, t=0.06, d=0.14, slot="met
 
 # ================================================================================================ THE EXTERIOR (LOD0)
 EX = Acc("Villa", EXT_SLOTS)
+ART = [Acc("Villa_art", EXT_SLOTS), Acc("Villa_art_lod1", EXT_SLOTS), Acc("Villa_art_lod2", EXT_SLOTS)]   # villa3 job 4: the sculptures, per level
+ART_INFO = {"lights": [], "contact": []}
 KIT = Acc("Villa_kit", EXT_SLOTS)                # villa3 job 3: the pool kit + the jointed coping (near only: shown with LOD0)
 KIT_CONTACT = []
 IVY = Acc("Villa_ivy", EXT_SLOTS)                # (the climbers' leaf cards: their own node, audited apart: cards overlap by design)
@@ -599,6 +602,25 @@ def exterior():
     kit_put(VP.parasol(), 43.95, -9.75, GL, (0, 1), (0.26, 0.26))
     for w_ in (9.2, 10.4): kit_put(VP.lounger(), 40.8, w_, GL, (1, 0), (0.95, 0.31))
     for (u_, w_) in ((36.5, -16.5), (44.05, -16.5), (44.05, 15.5)): kit_put(VP.planter(), u_, w_, GL, (0, 1), (0.26, 0.26))
+    # ---- villa3 job 4: THREE SCULPTURES (CC0 scans, tools/blender/villa_art.py) on pale stone plinths in the lawn, where
+    # they read from the house and the terrace (the pool's axis, the two lawn corners), clear of the steps' walk (w -1 .. 5)
+    # and of the hedges; a small ground uplight in front of each (metal_dark, its lens code led: emissive at night)
+    for (k, u_, w_, rot, (pa, pb, ph_)) in ((0, 47.6, 10.2, -90.0, (0.22, 0.22, 1.12)), (1, 50.8, -23.6, -60.0, (0.62, 0.42, 0.55)), (2, 54.2, -6.0, -90.0, (0.8, 0.8, 0.32))):
+        gb_ = gmin(u_ - pa, u_ + pa, w_ - pb, w_ + pb, pad=0.1) - SINK; top = gmax(u_ - pa, u_ + pa, w_ - pb, w_ + pb) + ph_
+        bbox(KIT, u_ - pa, u_ + pa, w_ - pb, w_ + pb, gb_, top - 0.04, "concrete_soffit", C["plinth"], 0.01, 1)
+        bbox(KIT, u_ - pa - 0.03, u_ + pa + 0.03, w_ - pb - 0.03, w_ + pb + 0.03, top - 0.04, top, "concrete_soffit", C["coping"], 0.008, 1, False)   # (a cap stone, 3 cm proud)
+        for lev in range(3):
+            bm = VA.statue(k, lev)
+            M = Matrix.Translation(P(u_, w_, top)) @ Matrix.Rotation(math.radians(rot), 4, "Z")
+            ART[lev].emit(bm, "sculpture", k, M, True)
+        su, sw = u_ - pa - 0.75, w_                                     # the uplight: 0.75 m in front (toward the house)
+        gl_ = gmax(su - 0.08, su + 0.08, sw - 0.08, sw + 0.08)
+        bbox(KIT, su - 0.07, su + 0.07, sw - 0.07, sw + 0.07, gmin(su - 0.07, su + 0.07, sw - 0.07, sw + 0.07, pad=0.05) - SINK, gl_ + 0.06, "metal_dark", 0, 0.006, 1)
+        KIT.rect(P(su - 0.05, sw - 0.05, gl_ + 0.061), P(su + 0.05, sw - 0.05, gl_ + 0.061), P(su + 0.05, sw + 0.05, gl_ + 0.061), P(su - 0.05, sw + 0.05, gl_ + 0.061), "metal_dark", C["led"], (0, 0, 1))
+        sx, sy, sz = VA.size(k)
+        ART_INFO["lights"].append({"at": [round(su, 3), round(gl_ + 0.07 - OY, 3), round(sw, 3)], "top": round(top - OY, 3), "h": round(sz, 3)})
+        rr = max(sx, sy) / 2 + 0.02                                       # (the statue's whole plan: the horse stands on its hooves, not its belly)
+        ART_INFO["contact"].append({"u": [round(u_ - rr, 3), round(u_ + rr, 3)], "w": [round(w_ - rr, 3), round(w_ + rr, 3)], "y": round(top - OY, 3), "k": k})
     for (axis, c, a0, a1) in (("u", t["u1"] + 0.38, t["w0"] - 0.68, -1.15), ("u", t["u1"] + 0.38, 5.15, t["w1"] + 0.68), ("w", t["w0"] - 0.38, t["u0"] + 0.5, t["u1"] + 0.08), ("w", t["w1"] + 0.38, t["u0"] + 0.5, t["u1"] + 0.08)):
         nseg = max(1, math.ceil((a1 - a0) / 2.0))
         for k in range(nseg):
@@ -1517,7 +1539,7 @@ EX.v += GLS.v and []
 # the exterior glass into LOD0 (same object, its own slot)
 off = len(EX.v)
 EX.v.extend(GLS.v); EX.f.extend([tuple(i + off for i in f) for f in GLS.f]); EX.fs.extend(GLS.fs); EX.fc.extend(GLS.fc); EX.fuv.extend(GLS.fuv); EX.sm.extend(GLS.sm)
-ob_ext = make(EX, EXT_M); ob_kit = make(KIT, EXT_M); ob_far = make(FAR, EXT_M); ob_ivy = make(IVY, EXT_M); ob_lod1 = make(L1, EXT_M); ob_bay = make(BAY, EXT_M)
+ob_ext = make(EX, EXT_M); ob_kit = make(KIT, EXT_M); ob_art = [make(a_, EXT_M) for a_ in ART]; ob_far = make(FAR, EXT_M); ob_ivy = make(IVY, EXT_M); ob_lod1 = make(L1, EXT_M); ob_bay = make(BAY, EXT_M)
 ob_gl = make(GATE_L, EXT_M, GATE_L_O); ob_gr = make(GATE_R, EXT_M, GATE_R_O); ob_door = make(DOOR_A, EXT_M, DOOR_O); ob_water = make(WATER, EXT_M)
 # the soft furnishings (cushions, rugs, leather, plants: smooth-shaded) in their own node "Soft": the audit checks them
 # without the streak / bentflat checks (those guard architecture: a cushion's normals turn round its rounded edges by design)
@@ -1581,7 +1603,7 @@ if BAKE:
     nt = glow.node_tree; nt.nodes.remove(nt.nodes["Principled BSDF"]); em = nt.nodes.new("ShaderNodeEmission")
     em.inputs["Color"].default_value = (1.0, 0.8, 0.55, 1); em.inputs["Strength"].default_value = 0.0
     nt.links.new(em.outputs[0], nt.nodes["Material Output"].inputs["Surface"])
-    for o in (ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy, ob_cell, ob_soft, ob_iglass):
+    for o in (ob_ext, ob_kit, *ob_art, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy, ob_cell, ob_soft, ob_iglass):
         me = o.data
         for i, mt in enumerate(me.materials):
             nm = mt.name
@@ -1662,7 +1684,7 @@ if BAKE:
             kv = np.where(deg > 0, 0.5 * kv + 0.5 * nb_ / np.maximum(deg, 1), kv)
         ca.data.foreach_set("color", kv[keys].astype(np.float32).ravel())
     # weld duplicates for the AO smoothing (the builder emits every face with its own corners)
-    weld([ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
+    weld([ob_ext, ob_kit, *ob_art, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
     for o in (ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door):
         me = o.data
         smooth_corners(me, "ao", 3)
@@ -1797,10 +1819,10 @@ if BAKE:
     for o in list(scn.objects):
         if o.type in ("LIGHT", "CAMERA") or o.name in ("Ground", "Neighbours", "ProbeCubes"): bpy.data.objects.remove(o)
     # back to the named slots for export
-    for o, mats in ((ob_ext, EXT_M), (ob_kit, EXT_M), (ob_far, EXT_M), (ob_lod1, EXT_M), (ob_bay, EXT_M), (ob_gl, EXT_M), (ob_gr, EXT_M), (ob_door, EXT_M), (ob_water, EXT_M), (ob_ivy, EXT_M), (ob_cell, INT_M), (ob_soft, INT_M), (ob_iglass, INT_M)):
+    for o, mats in ((ob_ext, EXT_M), (ob_kit, EXT_M), *((a_, EXT_M) for a_ in ob_art), (ob_far, EXT_M), (ob_lod1, EXT_M), (ob_bay, EXT_M), (ob_gl, EXT_M), (ob_gr, EXT_M), (ob_door, EXT_M), (ob_water, EXT_M), (ob_ivy, EXT_M), (ob_cell, INT_M), (ob_soft, INT_M), (ob_iglass, INT_M)):
         for i in range(len(o.data.materials)): o.data.materials[i] = mats[i]
 else:
-    weld([ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
+    weld([ob_ext, ob_kit, *ob_art, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
     for me in (ob_cell.data, ob_soft.data):
         for mode in ("SKY", "SUN", "NIGHT"):
             at = me.attributes.new("_L" + mode, "FLOAT_VECTOR", "CORNER")
@@ -1816,7 +1838,7 @@ def export(objs, path):
                               export_all_vertex_colors=False, export_attributes=True, export_materials="EXPORT", export_image_format="NONE", export_extras=False)
     print("exported", path, os.path.getsize(path) // 1024, "KB")
 # drop unused material slots per object (the exporter writes one primitive per used slot only)
-export([ob_ext, ob_kit, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy], os.path.join(OUT, "villa.raw.glb"))
+export([ob_ext, ob_kit, *ob_art, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy], os.path.join(OUT, "villa.raw.glb"))
 export([ob_cell, ob_soft, ob_iglass, ob_col], os.path.join(OUT, "interior.raw.glb"))
 
 def loc(u, w, h): return [u, h - OY, w]
@@ -1846,7 +1868,8 @@ notes = {
     "entrance_steps": STEPS_INFO,
     "bounds_uw": {"u": [WALL_U - 0.3, SITE["plot"]["u1"]], "w": [SITE["plot"]["w0"], SITE["plot"]["w1"]], "h": [GR and min(GR["h"]) - 1, PAR1 + 0.1]},
     "kit_contact": KIT_CONTACT,
-    "tris": {"lod0": tri(ob_ext), "kit": tri(ob_kit), "lod1": tri(ob_lod1), "far": tri(ob_far), "gate": tri(ob_gl) + tri(ob_gr), "door": tri(ob_door)},
+    "art": ART_INFO,
+    "tris": {"lod0": tri(ob_ext), "kit": tri(ob_kit), "art": [tri(a_) for a_ in ob_art], "lod1": tri(ob_lod1), "far": tri(ob_far), "gate": tri(ob_gl) + tri(ob_gr), "door": tri(ob_door)},
 }
 json.dump(notes, open(os.path.join(OUT, "villa.json"), "w"), indent=1)
 info = {
