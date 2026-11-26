@@ -64,6 +64,7 @@ import { setCompileFlush, openBootPipelines, warmBoot, precompile, shareShadowNo
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { buildGrounds } from "./grounds.js";
 import { lyceeFront } from "./lyceeFront.js";
+import { embassyFlags, loadEmbassyFlags } from "./embassyFlags.js";
 import { parkFence, PARKFENCE } from "./parkFence.js";
 import { billboards, BILLBOARDS } from "./billboards.js";
 import { Flyer } from "./flight.js";
@@ -761,6 +762,8 @@ const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("pai
  *  houses' and the school's looks, the school's yards and courts, its front (fence, gate, flags, lettering);
  *  ?cortenbosch=old: the neighbourhood as before */
 const CORTENBOSCH = params.get("cortenbosch") !== "old";
+/** (TODO 4b, rule embassy-flags) the cloth flags in front of the embassies that really fly one (data/places/embassy_flags.json) */
+const EMBASSYFLAGS = params.get("embassyflags") !== "0";
 /** a hard ground's own switch (data/overrides.json grounds[].switch "?key=old") is on */
 const groundOn = (g) => { const k = /^\?(\w+)=old$/.exec(g?.switch ?? "")?.[1]; return !k || (k === "cortenbosch" ? CORTENBOSCH : params.get(k) !== "old"); };
 /** (claude/carrefour2, rule curated-shed-look) no LiDAR "tree" under a curated canopy: a hard ground's chmClear rings drop
@@ -1182,6 +1185,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (cortenbosch) the Lycée Français's front: railing, gate, flag poles, lettering (viewer/lyceeFront.js; tile F7)
   const lycee = CORTENBOSCH ? lyceeFront.tile(entry.name, own.features, (x, z) => hm.surface(x, z)) : null;
   if (lycee) say(`lycée front: ${lycee.panels} railing panels, ${lycee.tris} triangles (viewer/lyceeFront.js)`);
+  // (TODO 4b) the embassy flag poles on this tile's drawn ground (viewer/embassyFlags.js; ?embassyflags=0 none)
+  if (EMBASSYFLAGS) { await loadEmbassyFlags(); const ef = embassyFlags.tile(entry.name, own.features, (x, z) => hm.surface(x, z)); if (ef) say(`embassy flag poles: ${ef.poles}, ${ef.tris} triangles (viewer/embassyFlags.js)`); }
   // (parkfence) the Parc de Wolvendael's and the Parc de la Sauvagère's fences and gates on this tile's drawn ground
   // (viewer/parkFence.js: instanced, the colliders a hero root per park and tile; ?parkfence=0 none)
   if (PARKFENCE) parkFence.tile(entry.name, gardenGround).then((c) => { if (c) say(`park fences: ${Object.entries(c).map(([k, v]) => `${k} ${Object.entries(v).filter(([, n]) => n).map(([q, n]) => `${n} ${q}`).join(" ")}`).join("; ")} (viewer/parkFence.js)`); }).catch((e) => say(`park fences failed: ${e.message}`));
@@ -1637,6 +1642,7 @@ async function main() {
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   // ... and the Lycée Français's three (viewer/lyceeFront.js: once tile F7 has built the poles; ?cortenbosch=old none)
   if (CORTENBOSCH && params.get("flags") !== "0") lyceeFront.flags({ scene, updaters, renderer, compiler: heroCompiler, params, log }).catch((e) => log(`lycée flags failed: ${e.message}`));
+  if (EMBASSYFLAGS) embassyFlags.start({ scene, updaters, renderer, compiler: heroCompiler, params, log }).catch((e) => log(`embassy flags failed: ${e.message} (?embassyflags=0: none)`));
   if (PARKFENCE) parkFence.start({ scene, updaters, world, compiler: heroCompiler, log }).catch((e) => log(`park fences failed: ${e.message} (?parkfence=0: none)`));
   // (billboards) the big ad boards on gables and roofs, invented posters, the trivision prisms turning (viewer/billboards.js; ?billboards=0 none)
   if (BILLBOARDS) billboards.start({ scene, updaters, compiler: heroCompiler, log }).catch((e) => log(`billboards failed: ${e.message} (?billboards=0: none)`));
@@ -1849,7 +1855,7 @@ async function main() {
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
   // (cortenbosch2) the Lycée Français's railing, sliding gate and flag poles (viewer/lyceeFront.js, tile F7) collide like the
   // landmarks: car blocks from their triangles in the 0.3-1.3 m band, the triangles for walk / third person
-  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); if (PARKFENCE) for (const n of await parkFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (params.get("places2") !== "old") for (const n of playgroundRootNames(await loadOverrides(DATA), params)) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
+  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); if (PARKFENCE) for (const n of await parkFence.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (EMBASSYFLAGS) for (const n of await embassyFlags.rootNames()) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); if (params.get("places2") !== "old") for (const n of playgroundRootNames(await loadOverrides(DATA), params)) if (!hc.HERO_ROOTS.includes(n)) hc.HERO_ROOTS.push(n); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
   else {
     if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});
     for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);

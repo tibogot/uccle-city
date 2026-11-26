@@ -24,6 +24,10 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    a flag only where Street View shows a real pole / flag (look only); the existing cloth flags (viewer/flagsCity.js:
    baked loops, live cloth < 45 m, hidden > 700 m, rule flags-are-cloth); public-domain flag designs; check: one per
    real pole, no flag on a residence without a pole, cost structural (draws / live count).
+   **MERGED 2026-11-26 (claude/flags3):** 19 OSM places in the commune looked at: 11 fly a flag (14 poles / brackets:
+   UA, HU+EU, BG+EU, RO+EU, KE, SZ, BF, ER, AF, NI, AO), 6 no, 2 unseen; the real Commons flags (PD) in one atlas, real
+   proportions, a local wind along the front; rule embassy-flags, row embassyflags. Left: generic blocks where the real
+   embassies are villas (Hungary, Eswatini, Afghanistan); Romania's garden pole not placed.
 4b2. ACTIVITIES, one at a time, each self-contained (loaded only where it happens, own perf budget + checks; owner
    2026-11-26 agreed the order: core city perf + the three games first): (1) SNOOKER in the villa (mouse play: aim,
    pull back, shoot; real ball physics: collisions, cushions, spin, pockets; no character; loads with the interior);
