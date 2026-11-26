@@ -155,6 +155,8 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   traced); big chains: name + colours with generic lettering, or an invented name (owner's call per chain); a small
   shop's real logo only with its written OK (owner asks).
 
+- [ ] REALITY ROUND 1 done 2026-11-26 (claude/reality1, not merged): 14 spots, docs/REALITY_ROUND_2026-11-26.md (classes C1-C15, later jobs in its last section), owner sheet C:\Users\tibog\Downloads\uccle-reality\round1_sheet.png. Montjoie school fixed (?montjoie=old, rule institution-not-balcony-block, row montjoie); Bleus d'Encre sign fixed.
+
 **Step 3: places (compare with photos, look only)**
 - [x] MERGED 2026-11-23 (claude/parkfence) Wolvendael: big metal fences all round + several big gates (one at the Dieweg tram terminus).
 - [ ] UNDERGROUND (owner 2026-11-23, "add to the list"): from OSM (data/raw/osm/area.json): 36 parking=underground, 2 multi-storey (Parking Saint-Pierre named), 4 more road tunnels not built (Av. des Biches, Rue des Bigarreaux, Rue de l'Élan, Rue du Bien-Faire: check if rail underpasses), roads through buildings (Galerie de Waterloo, Square Coghen, Rue Fernand Gillion, Square du Val de la Cambre). Order:
