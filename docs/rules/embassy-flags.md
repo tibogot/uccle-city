@@ -18,7 +18,11 @@ rule), outside every footprint. Every flag flown is the REAL national flag, embl
 data/flags/embassy_sources.json; public domain, or CC-BY(-SA) only with the credit in CREDITS.md), the download kept
 unedited in data/raw/flags/commons, rasterised at build time (tools/flags/build_atlas.mjs, a deterministic pure-JS
 rasteriser) into one atlas the gate rebuilds and compares byte for byte; each flag at its real proportions (the
-cloth stretched along the fly, the one-draw set kept).
+cloth stretched along the fly, the one-draw set kept). Every flag flies readably in any wind: a flag on a front (a
+bracket, a pole near its wall) takes the local wind along the street (viewer/embassyFlags.js localWind: the part into
+the wall dropped, an outward share, a minimum flutter), so it streams broadside to the street and never lies folded on
+the wall; a bracket flies 1.5 x 1.0 m (2:3; p.hoist for a big front); the check records every flag's loop for 9 wind
+directions (tools/embassy/flutter.mjs: spread >= 0.6, broadside >= 0.5, no vertex in the wall).
 
 **Why.** The owner (2026-11-26): "in Uccle there are a lot of embassies; flags in front of their gate, if it doesn't
 cost perf". OSM had only the Russian embassy in the city's pull (the pulls never asked for office=diplomatic); a
@@ -27,4 +31,7 @@ apartment blocks, compounds behind walls). Flying one at every OSM point would h
 flag per place as its own cloth would have cost a draw and a live cloth each. So: a per-place look first, the record in
 the data, and a gate that keeps the flags to the real poles and the cost structural. Round 2 (owner, 2026-11-26): the
 first designs were drawn in code with the emblems simplified and every flag squashed to 2:3; the owner wanted the real
-flags ("no reason not to use the real one").
+flags ("no reason not to use the real one"). Round 3 (owner): "fix the limp flags and make the bracket flags bigger":
+the default wind (towards 70 deg) blew square into Eswatini's front (the cloth pressed on its wall's half-space) and
+straight out of the Wolvendael fronts towards the street (Nicaragua, Afghanistan: seen edge-on, a limp strip); the
+brackets flew 1.2 x 0.8 m.

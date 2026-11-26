@@ -185,6 +185,7 @@ export const FEATURES = [
   on("townhall", "world", "town hall", "Maison communale (Place Jean Vander Elst).", { sub: "Landmarks" }),
   on("flags", "world", "cloth flags", "The cloth flags (viewer/flagsCity.js): the town hall's balcony, the Lycée Français's entrance, the police station's yard (police.json flag_poles). Every placed flag is a cloth flag (rule flags-are-cloth).", { sub: "Landmarks" }),
   on("embassyflags", "world", "embassy flags", "The cloth flags in front of the embassies that really fly one (looked at per place on street-level imagery: data/places/embassy_flags.json, viewer/embassyFlags.js): scripted poles / façade brackets, one draw for the free poles' flags (a design atlas), live cloth for the nearest 6 within 45 m. Rule embassy-flags.", { sub: "Landmarks" }),
+  old("embassywind", "ab", "embassy flags in the city wind (old)", "claude/flags3 round 3: the façade / near-wall embassy flags in the plain city wind (into the wall too: Eswatini lay folded on its wall, flags seen edge-on from the street) with the 1.2 x 0.8 m bracket flags, as before; default: the local wind along the front (localWind: off the wall, a minimum flutter) and 1.5 x 1.0 m bracket flags.", { sub: "City defects" }),
   on("observatory", "world", "Observatory", "Observatoire royal.", { sub: "Landmarks" }),
   on("wolvendael", "world", "Wolvendael château", "Château + pond.", { sub: "Landmarks" }),
   on("police", "world", "police station", "Police station (+ yard).", { sub: "Landmarks" }),

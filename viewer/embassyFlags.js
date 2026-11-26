@@ -23,7 +23,37 @@ import { loadFlagAtlas } from "./flags/flagAtlas.js";
 
 export const LIVE_RADIUS = 45, HIDE_DIST = 700, LIVE_MAX = 6;
 export const POLE_H = 7.0, BRACKET_LEN = 2.2, BRACKET_TILT = 35;            // m, m, degrees above the horizontal
-const FLAG_W = 1.5, FLAG_H = 1.0, BRACKET_FLAG = [1.2, 0.8];
+const FLAG_W = 1.5, FLAG_H = 1.0;
+// a bracket's flag: 1.0 m at the hoist by default (1.5 x 1.0 for a 2:3 flag, what the embassy fronts fly; the first
+// round's 1.2 x 0.8 read small), p.hoist for a big front; the wind near a front (localWind): never under MIN_WIND
+export const BRACKET_HOIST = 1.0, MIN_WIND = 3.5;
+const OLD_WIND = typeof location !== "undefined" && new URLSearchParams(location.search).get("embassywind") === "old";
+
+/** the city wind (speed m/s, towards deg) at a flag. Free poles: as it is (never under MIN_WIND). Near a front (a
+ *  bracket, a pole within the cloth's reach of its wall): the street channels the wind along the front, and what
+ *  blows into the wall rolls off it: the part into the wall is dropped, the part along the front kept (at least half
+ *  of it, so a flag on a front square to the wind still streams one way), plus an outward share, so the cloth swings
+ *  off the wall instead of folding flat on it (claude/flags3 round 3: Nicaragua and Eswatini hung limp: the default
+ *  wind, towards 70 deg, blows square into Eswatini's front and the cloth lay folded on the wall's half-space).
+ *  -> { dir: [x, 0, z], speed } */
+export function localWind(p, deg, speed, { old = OLD_WIND } = {}) {
+  const a = (deg * Math.PI) / 180, d = [Math.cos(a), 0, -Math.sin(a)];
+  const n = p.type === "bracket" ? p.n : p.wall?.n ?? null;
+  if (old) return { dir: d, speed };
+  if (!n) return { dir: d, speed: Math.max(MIN_WIND, speed) };
+  const t = [n[1], -n[0]], dn = d[0] * n[0] + d[2] * n[1], dt = d[0] * t[0] + d[2] * t[1];
+  const along = (dt >= 0 ? 1 : -1) * Math.max(Math.abs(dt), 0.8), off = Math.min(0.6, Math.max(dn, 0.35));
+  const x = t[0] * along + n[0] * off, z = t[1] * along + n[1] * off, l = Math.hypot(x, z);
+  return { dir: [x / l, 0, z / l], speed: Math.max(MIN_WIND, speed * 0.9) };
+}
+
+/** a flag's cloth as the city flies it (shared with tools/embassy/flutter.mjs): aspect = the flag's width / height */
+export function clothSpec(p, aspect, deg, speed, { old = OLD_WIND } = {}) {
+  const w = localWind(p, deg, speed, { old }), wallPole = p.type !== "bracket" && !!p.wall;
+  if (p.type !== "bracket" && !p.wall) return { cloth: { width: FLAG_W, height: FLAG_H, axis: [0, 1, 0], out: w.dir, windDir: w.dir, fabric: FABRIC.polyester, planes: [] }, speed: w.speed, fly: (FLAG_H * aspect) / FLAG_W };
+  const axis = wallPole ? [0, 1, 0] : bracketAxis(p), hoist = wallPole ? FLAG_H : old ? 0.8 : p.hoist ?? BRACKET_HOIST;
+  return { cloth: { width: hoist * aspect, height: hoist, axis, out: w.dir, windDir: w.dir, fabric: FABRIC.polyester, planes: [wallPole ? [p.wall.n[0], 0, p.wall.n[1], -p.wall.d + 0.04] : bracketPlane(p, axis)] }, speed: w.speed, fly: 1 };
+}
 const WHITE = [0.78, 0.78, 0.76], STEEL = [0.55, 0.56, 0.57], CONCRETE = [0.42, 0.41, 0.39], GOLD = [0.6, 0.48, 0.2];
 
 let DATA = null, MAT = null;
@@ -146,7 +176,6 @@ export const embassyFlags = {
     if (!poles.length) { log?.("embassy flags: no pole in data/places/embassy_flags.json"); return null; }
     const [ws, wd] = (params.get("wind") ?? "5,70").split(",").map(Number);
     const wind = { speed: Number.isFinite(ws) ? ws : 5, deg: Number.isFinite(wd) ? wd : 70 };
-    const dirOf = (deg) => { const a = THREE.MathUtils.degToRad(deg); return [Math.cos(a), 0, -Math.sin(a)]; };
     const keys = [...new Set(poles.map((p) => p.design))];
     // the real flags (the Commons SVGs rasterised at build time: tools/flags/build_atlas.mjs), each with its own
     // proportions: a free pole's cloth is the simulated 1 m hoist stretched along the fly to the flag's aspect (one loop,
@@ -157,24 +186,24 @@ export const embassyFlags = {
     // the free-standing poles: one set; each bracket: its own set (its axis, its wall)
     // (a free pole within the cloth's reach of a wall, p.wall, flies its own loop kept clear of that wall, as a bracket)
     const free = poles.filter((p) => p.type !== "bracket" && !p.wall), brackets = poles.filter((p) => p.type === "bracket" || p.wall);
-    const freeCloth = { width: FLAG_W, height: FLAG_H, axis: [0, 1, 0], out: dirOf(wind.deg), windDir: dirOf(wind.deg), fabric: FABRIC.polyester, planes: [] };
+    const freeSpec = free.length ? clothSpec(free[0], 1.5, wind.deg, wind.speed) : null, freeCloth = freeSpec?.cloth;
     const sets = [], flags = [];
     if (free.length) {
-      const set = await BakedFlags.create({ cloth: freeCloth, map: null, atlas, capacity: free.length, speed: wind.speed, stretch: true });
+      const set = await BakedFlags.create({ cloth: freeCloth, map: null, atlas, capacity: free.length, speed: freeSpec.speed, stretch: true });
+      set.localSpeed = freeSpec.speed;
       sets.push(set);
       for (const p of free) {
-        const fly = (FLAG_H * atlas.aspectOf(p.design)) / FLAG_W;
-        flags.push({ p, set, fly, i: set.add(0, -1e4, 0, { phase: Math.random(), scale: 0, cell: atlas.cellOf(p.design), fly }), cloth: freeCloth, top: new THREE.Vector3(), on: false, live: null, state: "baked", d: Infinity });
+        const fly = clothSpec(p, atlas.aspectOf(p.design), wind.deg, wind.speed).fly;
+        flags.push({ p, set, fly, windDir: freeCloth.windDir, speed: freeSpec.speed, i: set.add(0, -1e4, 0, { phase: Math.random(), scale: 0, cell: atlas.cellOf(p.design), fly }), cloth: freeCloth, top: new THREE.Vector3(), on: false, live: null, state: "baked", d: Infinity });
       }
     }
     for (const p of brackets) {
-      const wallPole = p.type !== "bracket", axis = wallPole ? [0, 1, 0] : bracketAxis(p);
-      // the wall as a half-space in the sim frame (relative to the hoist top)
-      const hoist = wallPole ? FLAG_H : BRACKET_FLAG[1], size = [hoist * atlas.aspectOf(p.design), hoist];
-      const cloth = { width: size[0], height: size[1], axis, out: dirOf(wind.deg), windDir: dirOf(wind.deg), fabric: FABRIC.polyester, planes: [wallPole ? [p.wall.n[0], 0, p.wall.n[1], -p.wall.d + 0.04] : bracketPlane(p, axis)] };
-      const set = await BakedFlags.create({ cloth, map: null, atlas, capacity: 1, speed: wind.speed });
+      // its own loop: its axis, its wall as a half-space in the sim frame (relative to the hoist top), its local wind
+      const spec = clothSpec(p, atlas.aspectOf(p.design), wind.deg, wind.speed), cloth = spec.cloth;
+      const set = await BakedFlags.create({ cloth, map: null, atlas, capacity: 1, speed: spec.speed });
+      set.localSpeed = spec.speed;
       sets.push(set);
-      flags.push({ p, set, fly: 1, i: set.add(0, -1e4, 0, { phase: Math.random(), scale: 0, cell: atlas.cellOf(p.design), fly: 1 }), cloth, top: new THREE.Vector3(), on: false, live: null, state: "baked", d: Infinity });
+      flags.push({ p, set, fly: 1, windDir: cloth.windDir, speed: spec.speed, i: set.add(0, -1e4, 0, { phase: Math.random(), scale: 0, cell: atlas.cellOf(p.design), fly: 1 }), cloth, top: new THREE.Vector3(), on: false, live: null, state: "baked", d: Infinity });
     }
     for (const s of sets) { s.mesh.visible = false; s.mesh.userData.nightMover = 2; s.mesh.name = "flags_baked_embassy"; scene.add(s.mesh); }
     // the live pool: LIVE_MAX cloths for the free poles + one per bracket, each with its own material (its cell a
@@ -205,7 +234,7 @@ export const embassyFlags = {
       const lf = f.own ?? pool.find((q) => !q.busy);
       if (!lf) return false;
       lf.busy = f; f.live = lf; lf.cell.value = f.set.extra[f.i * 4 + 2]; lf.s.value = f.fly;
-      Object.assign(lf.cloth.wind, { speed: wind.speed, dir: dirOf(wind.deg) });
+      Object.assign(lf.cloth.wind, { speed: f.speed, dir: f.windDir });
       lf.startFrom(f.set.stateAt(f.i, t), 0);
       lf.mesh.position.copy(f.top); lf.mesh.visible = true;
       f.set.setVisible(f.i, false); f.state = "live";
@@ -224,7 +253,7 @@ export const embassyFlags = {
         if (on !== f.on) { f.on = on; if (!f.live) f.set.setVisible(f.i, on); }
         if (!on && f.live) dropLive(f);
       }
-      for (const s of sets) { s.mesh.visible = false; s.setWind(wind.speed); s.update(t, dt); }
+      for (const s of sets) { s.mesh.visible = false; s.setWind(s.localSpeed); s.update(t, dt); }
       for (const f of flags) if (f.on) f.set.mesh.visible = true;
       // the nearest LIVE_MAX within LIVE_RADIUS run the cloth (insertion sort in place: no allocation)
       for (let a = 1; a < order.length; a++) { const k = order[a]; let b = a - 1; while (b >= 0 && flags[order[b]].d > flags[k].d) { order[b + 1] = order[b]; b--; } order[b + 1] = k; }
@@ -235,7 +264,7 @@ export const embassyFlags = {
         else if (want && f.state === "handback") { f.live.blend = null; f.state = "live"; }
         else if (!want && f.state === "live") { f.live.handBack(() => f.set.stateAt(f.i, t), 0); f.state = "handback"; }
         if (f.live) {
-          Object.assign(f.live.cloth.wind, { speed: wind.speed });
+          f.live.cloth.wind.speed = f.speed;
           const going = f.live.update(dt); sim += f.live.simMs; n++;
           if (f.state === "handback" && !going) dropLive(f);
         }

@@ -19,6 +19,8 @@
 //   6. against the drawn city (each pole's tile built as the city builds it, tools/embassy/clearance.mjs): the pole's
 //      axis meets no drawn triangle; the flag's swing (16 directions at 3 heights, as long as its fly; a wall's
 //      half-space excluded) meets nothing;
+//   7. every flag flies (tools/embassy/flutter.mjs, the city's own cloth and loop for 9 wind directions at 5 m/s): the fly
+//      end's spread >= 0.6 of the width, a flag on a front broadside to the street (>= 0.5 along it), no vertex in its wall;
 //   node --import ./tools/christmas/hook.mjs --import ./tools/road_audit/register.mjs tools/audit/embassyFlagsCheck.mjs
 //        [--quiet] [--no-build (skip 6)]
 import fs from "node:fs";
@@ -136,6 +138,16 @@ if (!process.argv.includes("--no-build")) {
   const r = await clearance(), badP = Object.entries(r).filter(([, v]) => v.pole), badC = Object.entries(r).filter(([, v]) => v.cloth);
   check("6. every pole's axis clear of the drawn walls / details / roofs", !badP.length, badP.map(([id, v]) => `${id}: ${v.pole}`).join("; ") || `${Object.keys(r).length} pole(s) on ${new Set(Object.values(r).map((v) => v.tile)).size} tile(s)`);
   check("6. every flag's swing (16 directions x 3 heights, the fly + 10 cm; not into its wall's half-space) clear of the drawn city", !badC.length, badC.map(([id, v]) => `${id}: ${v.cloth}`).join("; ") || "clear");
+}
+
+// ---- 7. every flag flies (tools/embassy/flutter.mjs: its loop recorded for 9 wind directions at the default speed)
+{
+  const { flutter, MIN_SPREAD, MIN_FACE } = await import("../embassy/flutter.mjs");
+  const r = Object.entries(flutter());
+  const limp = r.filter(([, v]) => v.min < MIN_SPREAD), edge = r.filter(([, v]) => v.faceMin != null && v.faceMin < MIN_FACE), inWall = r.filter(([, v]) => v.wallMin != null && v.wallMin < -0.01);
+  check(`7. every flag spreads (fly end / width >= ${MIN_SPREAD}) in 9 wind directions at 5 m/s`, !limp.length, limp.map(([id, v]) => `${id} ${v.design} ${v.min.toFixed(2)}`).join("; ") || `lowest ${Math.min(...r.map(([, v]) => v.min)).toFixed(2)}`);
+  check(`7. every flag on a front reads broadside from the street (along the front >= ${MIN_FACE} of its width) in every direction`, !edge.length, edge.map(([id, v]) => `${id} ${v.design} ${v.faceMin.toFixed(2)}`).join("; ") || `lowest ${Math.min(...r.filter(([, v]) => v.faceMin != null).map(([, v]) => v.faceMin)).toFixed(2)}`);
+  check("7. no cloth vertex in its wall (half-space) while flying", !inWall.length, inWall.map(([id, v]) => `${id} ${v.wallMin.toFixed(3)} m`).join("; ") || "clear");
 }
 
 // ---- 5. the cost
