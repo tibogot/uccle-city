@@ -1,6 +1,6 @@
 # Mesh audit (before pack): art.art2
 
-782 triangles, 412 welded vertices, 19 open edges, 736 rays, 21 ms.
+782 triangles, 412 welded vertices, 19 open edges, 736 rays, 38 ms.
 
 **0 blocking**, 6 warnings. Clean (no blocking item).
 

@@ -324,6 +324,9 @@ def plinth_bot(axis, c, out):
         return gmin(x0, x1, min(c, c - out * 0.6), max(c, c - out * 0.6), pad=0.05) - SINK
     return f
 
+# villa3 job 5 (rule villa-garden-city-kit): the villa's hedges are the CITY's hedge modules (viewer/villa/villaPlot.js
+# VILLA_HEDGE_RUNS -> viewer/gardens/gardenHedge.js); the owner: "big blocks, not natural". CITY_HEDGES = False = the boxes
+CITY_HEDGES = os.environ.get("VILLA_BOX_HEDGES") != "1"
 # ---- clipped hedges along the sides and the back of the plot (on the ground, sunk)
 def hedge(axis, c, a0, a1, thick=1.0, hgt=2.3):
     n_ = max(1, math.ceil((a1 - a0) / 2.0))
@@ -544,9 +547,9 @@ def exterior():
         else:           # the house number "18" (fictional) in bright bars on a dark plate
             bbox(EX, WALL_U - 0.13, WALL_U - 0.1, a + 0.05, b - 0.05, top - 0.95, top - 0.55, "metal_dark", C["frame"], 0.004, 1, False)
             digits(EX, WALL_U - 0.13, (a + b) / 2, top - 0.9, 0.3)
-    for (a, b) in ((-32.95, -0.9), (GATE["w1"] + 0.6, 28.95)):
+    for (a, b) in ((-32.95, -0.9), (GATE["w1"] + 0.6, 28.95)) if not CITY_HEDGES else ():
         hedge("u", WALL_U + 0.8, a, b, thick=0.9, hgt=1.9)
-    hedge("u", 13.55, -22.8, -1.2, thick=0.7, hgt=0.85)
+    if not CITY_HEDGES: hedge("u", 13.55, -22.8, -1.2, thick=0.7, hgt=0.85)
     for (w0_, w1_, ht) in ((-19.6, -17.3, 4.8), (-15.5, -12.9, 5.6), (-11.1, -8.4, 3.6)):
         climber(IVY, GF["u0"], w0_, w1_, GL - 0.1, GL + ht, seed=int(-w0_ * 10))
     # ---- the terrace (blue stone) with the pool, its steps down to the lawn, the pergola
@@ -621,7 +624,7 @@ def exterior():
         ART_INFO["lights"].append({"at": [round(su, 3), round(gl_ + 0.07 - OY, 3), round(sw, 3)], "top": round(top - OY, 3), "h": round(sz, 3)})
         rr = max(sx, sy) / 2 + 0.02                                       # (the statue's whole plan: the horse stands on its hooves, not its belly)
         ART_INFO["contact"].append({"u": [round(u_ - rr, 3), round(u_ + rr, 3)], "w": [round(w_ - rr, 3), round(w_ + rr, 3)], "y": round(top - OY, 3), "k": k})
-    for (axis, c, a0, a1) in (("u", t["u1"] + 0.38, t["w0"] - 0.68, -1.15), ("u", t["u1"] + 0.38, 5.15, t["w1"] + 0.68), ("w", t["w0"] - 0.38, t["u0"] + 0.5, t["u1"] + 0.08), ("w", t["w1"] + 0.38, t["u0"] + 0.5, t["u1"] + 0.08)):
+    for (axis, c, a0, a1) in (("u", t["u1"] + 0.38, t["w0"] - 0.68, -1.15), ("u", t["u1"] + 0.38, 5.15, t["w1"] + 0.68), ("w", t["w0"] - 0.38, t["u0"] + 0.5, t["u1"] + 0.08), ("w", t["w1"] + 0.38, t["u0"] + 0.5, t["u1"] + 0.08)) if not CITY_HEDGES else ():
         nseg = max(1, math.ceil((a1 - a0) / 2.0))
         for k in range(nseg):
             x0, x1 = a0 + (a1 - a0) * k / nseg, a0 + (a1 - a0) * (k + 1) / nseg - 0.001
@@ -632,9 +635,10 @@ def exterior():
                 gb_ = gmin(x0, x1, c - 0.3, c + 0.3, pad=0.1) - SINK; gt = gmax(x0, x1, c - 0.3, c + 0.3) + 0.62
                 bbox(KIT, x0, x1, c - 0.3, c + 0.3, gb_, gt, "hedge", 0, 0.1, 1)
     plot = SITE["plot"]
-    hedge("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"])
-    hedge("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"])
-    hedge("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0)
+    if not CITY_HEDGES:
+        hedge("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"])
+        hedge("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"])
+        hedge("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0)
 
 STEPS_INFO = {}
 exterior()
@@ -693,7 +697,7 @@ def far():
     for (a, b) in ((-34.0, GATE["w0"] - 0.5), (GATE["w1"] + 0.5, 30.0)):
         box(FAR, WALL_U, WALL_U + 0.3, a, b, gmin(WALL_U, WALL_U + 0.3, a, b, 0.2) - SINK, gmax(WALL_U, WALL_U + 0.3, a, b) + 1.75, "render_white", 0, skip=("-h",))
     plot = SITE["plot"]
-    for (ax_, c, a0, a1) in (("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"]), ("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"]), ("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0)):
+    for (ax_, c, a0, a1) in (("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"]), ("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"]), ("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0)) if not CITY_HEDGES else ():
         if ax_ == "w": box(FAR, a0, a1, c - 0.5, c + 0.5, gmin(a0, a1, c - 0.5, c + 0.5, 0.1) - SINK, gmax(a0, a1, c - 0.5, c + 0.5) + 2.3, "hedge", 0, skip=("-h",))
         else: box(FAR, c - 0.5, c + 0.5, a0, a1, gmin(c - 0.5, c + 0.5, a0, a1, 0.1) - SINK, gmax(c - 0.5, c + 0.5, a0, a1) + 2.3, "hedge", 0, skip=("-h",))
 far()
@@ -860,13 +864,15 @@ def lod1():
     for (a, b) in ((GATE["w0"] - 0.5, GATE["w0"]), (GATE["w1"], GATE["w1"] + 0.5)):
         top = round(gmax(WALL_U, WALL_U + 0.3, a, b) + 2.05, 2)
         box(L1, WALL_U - 0.1, WALL_U + 0.4, a, b, gmin(WALL_U - 0.1, WALL_U + 0.4, a, b) - SINK, top, "stone_blue", C["plinth"], skip=("-h",))
-    for (a, b) in ((-32.95, -0.9), (GATE["w1"] + 0.6, 28.95)):
+    for (a, b) in ((-32.95, -0.9), (GATE["w1"] + 0.6, 28.95)) if not CITY_HEDGES else ():
         lbox_run("u", WALL_U + 0.8, a, b, 0.9, 1.9)
-    lbox_run("u", 13.55, -22.8, -1.2, 0.7, 0.85)
     plot = SITE["plot"]
-    lbox_run("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"], 1.0, 2.3)
-    lbox_run("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"], 1.0, 2.3)
-    lbox_run("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0, 1.0, 2.3)
+    if CITY_HEDGES: pass
+    else:
+      lbox_run("u", 13.55, -22.8, -1.2, 0.7, 0.85)
+      lbox_run("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"], 1.0, 2.3)
+      lbox_run("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"], 1.0, 2.3)
+      lbox_run("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0, 1.0, 2.3)
     # ---- the terrace, the pool's coping and basin rim, the steps to the lawn, the pergola
     t = TER; p = POOL; cp = 0.35; ci = 0.05
     for (a, b, c_, d) in ((t["u0"], p["u0"] - ci, t["w0"], t["w1"]), (p["u1"] + ci, t["u1"], t["w0"], -1.0), (p["u1"] + ci, t["u1"], -1.0, 5.0), (p["u1"] + ci, t["u1"], 5.0, t["w1"]),

@@ -1,6 +1,6 @@
 # Mesh audit (before pack): villa.lod0
 
-62,870 triangles, 36,949 welded vertices, 8,414 open edges, 1,167,188 rays, 19614 ms.
+50,998 triangles, 30,677 welded vertices, 7,966 open edges, 1,008,660 rays, 6374 ms.
 
 **0 blocking**, 17181 warnings. Clean (no blocking item).
 
@@ -9,9 +9,9 @@
 | sliver | warn | 16032 |
 | nonmanifold | warn | 94 |
 | tjunction | warn | 1055 |
-| seam | info | 745 |
-| opening | info | 1344 |
-| backtoback | info | 3177 |
+| seam | info | 638 |
+| opening | info | 1038 |
+| backtoback | info | 3173 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -156,7 +156,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (1015 more in the JSON)
 
-## seam (info, 745)
+## seam (info, 638)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -201,9 +201,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 35.85, 118.42, -7.79 | Villa/stone_blue + Villa/metal_dark | 25.42 | 25 | 90 |
 | 35.85, 118.42, 5.06 | Villa/stone_blue + Villa/metal_dark | 5.72 | 25 | 90 |
 
-(705 more in the JSON)
+(598 more in the JSON)
 
-## opening (info, 1344)
+## opening (info, 1038)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -248,9 +248,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 124.55, -12.60 | Villa/render_white | 0 + 0 + 1 | 0.3 |
 | 14.00, 124.75, -11.40 | Villa/render_white | 0 + 0 + -1 | 0.3 |
 
-(1304 more in the JSON)
+(998 more in the JSON)
 
-## backtoback (info, 3177)
+## backtoback (info, 3173)
 
 | at | parts | area |
 |---|---|---|
@@ -264,7 +264,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 121.78, 5.51 | Villa/render_white + Villa/metal_dark | 0.0014 |
 | 14.00, 121.95, 5.88 | Villa/render_white + Villa/metal_dark | 0.00394 |
 | 14.00, 121.83, 5.82 | Villa/render_white + Villa/metal_dark | 0.02486 |
-| 14.00, 121.97, 5.77 | Villa/render_white + Villa/metal_dark | 0.01149 |
+| 14.00, 121.98, 5.73 | Villa/render_white + Villa/metal_dark | 0.01149 |
 | 14.00, 121.89, 5.66 | Villa/render_white + Villa/metal_dark | 0.03171 |
 | 14.00, 121.91, 6.23 | Villa/render_white + Villa/metal_dark | 0.03184 |
 | 14.00, 121.82, 6.03 | Villa/render_white + Villa/metal_dark | 0.00816 |
@@ -274,7 +274,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 121.82, 6.53 | Villa/render_white + Villa/metal_dark | 0.02652 |
 | 14.00, 121.97, 6.73 | Villa/render_white + Villa/metal_dark | 0.03818 |
 | 14.00, 121.90, 6.41 | Villa/render_white + Villa/metal_dark | 0.03182 |
-| 14.00, 121.92, 7.62 | Villa/render_white + Villa/metal_dark | 0.04348 |
+| 14.00, 121.90, 7.60 | Villa/render_white + Villa/metal_dark | 0.04348 |
 | 14.00, 121.82, 7.22 | Villa/render_white + Villa/metal_dark | 0.02652 |
 | 14.00, 121.97, 7.43 | Villa/render_white + Villa/metal_dark | 0.03818 |
 | 14.00, 121.90, 7.11 | Villa/render_white + Villa/metal_dark | 0.03182 |
@@ -289,13 +289,13 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 121.91, 9.72 | Villa/render_white + Villa/metal_dark | 0.03733 |
 | 14.00, 121.80, 9.51 | Villa/render_white + Villa/metal_dark | 0.02987 |
 | 14.00, 121.97, 9.55 | Villa/render_white + Villa/metal_dark | 0.04667 |
-| 14.00, 121.85, 9.23 | Villa/render_white + Villa/metal_dark | 0.05413 |
+| 14.00, 121.88, 9.21 | Villa/render_white + Villa/metal_dark | 0.05413 |
 | 14.00, 121.91, 10.42 | Villa/render_white + Villa/metal_dark | 0.03733 |
 | 14.00, 121.80, 10.21 | Villa/render_white + Villa/metal_dark | 0.02987 |
 | 14.00, 121.97, 10.25 | Villa/render_white + Villa/metal_dark | 0.04667 |
 | 14.00, 121.88, 9.91 | Villa/render_white + Villa/metal_dark | 0.05413 |
 
-(3137 more in the JSON)
+(3133 more in the JSON)
 
 
 Nodes: Villa, Villa_bay, Villa_gateL, Villa_gateR, Villa_door, Villa_water. Distances: {"Villa_ivy":80,"Villa":80,"Villa_kit":80,"Villa_art":80,"Villa_art_lod1":260,"Villa_art_lod2":2000,"Villa_bay":80,"Villa_gateL":80,"Villa_gateR":80,"Villa_door":80,"Villa_water":400,"Villa_far":2000,"Villa_lod1":260,"Villa_lod2":2000}. Quantum 0.000 mm. Offset 0,100,0.

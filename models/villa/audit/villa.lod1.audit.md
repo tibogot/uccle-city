@@ -1,21 +1,21 @@
 # Mesh audit (before pack): villa.lod1
 
-8,098 triangles, 5,569 welded vertices, 4,052 open edges, 857,000 rays, 3521 ms.
+4,766 triangles, 3,507 welded vertices, 2,592 open edges, 638,812 rays, 1276 ms.
 
-**0 blocking**, 1477 warnings. Clean (no blocking item).
+**0 blocking**, 1079 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 644 |
-| nonmanifold | warn | 26 |
-| tjunction | warn | 807 |
-| seam | info | 561 |
-| opening | info | 1240 |
-| backtoback | info | 434 |
+| sliver | warn | 592 |
+| nonmanifold | warn | 24 |
+| tjunction | warn | 463 |
+| seam | info | 555 |
+| opening | info | 476 |
+| backtoback | info | 410 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 644)
+## sliver (warn, 592)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -60,9 +60,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 9.90, 116.78, -13.30 | Villa_lod1/render_white | 43 | 2.101 |
 | 9.90, 116.77, -14.00 | Villa_lod1/render_white | 43 | 2.101 |
 
-(604 more in the JSON)
+(552 more in the JSON)
 
-## nonmanifold (warn, 26)
+## nonmanifold (warn, 24)
 
 | at | part | uses |
 |---|---|---|
@@ -90,10 +90,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 37.52, 126.33, 23.20 | Villa_lod1/metal_dark | 4 |
 | 13.98, 125.97, -22.70 | Villa_lod1/metal_dark | 4 |
 | 36.02, 125.97, -22.70 | Villa_lod1/metal_dark | 4 |
-| 58.00, 119.95, -33.00 | Villa_lod1/hedge | 4 |
-| 58.00, 119.95, 29.00 | Villa_lod1/hedge | 4 |
 
-## tjunction (warn, 807)
+## tjunction (warn, 463)
 
 | at | part | edge_m |
 |---|---|---|
@@ -138,9 +136,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 12.60, 126.00, 23.20 | Villa_lod1/render_white | 24.9 |
 | 14.30, 125.70, -21.00 | Villa_lod1/render_white | 14.7 |
 
-(767 more in the JSON)
+(423 more in the JSON)
 
-## seam (info, 561)
+## seam (info, 555)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -185,9 +183,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 35.90, 118.57, 4.90 | Villa_lod1/render_white + Villa_lod1/metal_dark | 3.87 | 13 | 90 |
 | 35.90, 118.73, 5.00 | Villa_lod1/render_white + Villa_lod1/metal_dark | 3.87 | 13 | 90 |
 
-(521 more in the JSON)
+(515 more in the JSON)
 
-## opening (info, 1240)
+## opening (info, 476)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -232,9 +230,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 123.15, -21.20 | Villa_lod1/render_white | 0 + 0 + 1 | 1.7 |
 | 14.00, 124.75, -19.90 | Villa_lod1/render_white | 0 + 0 + -1 | 1.7 |
 
-(1200 more in the JSON)
+(436 more in the JSON)
 
-## backtoback (info, 434)
+## backtoback (info, 410)
 
 | at | parts | area |
 |---|---|---|
@@ -279,7 +277,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.13, 118.40, -17.00 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00052 |
 | 14.11, 118.40, -16.96 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00113 |
 
-(394 more in the JSON)
+(370 more in the JSON)
 
 
 Nodes: Villa_lod1. Distances: {"Villa_ivy":80,"Villa":80,"Villa_kit":80,"Villa_art":80,"Villa_art_lod1":260,"Villa_art_lod2":2000,"Villa_bay":80,"Villa_gateL":80,"Villa_gateR":80,"Villa_door":80,"Villa_water":400,"Villa_far":2000,"Villa_lod1":260,"Villa_lod2":2000}. Quantum 0.000 mm. Offset 0,100,0.

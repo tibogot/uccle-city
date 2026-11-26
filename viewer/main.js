@@ -22,7 +22,7 @@ import { addStalle } from "./stalleCity.js";
 import { addTownHall } from "./townhallCity.js";
 import { addVanBuuren } from "./vanbuurenCity.js";
 import { addVilla } from "./villa/villaCity.js";
-import { VILLA_ON, villaClearRings, villaTreesClear, villaGrassSolid } from "./villa/villaPlot.js";   // the villa on Av. du Prince d'Orange (claude/villa1; ?villa=0 off)
+import { VILLA_ON, villaClearRings, villaTreesClear, villaGrassSolid, VILLA_GARDEN_V3, VILLA_HEDGE_RUNS, villaShrubRows } from "./villa/villaPlot.js";   // the villa on Av. du Prince d'Orange (claude/villa1; ?villa=0 off)
 import { addWolvendael } from "./wolvendaelCity.js";
 import { addPolice } from "./policeCity.js";
 import { addCalevoet } from "./calevoetCity.js";
@@ -993,6 +993,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const furnP = cityFurniture.fetchTile(entry.name);    // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
   const skP = cityStreetKit.fetchTile(entry.name);      // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
   const twP = cityTwoWheelers.fetchTile(entry.name);    // (motorbike round 2: the shops the parked two-wheelers gather near)
+  if (VILLA_GARDEN_V3) cityGardens.extraHedges = { H9: VILLA_HEDGE_RUNS };   // (villa3 job 5: the villa's hedges are the city's modules)
   const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
   const ivyP = cityIvy.fetchTile(entry.name);           // ivy on walls, climbers on railings (viewer/plants/cityIvy.js), ?ivy=0 off
   const plantsP = cityPlants.fetchTile(entry.name);     // shrubs, bed plants, beds, window boxes (viewer/plants/), on by default, ?plants=0 off
@@ -1189,6 +1190,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (VIVIER && bridgeDeckRefs.size && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (deckY(B[o], B[o + 1]) == null) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
   if (clearRings.length && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (!inClear(P[o], P[o + 1])) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
   if (clearRings.length && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (!inClear(B[o], B[o + 1])) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
+  // villa3 job 5: the villa's shrubs from the city's plant kit (viewer/villa/villaPlot.js), after the plot's clear ring
+  if (VILLA_GARDEN_V3 && entry.name === "H9" && plantDoc?.plants) plantDoc.plants = plantDoc.plants.concat(villaShrubRows(plantDoc.types || ["box_ball", "laurel", "rhododendron", "hydrangea", "rose", "lavender", "bulbs", "geranium"]));
   // claude/roads (rule 38): no shrub / bed standing in, or hanging its crown over, the drawn carriageway (viewer/plants/plantsClear.js;
   // ?roads=old: as before)
   if (ROADS_R && plantDoc) { const r = plantsOffCarriageway(plantDoc, drivenAt); if (r.plants || r.beds) { plantDoc = r.doc; say(`plants: ${r.plants} shrub(s), ${r.beds} bed(s) off the carriageway (rule 38)`); } }

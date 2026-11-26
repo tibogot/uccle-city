@@ -1,20 +1,19 @@
 # Mesh audit (packed): villa.lod2
 
-170 triangles, 150 welded vertices, 178 open edges, 368,640 rays, 701 ms.
+140 triangles, 126 welded vertices, 166 open edges, 266,080 rays, 414 ms.
 
-**0 blocking**, 49 warnings. Clean (no blocking item).
+**0 blocking**, 43 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 10 |
+| sliver | warn | 4 |
 | tjunction | warn | 39 |
-| seam | info | 29 |
-| opening | info | 104 |
-| backtoback | info | 6 |
+| seam | info | 27 |
+| opening | info | 96 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 10)
+## sliver (warn, 4)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -22,12 +21,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 9.70, 119.74, -17.10 | Villa_lod2/render_white | 169 | 50.701 |
 | 37.50, 122.27, 15.67 | Villa_lod2/wood_cladding | 59 | 23.503 |
 | 37.50, 122.13, 7.83 | Villa_lod2/wood_cladding | 59 | 23.503 |
-| 41.98, 122.75, -33.33 | Villa_lod2/hedge | 48 | 48.06 |
-| 25.97, 122.75, -33.67 | Villa_lod2/hedge | 48 | 48.06 |
-| 41.98, 121.88, 29.67 | Villa_lod2/hedge | 48 | 48.06 |
-| 25.97, 121.88, 29.33 | Villa_lod2/hedge | 48 | 48.06 |
-| 57.67, 122.84, 8.33 | Villa_lod2/hedge | 62 | 62.008 |
-| 57.33, 122.84, -12.33 | Villa_lod2/hedge | 62 | 62.008 |
 
 ## tjunction (warn, 39)
 
@@ -73,12 +66,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 28.00, 125.95, -23.00 | Villa_lod2/concrete_soffit | 22 |
 | 14.00, 125.95, -21.20 | Villa_lod2/concrete_soffit | 15 |
 
-## seam (info, 29)
+## seam (info, 27)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| 58.00, 120.45, -33.00 | Villa_lod2/hedge + Villa_lod2/hedge | 14.8 | 6 | 90 |
-| 58.00, 120.01, 29.00 | Villa_lod2/hedge + Villa_lod2/hedge | 12.17 | 5 | 90 |
 | 36.00, 118.17, -17.00 | Villa_lod2/stone_blue + Villa_lod2/stone_blue | 36.12 | 4 | 90 |
 | 14.00, 122.00, -6.76 | Villa_lod2/render_white + Villa_lod2/wood_cladding | 12.5 | 2 | 90 |
 | 14.00, 122.00, 22.25 | Villa_lod2/render_white + Villa_lod2/wood_cladding | 11.5 | 2 | 90 |
@@ -107,7 +98,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 37.50, 125.20, 23.50 | Villa_lod2/wood_cladding + Villa_lod2/glass_window | 0.4 | 1 | 90 |
 | 37.50, 124.00, 23.50 | Villa_lod2/wood_cladding + Villa_lod2/glass_window | 2 | 1 | 90 |
 
-## opening (info, 104)
+## opening (info, 96)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -152,18 +143,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 33.00, 121.45, 23.00 | Villa_lod2/render_white | 0 + 0 + 1 | 0.6 |
 | 24.00, 121.95, 23.00 | Villa_lod2/render_white | 0 + 0 + 1 | 0.6 |
 
-(64 more in the JSON)
-
-## backtoback (info, 6)
-
-| at | parts | area |
-|---|---|---|
-| 57.68, 121.18, -33.00 | Villa_lod2/hedge + Villa_lod2/hedge | 2.20758 |
-| 57.26, 120.40, -33.00 | Villa_lod2/hedge + Villa_lod2/hedge | 2.33798 |
-| 57.35, 122.72, -33.00 | Villa_lod2/hedge + Villa_lod2/hedge | 0.05002 |
-| 57.02, 122.70, -33.00 | Villa_lod2/hedge + Villa_lod2/hedge | 0.00304 |
-| 57.70, 120.01, 29.00 | Villa_lod2/hedge + Villa_lod2/hedge | 2.24342 |
-| 57.27, 120.64, 29.00 | Villa_lod2/hedge + Villa_lod2/hedge | 1.48021 |
+(56 more in the JSON)
 
 
-Nodes: Villa_lod2. Distances: {"Villa_ivy":80,"Villa":80,"Villa_kit":80,"Villa_art":80,"Villa_art_lod1":260,"Villa_art_lod2":2000,"Villa_bay":80,"Villa_gateL":80,"Villa_gateR":80,"Villa_door":80,"Villa_water":400,"Villa_far":2000,"Villa_lod1":260,"Villa_lod2":2000}. Quantum 0.443 mm. Offset 0,100,0.
+Nodes: Villa_lod2. Distances: {"Villa_ivy":80,"Villa":80,"Villa_kit":80,"Villa_art":80,"Villa_art_lod1":260,"Villa_art_lod2":2000,"Villa_bay":80,"Villa_gateL":80,"Villa_gateR":80,"Villa_door":80,"Villa_water":400,"Villa_far":2000,"Villa_lod1":260,"Villa_lod2":2000}. Quantum 0.420 mm. Offset 0,100,0.

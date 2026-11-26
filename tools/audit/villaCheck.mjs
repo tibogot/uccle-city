@@ -206,6 +206,48 @@ check(unbaked.length === 0, "every interior primitive carries the sky / sun / ni
   check(a0 > 0 && a0 <= 46000 && a1 <= 12000 && a2 <= 1500 && d0 === 1 && (notes.art?.contact || []).length === 3 && bad4 === 0,
     "the sculptures: one draw a level, LOD0 <= 46k / LOD1 <= 12k / LOD2 <= 1.5k triangles, each on its plinth within 5 mm", `${a0} / ${a1} / ${a2} tris, ${d0} draw; ${rows4.join(", ")}`);
 }
+// ---- 2i. villa3 job 5 (rule villa-garden-city-kit): the villa's hedges are the CITY's hedge modules and its shrubs the
+// city's plant kit: no `hedge`-slot box left in any villa node; every run a city species (gardenHedge.js HEDGE_SPECIES),
+// width <= 0.99 (the module's cap), its whole body inside the plot and clear of the terrace / pool; the shrubs on the
+// plot, of the plant doc's types; wired after the clear rings (cityGardens.addTileGen after clearRoadsGen, main.js
+// after the plants' clear-ring filter)
+{
+  // (the three terrace planters' topiary balls stay: soft rounded shrubs in Villa_kit's hedge slot, near only, ~300 tris each)
+  const boxes = ext.parts.filter((q) => q.slot === "hedge" && q.node !== "Villa_kit").reduce((s2, q) => s2 + q.index.length / 3, 0);
+  const topi = ext.parts.filter((q) => q.slot === "hedge" && q.node === "Villa_kit").reduce((s2, q) => s2 + q.index.length / 3, 0);
+  const hsrc = readFileSync(new URL("viewer/gardens/gardenHedge.js", ROOT), "utf8");
+  const SPEC = JSON.parse((hsrc.match(/HEDGE_SPECIES = (\[[^\]]*\])/) || [, "[]"])[1]);
+  const P = plot.PLOT_UW, T = notes.terrace, runs = plot.VILLA_HEDGE_RUNS || [];
+  let bad = [];
+  runs.forEach((r, i) => {
+    if (!SPEC.includes(r.species) || !(r.width > 0.3 && r.width <= 0.99) || !(r.height >= 0.5 && r.height <= 2.6)) bad.push(`#${i} ${r.species} ${r.width}`);
+    for (const [x, z] of r.points) {
+      const [u, w] = plot.toFrame(x, z), h = r.width / 2;
+      if (u - h < P.u0 - 0.01 || u + h > P.u1 || w - h < P.w0 || w + h > P.w1) { bad.push(`#${i} off the plot at u ${u.toFixed(1)} w ${w.toFixed(1)}`); break; }
+      if (u + h > T.u0 && u - h < T.u1 && w + h > T.w0 && w - h < T.w1) { bad.push(`#${i} on the terrace at u ${u.toFixed(1)} w ${w.toFixed(1)}`); break; }
+    }
+  });
+  // the boundary (hornbeam) runs close the plot: each end inside another run's body or against the front wall (u <= 10):
+  // no corner gap (the first layout left a 0.5 m slot at the back corners)
+  const seg = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1, f = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2)); return Math.hypot(p[0] - a[0] - dx * f, p[1] - a[1] - dz * f); };
+  runs.forEach((r, i) => {
+    if (r.species !== "hornbeam") return;
+    for (const e of [r.points[0], r.points[r.points.length - 1]]) {
+      if (plot.toFrame(...e)[0] <= 10.0) continue;
+      const hit = runs.some((q, j) => j !== i && q.points.some((pt, k) => k > 0 && seg(e, q.points[k - 1], pt) <= q.width / 2 + 0.01));
+      if (!hit) { const [u, w] = plot.toFrame(...e); bad.push(`#${i} open end at u ${u.toFixed(1)} w ${w.toFixed(1)}`); }
+    }
+  });
+  const types = J("data/plants/H9.json").types, rows5 = plot.villaShrubRows ? plot.villaShrubRows(types) : [];
+  for (let o = 0; o < rows5.length; o += 6) { const [u, w] = plot.toFrame(rows5[o], rows5[o + 1]); if (u < P.u0 || u > P.u1 || w < P.w0 || w > P.w1) bad.push(`shrub ${o / 6} off the plot`); }
+  const gsrc = readFileSync(new URL("viewer/gardens/cityGardens.js", ROOT), "utf8"), msrc = readFileSync(new URL("viewer/main.js", ROOT), "utf8");
+  const wired = gsrc.indexOf("this.extraHedges?.[name]") > gsrc.indexOf("clearRoadsGen(doc") && gsrc.indexOf("clearRoadsGen(doc") > 0
+    && /extraHedges = \{ H9: VILLA_HEDGE_RUNS \}/.test(msrc)
+    && msrc.indexOf("villaShrubRows(") > msrc.indexOf("if (!inClear(P[o], P[o + 1]))");
+  check(boxes === 0 && topi <= 1000 && runs.length >= 10 && rows5.length / 6 >= 12 && bad.length === 0 && wired,
+    "the villa's hedges / shrubs are the city's kits (no hedge boxes; runs on the plot, off the terrace; wired after the clear rings)",
+    `${boxes} hedge-box tris (${topi} planter topiary), ${runs.length} runs (${runs.reduce((s2, r) => s2 + r.points.length, 0)} pts), ${rows5.length / 6} shrubs${bad.length ? "; " + bad.slice(0, 4).join("; ") : ""}${wired ? "" : "; NOT wired"}`);
+}
 // ---- 2d. villa3 (rule villa-licences): every external asset the villa ships is listed with its licence and source page
 {
   let lic = ""; try { lic = readFileSync(new URL("models/villa/LICENCES.md", ROOT), "utf8"); } catch { /* missing */ }

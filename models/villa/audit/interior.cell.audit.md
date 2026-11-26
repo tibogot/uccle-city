@@ -1,6 +1,6 @@
 # Mesh audit (before pack): interior.cell
 
-105,692 triangles, 59,234 welded vertices, 9,116 open edges, 584,300 rays, 14468 ms.
+105,692 triangles, 59,234 welded vertices, 9,116 open edges, 584,300 rays, 4945 ms.
 
 **0 blocking**, 7176 warnings. Clean (no blocking item).
 

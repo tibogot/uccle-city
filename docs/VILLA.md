@@ -199,3 +199,19 @@ models/villa/art_col.ktx2 + art_dat.ktx2, 1.2 MB, tools/villa/art_ktx2.py; loade
 read as chrome (the scans' glossy roughness under the sky env): roughness >= 0.48, metal x 0.85. The first packs
 had 220 / 8 / 2 blocking mesh-audit items (decimation slits and folds, the x6 horse's seams): fixed by cause (rule
 villa-sculptures). Budgets: Villa_art 41,135 / 7,474 / 782 tris, 1 draw a level; download 8.82 MB of 9.
+
+## v3 job 5 (2026-11-26): the garden on the city's kits
+
+The owner: "the garden was ugly, with the hedges around the villa being like big blocks, not natural at all". Cause:
+villa.py drew its own hedges (stepped boxes with a leaf shader, a second hedge technique next to the city's), so they
+read as blocks at every distance and never matched the street's hedges. Now (rule villa-garden-city-kit) the villa's
+hedges are 10 runs (259 m) of the CITY's front-garden hedge modules (viewer/gardens/gardenHedge.js: baked clipped
+leaf surface, leaf cards inside 24 m, soft lumps, the shadowed foot, species colour by season, 3 dithered LODs,
+colliders): beech behind the street wall, box along the living wing and round the terrace (the old skirt), hornbeam
+2.2 m on the plot's sides and back (ends overlapping: no corner slot); and 17 shrubs from the city's plant kit
+(hydrangeas along the front, rhododendrons / laurels in the back corners, lavender by the lawn steps, box balls
+near the sculptures). viewer/villa/villaPlot.js VILLA_HEDGE_RUNS / villaShrubRows, added to tile H9 after the plot's
+clear ring (cityGardens.extraHedges, main.js). villa.py: CITY_HEDGES (VILLA_BOX_HEDGES=1 = the boxes back). The city
+hedges round the plot are the same modules (one look). Cost: no draw of its own (the city's hedge pool, already
+drawn); +258 module instances (+ cards near), Villa LOD0 49.1k tris (was 61k), download 8.44 MB of 9. `?villa3=0`
+= before (the v2 model and its boxes). Sheet: uccle-villa3/job5/job5_compare.png.

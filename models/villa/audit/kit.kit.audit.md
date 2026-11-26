@@ -1,6 +1,6 @@
 # Mesh audit (before pack): kit.kit
 
-10,924 triangles, 5,821 welded vertices, 168 open edges, 36,592 rays, 780 ms.
+9,874 triangles, 5,221 welded vertices, 68 open edges, 5,488 rays, 469 ms.
 
 **0 blocking**, 408 warnings. Clean (no blocking item).
 
@@ -9,7 +9,7 @@
 | near | warn | 12 |
 | nonmanifold | warn | 4 |
 | seam | info | 27 |
-| opening | info | 146 |
+| opening | info | 46 |
 | backtoback | info | 44 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
@@ -57,7 +57,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 40.49, 118.70, 10.72 | Villa_kit/metal_dark + Villa_kit/metal_dark | 0.24 | 28 | 35 |
 | 43.31, 118.42, -12.23 | Villa_kit/stone_blue + Villa_kit/metal_dark | 0.13 | 16 | 90 |
 | 43.31, 118.42, -11.73 | Villa_kit/stone_blue + Villa_kit/metal_dark | 0.13 | 16 | 90 |
-| 43.96, 118.48, -9.73 | Villa_kit/stone_blue + Villa_kit/metal_dark | 0.16 | 12 | 90 |
+| 43.95, 118.48, -9.72 | Villa_kit/stone_blue + Villa_kit/metal_dark | 0.16 | 12 | 90 |
 | 50.19, 120.64, -23.60 | Villa_kit/concrete_soffit + Villa_kit/concrete_soffit | 4.08 | 10 | 45 |
 | 43.63, 118.65, -10.61 | Villa_kit/metal_dark + Villa_kit/metal_dark | 0.1 | 8 | 45 |
 | 44.25, 118.65, -10.61 | Villa_kit/metal_dark + Villa_kit/metal_dark | 0.1 | 8 | 45 |
@@ -72,7 +72,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 38.52, 118.39, 0.97 | Villa_kit/stone_blue + Villa_kit/stone_blue | 0.03 | 2 | 45 |
 | 42.98, 118.40, 0.97 | Villa_kit/stone_blue + Villa_kit/stone_blue | 0.03 | 2 | 45 |
 
-## opening (info, 146)
+## opening (info, 46)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -117,7 +117,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 50.19, 119.56, -23.96 | Villa_kit/concrete_soffit | -0.71 + -0.71 + 0 | 0.82 |
 | 51.41, 119.56, -23.96 | Villa_kit/concrete_soffit | 0.71 + -0.71 + 0 | 0.82 |
 
-(106 more in the JSON)
+(6 more in the JSON)
 
 ## backtoback (info, 44)
 
@@ -134,7 +134,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 38.31, 118.40, 0.97 | Villa_kit/stone_blue + Villa_kit/stone_blue | 0.00206 |
 | 38.47, 118.39, 0.97 | Villa_kit/stone_blue + Villa_kit/stone_blue | 0.00132 |
 | 38.22, 118.39, 0.97 | Villa_kit/stone_blue + Villa_kit/stone_blue | 0.00319 |
-| 38.35, 118.38, 0.97 | Villa_kit/stone_blue + Villa_kit/stone_blue | 0.00393 |
+| 38.39, 118.38, 0.97 | Villa_kit/stone_blue + Villa_kit/stone_blue | 0.00393 |
 | 43.11, 118.40, 0.97 | Villa_kit/stone_blue + Villa_kit/stone_blue | 0.00394 |
 | 43.28, 118.39, 0.97 | Villa_kit/stone_blue + Villa_kit/stone_blue | 0.0032 |
 | 43.03, 118.39, 0.97 | Villa_kit/stone_blue + Villa_kit/stone_blue | 0.00131 |
