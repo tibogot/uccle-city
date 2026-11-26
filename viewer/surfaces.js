@@ -84,29 +84,40 @@ export const GRID = 0.5;           // m: class raster
 
 // ---------------------------------------------------------------- the joint corner fit (claude/sawtooth)
 const JOINT_LAMBDA = 2;            // weight of one corner triple's second difference (a sample's residual weighs 1)
-const JOINT_MU = 0.02;             // pull of a corner to its own plane's value (anchors a corner with no data)
-const JOINT_ITER = 400, JOINT_TOL = 1e-10;
+const JOINT_MU = 0.02;             // pull of a corner to its own plane's value (anchors a corner with little data)
+const JOINT_ITER = 300, JOINT_TOL = 1e-10;
 /**
- * The corners of `street` (cellKey -> value in `corner`, the per-corner fits) re-solved together: minimise
- *   sum over street samples (1 m lattice in every cell whose 4 corners are in `street`, classAt >= 0) of (H(p) - g(p))^2
+ * The street height field's corners (cellKey -> value in `corner`, the per-corner fits) re-solved together: minimise
+ *   sum over the street samples (1 m lattice, classAt >= 0, the same groundAt) of (H(p) - g(p))^2
  * + JOINT_LAMBDA * sum over corner triples in x, z and the split diagonal of (c[-1] - 2 c[0] + c[+1])^2
  * + JOINT_MU * sum of (c - c_own)^2
  * with H linear in each half-cell (split (i, j)-(i+1, j+1), as H). Sparse normal equations (a 5 x 5 stencil a corner),
- * conjugate gradients from the per-corner values. With clamp: each corner within H_MARGIN of its own samples.
+ * Jacobi-preconditioned conjugate gradients from the per-corner values. With clamp: each corner within H_MARGIN of the
+ * samples of its cells (as fitCorner's clampH).
+ * (claude/sawtooth tuning on I6 H6 F2, tools/audit/census/sawtooth.mjs: LAMBDA 0.5 / 1 / 2 / 4 = 26 / 17 / 13 / 8 sidewalk +
+ * road saw-tooth places (per corner: 60); |H - ground| over the street samples p50 / p99 2.0 / 14.3 cm at 0.5, 2.6 / 19.7
+ * at 2 (per corner 2.4 / 17.1). A robust (Huber) fit left 4 places but p99 34 cm: junction creases drawn off their ground.
+ * Taking the levelled sidewalks' cross-fall out of the fit and adding it back per vertex made it worse (22): the DTM's rise
+ * sampled at the slab's sparse vertices is itself a 6 m saw)
  */
-function jointFit(street, corner, classAt, groundAt, clamp) {
-  const keys = [...street], n = keys.length, id = new Map(keys.map((k, q) => [k, q]));
-  const M = new Float64Array(n * 25), rhs = new Float64Array(n), c0 = new Float64Array(n);
+function jointFit(street, corner, classAt, groundAt, clamp, bounds, fitCorner) {
+  // the unknowns: every corner of every cell holding a street sample, not only the cells of the base triangles' centroids
+  const cells = new Set();
+  for (let x = Math.floor(bounds.x0) + 0.5; x < bounds.x1; x += 1) for (let z = Math.floor(bounds.z0) + 0.5; z < bounds.z1; z += 1)
+    if (classAt(x, z) >= 0) cells.add(cellKey(Math.floor(x / CELL), Math.floor(z / CELL)));
+  const all = new Set(street);
+  for (const k of cells) for (const d of [0, 8192, 1, 8193]) all.add(k + d);
+  const keys = [...all], n = keys.length, id = new Map(keys.map((k, q) => [k, q]));
+  for (const k of keys) if (!corner.has(k)) corner.set(k, fitCorner((Math.floor(k / 8192) - 4096) * CELL, ((k % 8192) - 4096) * CELL));
+  const c0 = Float64Array.from(keys, (k) => corner.get(k));
   const lo = new Float64Array(n).fill(Infinity), hi = new Float64Array(n).fill(-Infinity);
   const slot = (di, dj) => (di + 2) * 5 + (dj + 2);
-  const add = (a, b, di, dj, v) => { M[a * 25 + slot(di, dj)] += v; };
-  keys.forEach((k, q) => { c0[q] = corner.get(k); });
   const ij = (k) => [Math.floor(k / 8192) - 4096, (k % 8192) - 4096];
-  // data
-  for (const k of keys) {
+  const M = new Float64Array(n * 25), rhs = new Float64Array(n);
+  // data: each sample on its half-cell's 3 corners
+  for (const k of cells) {
     const [i, j] = ij(k);
     const q00 = id.get(k), q10 = id.get(cellKey(i + 1, j)), q01 = id.get(cellKey(i, j + 1)), q11 = id.get(cellKey(i + 1, j + 1));
-    if (q10 === undefined || q01 === undefined || q11 === undefined) continue;
     for (let a = 0.5; a < CELL; a += 1) for (let b = 0.5; b < CELL; b += 1) {
       const x = i * CELL + a, z = j * CELL + b, cls = classAt(x, z);
       if (cls < 0) continue;
@@ -114,34 +125,31 @@ function jointFit(street, corner, classAt, groundAt, clamp) {
       const P = fx >= fz ? [[q00, 0, 0, 1 - fx], [q10, 1, 0, fx - fz], [q11, 1, 1, fz]] : [[q00, 0, 0, 1 - fz], [q01, 0, 1, fz - fx], [q11, 1, 1, fx]];
       for (const [qa, ia, ja, wa] of P) {
         rhs[qa] += wa * y;
-        for (const [, ib, jb, wb] of P) add(qa, 0, ib - ia, jb - ja, wa * wb);
+        for (const [, ib, jb, wb] of P) M[qa * 25 + slot(ib - ia, jb - ja)] += wa * wb;
         if (y < lo[qa]) lo[qa] = y; if (y > hi[qa]) hi[qa] = y;
       }
     }
   }
-  // second differences (x, z, the split diagonal)
+  // second differences (x, z, the split diagonal): zero for any plane
   for (const k of keys) {
-    const [i, j] = ij(k);
+    const [i, j] = ij(k), q0 = id.get(k);
     for (const [di, dj] of [[1, 0], [0, 1], [1, 1]]) {
-      const qm = id.get(cellKey(i - di, j - dj)), qp = id.get(cellKey(i + di, j + dj)), q0 = id.get(k);
+      const qm = id.get(cellKey(i - di, j - dj)), qp = id.get(cellKey(i + di, j + dj));
       if (qm === undefined || qp === undefined) continue;
       const T = [[qm, -1, 1], [q0, 0, -2], [qp, 1, 1]];
-      for (const [qa, sa, wa] of T) for (const [, sb, wb] of T) add(qa, 0, (sb - sa) * di, (sb - sa) * dj, JOINT_LAMBDA * wa * wb);
+      for (const [qa, sa, wa] of T) for (const [, sb, wb] of T) M[qa * 25 + slot((sb - sa) * di, (sb - sa) * dj)] += JOINT_LAMBDA * wa * wb;
     }
   }
   for (let q = 0; q < n; q++) { M[q * 25 + 12] += JOINT_MU; rhs[q] += JOINT_MU * c0[q]; }
-  // neighbour index table
   const nb = new Int32Array(n * 25).fill(-1);
   keys.forEach((k, q) => { const [i, j] = ij(k); for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) { const r = id.get(cellKey(i + di, j + dj)); if (r !== undefined) nb[q * 25 + slot(di, dj)] = r; } });
   const mul = (v, out) => { for (let q = 0; q < n; q++) { let s = 0; const o = q * 25; for (let t = 0; t < 25; t++) { const r = nb[o + t]; if (r >= 0) s += M[o + t] * v[r]; } out[q] = s; } };
-  // conjugate gradients (Jacobi preconditioned)
-  const x = Float64Array.from(c0), r = new Float64Array(n), z = new Float64Array(n), p = new Float64Array(n), Ap = new Float64Array(n);
+  const x = Float64Array.from(c0), r = new Float64Array(n), z = new Float64Array(n), p = new Float64Array(n), Ap = new Float64Array(n), dinv = new Float64Array(n);
   mul(x, Ap); for (let q = 0; q < n; q++) r[q] = rhs[q] - Ap[q];
-  const dinv = new Float64Array(n); for (let q = 0; q < n; q++) dinv[q] = 1 / M[q * 25 + 12];
-  for (let q = 0; q < n; q++) { z[q] = r[q] * dinv[q]; p[q] = z[q]; }
+  for (let q = 0; q < n; q++) { dinv[q] = 1 / M[q * 25 + 12]; z[q] = r[q] * dinv[q]; p[q] = z[q]; }
   let rz = 0; for (let q = 0; q < n; q++) rz += r[q] * z[q];
   const r0 = rz;
-  for (let it = 0; it < JOINT_ITER && rz > JOINT_TOL * Math.max(1, r0); it++) {
+  for (let it = 0; it < JOINT_ITER && rz > JOINT_TOL * Math.max(1e-6, r0); it++) {
     mul(p, Ap); let pAp = 0; for (let q = 0; q < n; q++) pAp += p[q] * Ap[q];
     if (!(pAp > 0)) break;
     const al = rz / pAp; for (let q = 0; q < n; q++) { x[q] += al * p[q]; r[q] -= al * Ap[q]; z[q] = r[q] * dinv[q]; }
@@ -849,7 +857,7 @@ export function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
   // differences (zero for any plane: a slope is never flattened) that only carries the corners with little data, and a
   // weak pull to the per-corner value above (no corner without an anchor). Conjugate gradients from the per-corner
   // values; the corners stay within H_MARGIN of their own samples (as clampH).
-  if (opts.jointFit && street.size) jointFit(street, corner, classAt, groundAt, opts.clampH);
+  if (opts.jointFit && street.size) jointFit(street, corner, classAt, groundAt, opts.clampH, bounds, fitCorner);
   for (let pass = 0; pass < SMOOTH_PASSES; pass++) {
     const next = new Map();
     for (const k of street) {

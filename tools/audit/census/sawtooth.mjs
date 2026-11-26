@@ -25,7 +25,7 @@ import { join } from "node:path";
 import { runTiles, cli, ROOT, SC, imp } from "./lib_street.mjs";
 import { buildTile, streetAt, allBuiltTiles } from "./lib_mesh.mjs";
 
-export const STEP = 0.25, JUMP = 0.06, MIN_RUN = 8, DETREND = 3, AMP = 0.025, MIN_SWINGS = 5, CV = 0.4, PMIN = 0.75, PMAX = 12;
+export const STEP = 0.25, JUMP = 0.06, MIN_RUN = 8, DETREND = 3, AMP = +(process.env.SAW_AMP || 0.025), MIN_SWINGS = 5, CV = 0.4, PMIN = 0.75, PMAX = 12;
 
 /** saw-tooth chains in one profile (ys at STEP, NaN = cut): [{ i0, i1, swings, period, amp }] (indices into ys) */
 export function sawChains(ys, { amp = AMP, minSwings = MIN_SWINGS } = {}) {
@@ -95,7 +95,7 @@ export function fixture() {
 // ------------------------------------------------------------------------------------------------ parent
 const c = cli();
 const { CHILD, OUT, JOBS, WORST } = c;
-const OLD = c.flag("--old"), QUIET = c.flag("--quiet"), MAX = c.opt("--max", null), FIX = c.flag("--fixture"), MAP = c.opt("--map", null);
+const OLD = c.flag("--old"), QUIET = c.flag("--quiet"), MAX = c.opt("--max", null), FIX = c.flag("--fixture"), MAP = c.opt("--map", null), OLDCHECK = c.opt("--oldcheck", null);
 const TILES = c.ALL ? allBuiltTiles() : c.argv.filter((a) => /^[A-Z]\d+$/i.test(a)).map((t) => t.toUpperCase());
 const isMain = /sawtooth.mjs$/.test(process.argv[1] || "");
 
@@ -108,21 +108,28 @@ if (isMain && !CHILD) {
   const fx = fixture();
   if (!(fx.smooth === 0 && fx.saw > 0 && fx.step === 0 && fx.noise === 0)) { console.log(`FAIL fixture ${JSON.stringify(fx)}`); process.exit(1); }
   const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS ?? 3, extra: OLD ? ["--old"] : [], log: !QUIET });
-  const sum = { places: 0, metres: 0, chains: 0, walkedKm: 0 }, items = [], byKind = {};
+  const sum = { places: 0, metres: 0, dtmPlaces: 0, dtmMetres: 0, chains: 0, walkedKm: 0 }, items = [], byKind = {};
   let errors = 0;
   for (const r of res) {
     if (r.error) { errors++; continue; }
-    sum.places += r.sum.places; sum.metres += r.sum.metres; sum.chains += r.sum.chains; sum.walkedKm += r.sum.walkedKm;
+    for (const k of Object.keys(sum)) sum[k] += r.sum[k] || 0;
     for (const it of r.items) { items.push({ tile: r.tile, ...it }); byKind[it.surface] = (byKind[it.surface] || 0) + 1; }
   }
-  sum.metres = Math.round(sum.metres); sum.walkedKm = Math.round(sum.walkedKm);
+  sum.metres = Math.round(sum.metres); sum.dtmMetres = Math.round(sum.dtmMetres); sum.walkedKm = Math.round(sum.walkedKm);
   items.sort((a, b) => b.score - a.score);
   console.log(`saw-tooth${OLD ? " (?sawtooth=old)" : ""}, ${res.length - errors} tiles: ${JSON.stringify(sum)} by surface ${JSON.stringify(byKind)}`);
-  if (!QUIET) for (const it of items.slice(0, WORST)) console.log(`  ${JSON.stringify(it)}`);
+  if (!QUIET) for (const it of items.filter((q) => q.surface !== "dtm").slice(0, WORST)) console.log(`  ${JSON.stringify(it)}`);
   if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byKind, tiles: res.map((r) => ({ tile: r.tile, sum: r.sum })), items }, null, 1));
   if (MAP) writeFileSync(join(ROOT, MAP), mapSvg(items));
   let fail = errors > 0;
   if (errors) console.log(`FAIL ${errors} tile(s) did not build`);
+  // the old builder (?sawtooth=old) on these tiles must still show its saw-tooth: >= 2 x the places of the current one
+  if (OLDCHECK) {
+    const OT = OLDCHECK.split(","), old = await runTiles(new URL(import.meta.url), OT, { jobs: JOBS ?? 3, extra: ["--old"], log: false });
+    const nNew = res.filter((r) => OT.includes(r.tile) && !r.error).reduce((t, r) => t + r.sum.places, 0), nOld = old.reduce((t, r) => t + (r.error ? 0 : r.sum.places), 0);
+    if (old.some((r) => r.error) || nOld < 2 * nNew + 5) { fail = true; console.log(`FAIL oldcheck ${OT.join(" ")}: ?sawtooth=old ${nOld} places, current ${nNew} (the detector must see the old builder's saw-tooth)`); }
+    else console.log(`ok oldcheck ${OT.join(" ")}: ?sawtooth=old ${nOld} places > current ${nNew}`);
+  }
   if (MAX) for (const kv of MAX.split(",")) {
     const [k, v] = kv.split("="), n = sum[k];
     if (n > +v) { fail = true; console.log(`FAIL ${k}: ${n} > ceiling ${v}`); } else console.log(`ok ${k}: ${n} <= ${v}`);
@@ -177,13 +184,16 @@ if (isMain && CHILD) {
       const y = l1 * ay + l2 * by + l3 * cy; if (y > m) m = y;
     }
     const t = terr(x, z);
-    if (m === -Infinity) return Number.isNaN(t) ? null : { y: t, street: false };
-    return t > m + 0.005 ? { y: t, street: false } : { y: m, street: true };
+    if (m === -Infinity) return Number.isNaN(t) ? null : { y: t, street: false, raw: rawAt(x, z) };
+    return t > m + 0.005 ? { y: t, street: false, raw: rawAt(x, z) } : { y: m, street: true };
   };
+  // the terrain there is the bare UrbIS DTM (no carve / weld / clamp within its cell): its micro-relief is measured, not built
+  const O = d.orig;
+  const rawAt = (x, z) => { const c0 = Math.floor((x - H.x0) / st), r0 = Math.floor((z - H.z0) / st), k = r0 * NC + c0; for (const q of [k, k + 1, k + NC, k + NC + 1]) if (Math.abs(Y[q] - O[q]) > 0.01) return false; return true; };
   const inB = (x, z) => x >= b.x0 && x < b.x1 && z >= b.z0 && z < b.z1;
   const REAL_DIP = new Set([SC.ramp, SC.pit]);
   const nearDip = (x, z) => { for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) if (REAL_DIP.has(classAt(x + dx, z + dz))) return true; return false; };
-  const SURF = (cls, street) => !street ? "ground" : cls === SC.sidewalk || cls === SC.median ? "sidewalk" : cls === SC.square ? "square" : cls === SC.path ? "path" : cls === SC.roadway || cls === SC.tramRoad || cls === SC.parking ? "road" : cls === SC.tramSite ? "tram" : "other";
+  const SURF = (cls, street, raw) => !street ? (raw ? "dtm" : "ground") : cls === SC.sidewalk || cls === SC.median ? "sidewalk" : cls === SC.square ? "square" : cls === SC.path ? "path" : cls === SC.roadway || cls === SC.tramRoad || cls === SC.parking ? "road" : cls === SC.tramSite ? "tram" : "other";
 
   const chains = []; let walked = 0;
   const DUMP = process.env.SAW_DUMP ? process.env.SAW_DUMP.split(",").map(Number) : null, dumps = [];   // (debug: the profiles of the chains near x,z,r)
@@ -201,7 +211,7 @@ if (isMain && CHILD) {
     const ys = new Float64Array(S.length), cl = new Int8Array(S.length), sf = [];
     for (let i = 0; i < S.length; i++) {
       const p = S[i], t = inB(p.x, p.z) ? top(p.x, p.z) : null, cls = classAt(p.x, p.z);
-      cl[i] = cls; sf.push(t ? SURF(cls, t.street) : null);
+      cl[i] = cls; sf.push(t ? SURF(cls, t.street, t.raw) : null);
       ys[i] = !t || (want === "street" && !t.street) || nearDip(p.x, p.z) ? NaN : t.y;
     }
     for (let i = 1; i < S.length; i++) {
@@ -247,7 +257,9 @@ if (isMain && CHILD) {
     const metres = Math.max(...mem.map((q) => q.metres));
     items.push({ surface: w.surface, kind: w.kind, metres: +metres.toFixed(1), period: +w.period.toFixed(1), ampCm: +(w.amp * 100).toFixed(1), swings: w.swings, walks: mem.length, score: +(metres * w.amp * 100).toFixed(1), at: `${w.x.toFixed(1)}, ${w.z.toFixed(1)}`, from: `${w.x0.toFixed(1)}, ${w.z0.toFixed(1)}`, to: `${w.x1.toFixed(1)}, ${w.z1.toFixed(1)}`, street: streetAt(T, w.x, w.z) });
   }
-  const sum = { places: items.length, metres: items.reduce((s, q) => s + q.metres, 0), chains: chains.length, walkedKm: walked / 1000 };
+  // (the bare DTM's own micro-relief, a lawn or a park path on the measured ground: reported, not a built saw-tooth)
+  const built = items.filter((q) => q.surface !== "dtm"), dtm = items.filter((q) => q.surface === "dtm");
+  const sum = { places: built.length, metres: built.reduce((s, q) => s + q.metres, 0), dtmPlaces: dtm.length, dtmMetres: dtm.reduce((s, q) => s + q.metres, 0), chains: chains.length, walkedKm: walked / 1000 };
   if (DUMP) writeFileSync(join(ROOT, ".st", "dump.json"), JSON.stringify(dumps));
   console.log(JSON.stringify({ tile: T, sum, items }));
 }
