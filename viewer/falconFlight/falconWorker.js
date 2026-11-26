@@ -118,3 +118,6 @@ self.onmessage = async (e) => {
     else throw new Error(`unknown job ${kind}`);
   } catch (err) { self.postMessage({ id, error: err.message }); }
 };
+
+// (the node checks use the same jobs: tools/falconRingsTest.mjs)
+export { trees, raster };

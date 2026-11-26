@@ -19,6 +19,7 @@ import { warm } from "../police/warm.js";
 import { PLACE } from "../falconFlight/church.js";
 import { CTL_OLD } from "../falconFlight/falconInput.js";
 import { FUN_OLD, placeStarter } from "../falconFlight/falconFun.js";
+import { startRings, stopRings, ringsActive } from "./ringsGame.js";
 
 const DEG = Math.PI / 180;
 const S = {
@@ -112,9 +113,13 @@ function offer(kit, def, text) {
 export const FALCON_GAME = {
   id: "falcon", title: "Falcon", icon: "falcon",
   tagline: "The Saint-Job peregrines: you are the tiercel. Stoop on pigeons and starlings, feed the three eyases, drive the crows off the eyrie.",
-  modes: [{ id: "missions", label: "Missions", desc: "hunt, feed the eyases, defend the eyrie", primary: true }, { id: "free", label: "Free flight", desc: "fly over Uccle, hunt when you like" }],
+  modes: [{ id: "missions", label: "Missions", desc: "hunt, feed the eyases, defend the eyrie", primary: true }, { id: "free", label: "Free flight", desc: "fly over Uccle, hunt when you like" },
+    // (rule falcon-rings: the ring courses, ringsGame.js)
+    { id: "rings-spires", label: "Rings: the spires", desc: "Saint-Job's tower to Saint-Pierre's, over the roofs" },
+    { id: "rings-avenue", label: "Rings: the avenue", desc: "down Avenue Brugmann, under the tram wires" },
+    { id: "rings-stoop", label: "Rings: the stoop", desc: "dive through the rings off the Observatory" }],
   options: [{ id: "assist", label: "Aim assist in the strike", default: true }, { id: "avoid", label: "Flight assist: steer clear of roofs, trees and the ground", default: true }],   // (no sound tick: the speaker button is the one switch, docs/SOUND_CITY.md)
-  idleText: { missions: "Rest on a perch or circle the tower: the falcon will call.", free: "Free flight. Hunt anytime: pigeons on the squares, starlings and parakeets over the parks." },
+  idleText: { "rings-spires": "Fly through the rings, the gold one is next. R: start again.", "rings-avenue": "Fly through the rings, the gold one is next. R: start again.", "rings-stoop": "Fly through the rings, the gold one is next. R: start again.", missions: "Rest on a perch or circle the tower: the falcon will call.", free: "Free flight. Hunt anytime: pigeons on the squares, starlings and parakeets over the parks." },
   keys: { default: CTL_OLD ? "<kbd>W S A D</kbd> fly · <kbd>Space</kbd> flap · <kbd>Shift</kbd> stoop · <kbd>F</kbd> talons · <kbd>E</kbd> land · <kbd>V</kbd> camera · click: mouse aim · <kbd>Esc</kbd> pause"
     : FUN_OLD ? "click + mouse or <kbd>A D</kbd> steer · <kbd>W S</kbd> down / up · <kbd>Space</kbd> climb · <kbd>Shift</kbd> stoop · <kbd>E</kbd> land · <kbd>F</kbd> talons · <kbd>V</kbd> camera · <kbd>Esc</kbd> pause"
     : "click + mouse or <kbd>A D</kbd> steer · look at a pigeon, hold <kbd>F</kbd> (or <kbd>Shift</kbd>) = dive onto it · <kbd>Space</kbd> climb, tap = sprint · <kbd>Shift</kbd> stoop · <kbd>E</kbd> land · <kbd>V</kbd> camera · <kbd>Esc</kbd> pause" },
@@ -123,6 +128,14 @@ export const FALCON_GAME = {
     S.kit = kit;
     const host = kit.host, fl = host.flyer;
     if (!fl?.ready) { kit.hud.toast({ kind: "bad", title: "No falcon flight", text: "This page runs the old flight (?falcon=old)." }, 6000); return; }
+    // (rule falcon-rings) a ring course: its own light layer (no hunt, no pigeons, no mobbers)
+    if (mode?.startsWith("rings-")) {
+      await fl.ready;
+      if (fl.game.assist) fl.game.assist.avoid = options.avoid !== false && !/[?&]falconavoid=0(&|$)/.test(location.search);
+      await startRings(kit, mode.slice(6));
+      tiercel(fl, true);
+      return;
+    }
     kit.hud.toast({ title: "Saint-Job church", text: "The tiercel wakes in the belfry…" }, 0);
     try {
       await fl.ready;
@@ -221,6 +234,7 @@ export const FALCON_GAME = {
   },
   stop(kit) {
     const fl = kit.host.flyer;
+    if (ringsActive()) { stopRings(kit); if (fl?.game) tiercel(fl, false); return; }
     kit.markers?.set("flock0", null); kit.markers?.set("flock1", null); S.flockKey = "";
     const i = kit.host.updaters.indexOf(S.frameFn); if (i >= 0) kit.host.updaters.splice(i, 1); S.frameFn = null;
     S.mobbers?.stop();
