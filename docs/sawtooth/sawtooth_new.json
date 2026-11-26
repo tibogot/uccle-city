@@ -1,21 +1,20 @@
 {
- "when": "2026-11-26T03:16:04.295Z",
+ "when": "2026-11-26T04:30:08.663Z",
  "old": false,
  "sum": {
-  "places": 356,
-  "metres": 8756,
+  "places": 330,
+  "metres": 7936,
   "dtmPlaces": 761,
   "dtmMetres": 25698,
-  "chains": 1417,
+  "chains": 1390,
   "walkedKm": 2224
  },
  "byKind": {
-  "sidewalk": 80,
-  "road": 140,
+  "sidewalk": 76,
+  "road": 120,
   "dtm": 761,
-  "ground": 130,
-  "square": 2,
-  "tram": 2,
+  "ground": 128,
+  "square": 4,
   "other": 2
  },
  "tiles": [
@@ -33,12 +32,12 @@
   {
    "tile": "B4",
    "sum": {
-    "places": 6,
-    "metres": 241,
+    "places": 5,
+    "metres": 182.9,
     "dtmPlaces": 1,
     "dtmMetres": 10,
-    "chains": 22,
-    "walkedKm": 34.09275
+    "chains": 24,
+    "walkedKm": 34.093
    }
   },
   {
@@ -49,18 +48,18 @@
     "dtmPlaces": 7,
     "dtmMetres": 207.89999999999998,
     "chains": 10,
-    "walkedKm": 18.45575
+    "walkedKm": 18.45875
    }
   },
   {
    "tile": "B6",
    "sum": {
-    "places": 5,
-    "metres": 175.9,
+    "places": 1,
+    "metres": 33,
     "dtmPlaces": 1,
     "dtmMetres": 27.5,
-    "chains": 13,
-    "walkedKm": 14.69975
+    "chains": 4,
+    "walkedKm": 14.6995
    }
   },
   {
@@ -88,12 +87,12 @@
   {
    "tile": "C3",
    "sum": {
-    "places": 9,
-    "metres": 206.6,
+    "places": 8,
+    "metres": 187.6,
     "dtmPlaces": 3,
     "dtmMetres": 62.099999999999994,
-    "chains": 21,
-    "walkedKm": 43.381
+    "chains": 19,
+    "walkedKm": 43.37775
    }
   },
   {
@@ -104,7 +103,7 @@
     "dtmPlaces": 6,
     "dtmMetres": 153.2,
     "chains": 19,
-    "walkedKm": 23.98575
+    "walkedKm": 23.98625
    }
   },
   {
@@ -115,18 +114,18 @@
     "dtmPlaces": 2,
     "dtmMetres": 52.099999999999994,
     "chains": 2,
-    "walkedKm": 27.83025
+    "walkedKm": 27.83575
    }
   },
   {
    "tile": "C6",
    "sum": {
     "places": 2,
-    "metres": 34.6,
+    "metres": 40.6,
     "dtmPlaces": 25,
     "dtmMetres": 914.3,
     "chains": 27,
-    "walkedKm": 24.042
+    "walkedKm": 24.04175
    }
   },
   {
@@ -143,11 +142,11 @@
   {
    "tile": "C8",
    "sum": {
-    "places": 1,
-    "metres": 16.8,
+    "places": 0,
+    "metres": 0,
     "dtmPlaces": 12,
     "dtmMetres": 349.5,
-    "chains": 14,
+    "chains": 12,
     "walkedKm": 18.5605
    }
   },
@@ -165,23 +164,23 @@
   {
    "tile": "D1",
    "sum": {
-    "places": 10,
-    "metres": 333.4,
+    "places": 9,
+    "metres": 290.50000000000006,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 35,
+    "chains": 30,
     "walkedKm": 21.474
    }
   },
   {
    "tile": "D10",
    "sum": {
-    "places": 1,
-    "metres": 18,
+    "places": 2,
+    "metres": 53.3,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 2,
-    "walkedKm": 7.80275
+    "chains": 7,
+    "walkedKm": 7.80325
    }
   },
   {
@@ -202,7 +201,7 @@
     "metres": 24.3,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 2,
+    "chains": 3,
     "walkedKm": 27.66025
    }
   },
@@ -210,51 +209,51 @@
    "tile": "D4",
    "sum": {
     "places": 10,
-    "metres": 316.4,
+    "metres": 221.39999999999998,
     "dtmPlaces": 7,
     "dtmMetres": 176.7,
-    "chains": 24,
-    "walkedKm": 30.793
+    "chains": 28,
+    "walkedKm": 30.7925
    }
   },
   {
    "tile": "D5",
    "sum": {
-    "places": 9,
-    "metres": 318,
+    "places": 2,
+    "metres": 52.8,
     "dtmPlaces": 6,
     "dtmMetres": 167.7,
-    "chains": 26,
+    "chains": 16,
     "walkedKm": 28.851
    }
   },
   {
    "tile": "D6",
    "sum": {
-    "places": 34,
-    "metres": 612.4,
+    "places": 31,
+    "metres": 608.8,
     "dtmPlaces": 9,
     "dtmMetres": 384.30000000000007,
-    "chains": 75,
-    "walkedKm": 31.38275
+    "chains": 82,
+    "walkedKm": 31.3915
    }
   },
   {
    "tile": "D7",
    "sum": {
-    "places": 6,
-    "metres": 117.49999999999999,
+    "places": 3,
+    "metres": 52.6,
     "dtmPlaces": 8,
     "dtmMetres": 216.2,
-    "chains": 20,
-    "walkedKm": 26.574
+    "chains": 11,
+    "walkedKm": 26.5735
    }
   },
   {
    "tile": "D8",
    "sum": {
     "places": 4,
-    "metres": 93.8,
+    "metres": 83.6,
     "dtmPlaces": 5,
     "dtmMetres": 115.6,
     "chains": 9,
@@ -275,11 +274,11 @@
   {
    "tile": "E1",
    "sum": {
-    "places": 2,
-    "metres": 83.3,
+    "places": 3,
+    "metres": 91.3,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 6,
+    "chains": 9,
     "walkedKm": 41.92175
    }
   },
@@ -297,12 +296,12 @@
   {
    "tile": "E2",
    "sum": {
-    "places": 10,
-    "metres": 293.1,
+    "places": 5,
+    "metres": 146.9,
     "dtmPlaces": 2,
     "dtmMetres": 39.5,
-    "chains": 26,
-    "walkedKm": 29.58025
+    "chains": 18,
+    "walkedKm": 29.579
    }
   },
   {
@@ -313,29 +312,29 @@
     "dtmPlaces": 0,
     "dtmMetres": 0,
     "chains": 0,
-    "walkedKm": 27.20825
+    "walkedKm": 27.212
    }
   },
   {
    "tile": "E4",
    "sum": {
-    "places": 2,
-    "metres": 36.3,
+    "places": 0,
+    "metres": 0,
     "dtmPlaces": 2,
     "dtmMetres": 37.3,
-    "chains": 4,
-    "walkedKm": 39.92
+    "chains": 2,
+    "walkedKm": 39.91975
    }
   },
   {
    "tile": "E5",
    "sum": {
-    "places": 0,
-    "metres": 0,
+    "places": 1,
+    "metres": 23.3,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 0,
-    "walkedKm": 27.57425
+    "chains": 1,
+    "walkedKm": 27.5775
    }
   },
   {
@@ -357,17 +356,17 @@
     "dtmPlaces": 26,
     "dtmMetres": 836.0999999999999,
     "chains": 29,
-    "walkedKm": 20.78425
+    "walkedKm": 20.78375
    }
   },
   {
    "tile": "E8",
    "sum": {
-    "places": 2,
-    "metres": 44.1,
+    "places": 3,
+    "metres": 61.599999999999994,
     "dtmPlaces": 11,
     "dtmMetres": 351.80000000000007,
-    "chains": 14,
+    "chains": 15,
     "walkedKm": 21.82525
    }
   },
@@ -385,11 +384,11 @@
   {
    "tile": "F1",
    "sum": {
-    "places": 4,
-    "metres": 99.5,
+    "places": 1,
+    "metres": 33,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 10,
+    "chains": 1,
     "walkedKm": 44.862
    }
   },
@@ -397,99 +396,99 @@
    "tile": "F10",
    "sum": {
     "places": 4,
-    "metres": 81.4,
+    "metres": 85.1,
     "dtmPlaces": 7,
     "dtmMetres": 220.2,
     "chains": 11,
-    "walkedKm": 6.607
+    "walkedKm": 6.6065
    }
   },
   {
    "tile": "F2",
    "sum": {
-    "places": 7,
-    "metres": 134.7,
+    "places": 5,
+    "metres": 96.39999999999999,
     "dtmPlaces": 3,
     "dtmMetres": 73.8,
-    "chains": 27,
-    "walkedKm": 40.89225
+    "chains": 19,
+    "walkedKm": 40.89075
    }
   },
   {
    "tile": "F3",
    "sum": {
-    "places": 5,
-    "metres": 156.70000000000002,
+    "places": 3,
+    "metres": 155.3,
     "dtmPlaces": 6,
     "dtmMetres": 124,
     "chains": 11,
-    "walkedKm": 32.6505
+    "walkedKm": 32.6495
    }
   },
   {
    "tile": "F4",
    "sum": {
-    "places": 18,
-    "metres": 500.40000000000003,
+    "places": 19,
+    "metres": 504.40000000000003,
     "dtmPlaces": 5,
     "dtmMetres": 155.6,
-    "chains": 26,
-    "walkedKm": 23.82175
+    "chains": 27,
+    "walkedKm": 23.818
    }
   },
   {
    "tile": "F5",
    "sum": {
     "places": 5,
-    "metres": 195.5,
+    "metres": 189.8,
     "dtmPlaces": 27,
     "dtmMetres": 509.3000000000001,
-    "chains": 50,
-    "walkedKm": 29.07025
+    "chains": 49,
+    "walkedKm": 29.06675
    }
   },
   {
    "tile": "F6",
    "sum": {
     "places": 2,
-    "metres": 139.1,
+    "metres": 137.6,
     "dtmPlaces": 19,
     "dtmMetres": 348.50000000000006,
-    "chains": 26,
-    "walkedKm": 22.0435
+    "chains": 29,
+    "walkedKm": 22.03925
    }
   },
   {
    "tile": "F7",
    "sum": {
-    "places": 6,
-    "metres": 139.9,
+    "places": 3,
+    "metres": 57.6,
     "dtmPlaces": 11,
     "dtmMetres": 318.00000000000006,
-    "chains": 20,
-    "walkedKm": 13.74125
+    "chains": 14,
+    "walkedKm": 13.73975
    }
   },
   {
    "tile": "F8",
    "sum": {
-    "places": 3,
-    "metres": 60.8,
+    "places": 5,
+    "metres": 87.3,
     "dtmPlaces": 12,
     "dtmMetres": 441,
     "chains": 22,
-    "walkedKm": 14.92875
+    "walkedKm": 14.93075
    }
   },
   {
    "tile": "F9",
    "sum": {
-    "places": 5,
-    "metres": 79.3,
+    "places": 8,
+    "metres": 128.39999999999998,
     "dtmPlaces": 39,
     "dtmMetres": 1402.7999999999993,
-    "chains": 45,
-    "walkedKm": 45.084
+    "chains": 48,
+    "walkedKm": 45.08325
    }
   },
   {
@@ -500,39 +499,39 @@
     "dtmPlaces": 0,
     "dtmMetres": 0,
     "chains": 0,
-    "walkedKm": 38.84875
+    "walkedKm": 38.8395
    }
   },
   {
    "tile": "G10",
    "sum": {
     "places": 5,
-    "metres": 156.4,
+    "metres": 185.89999999999998,
     "dtmPlaces": 8,
     "dtmMetres": 264.2,
-    "chains": 26,
-    "walkedKm": 11.45425
+    "chains": 30,
+    "walkedKm": 11.4505
    }
   },
   {
    "tile": "G2",
    "sum": {
-    "places": 7,
-    "metres": 210.60000000000002,
+    "places": 4,
+    "metres": 197.3,
     "dtmPlaces": 25,
     "dtmMetres": 836.6999999999996,
-    "chains": 40,
-    "walkedKm": 30.71175
+    "chains": 35,
+    "walkedKm": 30.714
    }
   },
   {
    "tile": "G3",
    "sum": {
-    "places": 6,
-    "metres": 136.1,
+    "places": 5,
+    "metres": 130.8,
     "dtmPlaces": 17,
     "dtmMetres": 340.6,
-    "chains": 23,
+    "chains": 25,
     "walkedKm": 16.69725
    }
   },
@@ -540,22 +539,22 @@
    "tile": "G4",
    "sum": {
     "places": 4,
-    "metres": 139.3,
+    "metres": 168.89999999999998,
     "dtmPlaces": 2,
     "dtmMetres": 47,
-    "chains": 15,
-    "walkedKm": 17.97525
+    "chains": 17,
+    "walkedKm": 17.96525
    }
   },
   {
    "tile": "G5",
    "sum": {
-    "places": 2,
-    "metres": 33.6,
+    "places": 1,
+    "metres": 15.3,
     "dtmPlaces": 9,
     "dtmMetres": 197.20000000000002,
-    "chains": 11,
-    "walkedKm": 24.543
+    "chains": 10,
+    "walkedKm": 24.541
    }
   },
   {
@@ -572,23 +571,23 @@
   {
    "tile": "G7",
    "sum": {
-    "places": 6,
-    "metres": 150.89999999999998,
+    "places": 5,
+    "metres": 137.6,
     "dtmPlaces": 33,
     "dtmMetres": 1230.2999999999995,
-    "chains": 49,
-    "walkedKm": 11.71525
+    "chains": 46,
+    "walkedKm": 11.71625
    }
   },
   {
    "tile": "G8",
    "sum": {
-    "places": 1,
-    "metres": 24.5,
+    "places": 2,
+    "metres": 45,
     "dtmPlaces": 9,
     "dtmMetres": 409.8,
-    "chains": 10,
-    "walkedKm": 6.9665
+    "chains": 11,
+    "walkedKm": 6.96475
    }
   },
   {
@@ -617,7 +616,7 @@
    "tile": "H10",
    "sum": {
     "places": 1,
-    "metres": 28.3,
+    "metres": 24.8,
     "dtmPlaces": 9,
     "dtmMetres": 305,
     "chains": 13,
@@ -643,7 +642,7 @@
     "dtmPlaces": 3,
     "dtmMetres": 56.400000000000006,
     "chains": 6,
-    "walkedKm": 35.33725
+    "walkedKm": 35.32875
    }
   },
   {
@@ -671,23 +670,23 @@
   {
    "tile": "H5",
    "sum": {
-    "places": 3,
-    "metres": 47.599999999999994,
+    "places": 1,
+    "metres": 12.8,
     "dtmPlaces": 1,
     "dtmMetres": 20.5,
-    "chains": 5,
-    "walkedKm": 24.95275
+    "chains": 3,
+    "walkedKm": 24.9535
    }
   },
   {
    "tile": "H6",
    "sum": {
-    "places": 13,
-    "metres": 164.90000000000003,
+    "places": 14,
+    "metres": 176.40000000000003,
     "dtmPlaces": 24,
     "dtmMetres": 1017.7999999999997,
-    "chains": 50,
-    "walkedKm": 23.74225
+    "chains": 52,
+    "walkedKm": 23.74325
    }
   },
   {
@@ -698,17 +697,17 @@
     "dtmPlaces": 16,
     "dtmMetres": 507.70000000000005,
     "chains": 17,
-    "walkedKm": 18.0665
+    "walkedKm": 18.0655
    }
   },
   {
    "tile": "H8",
    "sum": {
-    "places": 0,
-    "metres": 0,
+    "places": 2,
+    "metres": 49.8,
     "dtmPlaces": 8,
     "dtmMetres": 283.40000000000003,
-    "chains": 9,
+    "chains": 11,
     "walkedKm": 23.327
    }
   },
@@ -759,12 +758,12 @@
   {
    "tile": "I2",
    "sum": {
-    "places": 1,
-    "metres": 23.8,
+    "places": 0,
+    "metres": 0,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 1,
-    "walkedKm": 33.6045
+    "chains": 0,
+    "walkedKm": 33.606
    }
   },
   {
@@ -781,19 +780,19 @@
   {
    "tile": "I4",
    "sum": {
-    "places": 1,
-    "metres": 19.8,
+    "places": 2,
+    "metres": 50.6,
     "dtmPlaces": 5,
     "dtmMetres": 161.89999999999998,
-    "chains": 6,
-    "walkedKm": 16.001
+    "chains": 7,
+    "walkedKm": 15.98325
    }
   },
   {
    "tile": "I5",
    "sum": {
     "places": 3,
-    "metres": 73.3,
+    "metres": 83.6,
     "dtmPlaces": 1,
     "dtmMetres": 50.3,
     "chains": 8,
@@ -804,21 +803,21 @@
    "tile": "I6",
    "sum": {
     "places": 3,
-    "metres": 73.6,
+    "metres": 75.8,
     "dtmPlaces": 10,
     "dtmMetres": 287.5,
-    "chains": 15,
-    "walkedKm": 29.718
+    "chains": 14,
+    "walkedKm": 29.729
    }
   },
   {
    "tile": "I7",
    "sum": {
-    "places": 1,
-    "metres": 33.3,
+    "places": 3,
+    "metres": 65.1,
     "dtmPlaces": 10,
     "dtmMetres": 330.80000000000007,
-    "chains": 11,
+    "chains": 14,
     "walkedKm": 17.13375
    }
   },
@@ -863,39 +862,39 @@
     "dtmPlaces": 0,
     "dtmMetres": 0,
     "chains": 0,
-    "walkedKm": 6.34525
+    "walkedKm": 6.34575
    }
   },
   {
    "tile": "J2",
    "sum": {
-    "places": 4,
-    "metres": 84.89999999999999,
+    "places": 3,
+    "metres": 63.099999999999994,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 5,
-    "walkedKm": 12.816
+    "chains": 4,
+    "walkedKm": 12.8115
    }
   },
   {
    "tile": "J3",
    "sum": {
-    "places": 2,
-    "metres": 25.1,
+    "places": 4,
+    "metres": 72.39999999999999,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 2,
+    "chains": 7,
     "walkedKm": 23.884
    }
   },
   {
    "tile": "J4",
    "sum": {
-    "places": 0,
-    "metres": 0,
+    "places": 1,
+    "metres": 22.3,
     "dtmPlaces": 2,
     "dtmMetres": 44.5,
-    "chains": 2,
+    "chains": 3,
     "walkedKm": 22.5
    }
   },
@@ -918,18 +917,18 @@
     "dtmPlaces": 2,
     "dtmMetres": 43.6,
     "chains": 3,
-    "walkedKm": 17.0205
+    "walkedKm": 17.0215
    }
   },
   {
    "tile": "J7",
    "sum": {
-    "places": 4,
-    "metres": 193.6,
+    "places": 1,
+    "metres": 23.3,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 8,
-    "walkedKm": 33.947
+    "chains": 3,
+    "walkedKm": 33.9505
    }
   },
   {
@@ -1012,11 +1011,11 @@
   {
    "tile": "K6",
    "sum": {
-    "places": 2,
-    "metres": 33.8,
+    "places": 1,
+    "metres": 13,
     "dtmPlaces": 11,
     "dtmMetres": 365.2,
-    "chains": 13,
+    "chains": 12,
     "walkedKm": 13.55325
    }
   },
@@ -1034,11 +1033,11 @@
   {
    "tile": "K8",
    "sum": {
-    "places": 1,
-    "metres": 13.8,
+    "places": 2,
+    "metres": 109.8,
     "dtmPlaces": 0,
     "dtmMetres": 0,
-    "chains": 1,
+    "chains": 2,
     "walkedKm": 21.8475
    }
   },
@@ -1057,7 +1056,7 @@
    "tile": "L10",
    "sum": {
     "places": 1,
-    "metres": 55.3,
+    "metres": 20.3,
     "dtmPlaces": 18,
     "dtmMetres": 512.4000000000001,
     "chains": 19,
@@ -1089,12 +1088,12 @@
   {
    "tile": "L5",
    "sum": {
-    "places": 13,
-    "metres": 341.30000000000007,
+    "places": 15,
+    "metres": 412.1000000000001,
     "dtmPlaces": 7,
     "dtmMetres": 234.4,
-    "chains": 35,
-    "walkedKm": 11.61975
+    "chains": 42,
+    "walkedKm": 11.62025
    }
   },
   {
@@ -1199,12 +1198,12 @@
   {
    "tile": "M7",
    "sum": {
-    "places": 6,
-    "metres": 167.7,
+    "places": 12,
+    "metres": 257.90000000000003,
     "dtmPlaces": 3,
     "dtmMetres": 78.6,
-    "chains": 9,
-    "walkedKm": 1.9665
+    "chains": 15,
+    "walkedKm": 1.967
    }
   },
   {
@@ -1215,7 +1214,7 @@
     "dtmPlaces": 6,
     "dtmMetres": 280.2,
     "chains": 11,
-    "walkedKm": 2.074
+    "walkedKm": 2.0725
    }
   },
   {
@@ -1244,32 +1243,32 @@
    "tile": "N11",
    "sum": {
     "places": 3,
-    "metres": 56.099999999999994,
+    "metres": 52.599999999999994,
     "dtmPlaces": 8,
     "dtmMetres": 367.70000000000005,
     "chains": 11,
-    "walkedKm": 3.5765
+    "walkedKm": 3.576
    }
   },
   {
    "tile": "N5",
    "sum": {
-    "places": 3,
-    "metres": 74.1,
+    "places": 1,
+    "metres": 21.3,
     "dtmPlaces": 5,
     "dtmMetres": 169.2,
-    "chains": 11,
+    "chains": 8,
     "walkedKm": 29.951
    }
   },
   {
    "tile": "N6",
    "sum": {
-    "places": 6,
-    "metres": 157.8,
+    "places": 5,
+    "metres": 135.3,
     "dtmPlaces": 9,
     "dtmMetres": 270.5,
-    "chains": 15,
+    "chains": 14,
     "walkedKm": 8.482
    }
   },
@@ -1357,6 +1356,21 @@
    "street": ""
   },
   {
+   "tile": "F6",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 118.8,
+   "period": 6.7,
+   "ampCm": 12.6,
+   "swings": 35,
+   "walks": 3,
+   "score": 1501.4,
+   "at": "-189.5, 560.0",
+   "from": "-163.0, 613.0",
+   "to": "-216.0, 506.8",
+   "street": "Rue du Repos 141"
+  },
+  {
    "tile": "G7",
    "surface": "dtm",
    "kind": "path",
@@ -1417,21 +1431,6 @@
    "street": ""
   },
   {
-   "tile": "F6",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 124.8,
-   "period": 6.8,
-   "ampCm": 8.2,
-   "swings": 36,
-   "walks": 1,
-   "score": 1018.8,
-   "at": "-190.8, 557.3",
-   "from": "-163.0, 613.0",
-   "to": "-218.6, 501.4",
-   "street": "Rue du Repos 139"
-  },
-  {
    "tile": "K5",
    "surface": "dtm",
    "kind": "path",
@@ -1445,6 +1444,21 @@
    "from": "2156.8, 477.1",
    "to": "2168.7, 350.2",
    "street": ""
+  },
+  {
+   "tile": "D5",
+   "surface": "sidewalk",
+   "kind": "path",
+   "metres": 34.8,
+   "period": 7.4,
+   "ampCm": 24.7,
+   "swings": 8,
+   "walks": 6,
+   "score": 859.6,
+   "at": "-1483.6, 259.5",
+   "from": "-1469.4, 252.5",
+   "to": "-1497.7, 266.4",
+   "street": "Rue Gatti de Gamond 337"
   },
   {
    "tile": "C6",
@@ -1462,6 +1476,21 @@
    "street": ""
   },
   {
+   "tile": "B4",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 36,
+   "period": 6.5,
+   "ampCm": 23.3,
+   "swings": 11,
+   "walks": 8,
+   "score": 837.8,
+   "at": "-2248.7, -465.4",
+   "from": "-2261.9, -453.1",
+   "to": "-2235.6, -477.6",
+   "street": ""
+  },
+  {
    "tile": "N11",
    "surface": "dtm",
    "kind": "path",
@@ -1474,6 +1503,21 @@
    "at": "3954.4, 3055.3",
    "from": "3964.1, 3001.0",
    "to": "3952.8, 3110.1",
+   "street": ""
+  },
+  {
+   "tile": "G2",
+   "surface": "road",
+   "kind": "path",
+   "metres": 87,
+   "period": 6.2,
+   "ampCm": 9.6,
+   "swings": 28,
+   "walks": 1,
+   "score": 831.9,
+   "at": "113.4, -1086.4",
+   "from": "90.5, -1049.4",
+   "to": "137.6, -1122.5",
    "street": ""
   },
   {
@@ -1535,6 +1579,21 @@
    "from": "396.4, 1141.0",
    "to": "441.3, 1079.4",
    "street": ""
+  },
+  {
+   "tile": "F3",
+   "surface": "road",
+   "kind": "path",
+   "metres": 88.3,
+   "period": 5.8,
+   "ampCm": 8.7,
+   "swings": 30,
+   "walks": 1,
+   "score": 766.3,
+   "at": "-16.7, -852.2",
+   "from": "-29.7, -810.2",
+   "to": "-2.0, -893.9",
+   "street": "Avenue de la Ferme Rose 5"
   },
   {
    "tile": "L9",
@@ -1807,6 +1866,21 @@
    "street": ""
   },
   {
+   "tile": "E2",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 43,
+   "period": 7.7,
+   "ampCm": 14,
+   "swings": 6,
+   "walks": 9,
+   "score": 602.7,
+   "at": "-533.9, -1088.6",
+   "from": "-545.6, -1085.6",
+   "to": "-522.1, -1091.5",
+   "street": "Avenue de Floréal 112"
+  },
+  {
    "tile": "H9",
    "surface": "dtm",
    "kind": "path",
@@ -1912,6 +1986,21 @@
    "street": "Avenue Dolez 522"
   },
   {
+   "tile": "K8",
+   "surface": "road",
+   "kind": "path",
+   "metres": 96,
+   "period": 6.5,
+   "ampCm": 6.1,
+   "swings": 29,
+   "walks": 1,
+   "score": 582.8,
+   "at": "2280.0, 1911.7",
+   "from": "2323.5, 1891.4",
+   "to": "2236.5, 1932.0",
+   "street": ""
+  },
+  {
    "tile": "N10",
    "surface": "dtm",
    "kind": "path",
@@ -1942,6 +2031,21 @@
    "street": "Rue du Kriekenput 109"
   },
   {
+   "tile": "B4",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 63.8,
+   "period": 8.6,
+   "ampCm": 9,
+   "swings": 11,
+   "walks": 10,
+   "score": 575.2,
+   "at": "-2241.5, -457.5",
+   "from": "-2224.1, -473.9",
+   "to": "-2258.9, -441.0",
+   "street": ""
+  },
+  {
    "tile": "M11",
    "surface": "dtm",
    "kind": "path",
@@ -1957,19 +2061,19 @@
    "street": ""
   },
   {
-   "tile": "N11",
-   "surface": "ground",
-   "kind": "path",
-   "metres": 25.5,
-   "period": 4.5,
-   "ampCm": 22.2,
-   "swings": 11,
-   "walks": 1,
+   "tile": "H10",
+   "surface": "road",
+   "kind": "road",
+   "metres": 24.8,
+   "period": 6,
+   "ampCm": 22.9,
+   "swings": 8,
+   "walks": 4,
    "score": 566.5,
-   "at": "3980.9, 3130.1",
-   "from": "3978.7, 3142.7",
-   "to": "3983.6, 3117.6",
-   "street": ""
+   "at": "511.1, 2740.7",
+   "from": "500.2, 2745.9",
+   "to": "522.0, 2735.2",
+   "street": "Avenue Dolez 592"
   },
   {
    "tile": "L9",
@@ -2017,36 +2121,6 @@
    "street": "Chaussée de Saint-Job 532"
   },
   {
-   "tile": "B4",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 63.8,
-   "period": 8.6,
-   "ampCm": 8.7,
-   "swings": 11,
-   "walks": 7,
-   "score": 552.5,
-   "at": "-2241.5, -457.5",
-   "from": "-2224.1, -473.9",
-   "to": "-2258.9, -441.0",
-   "street": ""
-  },
-  {
-   "tile": "F3",
-   "surface": "road",
-   "kind": "path",
-   "metres": 67.8,
-   "period": 6.3,
-   "ampCm": 8.1,
-   "swings": 21,
-   "walks": 1,
-   "score": 547.2,
-   "at": "-19.6, -844.0",
-   "from": "-29.4, -811.7",
-   "to": "-8.3, -876.0",
-   "street": "Avenue de la Ferme Rose 6"
-  },
-  {
    "tile": "M10",
    "surface": "dtm",
    "kind": "path",
@@ -2059,21 +2133,6 @@
    "at": "3138.5, 2555.2",
    "from": "3116.5, 2559.7",
    "to": "3159.0, 2546.0",
-   "street": ""
-  },
-  {
-   "tile": "F4",
-   "surface": "road",
-   "kind": "path",
-   "metres": 30.3,
-   "period": 7.7,
-   "ampCm": 17.9,
-   "swings": 8,
-   "walks": 1,
-   "score": 541.6,
-   "at": "-305.1, -242.6",
-   "from": "-319.2, -247.8",
-   "to": "-290.7, -237.7",
    "street": ""
   },
   {
@@ -2105,6 +2164,21 @@
    "from": "550.3, 2411.5",
    "to": "538.5, 2496.9",
    "street": ""
+  },
+  {
+   "tile": "G10",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 63,
+   "period": 6.9,
+   "ampCm": 8.4,
+   "swings": 18,
+   "walks": 5,
+   "score": 530.8,
+   "at": "325.1, 2793.2",
+   "from": "352.8, 2808.0",
+   "to": "323.4, 2762.6",
+   "street": "Rue de Percke 161"
   },
   {
    "tile": "G6",
@@ -2152,6 +2226,36 @@
    "street": "Avenue du Prince de Ligne 34"
   },
   {
+   "tile": "G2",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 70,
+   "period": 6.6,
+   "ampCm": 7.5,
+   "swings": 18,
+   "walks": 5,
+   "score": 527.9,
+   "at": "137.6, -1106.7",
+   "from": "156.1, -1130.3",
+   "to": "120.0, -1082.1",
+   "street": "Avenue Adolphe Dupuich 32"
+  },
+  {
+   "tile": "F5",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 88.5,
+   "period": 6.7,
+   "ampCm": 5.9,
+   "swings": 26,
+   "walks": 3,
+   "score": 526,
+   "at": "-238.6, 461.0",
+   "from": "-219.5, 499.8",
+   "to": "-258.0, 422.0",
+   "street": "Rue du Repos 113"
+  },
+  {
    "tile": "L9",
    "surface": "dtm",
    "kind": "path",
@@ -2167,21 +2271,6 @@
    "street": ""
   },
   {
-   "tile": "M7",
-   "surface": "road",
-   "kind": "path",
-   "metres": 50.3,
-   "period": 7.2,
-   "ampCm": 10.2,
-   "swings": 14,
-   "walks": 1,
-   "score": 514.6,
-   "at": "3132.0, 1209.8",
-   "from": "3113.9, 1226.6",
-   "to": "3154.6, 1198.6",
-   "street": ""
-  },
-  {
    "tile": "L5",
    "surface": "ground",
    "kind": "path",
@@ -2194,6 +2283,21 @@
    "at": "2866.8, 389.1",
    "from": "2870.0, 415.9",
    "to": "2863.3, 362.1",
+   "street": ""
+  },
+  {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 50.8,
+   "period": 7.1,
+   "ampCm": 9.9,
+   "swings": 14,
+   "walks": 1,
+   "score": 500.6,
+   "at": "-369.2, -346.0",
+   "from": "-381.5, -368.0",
+   "to": "-356.1, -324.1",
    "street": ""
   },
   {
@@ -2317,21 +2421,6 @@
    "street": "Drève des Gendarmes 13"
   },
   {
-   "tile": "D1",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 52,
-   "period": 6.6,
-   "ampCm": 9.4,
-   "swings": 16,
-   "walks": 5,
-   "score": 488.8,
-   "at": "-1360.6, -1625.9",
-   "from": "-1340.3, -1641.8",
-   "to": "-1380.0, -1608.5",
-   "street": ""
-  },
-  {
    "tile": "E7",
    "surface": "dtm",
    "kind": "path",
@@ -2345,21 +2434,6 @@
    "from": "-895.1, 1288.1",
    "to": "-915.0, 1247.0",
    "street": ""
-  },
-  {
-   "tile": "F5",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 54.5,
-   "period": 7.1,
-   "ampCm": 8.8,
-   "swings": 11,
-   "walks": 5,
-   "score": 480.3,
-   "at": "-110.8, 288.3",
-   "from": "-128.5, 297.6",
-   "to": "-93.1, 279.0",
-   "street": "Dieweg 121"
   },
   {
    "tile": "H8",
@@ -2404,6 +2478,21 @@
    "at": "3808.2, 2677.9",
    "from": "3794.5, 2664.8",
    "to": "3820.5, 2692.3",
+   "street": ""
+  },
+  {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 29.5,
+   "period": 6.4,
+   "ampCm": 16.1,
+   "swings": 9,
+   "walks": 1,
+   "score": 474.4,
+   "at": "-254.8, -289.5",
+   "from": "-267.8, -282.4",
+   "to": "-241.3, -295.4",
    "street": ""
   },
   {
@@ -2512,6 +2601,21 @@
    "street": "Rue de Stalle 27"
   },
   {
+   "tile": "D6",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 56,
+   "period": 6.6,
+   "ampCm": 8.1,
+   "swings": 17,
+   "walks": 3,
+   "score": 452.7,
+   "at": "-1292.2, 839.0",
+   "from": "-1317.6, 851.1",
+   "to": "-1267.7, 826.3",
+   "street": "Rue François Vervloet 9"
+  },
+  {
    "tile": "D9",
    "surface": "dtm",
    "kind": "path",
@@ -2570,21 +2674,6 @@
    "from": "3245.9, 3292.9",
    "to": "3318.4, 3355.7",
    "street": ""
-  },
-  {
-   "tile": "G2",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 70,
-   "period": 6.9,
-   "ampCm": 6.3,
-   "swings": 20,
-   "walks": 5,
-   "score": 442,
-   "at": "140.3, -1108.7",
-   "from": "162.0, -1136.1",
-   "to": "119.9, -1080.3",
-   "street": "Avenue Adolphe Dupuich 32"
   },
   {
    "tile": "M6",
@@ -2677,6 +2766,21 @@
    "street": ""
   },
   {
+   "tile": "G10",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 25.8,
+   "period": 6.5,
+   "ampCm": 16.6,
+   "swings": 7,
+   "walks": 6,
+   "score": 427.5,
+   "at": "365.3, 2714.3",
+   "from": "360.6, 2724.8",
+   "to": "369.4, 2703.3",
+   "street": "Avenue Buysdelle 12"
+  },
+  {
    "tile": "E7",
    "surface": "dtm",
    "kind": "path",
@@ -2689,6 +2793,21 @@
    "at": "-831.7, 1320.1",
    "from": "-857.4, 1305.7",
    "to": "-806.9, 1336.0",
+   "street": ""
+  },
+  {
+   "tile": "N6",
+   "surface": "road",
+   "kind": "path",
+   "metres": 53,
+   "period": 5.7,
+   "ampCm": 8,
+   "swings": 19,
+   "walks": 1,
+   "score": 423.3,
+   "at": "3564.5, 596.2",
+   "from": "3545.9, 615.1",
+   "to": "3583.3, 577.6",
    "street": ""
   },
   {
@@ -2752,21 +2871,6 @@
    "street": ""
   },
   {
-   "tile": "G10",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 37.5,
-   "period": 6.6,
-   "ampCm": 11.2,
-   "swings": 7,
-   "walks": 4,
-   "score": 419,
-   "at": "367.2, 2708.0",
-   "from": "370.8, 2695.7",
-   "to": "362.4, 2720.3",
-   "street": "Avenue Buysdelle 2"
-  },
-  {
    "tile": "E7",
    "surface": "dtm",
    "kind": "path",
@@ -2782,21 +2886,6 @@
    "street": ""
   },
   {
-   "tile": "D6",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 56,
-   "period": 6.6,
-   "ampCm": 7.4,
-   "swings": 17,
-   "walks": 3,
-   "score": 416.8,
-   "at": "-1292.2, 839.0",
-   "from": "-1317.6, 851.1",
-   "to": "-1267.7, 826.3",
-   "street": "Rue François Vervloet 9"
-  },
-  {
    "tile": "C6",
    "surface": "dtm",
    "kind": "path",
@@ -2809,21 +2898,6 @@
    "at": "-1563.1, 970.4",
    "from": "-1551.2, 981.3",
    "to": "-1576.8, 961.3",
-   "street": ""
-  },
-  {
-   "tile": "D1",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 42.5,
-   "period": 8.5,
-   "ampCm": 9.7,
-   "swings": 10,
-   "walks": 5,
-   "score": 413.5,
-   "at": "-1430.8, -1538.7",
-   "from": "-1444.9, -1522.9",
-   "to": "-1416.2, -1554.0",
    "street": ""
   },
   {
@@ -2887,34 +2961,19 @@
    "street": ""
   },
   {
-   "tile": "D5",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 39,
-   "period": 6.9,
-   "ampCm": 10.3,
-   "swings": 8,
-   "walks": 7,
-   "score": 402.7,
-   "at": "-1486.2, 265.9",
-   "from": "-1475.2, 258.8",
-   "to": "-1498.3, 271.8",
-   "street": "Rue Gatti de Gamond 337"
-  },
-  {
-   "tile": "F4",
+   "tile": "D6",
    "surface": "road",
-   "kind": "path",
-   "metres": 43.5,
-   "period": 8.8,
-   "ampCm": 9.2,
-   "swings": 10,
-   "walks": 1,
-   "score": 401.4,
-   "at": "-312.3, -42.3",
-   "from": "-330.3, -30.2",
-   "to": "-299.8, -59.6",
-   "street": ""
+   "kind": "kerb-",
+   "metres": 71.3,
+   "period": 6.2,
+   "ampCm": 5.6,
+   "swings": 22,
+   "walks": 15,
+   "score": 401.6,
+   "at": "-1285.1, 852.9",
+   "from": "-1314.0, 873.5",
+   "to": "-1256.2, 831.9",
+   "street": "Rue François Vervloet 6"
   },
   {
    "tile": "G10",
@@ -2945,21 +3004,6 @@
    "from": "934.8, 1019.8",
    "to": "909.0, 1023.0",
    "street": ""
-  },
-  {
-   "tile": "E2",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 52.3,
-   "period": 6.5,
-   "ampCm": 7.6,
-   "swings": 13,
-   "walks": 8,
-   "score": 397.8,
-   "at": "-543.5, -1087.7",
-   "from": "-563.9, -1082.7",
-   "to": "-522.9, -1092.9",
-   "street": "Avenue Henri Pirenne 11"
   },
   {
    "tile": "E7",
@@ -3050,21 +3094,6 @@
    "from": "2898.5, 648.0",
    "to": "2910.4, 709.0",
    "street": ""
-  },
-  {
-   "tile": "D6",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 38.8,
-   "period": 7.2,
-   "ampCm": 10.1,
-   "swings": 10,
-   "walks": 9,
-   "score": 392.2,
-   "at": "-1271.9, 846.5",
-   "from": "-1285.9, 856.5",
-   "to": "-1257.7, 836.1",
-   "street": "Rue François Vervloet 2"
   },
   {
    "tile": "I7",
@@ -3262,21 +3291,6 @@
    "street": ""
   },
   {
-   "tile": "J7",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 107.5,
-   "period": 6.7,
-   "ampCm": 3.5,
-   "swings": 32,
-   "walks": 1,
-   "score": 378.3,
-   "at": "1665.3, 1137.4",
-   "from": "1617.2, 1161.1",
-   "to": "1713.5, 1113.7",
-   "street": "Drève de Carloo 19"
-  },
-  {
    "tile": "N5",
    "surface": "dtm",
    "kind": "path",
@@ -3292,18 +3306,48 @@
    "street": ""
   },
   {
-   "tile": "N6",
+   "tile": "L5",
    "surface": "road",
    "kind": "path",
-   "metres": 53,
-   "period": 5.1,
-   "ampCm": 7.1,
-   "swings": 21,
+   "metres": 33.5,
+   "period": 6.3,
+   "ampCm": 11.2,
+   "swings": 11,
    "walks": 1,
-   "score": 374.4,
-   "at": "3564.5, 596.2",
-   "from": "3545.9, 615.1",
-   "to": "3583.3, 577.6",
+   "score": 376.2,
+   "at": "2984.6, 210.4",
+   "from": "2999.6, 202.8",
+   "to": "2969.5, 217.5",
+   "street": ""
+  },
+  {
+   "tile": "G10",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 37.8,
+   "period": 8,
+   "ampCm": 10,
+   "swings": 8,
+   "walks": 6,
+   "score": 375.8,
+   "at": "334.5, 2751.5",
+   "from": "348.0, 2742.9",
+   "to": "318.7, 2753.2",
+   "street": "Avenue Buysdelle 30"
+  },
+  {
+   "tile": "G7",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 40.3,
+   "period": 6.6,
+   "ampCm": 9.3,
+   "swings": 12,
+   "walks": 4,
+   "score": 374.6,
+   "at": "39.1, 1096.2",
+   "from": "37.4, 1116.1",
+   "to": "45.0, 1077.0",
    "street": ""
   },
   {
@@ -3320,6 +3364,21 @@
    "from": "144.0, -744.7",
    "to": "171.9, -738.9",
    "street": "Rue Roberts Jones 77"
+  },
+  {
+   "tile": "D6",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 34,
+   "period": 4.6,
+   "ampCm": 11,
+   "swings": 14,
+   "walks": 7,
+   "score": 372.5,
+   "at": "-1328.7, 866.6",
+   "from": "-1314.0, 857.8",
+   "to": "-1342.9, 875.9",
+   "street": "Rue François Vervloet 23"
   },
   {
    "tile": "E7",
@@ -3379,6 +3438,21 @@
    "at": "3119.8, 3038.5",
    "from": "3113.0, 3012.9",
    "to": "3129.7, 3063.0",
+   "street": ""
+  },
+  {
+   "tile": "L5",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 38,
+   "period": 6.9,
+   "ampCm": 9.7,
+   "swings": 10,
+   "walks": 3,
+   "score": 366.7,
+   "at": "2757.8, 118.4",
+   "from": "2741.9, 115.0",
+   "to": "2773.9, 122.0",
    "street": ""
   },
   {
@@ -3457,18 +3531,18 @@
    "street": ""
   },
   {
-   "tile": "F4",
-   "surface": "road",
+   "tile": "N11",
+   "surface": "ground",
    "kind": "path",
-   "metres": 71.3,
-   "period": 6.7,
-   "ampCm": 5,
-   "swings": 21,
+   "metres": 22,
+   "period": 4.9,
+   "ampCm": 16.2,
+   "swings": 9,
    "walks": 1,
-   "score": 357.2,
-   "at": "-463.8, -212.8",
-   "from": "-480.0, -181.3",
-   "to": "-450.0, -245.7",
+   "score": 357,
+   "at": "3980.6, 3131.8",
+   "from": "3978.7, 3142.7",
+   "to": "3982.8, 3121.1",
    "street": ""
   },
   {
@@ -3485,21 +3559,6 @@
    "from": "1447.1, 348.2",
    "to": "1496.9, 341.6",
    "street": ""
-  },
-  {
-   "tile": "D6",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 31.8,
-   "period": 5.3,
-   "ampCm": 11.2,
-   "swings": 11,
-   "walks": 3,
-   "score": 355.7,
-   "at": "-1330.4, 867.6",
-   "from": "-1317.8, 859.9",
-   "to": "-1342.9, 875.9",
-   "street": "Rue François Vervloet 23"
   },
   {
    "tile": "C8",
@@ -3577,21 +3636,6 @@
    "street": ""
   },
   {
-   "tile": "L5",
-   "surface": "road",
-   "kind": "path",
-   "metres": 33.5,
-   "period": 6.3,
-   "ampCm": 10.5,
-   "swings": 11,
-   "walks": 1,
-   "score": 352.2,
-   "at": "2984.6, 210.4",
-   "from": "2999.6, 202.8",
-   "to": "2969.5, 217.5",
-   "street": ""
-  },
-  {
    "tile": "B5",
    "surface": "dtm",
    "kind": "path",
@@ -3622,19 +3666,19 @@
    "street": ""
   },
   {
-   "tile": "F4",
+   "tile": "E2",
    "surface": "road",
-   "kind": "path",
-   "metres": 66.3,
-   "period": 7.6,
-   "ampCm": 5.2,
-   "swings": 17,
-   "walks": 1,
-   "score": 342.4,
-   "at": "-359.6, -330.1",
-   "from": "-376.5, -358.5",
-   "to": "-345.7, -300.0",
-   "street": "Avenue du Manoir 19"
+   "kind": "kerb-",
+   "metres": 30.5,
+   "period": 6.4,
+   "ampCm": 11.4,
+   "swings": 10,
+   "walks": 3,
+   "score": 346.9,
+   "at": "-516.9, -1087.4",
+   "from": "-502.1, -1091.0",
+   "to": "-529.7, -1079.9",
+   "street": "Avenue de Floréal 116"
   },
   {
    "tile": "I1",
@@ -3652,18 +3696,18 @@
    "street": "Chaussée de Waterloo 690"
   },
   {
-   "tile": "B5",
-   "surface": "ground",
+   "tile": "G3",
+   "surface": "road",
    "kind": "path",
-   "metres": 41.8,
-   "period": 8.4,
-   "ampCm": 8.2,
-   "swings": 10,
+   "metres": 33.3,
+   "period": 6.5,
+   "ampCm": 10.3,
+   "swings": 11,
    "walks": 1,
-   "score": 341.7,
-   "at": "-2267.8, 295.9",
-   "from": "-2283.5, 282.3",
-   "to": "-2251.9, 309.6",
+   "score": 341.6,
+   "at": "5.9, -914.9",
+   "from": "0.0, -899.5",
+   "to": "12.9, -930.1",
    "street": ""
   },
   {
@@ -3682,18 +3726,18 @@
    "street": "Avenue du Hérisson 10"
   },
   {
-   "tile": "L10",
-   "surface": "road",
+   "tile": "B5",
+   "surface": "ground",
    "kind": "path",
-   "metres": 55.3,
-   "period": 7,
-   "ampCm": 6.2,
-   "swings": 16,
+   "metres": 41.8,
+   "period": 8.4,
+   "ampCm": 8.1,
+   "swings": 10,
    "walks": 1,
-   "score": 340,
-   "at": "2896.3, 2537.1",
-   "from": "2905.8, 2511.5",
-   "to": "2884.1, 2562.0",
+   "score": 339.4,
+   "at": "-2267.8, 295.9",
+   "from": "-2283.5, 282.3",
+   "to": "-2251.9, 309.6",
    "street": ""
   },
   {
@@ -3757,6 +3801,21 @@
    "street": ""
   },
   {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 43.5,
+   "period": 8.8,
+   "ampCm": 7.6,
+   "swings": 10,
+   "walks": 1,
+   "score": 332.7,
+   "at": "-312.3, -42.3",
+   "from": "-330.3, -30.2",
+   "to": "-299.8, -59.6",
+   "street": ""
+  },
+  {
    "tile": "G7",
    "surface": "dtm",
    "kind": "path",
@@ -3772,49 +3831,19 @@
    "street": ""
   },
   {
-   "tile": "B4",
+   "tile": "G4",
    "surface": "road",
    "kind": "kerb-",
-   "metres": 37.3,
-   "period": 8.5,
-   "ampCm": 8.8,
-   "swings": 9,
-   "walks": 8,
-   "score": 329.3,
-   "at": "-2254.6, -464.0",
-   "from": "-2268.1, -455.8",
-   "to": "-2240.9, -476.8",
-   "street": ""
-  },
-  {
-   "tile": "M7",
-   "surface": "road",
-   "kind": "path",
-   "metres": 42.3,
-   "period": 7.5,
-   "ampCm": 7.8,
-   "swings": 11,
-   "walks": 1,
-   "score": 329.1,
-   "at": "3412.0, 1342.1",
-   "from": "3425.5, 1326.0",
-   "to": "3398.7, 1358.7",
-   "street": ""
-  },
-  {
-   "tile": "B4",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 56.8,
-   "period": 5.2,
-   "ampCm": 5.8,
-   "swings": 22,
-   "walks": 1,
-   "score": 327.2,
-   "at": "-2250.5, -445.6",
-   "from": "-2230.0, -465.0",
-   "to": "-2271.2, -426.0",
-   "street": ""
+   "metres": 41.8,
+   "period": 6.9,
+   "ampCm": 7.9,
+   "swings": 12,
+   "walks": 3,
+   "score": 329.8,
+   "at": "89.5, -21.8",
+   "from": "78.0, -39.4",
+   "to": "98.9, -3.0",
+   "street": "Avenue Kamerdelle 89"
   },
   {
    "tile": "G10",
@@ -3845,36 +3874,6 @@
    "from": "473.9, 453.4",
    "to": "496.5, 434.0",
    "street": "Avenue de Mercure 9"
-  },
-  {
-   "tile": "D4",
-   "surface": "sidewalk",
-   "kind": "path",
-   "metres": 64,
-   "period": 7,
-   "ampCm": 5.1,
-   "swings": 18,
-   "walks": 1,
-   "score": 326.5,
-   "at": "-1080.1, -51.2",
-   "from": "-1059.2, -75.1",
-   "to": "-1101.3, -27.2",
-   "street": ""
-  },
-  {
-   "tile": "G10",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 45,
-   "period": 7.3,
-   "ampCm": 7.2,
-   "swings": 12,
-   "walks": 6,
-   "score": 325.1,
-   "at": "340.2, 2749.0",
-   "from": "355.7, 2732.7",
-   "to": "318.7, 2753.2",
-   "street": "Avenue Buysdelle 22"
   },
   {
    "tile": "F2",
@@ -3937,6 +3936,21 @@
    "street": ""
   },
   {
+   "tile": "E2",
+   "surface": "road",
+   "kind": "path",
+   "metres": 34.3,
+   "period": 8,
+   "ampCm": 9.4,
+   "swings": 9,
+   "walks": 1,
+   "score": 322.6,
+   "at": "-837.8, -1456.0",
+   "from": "-820.8, -1456.9",
+   "to": "-855.0, -1455.0",
+   "street": "Carré Pauwels 13"
+  },
+  {
    "tile": "H8",
    "surface": "dtm",
    "kind": "path",
@@ -3980,21 +3994,6 @@
    "from": "990.1, 871.3",
    "to": "958.6, 886.4",
    "street": ""
-  },
-  {
-   "tile": "E2",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 42.5,
-   "period": 7.3,
-   "ampCm": 7.5,
-   "swings": 12,
-   "walks": 5,
-   "score": 320.7,
-   "at": "-523.7, -1083.3",
-   "from": "-504.0, -1089.5",
-   "to": "-536.7, -1068.0",
-   "street": "Avenue Henri Pirenne 11"
   },
   {
    "tile": "G7",
@@ -4102,21 +4101,6 @@
    "street": "Cauter 28"
   },
   {
-   "tile": "D4",
-   "surface": "road",
-   "kind": "road",
-   "metres": 70.5,
-   "period": 8.4,
-   "ampCm": 4.4,
-   "swings": 17,
-   "walks": 1,
-   "score": 313.2,
-   "at": "-1064.5, -52.4",
-   "from": "-1088.4, -26.5",
-   "to": "-1038.0, -75.6",
-   "street": ""
-  },
-  {
    "tile": "N6",
    "surface": "dtm",
    "kind": "path",
@@ -4132,19 +4116,19 @@
    "street": ""
   },
   {
-   "tile": "E1",
+   "tile": "G4",
    "surface": "road",
    "kind": "kerb-",
-   "metres": 33.8,
-   "period": 8.7,
-   "ampCm": 9.3,
-   "swings": 6,
-   "walks": 4,
-   "score": 312.9,
-   "at": "-924.0, -1992.2",
-   "from": "-932.2, -1982.2",
-   "to": "-913.1, -1999.1",
-   "street": ""
+   "metres": 48.5,
+   "period": 6.9,
+   "ampCm": 6.4,
+   "swings": 14,
+   "walks": 1,
+   "score": 309.3,
+   "at": "93.7, -32.7",
+   "from": "79.6, -52.4",
+   "to": "103.5, -10.4",
+   "street": "Avenue Kamerdelle 89"
   },
   {
    "tile": "H9",
@@ -4160,21 +4144,6 @@
    "from": "550.4, 2410.4",
    "to": "554.1, 2373.3",
    "street": ""
-  },
-  {
-   "tile": "D5",
-   "surface": "road",
-   "kind": "road",
-   "metres": 56.5,
-   "period": 7.8,
-   "ampCm": 5.4,
-   "swings": 15,
-   "walks": 1,
-   "score": 307.6,
-   "at": "-1244.9, 145.0",
-   "from": "-1263.8, 166.0",
-   "to": "-1226.0, 124.0",
-   "street": "Rue de Stalle 92"
   },
   {
    "tile": "M11",
@@ -4234,6 +4203,21 @@
    "at": "263.3, 1118.8",
    "from": "267.4, 1142.4",
    "to": "256.0, 1095.8",
+   "street": ""
+  },
+  {
+   "tile": "D1",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 51,
+   "period": 5.8,
+   "ampCm": 6,
+   "swings": 18,
+   "walks": 7,
+   "score": 305.2,
+   "at": "-1359.5, -1625.0",
+   "from": "-1339.4, -1640.6",
+   "to": "-1378.4, -1607.9",
    "street": ""
   },
   {
@@ -4387,19 +4371,49 @@
    "street": ""
   },
   {
-   "tile": "F5",
+   "tile": "M7",
+   "surface": "road",
+   "kind": "path",
+   "metres": 31.3,
+   "period": 6.7,
+   "ampCm": 9.5,
+   "swings": 9,
+   "walks": 1,
+   "score": 297.6,
+   "at": "3152.4, 1199.8",
+   "from": "3138.4, 1206.5",
+   "to": "3166.2, 1192.1",
+   "street": ""
+  },
+  {
+   "tile": "G3",
+   "surface": "road",
+   "kind": "path",
+   "metres": 29,
+   "period": 6.7,
+   "ampCm": 10.3,
+   "swings": 8,
+   "walks": 1,
+   "score": 297.4,
+   "at": "71.7, -753.2",
+   "from": "57.2, -752.7",
+   "to": "86.2, -753.8",
+   "street": ""
+  },
+  {
+   "tile": "D6",
    "surface": "road",
    "kind": "kerb-",
-   "metres": 67.5,
-   "period": 6.7,
-   "ampCm": 4.4,
-   "swings": 20,
-   "walks": 4,
-   "score": 295.3,
-   "at": "-242.9, 452.2",
-   "from": "-228.0, 482.5",
-   "to": "-258.0, 422.0",
-   "street": "Rue du Repos 113"
+   "metres": 32.5,
+   "period": 7.6,
+   "ampCm": 9.1,
+   "swings": 9,
+   "walks": 3,
+   "score": 297,
+   "at": "-1091.0, 635.7",
+   "from": "-1100.8, 648.7",
+   "to": "-1081.1, 622.8",
+   "street": "Chaussée d'Alsemberg 956"
   },
   {
    "tile": "L7",
@@ -4429,6 +4443,21 @@
    "at": "1042.4, 968.3",
    "from": "1022.9, 994.9",
    "to": "1073.9, 949.6",
+   "street": ""
+  },
+  {
+   "tile": "C3",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 41.5,
+   "period": 7.4,
+   "ampCm": 7.1,
+   "swings": 11,
+   "walks": 4,
+   "score": 293,
+   "at": "-1842.9, -795.2",
+   "from": "-1822.2, -790.5",
+   "to": "-1863.9, -795.8",
    "street": ""
   },
   {
@@ -4537,6 +4566,21 @@
    "street": ""
   },
   {
+   "tile": "F3",
+   "surface": "road",
+   "kind": "path",
+   "metres": 36.5,
+   "period": 6.8,
+   "ampCm": 7.8,
+   "swings": 11,
+   "walks": 3,
+   "score": 286.2,
+   "at": "-95.9, -720.5",
+   "from": "-113.9, -720.3",
+   "to": "-78.1, -724.9",
+   "street": ""
+  },
+  {
    "tile": "L5",
    "surface": "sidewalk",
    "kind": "kerb+",
@@ -4627,21 +4671,6 @@
    "street": "Allée Jean de La Fontaine 5"
   },
   {
-   "tile": "H6",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 40.3,
-   "period": 7.1,
-   "ampCm": 7,
-   "swings": 8,
-   "walks": 10,
-   "score": 283.6,
-   "at": "893.5, 728.5",
-   "from": "905.6, 719.6",
-   "to": "881.5, 737.5",
-   "street": "Rue Jean Benaets 89"
-  },
-  {
    "tile": "K5",
    "surface": "dtm",
    "kind": "path",
@@ -4730,21 +4759,6 @@
    "from": "1349.0, 1361.0",
    "to": "1327.3, 1323.8",
    "street": ""
-  },
-  {
-   "tile": "H10",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 28.3,
-   "period": 4.9,
-   "ampCm": 9.8,
-   "swings": 11,
-   "walks": 4,
-   "score": 276.1,
-   "at": "515.3, 2740.8",
-   "from": "502.7, 2747.0",
-   "to": "528.0, 2734.3",
-   "street": "Avenue Dolez 592"
   },
   {
    "tile": "L9",
@@ -4882,6 +4896,21 @@
    "street": "Rue Steenvelt 40"
   },
   {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 34.8,
+   "period": 8,
+   "ampCm": 7.8,
+   "swings": 9,
+   "walks": 1,
+   "score": 270.5,
+   "at": "-192.5, -290.3",
+   "from": "-207.8, -298.1",
+   "to": "-177.1, -282.1",
+   "street": "Avenue Paul Stroobant 2"
+  },
+  {
    "tile": "G8",
    "surface": "dtm",
    "kind": "path",
@@ -4957,21 +4986,6 @@
    "street": ""
   },
   {
-   "tile": "E2",
-   "surface": "road",
-   "kind": "path",
-   "metres": 34.3,
-   "period": 8,
-   "ampCm": 7.9,
-   "swings": 9,
-   "walks": 1,
-   "score": 269.3,
-   "at": "-837.8, -1456.0",
-   "from": "-820.8, -1456.9",
-   "to": "-855.0, -1455.0",
-   "street": "Carré Pauwels 13"
-  },
-  {
    "tile": "H7",
    "surface": "dtm",
    "kind": "path",
@@ -5045,21 +5059,6 @@
    "from": "456.1, 1071.9",
    "to": "457.0, 1040.1",
    "street": ""
-  },
-  {
-   "tile": "F4",
-   "surface": "road",
-   "kind": "path",
-   "metres": 38,
-   "period": 8.8,
-   "ampCm": 7,
-   "swings": 8,
-   "walks": 1,
-   "score": 267.6,
-   "at": "-402.0, -380.4",
-   "from": "-418.5, -388.5",
-   "to": "-390.0, -366.0",
-   "street": "Chemin du Crabbegat 8"
   },
   {
    "tile": "E7",
@@ -5152,21 +5151,6 @@
    "street": ""
   },
   {
-   "tile": "D4",
-   "surface": "road",
-   "kind": "path",
-   "metres": 30,
-   "period": 6.1,
-   "ampCm": 8.7,
-   "swings": 10,
-   "walks": 1,
-   "score": 260.3,
-   "at": "-1137.0, -399.3",
-   "from": "-1122.0, -398.8",
-   "to": "-1152.0, -399.8",
-   "street": "Chemin du Vossegat 10"
-  },
-  {
    "tile": "E8",
    "surface": "dtm",
    "kind": "path",
@@ -5182,34 +5166,19 @@
    "street": "Rue Engeland 284"
   },
   {
-   "tile": "D5",
-   "surface": "road",
-   "kind": "road",
-   "metres": 47.5,
-   "period": 8.6,
-   "ampCm": 5.5,
-   "swings": 11,
-   "walks": 2,
-   "score": 259.1,
-   "at": "-1202.1, 97.5",
-   "from": "-1218.0, 115.1",
-   "to": "-1186.2, 79.8",
-   "street": "Rue de Stalle 68"
-  },
-  {
-   "tile": "B6",
+   "tile": "G4",
    "surface": "road",
    "kind": "kerb-",
-   "metres": 64.3,
-   "period": 6.2,
-   "ampCm": 4,
-   "swings": 21,
-   "walks": 6,
-   "score": 258.9,
-   "at": "-2052.3, 633.4",
-   "from": "-2035.7, 606.1",
-   "to": "-2069.0, 661.1",
-   "street": "Rue de l'Etoile 90"
+   "metres": 55.3,
+   "period": 7.1,
+   "ampCm": 4.7,
+   "swings": 15,
+   "walks": 5,
+   "score": 259.6,
+   "at": "59.2, -65.7",
+   "from": "76.1, -43.9",
+   "to": "45.3, -89.9",
+   "street": "Avenue Kamerdelle 83"
   },
   {
    "tile": "M8",
@@ -5242,21 +5211,6 @@
    "street": ""
   },
   {
-   "tile": "E2",
-   "surface": "road",
-   "kind": "road",
-   "metres": 27.8,
-   "period": 8.6,
-   "ampCm": 9.3,
-   "swings": 6,
-   "walks": 1,
-   "score": 257.3,
-   "at": "-878.2, -1100.1",
-   "from": "-876.0, -1113.7",
-   "to": "-880.4, -1086.3",
-   "street": "Chaussée d'Alsemberg 585"
-  },
-  {
    "tile": "E7",
    "surface": "dtm",
    "kind": "path",
@@ -5270,21 +5224,6 @@
    "from": "-634.9, 1462.0",
    "to": "-583.0, 1455.2",
    "street": ""
-  },
-  {
-   "tile": "E2",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 40,
-   "period": 8.5,
-   "ampCm": 6.4,
-   "swings": 9,
-   "walks": 3,
-   "score": 255.9,
-   "at": "-864.8, -1174.6",
-   "from": "-859.9, -1194.0",
-   "to": "-866.8, -1155.0",
-   "street": "Chaussée d'Alsemberg 559"
   },
   {
    "tile": "F9",
@@ -5314,6 +5253,21 @@
    "at": "18.8, 2716.8",
    "from": "0.0, 2713.9",
    "to": "36.8, 2724.2",
+   "street": ""
+  },
+  {
+   "tile": "L5",
+   "surface": "road",
+   "kind": "path",
+   "metres": 31.8,
+   "period": 8.1,
+   "ampCm": 8,
+   "swings": 8,
+   "walks": 1,
+   "score": 253.8,
+   "at": "2522.0, 307.2",
+   "from": "2518.1, 291.9",
+   "to": "2526.0, 322.7",
    "street": ""
   },
   {
@@ -5362,6 +5316,36 @@
    "street": "Rue Gatti de Gamond 224"
   },
   {
+   "tile": "H8",
+   "surface": "road",
+   "kind": "path",
+   "metres": 32.3,
+   "period": 7.2,
+   "ampCm": 7.8,
+   "swings": 8,
+   "walks": 1,
+   "score": 250.4,
+   "at": "556.9, 1778.2",
+   "from": "571.3, 1771.2",
+   "to": "541.6, 1783.6",
+   "street": "Avenue Dolez 123"
+  },
+  {
+   "tile": "M7",
+   "surface": "road",
+   "kind": "path",
+   "metres": 25.8,
+   "period": 8.6,
+   "ampCm": 9.7,
+   "swings": 6,
+   "walks": 1,
+   "score": 249.9,
+   "at": "3120.6, 1218.5",
+   "from": "3112.7, 1228.5",
+   "to": "3130.7, 1210.5",
+   "street": ""
+  },
+  {
    "tile": "D4",
    "surface": "dtm",
    "kind": "path",
@@ -5375,6 +5359,21 @@
    "from": "-1098.6, -127.5",
    "to": "-1083.7, -143.9",
    "street": "Avenue de la Princesse Paola 24"
+  },
+  {
+   "tile": "D7",
+   "surface": "ground",
+   "kind": "path",
+   "metres": 19.8,
+   "period": 7.2,
+   "ampCm": 12.6,
+   "swings": 6,
+   "walks": 1,
+   "score": 249.3,
+   "at": "-1408.1, 1126.4",
+   "from": "-1417.8, 1126.2",
+   "to": "-1398.1, 1125.2",
+   "street": ""
   },
   {
    "tile": "N11",
@@ -5405,21 +5404,6 @@
    "from": "469.0, 2532.0",
    "to": "435.4, 2502.0",
    "street": "Avenue Dolez 548A"
-  },
-  {
-   "tile": "F4",
-   "surface": "road",
-   "kind": "path",
-   "metres": 24,
-   "period": 7.2,
-   "ampCm": 10.4,
-   "swings": 6,
-   "walks": 1,
-   "score": 249,
-   "at": "-446.8, -324.0",
-   "from": "-446.6, -312.0",
-   "to": "-446.7, -336.0",
-   "street": "Rue Rouge 41"
   },
   {
    "tile": "F7",
@@ -5482,21 +5466,6 @@
    "street": ""
   },
   {
-   "tile": "G10",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 29.3,
-   "period": 7.1,
-   "ampCm": 8.4,
-   "swings": 8,
-   "walks": 4,
-   "score": 246.5,
-   "at": "319.9, 2773.2",
-   "from": "323.5, 2759.2",
-   "to": "321.5, 2787.5",
-   "street": "Avenue Buysdelle 30"
-  },
-  {
    "tile": "K5",
    "surface": "dtm",
    "kind": "path",
@@ -5542,21 +5511,6 @@
    "street": "Avenue Achille Reisdorff 36"
   },
   {
-   "tile": "I6",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 25.8,
-   "period": 7.8,
-   "ampCm": 9.5,
-   "swings": 6,
-   "walks": 2,
-   "score": 244.6,
-   "at": "1104.8, 866.6",
-   "from": "1100.3, 878.4",
-   "to": "1110.0, 854.8",
-   "street": "Montagne de Saint-Job 129"
-  },
-  {
    "tile": "H6",
    "surface": "dtm",
    "kind": "path",
@@ -5585,21 +5539,6 @@
    "from": "-158.5, 2383.9",
    "to": "-145.1, 2387.1",
    "street": "Avenue des Faons 24"
-  },
-  {
-   "tile": "G3",
-   "surface": "road",
-   "kind": "path",
-   "metres": 40.5,
-   "period": 7.8,
-   "ampCm": 6,
-   "swings": 10,
-   "walks": 1,
-   "score": 243.1,
-   "at": "77.4, -753.4",
-   "from": "57.2, -752.7",
-   "to": "97.7, -754.2",
-   "street": ""
   },
   {
    "tile": "L10",
@@ -5722,6 +5661,21 @@
    "street": ""
   },
   {
+   "tile": "M7",
+   "surface": "road",
+   "kind": "path",
+   "metres": 42.3,
+   "period": 7.5,
+   "ampCm": 5.7,
+   "swings": 11,
+   "walks": 1,
+   "score": 239.3,
+   "at": "3412.0, 1342.1",
+   "from": "3425.5, 1326.0",
+   "to": "3398.7, 1358.7",
+   "street": ""
+  },
+  {
    "tile": "C6",
    "surface": "dtm",
    "kind": "path",
@@ -5734,21 +5688,6 @@
    "at": "-1713.4, 799.2",
    "from": "-1714.7, 784.0",
    "to": "-1711.2, 814.3",
-   "street": ""
-  },
-  {
-   "tile": "D8",
-   "surface": "road",
-   "kind": "path",
-   "metres": 22.5,
-   "period": 7.3,
-   "ampCm": 10.6,
-   "swings": 6,
-   "walks": 1,
-   "score": 238.7,
-   "at": "-1483.0, 1711.5",
-   "from": "-1472.0, 1710.0",
-   "to": "-1491.8, 1718.2",
    "street": ""
   },
   {
@@ -5812,6 +5751,36 @@
    "street": ""
   },
   {
+   "tile": "D10",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 33,
+   "period": 6.7,
+   "ampCm": 7.1,
+   "swings": 9,
+   "walks": 3,
+   "score": 235.8,
+   "at": "-1038.4, 2694.9",
+   "from": "-1045.7, 2681.9",
+   "to": "-1032.0, 2708.5",
+   "street": "Rue du Bourdon 378"
+  },
+  {
+   "tile": "F5",
+   "surface": "road",
+   "kind": "road",
+   "metres": 28.8,
+   "period": 6.8,
+   "ampCm": 8.2,
+   "swings": 6,
+   "walks": 3,
+   "score": 235.5,
+   "at": "-224.9, 489.1",
+   "from": "-228.8, 480.5",
+   "to": "-220.9, 498.0",
+   "street": ""
+  },
+  {
    "tile": "D9",
    "surface": "dtm",
    "kind": "path",
@@ -5857,6 +5826,21 @@
    "street": ""
   },
   {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 38,
+   "period": 8.8,
+   "ampCm": 6.1,
+   "swings": 8,
+   "walks": 1,
+   "score": 233.1,
+   "at": "-402.0, -380.4",
+   "from": "-418.5, -388.5",
+   "to": "-390.0, -366.0",
+   "street": "Chemin du Crabbegat 8"
+  },
+  {
    "tile": "G4",
    "surface": "dtm",
    "kind": "path",
@@ -5870,21 +5854,6 @@
    "from": "291.0, -296.9",
    "to": "318.0, -306.9",
    "street": "Rue Groeselenberg 57A"
-  },
-  {
-   "tile": "G4",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 44.3,
-   "period": 7.2,
-   "ampCm": 5.3,
-   "swings": 12,
-   "walks": 1,
-   "score": 232.4,
-   "at": "92.5, -34.6",
-   "from": "79.6, -52.4",
-   "to": "102.0, -14.4",
-   "street": "Avenue Kamerdelle 89"
   },
   {
    "tile": "F7",
@@ -5902,6 +5871,21 @@
    "street": ""
   },
   {
+   "tile": "C3",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 24,
+   "period": 6.3,
+   "ampCm": 9.7,
+   "swings": 7,
+   "walks": 3,
+   "score": 232.1,
+   "at": "-1803.1, -941.7",
+   "from": "-1794.9, -948.9",
+   "to": "-1810.3, -933.6",
+   "street": ""
+  },
+  {
    "tile": "L9",
    "surface": "dtm",
    "kind": "path",
@@ -5914,6 +5898,21 @@
    "at": "2564.7, 2191.3",
    "from": "2568.4, 2173.4",
    "to": "2561.1, 2209.2",
+   "street": ""
+  },
+  {
+   "tile": "J3",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 16,
+   "period": 4.5,
+   "ampCm": 14.5,
+   "swings": 7,
+   "walks": 2,
+   "score": 231.2,
+   "at": "1623.9, -726.5",
+   "from": "1618.1, -721.0",
+   "to": "1629.7, -732.0",
    "street": ""
   },
   {
@@ -5992,21 +5991,6 @@
    "street": ""
   },
   {
-   "tile": "E1",
-   "surface": "square",
-   "kind": "kerb+",
-   "metres": 49.5,
-   "period": 7,
-   "ampCm": 4.6,
-   "swings": 14,
-   "walks": 2,
-   "score": 228.5,
-   "at": "-868.0, -1935.0",
-   "from": "-858.1, -1956.1",
-   "to": "-888.2, -1923.4",
-   "street": ""
-  },
-  {
    "tile": "L10",
    "surface": "dtm",
    "kind": "path",
@@ -6022,21 +6006,6 @@
    "street": ""
   },
   {
-   "tile": "D7",
-   "surface": "ground",
-   "kind": "path",
-   "metres": 19.8,
-   "period": 7.2,
-   "ampCm": 11.5,
-   "swings": 6,
-   "walks": 1,
-   "score": 227.8,
-   "at": "-1408.1, 1126.4",
-   "from": "-1417.8, 1126.2",
-   "to": "-1398.1, 1125.2",
-   "street": ""
-  },
-  {
    "tile": "G3",
    "surface": "dtm",
    "kind": "path",
@@ -6049,6 +6018,21 @@
    "at": "304.8, -646.6",
    "from": "295.3, -633.4",
    "to": "314.0, -660.2",
+   "street": ""
+  },
+  {
+   "tile": "M7",
+   "surface": "road",
+   "kind": "path",
+   "metres": 25.8,
+   "period": 6.9,
+   "ampCm": 8.8,
+   "swings": 8,
+   "walks": 1,
+   "score": 226.9,
+   "at": "3078.1, 1208.0",
+   "from": "3066.5, 1213.4",
+   "to": "3089.9, 1202.6",
    "street": ""
   },
   {
@@ -6080,21 +6064,6 @@
    "from": "9.8, 1141.3",
    "to": "19.2, 1163.3",
    "street": ""
-  },
-  {
-   "tile": "F5",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 35.5,
-   "period": 6.5,
-   "ampCm": 6.4,
-   "swings": 11,
-   "walks": 1,
-   "score": 226.6,
-   "at": "-110.3, 282.2",
-   "from": "-94.5, 274.0",
-   "to": "-126.0, 290.4",
-   "street": "Dieweg 121"
   },
   {
    "tile": "L9",
@@ -6157,6 +6126,21 @@
    "street": ""
   },
   {
+   "tile": "D4",
+   "surface": "sidewalk",
+   "kind": "path",
+   "metres": 30.3,
+   "period": 5.7,
+   "ampCm": 7.4,
+   "swings": 9,
+   "walks": 6,
+   "score": 223.1,
+   "at": "-1067.2, -63.7",
+   "from": "-1059.2, -75.1",
+   "to": "-1077.3, -54.0",
+   "street": ""
+  },
+  {
    "tile": "D5",
    "surface": "dtm",
    "kind": "path",
@@ -6170,21 +6154,6 @@
    "from": "-1458.0, 444.4",
    "to": "-1442.4, 464.0",
    "street": ""
-  },
-  {
-   "tile": "D6",
-   "surface": "road",
-   "kind": "road",
-   "metres": 22.5,
-   "period": 7.4,
-   "ampCm": 9.9,
-   "swings": 6,
-   "walks": 2,
-   "score": 222.6,
-   "at": "-1097.6, 644.7",
-   "from": "-1090.6, 635.9",
-   "to": "-1104.6, 653.5",
-   "street": "Chaussée d'Alsemberg 960"
   },
   {
    "tile": "G5",
@@ -6247,6 +6216,21 @@
    "street": ""
   },
   {
+   "tile": "L5",
+   "surface": "road",
+   "kind": "path",
+   "metres": 24.3,
+   "period": 7.3,
+   "ampCm": 9.1,
+   "swings": 6,
+   "walks": 1,
+   "score": 220.9,
+   "at": "2529.0, 334.3",
+   "from": "2526.0, 322.7",
+   "to": "2532.0, 346.2",
+   "street": ""
+  },
+  {
    "tile": "D7",
    "surface": "dtm",
    "kind": "path",
@@ -6259,6 +6243,21 @@
    "at": "-1012.6, 1222.6",
    "from": "-1000.5, 1219.6",
    "to": "-1025.0, 1222.7",
+   "street": ""
+  },
+  {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 48.3,
+   "period": 6.8,
+   "ampCm": 4.6,
+   "swings": 14,
+   "walks": 1,
+   "score": 220.5,
+   "at": "-468.8, -202.5",
+   "from": "-480.0, -181.3",
+   "to": "-458.1, -224.3",
    "street": ""
   },
   {
@@ -6337,33 +6336,18 @@
    "street": ""
   },
   {
-   "tile": "L5",
+   "tile": "D8",
    "surface": "road",
    "kind": "path",
-   "metres": 24,
+   "metres": 22.5,
    "period": 7.3,
-   "ampCm": 9.1,
+   "ampCm": 9.7,
    "swings": 6,
    "walks": 1,
-   "score": 218.6,
-   "at": "2529.0, 334.5",
-   "from": "2526.0, 322.9",
-   "to": "2532.0, 346.2",
-   "street": ""
-  },
-  {
-   "tile": "F8",
-   "surface": "road",
-   "kind": "road",
-   "metres": 23.8,
-   "period": 6.5,
-   "ampCm": 9.1,
-   "swings": 7,
-   "walks": 7,
-   "score": 217.3,
-   "at": "-473.5, 1503.6",
-   "from": "-462.2, 1505.6",
-   "to": "-485.0, 1506.9",
+   "score": 217.8,
+   "at": "-1483.0, 1711.5",
+   "from": "-1472.0, 1710.0",
+   "to": "-1491.8, 1718.2",
    "street": ""
   },
   {
@@ -6457,21 +6441,6 @@
    "street": ""
   },
   {
-   "tile": "D4",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 34,
-   "period": 5.1,
-   "ampCm": 6.3,
-   "swings": 13,
-   "walks": 5,
-   "score": 214.8,
-   "at": "-1051.3, -73.6",
-   "from": "-1038.0, -84.1",
-   "to": "-1063.9, -62.2",
-   "street": "Rue de Stalle 26"
-  },
-  {
    "tile": "L10",
    "surface": "dtm",
    "kind": "path",
@@ -6547,21 +6516,6 @@
    "street": "Rue Jean Benaets 91"
   },
   {
-   "tile": "C3",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 41.5,
-   "period": 7.4,
-   "ampCm": 5.1,
-   "swings": 11,
-   "walks": 4,
-   "score": 213.1,
-   "at": "-1842.9, -795.2",
-   "from": "-1822.2, -790.5",
-   "to": "-1863.9, -795.8",
-   "street": ""
-  },
-  {
    "tile": "H7",
    "surface": "dtm",
    "kind": "path",
@@ -6605,21 +6559,6 @@
    "from": "2500.0, 2505.2",
    "to": "2496.8, 2541.0",
    "street": ""
-  },
-  {
-   "tile": "D6",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 20.5,
-   "period": 4.6,
-   "ampCm": 10.4,
-   "swings": 6,
-   "walks": 5,
-   "score": 212.5,
-   "at": "-1302.1, 868.2",
-   "from": "-1308.0, 872.4",
-   "to": "-1296.2, 864.0",
-   "street": "Rue François Vervloet 16"
   },
   {
    "tile": "E7",
@@ -6787,6 +6726,21 @@
    "street": ""
   },
   {
+   "tile": "H6",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 28.3,
+   "period": 6.3,
+   "ampCm": 7.3,
+   "swings": 6,
+   "walks": 8,
+   "score": 205.7,
+   "at": "913.5, 725.8",
+   "from": "905.9, 731.4",
+   "to": "921.1, 720.1",
+   "street": "Rue Jean Benaets 81"
+  },
+  {
    "tile": "C6",
    "surface": "dtm",
    "kind": "path",
@@ -6920,21 +6874,6 @@
    "from": "643.8, 2597.3",
    "to": "671.7, 2621.2",
    "street": ""
-  },
-  {
-   "tile": "G10",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 30.3,
-   "period": 7.1,
-   "ampCm": 6.7,
-   "swings": 8,
-   "walks": 2,
-   "score": 203.5,
-   "at": "341.9, 2799.8",
-   "from": "354.5, 2808.1",
-   "to": "327.9, 2793.9",
-   "street": "Rue de Percke 161"
   },
   {
    "tile": "N10",
@@ -7237,21 +7176,6 @@
    "street": ""
   },
   {
-   "tile": "D1",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 41,
-   "period": 6.3,
-   "ampCm": 4.8,
-   "swings": 13,
-   "walks": 4,
-   "score": 196.2,
-   "at": "-1413.1, -1531.0",
-   "from": "-1405.3, -1549.3",
-   "to": "-1419.7, -1511.9",
-   "street": ""
-  },
-  {
    "tile": "D7",
    "surface": "dtm",
    "kind": "path",
@@ -7265,21 +7189,6 @@
    "from": "-1363.9, 1176.4",
    "to": "-1345.9, 1176.2",
    "street": "Chaussée d'Alsemberg 1120"
-  },
-  {
-   "tile": "D5",
-   "surface": "tram",
-   "kind": "road",
-   "metres": 49.3,
-   "period": 8.8,
-   "ampCm": 4,
-   "swings": 11,
-   "walks": 2,
-   "score": 195.8,
-   "at": "-1154.9, 38.2",
-   "from": "-1170.1, 57.2",
-   "to": "-1137.2, 20.9",
-   "street": "Rue de Stalle 50"
   },
   {
    "tile": "C6",
@@ -7372,6 +7281,51 @@
    "street": ""
   },
   {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 26.8,
+   "period": 8.2,
+   "ampCm": 7.2,
+   "swings": 6,
+   "walks": 1,
+   "score": 193.8,
+   "at": "-445.3, -289.1",
+   "from": "-444.0, -275.9",
+   "to": "-446.5, -302.5",
+   "street": "Rue Rouge 43"
+  },
+  {
+   "tile": "G10",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 32.3,
+   "period": 8,
+   "ampCm": 6,
+   "swings": 8,
+   "walks": 3,
+   "score": 193.8,
+   "at": "299.7, 2760.9",
+   "from": "283.9, 2761.8",
+   "to": "315.5, 2757.5",
+   "street": "Avenue Buysdelle 30"
+  },
+  {
+   "tile": "D8",
+   "surface": "road",
+   "kind": "path",
+   "metres": 22.3,
+   "period": 5.3,
+   "ampCm": 8.7,
+   "swings": 8,
+   "walks": 1,
+   "score": 193.7,
+   "at": "-1471.4, 1692.9",
+   "from": "-1466.5, 1683.5",
+   "to": "-1471.9, 1704.1",
+   "street": ""
+  },
+  {
    "tile": "H6",
    "surface": "dtm",
    "kind": "path",
@@ -7417,19 +7371,19 @@
    "street": ""
   },
   {
-   "tile": "F3",
+   "tile": "L5",
    "surface": "road",
    "kind": "path",
-   "metres": 23.3,
-   "period": 7.5,
-   "ampCm": 8.2,
+   "metres": 24,
+   "period": 7.3,
+   "ampCm": 8,
    "swings": 6,
    "walks": 1,
-   "score": 191.8,
-   "at": "-415.2, -880.9",
-   "from": "-411.0, -891.6",
-   "to": "-419.6, -870.0",
-   "street": "Avenue Brugmann 423"
+   "score": 191.4,
+   "at": "2535.0, 357.8",
+   "from": "2532.0, 346.2",
+   "to": "2538.0, 369.4",
+   "street": ""
   },
   {
    "tile": "F9",
@@ -7459,6 +7413,21 @@
    "at": "2535.7, 3404.1",
    "from": "2519.4, 3400.5",
    "to": "2552.6, 3406.5",
+   "street": ""
+  },
+  {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 28,
+   "period": 9.4,
+   "ampCm": 6.8,
+   "swings": 5,
+   "walks": 1,
+   "score": 190.6,
+   "at": "-453.0, -237.3",
+   "from": "-458.1, -224.3",
+   "to": "-448.3, -250.5",
    "street": ""
   },
   {
@@ -7537,6 +7506,21 @@
    "street": "Avenue Jacques Pastur 84"
   },
   {
+   "tile": "D4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 30,
+   "period": 6.1,
+   "ampCm": 6.3,
+   "swings": 10,
+   "walks": 1,
+   "score": 188.2,
+   "at": "-1143.0, -399.5",
+   "from": "-1128.0, -399.0",
+   "to": "-1158.0, -400.0",
+   "street": "Chemin du Vossegat 12"
+  },
+  {
    "tile": "G2",
    "surface": "dtm",
    "kind": "path",
@@ -7550,6 +7534,21 @@
    "from": "84.9, -1220.1",
    "to": "99.1, -1257.4",
    "street": ""
+  },
+  {
+   "tile": "I4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 30.8,
+   "period": 10.6,
+   "ampCm": 6.1,
+   "swings": 6,
+   "walks": 1,
+   "score": 187.3,
+   "at": "1413.0, -367.5",
+   "from": "1428.2, -366.0",
+   "to": "1397.9, -371.0",
+   "street": "Avenue de l'Observatoire 25"
   },
   {
    "tile": "I6",
@@ -7595,21 +7594,6 @@
    "from": "-281.9, 1998.3",
    "to": "-265.9, 1971.2",
    "street": "Rue Engeland 483"
-  },
-  {
-   "tile": "G4",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 48.5,
-   "period": 6.2,
-   "ampCm": 3.9,
-   "swings": 15,
-   "walks": 9,
-   "score": 186.8,
-   "at": "170.3, -425.0",
-   "from": "194.0, -430.1",
-   "to": "146.6, -420.0",
-   "street": "Rue Groeselenberg 51"
   },
   {
    "tile": "K10",
@@ -7762,18 +7746,18 @@
    "street": ""
   },
   {
-   "tile": "F4",
-   "surface": "road",
-   "kind": "path",
-   "metres": 31,
-   "period": 8.8,
-   "ampCm": 5.9,
-   "swings": 7,
-   "walks": 1,
+   "tile": "D5",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 18,
+   "period": 4.1,
+   "ampCm": 10.2,
+   "swings": 6,
+   "walks": 4,
    "score": 184,
-   "at": "-254.2, -289.8",
-   "from": "-267.8, -282.4",
-   "to": "-239.9, -295.9",
+   "at": "-1491.0, 288.0",
+   "from": "-1497.1, 291.0",
+   "to": "-1485.0, 285.1",
    "street": ""
   },
   {
@@ -7859,7 +7843,7 @@
    "period": 7.6,
    "ampCm": 4.3,
    "swings": 11,
-   "walks": 5,
+   "walks": 8,
    "score": 180.4,
    "at": "2697.6, 101.7",
    "from": "2677.3, 97.3",
@@ -7942,21 +7926,6 @@
    "street": ""
   },
   {
-   "tile": "L5",
-   "surface": "road",
-   "kind": "path",
-   "metres": 24,
-   "period": 7.3,
-   "ampCm": 7.4,
-   "swings": 6,
-   "walks": 1,
-   "score": 177.6,
-   "at": "2535.0, 357.8",
-   "from": "2532.0, 346.2",
-   "to": "2538.0, 369.4",
-   "street": ""
-  },
-  {
    "tile": "M6",
    "surface": "dtm",
    "kind": "path",
@@ -7969,21 +7938,6 @@
    "at": "3428.1, 914.2",
    "from": "3408.8, 909.7",
    "to": "3448.1, 914.0",
-   "street": ""
-  },
-  {
-   "tile": "F7",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 32,
-   "period": 7,
-   "ampCm": 5.5,
-   "swings": 9,
-   "walks": 3,
-   "score": 176.2,
-   "at": "-156.1, 1340.7",
-   "from": "-172.0, 1339.7",
-   "to": "-140.1, 1341.8",
    "street": ""
   },
   {
@@ -8002,6 +7956,21 @@
    "street": ""
   },
   {
+   "tile": "B5",
+   "surface": "ground",
+   "kind": "path",
+   "metres": 14.5,
+   "period": 5.4,
+   "ampCm": 12.1,
+   "swings": 5,
+   "walks": 1,
+   "score": 176,
+   "at": "-2208.4, 347.2",
+   "from": "-2201.3, 346.1",
+   "to": "-2215.6, 348.3",
+   "street": ""
+  },
+  {
    "tile": "M6",
    "surface": "dtm",
    "kind": "path",
@@ -8015,21 +7984,6 @@
    "from": "3080.3, 880.2",
    "to": "3099.0, 865.6",
    "street": ""
-  },
-  {
-   "tile": "G2",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 27.5,
-   "period": 10.7,
-   "ampCm": 6.3,
-   "swings": 5,
-   "walks": 1,
-   "score": 174.5,
-   "at": "309.8, -1458.3",
-   "from": "296.8, -1452.0",
-   "to": "324.1, -1455.9",
-   "street": "Avenue Winston Churchill 112"
   },
   {
    "tile": "L5",
@@ -8047,21 +8001,6 @@
    "street": ""
   },
   {
-   "tile": "B5",
-   "surface": "ground",
-   "kind": "path",
-   "metres": 14.5,
-   "period": 5.4,
-   "ampCm": 12,
-   "swings": 5,
-   "walks": 1,
-   "score": 173.7,
-   "at": "-2208.4, 347.2",
-   "from": "-2201.3, 346.1",
-   "to": "-2215.6, 348.3",
-   "street": ""
-  },
-  {
    "tile": "M8",
    "surface": "ground",
    "kind": "path",
@@ -8075,6 +8014,36 @@
    "from": "3473.0, 1686.3",
    "to": "3457.4, 1682.8",
    "street": ""
+  },
+  {
+   "tile": "F6",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 18.8,
+   "period": 6.1,
+   "ampCm": 9.2,
+   "swings": 5,
+   "walks": 2,
+   "score": 173,
+   "at": "-132.3, 680.9",
+   "from": "-139.3, 681.8",
+   "to": "-125.4, 678.1",
+   "street": "Chaussée de Saint-Job 334"
+  },
+  {
+   "tile": "G7",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 26.8,
+   "period": 7.3,
+   "ampCm": 6.4,
+   "swings": 7,
+   "walks": 2,
+   "score": 172.3,
+   "at": "118.7, 1271.2",
+   "from": "111.6, 1260.0",
+   "to": "126.0, 1282.6",
+   "street": "Avenue de la Chênaie 85"
   },
   {
    "tile": "K6",
@@ -8135,51 +8104,6 @@
    "from": "2639.0, 2316.9",
    "to": "2644.3, 2350.1",
    "street": ""
-  },
-  {
-   "tile": "G3",
-   "surface": "road",
-   "kind": "path",
-   "metres": 22.3,
-   "period": 8.8,
-   "ampCm": 7.6,
-   "swings": 5,
-   "walks": 1,
-   "score": 169.8,
-   "at": "17.2, -939.4",
-   "from": "12.6, -929.4",
-   "to": "23.6, -948.5",
-   "street": ""
-  },
-  {
-   "tile": "G7",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 26.8,
-   "period": 7.3,
-   "ampCm": 6.3,
-   "swings": 7,
-   "walks": 4,
-   "score": 169.7,
-   "at": "118.7, 1271.2",
-   "from": "111.6, 1260.0",
-   "to": "126.0, 1282.6",
-   "street": "Avenue de la Chênaie 85"
-  },
-  {
-   "tile": "J7",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 46.5,
-   "period": 6.7,
-   "ampCm": 3.6,
-   "swings": 14,
-   "walks": 2,
-   "score": 169.3,
-   "at": "1706.9, 1114.2",
-   "from": "1727.8, 1104.0",
-   "to": "1686.0, 1124.4",
-   "street": "Drève de Carloo 11"
   },
   {
    "tile": "D6",
@@ -8287,6 +8211,21 @@
    "street": ""
   },
   {
+   "tile": "H6",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 23.5,
+   "period": 6.8,
+   "ampCm": 7.1,
+   "swings": 7,
+   "walks": 4,
+   "score": 167.2,
+   "at": "890.9, 730.4",
+   "from": "900.3, 723.4",
+   "to": "881.5, 737.5",
+   "street": "Rue Jean Benaets 89"
+  },
+  {
    "tile": "G7",
    "surface": "dtm",
    "kind": "path",
@@ -8362,6 +8301,21 @@
    "street": "Avenue Paul Stroobant 43"
   },
   {
+   "tile": "B5",
+   "surface": "ground",
+   "kind": "path",
+   "metres": 26.5,
+   "period": 7.6,
+   "ampCm": 6.3,
+   "swings": 7,
+   "walks": 1,
+   "score": 165.7,
+   "at": "-2241.9, 318.3",
+   "from": "-2251.9, 309.6",
+   "to": "-2231.9, 327.0",
+   "street": ""
+  },
+  {
    "tile": "D7",
    "surface": "dtm",
    "kind": "path",
@@ -8375,21 +8329,6 @@
    "from": "-1157.3, 1064.1",
    "to": "-1160.9, 1082.2",
    "street": "Chaussée de Saint-Job 44"
-  },
-  {
-   "tile": "B5",
-   "surface": "ground",
-   "kind": "path",
-   "metres": 26.5,
-   "period": 7.6,
-   "ampCm": 6.2,
-   "swings": 7,
-   "walks": 1,
-   "score": 165.1,
-   "at": "-2241.9, 318.3",
-   "from": "-2251.9, 309.6",
-   "to": "-2231.9, 327.0",
-   "street": ""
   },
   {
    "tile": "C7",
@@ -8617,6 +8556,36 @@
    "street": ""
   },
   {
+   "tile": "I5",
+   "surface": "road",
+   "kind": "road",
+   "metres": 40.8,
+   "period": 7.7,
+   "ampCm": 4,
+   "swings": 10,
+   "walks": 5,
+   "score": 163,
+   "at": "1218.2, 196.6",
+   "from": "1200.1, 205.8",
+   "to": "1233.7, 183.9",
+   "street": "Avenue Albert Lancaster 101"
+  },
+  {
+   "tile": "I6",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 28,
+   "period": 6.4,
+   "ampCm": 5.8,
+   "swings": 9,
+   "walks": 1,
+   "score": 162.9,
+   "at": "1105.2, 865.5",
+   "from": "1100.3, 878.4",
+   "to": "1111.0, 852.8",
+   "street": "Montagne de Saint-Job 123"
+  },
+  {
    "tile": "F5",
    "surface": "dtm",
    "kind": "path",
@@ -8630,21 +8599,6 @@
    "from": "-115.7, 472.8",
    "to": "-99.1, 464.2",
    "street": ""
-  },
-  {
-   "tile": "G4",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 24.5,
-   "period": 6.5,
-   "ampCm": 6.6,
-   "swings": 6,
-   "walks": 2,
-   "score": 162.6,
-   "at": "51.5, -80.9",
-   "from": "56.6, -72.1",
-   "to": "46.5, -89.9",
-   "street": "Avenue Kamerdelle 83"
   },
   {
    "tile": "C4",
@@ -8662,6 +8616,21 @@
    "street": "Rue Victor Allard 263"
   },
   {
+   "tile": "G10",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 27,
+   "period": 6.3,
+   "ampCm": 6,
+   "swings": 9,
+   "walks": 2,
+   "score": 162.3,
+   "at": "485.6, 2751.7",
+   "from": "472.8, 2752.8",
+   "to": "498.0, 2747.0",
+   "street": "Avenue Dolez 317"
+  },
+  {
    "tile": "F9",
    "surface": "dtm",
    "kind": "path",
@@ -8675,6 +8644,21 @@
    "from": "-243.4, 2476.1",
    "to": "-247.5, 2456.4",
    "street": "Avenue des Belettes 49"
+  },
+  {
+   "tile": "D1",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 38.3,
+   "period": 6.9,
+   "ampCm": 4.2,
+   "swings": 11,
+   "walks": 1,
+   "score": 161.8,
+   "at": "-1431.4, -1536.2",
+   "from": "-1444.0, -1522.0",
+   "to": "-1418.4, -1550.3",
+   "street": ""
   },
   {
    "tile": "F10",
@@ -8857,21 +8841,6 @@
    "street": "Rue Jean Benaets 93"
   },
   {
-   "tile": "L7",
-   "surface": "road",
-   "kind": "path",
-   "metres": 16,
-   "period": 6.9,
-   "ampCm": 10,
-   "swings": 5,
-   "walks": 1,
-   "score": 159.5,
-   "at": "2951.6, 1266.9",
-   "from": "2944.5, 1270.5",
-   "to": "2958.8, 1263.4",
-   "street": ""
-  },
-  {
    "tile": "D6",
    "surface": "dtm",
    "kind": "path",
@@ -8887,18 +8856,18 @@
    "street": ""
   },
   {
-   "tile": "D7",
+   "tile": "F4",
    "surface": "road",
-   "kind": "kerb-",
-   "metres": 24.3,
-   "period": 6.8,
-   "ampCm": 6.6,
-   "swings": 7,
-   "walks": 7,
-   "score": 158.9,
-   "at": "-1103.3, 1118.5",
-   "from": "-1094.6, 1110.5",
-   "to": "-1114.2, 1123.6",
+   "kind": "path",
+   "metres": 30.5,
+   "period": 7.5,
+   "ampCm": 5.2,
+   "swings": 8,
+   "walks": 1,
+   "score": 159,
+   "at": "-415.0, -166.6",
+   "from": "-411.4, -181.5",
+   "to": "-418.7, -151.9",
    "street": ""
   },
   {
@@ -8909,7 +8878,7 @@
    "period": 7.2,
    "ampCm": 7.2,
    "swings": 6,
-   "walks": 2,
+   "walks": 4,
    "score": 158.6,
    "at": "-1102.5, -133.4",
    "from": "-1107.8, -123.7",
@@ -9112,6 +9081,21 @@
    "street": ""
   },
   {
+   "tile": "E1",
+   "surface": "square",
+   "kind": "kerb+",
+   "metres": 40.5,
+   "period": 5.9,
+   "ampCm": 3.8,
+   "swings": 13,
+   "walks": 5,
+   "score": 155.1,
+   "at": "-869.3, -1933.6",
+   "from": "-859.4, -1950.0",
+   "to": "-885.9, -1924.0",
+   "street": ""
+  },
+  {
    "tile": "M10",
    "surface": "dtm",
    "kind": "path",
@@ -9127,19 +9111,19 @@
    "street": ""
   },
   {
-   "tile": "F2",
+   "tile": "F4",
    "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 19,
-   "period": 6.5,
-   "ampCm": 8.1,
+   "kind": "path",
+   "metres": 27.8,
+   "period": 8.3,
+   "ampCm": 5.6,
    "swings": 6,
-   "walks": 5,
-   "score": 154.5,
-   "at": "-277.7, -1238.9",
-   "from": "-274.0, -1247.6",
-   "to": "-281.3, -1230.1",
-   "street": "Avenue de Messidor 203"
+   "walks": 4,
+   "score": 154.7,
+   "at": "-478.5, -354.7",
+   "from": "-485.9, -366.3",
+   "to": "-472.5, -342.0",
+   "street": "Rue Rouge 39"
   },
   {
    "tile": "H9",
@@ -9154,21 +9138,6 @@
    "at": "539.1, 2372.5",
    "from": "550.1, 2366.1",
    "to": "526.9, 2377.0",
-   "street": ""
-  },
-  {
-   "tile": "C3",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 26.5,
-   "period": 6.5,
-   "ampCm": 5.8,
-   "swings": 8,
-   "walks": 2,
-   "score": 154,
-   "at": "-1800.1, -945.6",
-   "from": "-1789.8, -954.0",
-   "to": "-1809.4, -935.9",
    "street": ""
   },
   {
@@ -9200,6 +9169,21 @@
    "from": "2937.3, 2099.8",
    "to": "2940.0, 2125.9",
    "street": ""
+  },
+  {
+   "tile": "C6",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 29.8,
+   "period": 6,
+   "ampCm": 5.2,
+   "swings": 10,
+   "walks": 1,
+   "score": 153.4,
+   "at": "-1513.5, 725.5",
+   "from": "-1500.5, 731.5",
+   "to": "-1505.9, 713.5",
+   "street": "Avenue François Englert 9"
   },
   {
    "tile": "N5",
@@ -9307,21 +9291,6 @@
    "street": ""
   },
   {
-   "tile": "G2",
-   "surface": "road",
-   "kind": "path",
-   "metres": 33.5,
-   "period": 5.7,
-   "ampCm": 4.4,
-   "swings": 12,
-   "walks": 1,
-   "score": 148.5,
-   "at": "116.2, -1090.8",
-   "from": "107.3, -1076.6",
-   "to": "125.6, -1104.7",
-   "street": "Avenue Adolphe Dupuich 34"
-  },
-  {
    "tile": "L7",
    "surface": "road",
    "kind": "path",
@@ -9367,6 +9336,21 @@
    "street": ""
   },
   {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 20.5,
+   "period": 8.3,
+   "ampCm": 7.2,
+   "swings": 5,
+   "walks": 1,
+   "score": 147,
+   "at": "-309.6, -244.2",
+   "from": "-319.2, -247.8",
+   "to": "-299.9, -240.9",
+   "street": ""
+  },
+  {
    "tile": "G7",
    "surface": "dtm",
    "kind": "path",
@@ -9395,6 +9379,21 @@
    "from": "288.0, -1225.7",
    "to": "295.9, -1215.1",
    "street": "Avenue Léo Errera 41"
+  },
+  {
+   "tile": "E1",
+   "surface": "square",
+   "kind": "kerb+",
+   "metres": 30.8,
+   "period": 8.1,
+   "ampCm": 4.7,
+   "swings": 7,
+   "walks": 3,
+   "score": 145.8,
+   "at": "-922.0, -1989.5",
+   "from": "-930.1, -1979.3",
+   "to": "-910.7, -1996.6",
+   "street": ""
   },
   {
    "tile": "F4",
@@ -9457,21 +9456,6 @@
    "street": ""
   },
   {
-   "tile": "K6",
-   "surface": "ground",
-   "kind": "path",
-   "metres": 20.8,
-   "period": 4.3,
-   "ampCm": 7,
-   "swings": 10,
-   "walks": 1,
-   "score": 145.5,
-   "at": "2186.2, 601.8",
-   "from": "2177.0, 606.4",
-   "to": "2195.5, 597.0",
-   "street": ""
-  },
-  {
    "tile": "C3",
    "surface": "dtm",
    "kind": "path",
@@ -9502,21 +9486,6 @@
    "street": ""
   },
   {
-   "tile": "F2",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 26.3,
-   "period": 7.7,
-   "ampCm": 5.5,
-   "swings": 7,
-   "walks": 5,
-   "score": 145.2,
-   "at": "-262.7, -1158.3",
-   "from": "-256.3, -1169.4",
-   "to": "-268.0, -1146.2",
-   "street": "Avenue Château de Walzin 10"
-  },
-  {
    "tile": "H2",
    "surface": "road",
    "kind": "path",
@@ -9545,6 +9514,21 @@
    "from": "1033.8, 885.1",
    "to": "1024.0, 860.0",
    "street": ""
+  },
+  {
+   "tile": "D6",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 35.8,
+   "period": 7.3,
+   "ampCm": 4.1,
+   "swings": 9,
+   "walks": 4,
+   "score": 144.8,
+   "at": "-1109.5, 624.2",
+   "from": "-1116.0, 640.7",
+   "to": "-1102.7, 607.5",
+   "street": "Chaussée d'Alsemberg 954"
   },
   {
    "tile": "L6",
@@ -9607,21 +9591,6 @@
    "street": "Rue Egide Van Ophem 24"
   },
   {
-   "tile": "G7",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 31.8,
-   "period": 7,
-   "ampCm": 4.6,
-   "swings": 9,
-   "walks": 3,
-   "score": 144.6,
-   "at": "59.7, 1352.9",
-   "from": "43.9, 1351.9",
-   "to": "75.6, 1353.7",
-   "street": "Rue de Verrewinkel 292"
-  },
-  {
    "tile": "I7",
    "surface": "dtm",
    "kind": "path",
@@ -9637,21 +9606,6 @@
    "street": ""
   },
   {
-   "tile": "E2",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 21.5,
-   "period": 6.8,
-   "ampCm": 6.7,
-   "swings": 6,
-   "walks": 2,
-   "score": 144.1,
-   "at": "-885.1, -1072.0",
-   "from": "-883.7, -1081.9",
-   "to": "-886.5, -1062.1",
-   "street": "Chaussée d'Alsemberg 595"
-  },
-  {
    "tile": "H6",
    "surface": "dtm",
    "kind": "path",
@@ -9664,6 +9618,36 @@
    "at": "939.6, 873.5",
    "from": "942.9, 886.2",
    "to": "933.7, 861.4",
+   "street": ""
+  },
+  {
+   "tile": "F8",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 24.8,
+   "period": 6.8,
+   "ampCm": 5.8,
+   "swings": 7,
+   "walks": 5,
+   "score": 144,
+   "at": "-473.7, 1502.8",
+   "from": "-462.0, 1504.4",
+   "to": "-485.4, 1506.6",
+   "street": ""
+  },
+  {
+   "tile": "F10",
+   "surface": "ground",
+   "kind": "path",
+   "metres": 14.5,
+   "period": 2.5,
+   "ampCm": 9.9,
+   "swings": 12,
+   "walks": 1,
+   "score": 143.8,
+   "at": "-33.6, 2627.1",
+   "from": "-34.9, 2634.3",
+   "to": "-32.3, 2620.0",
    "street": ""
   },
   {
@@ -9742,21 +9726,6 @@
    "street": "Chemin du Moulin Rose 20"
   },
   {
-   "tile": "D6",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 19.8,
-   "period": 8.3,
-   "ampCm": 7.2,
-   "swings": 5,
-   "walks": 1,
-   "score": 142.1,
-   "at": "-1321.6, 872.2",
-   "from": "-1313.9, 866.9",
-   "to": "-1329.4, 878.6",
-   "street": "Rue François Vervloet 16"
-  },
-  {
    "tile": "F8",
    "surface": "dtm",
    "kind": "path",
@@ -9772,34 +9741,19 @@
    "street": ""
   },
   {
-   "tile": "F10",
-   "surface": "ground",
-   "kind": "path",
-   "metres": 14,
-   "period": 2.4,
-   "ampCm": 10.1,
-   "swings": 12,
-   "walks": 1,
-   "score": 141,
-   "at": "-33.6, 2627.4",
-   "from": "-34.9, 2634.3",
-   "to": "-32.4, 2620.5",
-   "street": ""
-  },
-  {
-   "tile": "B6",
+   "tile": "E5",
    "surface": "road",
-   "kind": "kerb-",
-   "metres": 48,
-   "period": 6.8,
-   "ampCm": 2.9,
-   "swings": 14,
-   "walks": 2,
-   "score": 140.9,
-   "at": "-2126.3, 762.7",
-   "from": "-2138.9, 783.1",
-   "to": "-2113.5, 742.4",
-   "street": "Rue de l'Etoile 144"
+   "kind": "path",
+   "metres": 23.3,
+   "period": 8.2,
+   "ampCm": 6.1,
+   "swings": 6,
+   "walks": 1,
+   "score": 141.6,
+   "at": "-885.0, 61.9",
+   "from": "-873.6, 63.9",
+   "to": "-896.5, 60.0",
+   "street": "Chemin des Roses 2"
   },
   {
    "tile": "E7",
@@ -9829,6 +9783,21 @@
    "at": "3752.4, 2122.0",
    "from": "3752.3, 2129.0",
    "to": "3752.7, 2115.0",
+   "street": ""
+  },
+  {
+   "tile": "J2",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 24.3,
+   "period": 7.9,
+   "ampCm": 5.8,
+   "swings": 6,
+   "walks": 1,
+   "score": 140.2,
+   "at": "1844.7, -1483.6",
+   "from": "1838.7, -1473.4",
+   "to": "1851.0, -1494.2",
    "street": ""
   },
   {
@@ -10027,6 +9996,21 @@
    "street": "Rue Egide Van Ophem 1"
   },
   {
+   "tile": "D6",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 22.5,
+   "period": 6.1,
+   "ampCm": 6.1,
+   "swings": 5,
+   "walks": 4,
+   "score": 136.7,
+   "at": "-1408.3, 818.0",
+   "from": "-1404.0, 811.0",
+   "to": "-1413.6, 824.3",
+   "street": "Avenue Ilya Prigogine 14"
+  },
+  {
    "tile": "G7",
    "surface": "dtm",
    "kind": "path",
@@ -10057,6 +10041,21 @@
    "street": "Avenue d'Homborchveld 11A"
   },
   {
+   "tile": "M7",
+   "surface": "road",
+   "kind": "path",
+   "metres": 18.5,
+   "period": 6.3,
+   "ampCm": 7.4,
+   "swings": 6,
+   "walks": 1,
+   "score": 136.4,
+   "at": "3209.5, 1168.8",
+   "from": "3201.6, 1173.7",
+   "to": "3217.4, 1164.0",
+   "street": ""
+  },
+  {
    "tile": "F6",
    "surface": "dtm",
    "kind": "path",
@@ -10070,6 +10069,21 @@
    "from": "-168.4, 517.0",
    "to": "-188.9, 527.5",
    "street": "Rue du Repos 131"
+  },
+  {
+   "tile": "D10",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 20.3,
+   "period": 6.6,
+   "ampCm": 6.7,
+   "swings": 6,
+   "walks": 4,
+   "score": 136,
+   "at": "-1099.5, 2673.7",
+   "from": "-1108.3, 2676.8",
+   "to": "-1090.4, 2671.7",
+   "street": "Vieux Chemin 8"
   },
   {
    "tile": "B5",
@@ -10099,21 +10113,6 @@
    "at": "273.1, -1147.2",
    "from": "257.1, -1142.1",
    "to": "273.4, -1162.1",
-   "street": ""
-  },
-  {
-   "tile": "G3",
-   "surface": "road",
-   "kind": "path",
-   "metres": 20.3,
-   "period": 6.4,
-   "ampCm": 6.7,
-   "swings": 7,
-   "walks": 1,
-   "score": 135.7,
-   "at": "3.3, -908.9",
-   "from": "0.0, -899.5",
-   "to": "7.4, -918.3",
    "street": ""
   },
   {
@@ -10267,21 +10266,6 @@
    "street": "Rue Egide Van Ophem 16"
   },
   {
-   "tile": "F7",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 23,
-   "period": 8.2,
-   "ampCm": 5.8,
-   "swings": 6,
-   "walks": 2,
-   "score": 134.3,
-   "at": "-48.6, 1345.4",
-   "from": "-60.1, 1344.7",
-   "to": "-37.9, 1348.0",
-   "street": ""
-  },
-  {
    "tile": "J5",
    "surface": "dtm",
    "kind": "path",
@@ -10310,21 +10294,6 @@
    "from": "-316.8, -94.7",
    "to": "-300.1, -101.6",
    "street": ""
-  },
-  {
-   "tile": "F4",
-   "surface": "road",
-   "kind": "path",
-   "metres": 36.3,
-   "period": 7,
-   "ampCm": 3.7,
-   "swings": 10,
-   "walks": 1,
-   "score": 133.5,
-   "at": "-445.8, -293.8",
-   "from": "-444.0, -275.9",
-   "to": "-446.6, -312.0",
-   "street": "Rue Rouge 43"
   },
   {
    "tile": "G7",
@@ -10387,6 +10356,21 @@
    "street": ""
   },
   {
+   "tile": "J4",
+   "surface": "road",
+   "kind": "road",
+   "metres": 22.3,
+   "period": 7.5,
+   "ampCm": 6,
+   "swings": 6,
+   "walks": 1,
+   "score": 133.2,
+   "at": "1656.7, -275.2",
+   "from": "1658.0, -286.0",
+   "to": "1657.3, -264.0",
+   "street": "Chaussée de Waterloo 1103"
+  },
+  {
    "tile": "M8",
    "surface": "ground",
    "kind": "path",
@@ -10399,6 +10383,21 @@
    "at": "3375.6, 1835.6",
    "from": "3371.3, 1842.0",
    "to": "3379.9, 1829.2",
+   "street": ""
+  },
+  {
+   "tile": "D8",
+   "surface": "road",
+   "kind": "path",
+   "metres": 14,
+   "period": 5.4,
+   "ampCm": 9.5,
+   "swings": 5,
+   "walks": 1,
+   "score": 132.8,
+   "at": "-1494.7, 1734.9",
+   "from": "-1495.4, 1728.1",
+   "to": "-1492.5, 1741.6",
    "street": ""
   },
   {
@@ -10440,7 +10439,7 @@
    "ampCm": 7.1,
    "swings": 11,
    "walks": 1,
-   "score": 132.7,
+   "score": 132.5,
    "at": "3194.7, 1162.1",
    "from": "3186.3, 1166.2",
    "to": "3203.2, 1158.0",
@@ -10489,21 +10488,6 @@
    "at": "3168.7, 1175.1",
    "from": "3161.8, 1178.5",
    "to": "3175.9, 1171.5",
-   "street": ""
-  },
-  {
-   "tile": "F1",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 25,
-   "period": 7.8,
-   "ampCm": 5.3,
-   "swings": 6,
-   "walks": 2,
-   "score": 131.9,
-   "at": "-12.8, -1894.9",
-   "from": "-12.1, -1906.9",
-   "to": "-17.5, -1883.3",
    "street": ""
   },
   {
@@ -10567,36 +10551,6 @@
    "street": ""
   },
   {
-   "tile": "G2",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 18.8,
-   "period": 6.2,
-   "ampCm": 7,
-   "swings": 6,
-   "walks": 3,
-   "score": 131,
-   "at": "327.4, -1414.7",
-   "from": "333.9, -1422.1",
-   "to": "318.1, -1410.7",
-   "street": ""
-  },
-  {
-   "tile": "N5",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 18.5,
-   "period": 7.8,
-   "ampCm": 7.1,
-   "swings": 5,
-   "walks": 2,
-   "score": 130.7,
-   "at": "3785.1, 316.4",
-   "from": "3793.7, 318.2",
-   "to": "3776.1, 314.2",
-   "street": ""
-  },
-  {
    "tile": "C8",
    "surface": "dtm",
    "kind": "path",
@@ -10624,21 +10578,6 @@
    "at": "109.0, -968.2",
    "from": "120.8, -970.7",
    "to": "97.1, -965.6",
-   "street": ""
-  },
-  {
-   "tile": "D5",
-   "surface": "tram",
-   "kind": "road",
-   "metres": 35.8,
-   "period": 8.2,
-   "ampCm": 3.7,
-   "swings": 9,
-   "walks": 1,
-   "score": 130.5,
-   "at": "-1281.4, 184.1",
-   "from": "-1296.0, 194.1",
-   "to": "-1268.8, 171.3",
    "street": ""
   },
   {
@@ -10717,6 +10656,21 @@
    "street": "Avenue des Tilleuls 70"
   },
   {
+   "tile": "J3",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 31.3,
+   "period": 7.6,
+   "ampCm": 4.2,
+   "swings": 8,
+   "walks": 3,
+   "score": 129.8,
+   "at": "1978.1, -721.7",
+   "from": "1986.0, -734.9",
+   "to": "1970.4, -707.9",
+   "street": ""
+  },
+  {
    "tile": "F4",
    "surface": "ground",
    "kind": "path",
@@ -10745,21 +10699,6 @@
    "from": "2394.2, 115.0",
    "to": "2387.5, 85.0",
    "street": ""
-  },
-  {
-   "tile": "C6",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 23.8,
-   "period": 6.2,
-   "ampCm": 5.5,
-   "swings": 7,
-   "walks": 1,
-   "score": 129.6,
-   "at": "-1513.9, 722.4",
-   "from": "-1506.7, 731.2",
-   "to": "-1505.9, 713.5",
-   "street": "Avenue François Englert 9"
   },
   {
    "tile": "F9",
@@ -10852,21 +10791,6 @@
    "street": ""
   },
   {
-   "tile": "D10",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 18,
-   "period": 6.3,
-   "ampCm": 7.1,
-   "swings": 6,
-   "walks": 2,
-   "score": 128.4,
-   "at": "-1042.5, 2692.2",
-   "from": "-1046.8, 2684.9",
-   "to": "-1038.8, 2699.8",
-   "street": "Rue du Bourdon 378"
-  },
-  {
    "tile": "D8",
    "surface": "dtm",
    "kind": "path",
@@ -10955,21 +10879,6 @@
    "from": "-2129.8, -112.9",
    "to": "-2115.5, -128.2",
    "street": "Chaussée de Neerstalle 368"
-  },
-  {
-   "tile": "I5",
-   "surface": "road",
-   "kind": "road",
-   "metres": 30.5,
-   "period": 6.8,
-   "ampCm": 4.2,
-   "swings": 8,
-   "walks": 5,
-   "score": 127.5,
-   "at": "1222.8, 194.2",
-   "from": "1209.2, 201.1",
-   "to": "1233.7, 183.9",
-   "street": "Avenue Albert Lancaster 101"
   },
   {
    "tile": "N5",
@@ -11205,11 +11114,26 @@
    "ampCm": 5.1,
    "swings": 6,
    "walks": 1,
-   "score": 124.1,
+   "score": 124.2,
    "at": "1013.4, 782.2",
    "from": "1024.9, 778.9",
    "to": "1001.6, 785.6",
    "street": "Chemin Avijl 32"
+  },
+  {
+   "tile": "C3",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 16.5,
+   "period": 4.8,
+   "ampCm": 7.5,
+   "swings": 7,
+   "walks": 1,
+   "score": 124.1,
+   "at": "-1990.3, -931.1",
+   "from": "-1991.1, -922.9",
+   "to": "-1989.5, -939.3",
+   "street": ""
   },
   {
    "tile": "F5",
@@ -11377,6 +11301,21 @@
    "street": ""
   },
   {
+   "tile": "D4",
+   "surface": "sidewalk",
+   "kind": "path",
+   "metres": 25.5,
+   "period": 8.8,
+   "ampCm": 4.8,
+   "swings": 6,
+   "walks": 2,
+   "score": 122.1,
+   "at": "-1092.9, -36.8",
+   "from": "-1084.4, -46.3",
+   "to": "-1101.3, -27.2",
+   "street": ""
+  },
+  {
    "tile": "D6",
    "surface": "ground",
    "kind": "path",
@@ -11407,21 +11346,6 @@
    "street": "Rue du Repos 43"
   },
   {
-   "tile": "C3",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 18,
-   "period": 6,
-   "ampCm": 6.8,
-   "swings": 6,
-   "walks": 2,
-   "score": 121.6,
-   "at": "-1887.0, -933.0",
-   "from": "-1887.1, -924.0",
-   "to": "-1886.8, -942.0",
-   "street": ""
-  },
-  {
    "tile": "E7",
    "surface": "dtm",
    "kind": "path",
@@ -11435,21 +11359,6 @@
    "from": "-972.9, 1116.0",
    "to": "-954.3, 1091.7",
    "street": "Chaussée de Saint-Job 76"
-  },
-  {
-   "tile": "E2",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 19.3,
-   "period": 6.8,
-   "ampCm": 6.3,
-   "swings": 5,
-   "walks": 1,
-   "score": 121.3,
-   "at": "-872.9, -1095.5",
-   "from": "-874.7, -1086.1",
-   "to": "-870.9, -1105.0",
-   "street": "Chaussée d'Alsemberg 528"
   },
   {
    "tile": "L10",
@@ -11480,21 +11389,6 @@
    "from": "-627.1, 1087.1",
    "to": "-615.7, 1103.2",
    "street": "Rue Geleytsbeek 183"
-  },
-  {
-   "tile": "F1",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 21,
-   "period": 6.8,
-   "ampCm": 5.7,
-   "swings": 6,
-   "walks": 6,
-   "score": 120.3,
-   "at": "-135.3, -1576.9",
-   "from": "-131.5, -1586.4",
-   "to": "-139.2, -1567.2",
-   "street": "Avenue Brugmann 255"
   },
   {
    "tile": "M10",
@@ -11555,21 +11449,6 @@
    "from": "-1800.1, -365.0",
    "to": "-1794.0, -352.7",
    "street": "Rue Victor Allard 256"
-  },
-  {
-   "tile": "F4",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 30,
-   "period": 8.7,
-   "ampCm": 4,
-   "swings": 7,
-   "walks": 1,
-   "score": 119.2,
-   "at": "-460.7, -310.1",
-   "from": "-457.6, -295.7",
-   "to": "-466.3, -324.0",
-   "street": "Rue Rouge 41"
   },
   {
    "tile": "K5",
@@ -11647,6 +11526,21 @@
    "street": ""
   },
   {
+   "tile": "I7",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 17,
+   "period": 6,
+   "ampCm": 6.9,
+   "swings": 6,
+   "walks": 2,
+   "score": 118,
+   "at": "1367.7, 1380.0",
+   "from": "1375.3, 1376.3",
+   "to": "1360.0, 1383.8",
+   "street": "Avenue Jacques Pastur 88"
+  },
+  {
    "tile": "H6",
    "surface": "dtm",
    "kind": "path",
@@ -11675,6 +11569,21 @@
    "from": "3653.1, 778.8",
    "to": "3652.3, 760.8",
    "street": ""
+  },
+  {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "road",
+   "metres": 21,
+   "period": 6.4,
+   "ampCm": 5.6,
+   "swings": 7,
+   "walks": 1,
+   "score": 117.7,
+   "at": "-67.7, -150.5",
+   "from": "-75.4, -157.7",
+   "to": "-60.0, -143.4",
+   "street": "Chemin du Crabbegat 43A"
   },
   {
    "tile": "H10",
@@ -11737,18 +11646,18 @@
    "street": ""
   },
   {
-   "tile": "N6",
+   "tile": "M7",
    "surface": "road",
    "kind": "path",
-   "metres": 22.5,
-   "period": 7.9,
-   "ampCm": 5.2,
-   "swings": 5,
+   "metres": 17.5,
+   "period": 6.3,
+   "ampCm": 6.7,
+   "swings": 6,
    "walks": 1,
    "score": 117.2,
-   "at": "3727.5, 748.6",
-   "from": "3737.7, 743.7",
-   "to": "3717.4, 753.4",
+   "at": "3238.9, 1150.7",
+   "from": "3231.4, 1155.3",
+   "to": "3246.5, 1146.5",
    "street": ""
   },
   {
@@ -11812,21 +11721,6 @@
    "street": ""
   },
   {
-   "tile": "D5",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 18.8,
-   "period": 7.3,
-   "ampCm": 6.2,
-   "swings": 5,
-   "walks": 2,
-   "score": 116.2,
-   "at": "-1491.5, 284.9",
-   "from": "-1499.8, 289.0",
-   "to": "-1483.1, 280.9",
-   "street": ""
-  },
-  {
    "tile": "L9",
    "surface": "dtm",
    "kind": "path",
@@ -11854,6 +11748,21 @@
    "at": "-1829.3, -957.4",
    "from": "-1836.0, -950.7",
    "to": "-1821.7, -963.6",
+   "street": ""
+  },
+  {
+   "tile": "M7",
+   "surface": "road",
+   "kind": "path",
+   "metres": 14.8,
+   "period": 5.5,
+   "ampCm": 7.8,
+   "swings": 5,
+   "walks": 1,
+   "score": 115.4,
+   "at": "3106.7, 1195.4",
+   "from": "3100.0, 1198.1",
+   "to": "3114.0, 1194.0",
    "street": ""
   },
   {
@@ -11947,21 +11856,6 @@
    "street": "Rue Egide Van Ophem 1"
   },
   {
-   "tile": "D8",
-   "surface": "road",
-   "kind": "path",
-   "metres": 16.5,
-   "period": 7.1,
-   "ampCm": 6.9,
-   "swings": 5,
-   "walks": 1,
-   "score": 114.3,
-   "at": "-1471.4, 1695.9",
-   "from": "-1470.0, 1688.0",
-   "to": "-1471.9, 1704.1",
-   "street": ""
-  },
-  {
    "tile": "G10",
    "surface": "dtm",
    "kind": "path",
@@ -12022,6 +11916,21 @@
    "street": ""
   },
   {
+   "tile": "L7",
+   "surface": "road",
+   "kind": "path",
+   "metres": 16,
+   "period": 6.8,
+   "ampCm": 7.1,
+   "swings": 5,
+   "walks": 1,
+   "score": 113.8,
+   "at": "2951.6, 1266.9",
+   "from": "2944.5, 1270.5",
+   "to": "2958.8, 1263.4",
+   "street": ""
+  },
+  {
    "tile": "K6",
    "surface": "dtm",
    "kind": "path",
@@ -12035,6 +11944,21 @@
    "from": "2474.4, 538.5",
    "to": "2467.9, 507.2",
    "street": ""
+  },
+  {
+   "tile": "B6",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 33,
+   "period": 6.3,
+   "ampCm": 3.4,
+   "swings": 11,
+   "walks": 3,
+   "score": 112.5,
+   "at": "-2060.3, 647.0",
+   "from": "-2051.9, 632.8",
+   "to": "-2069.0, 661.1",
+   "street": "Rue de l'Etoile 161A"
   },
   {
    "tile": "D6",
@@ -12052,6 +11976,21 @@
    "street": "Rue Egide Van Ophem 28"
   },
   {
+   "tile": "L10",
+   "surface": "road",
+   "kind": "path",
+   "metres": 20.3,
+   "period": 5.4,
+   "ampCm": 5.6,
+   "swings": 8,
+   "walks": 1,
+   "score": 112.5,
+   "at": "2888.6, 2552.8",
+   "from": "2893.0, 2543.8",
+   "to": "2884.1, 2562.0",
+   "street": ""
+  },
+  {
    "tile": "F4",
    "surface": "ground",
    "kind": "path",
@@ -12065,21 +12004,6 @@
    "from": "-72.2, -474.6",
    "to": "-75.5, -485.7",
    "street": "Avenue des Statuaires 9"
-  },
-  {
-   "tile": "F4",
-   "surface": "sidewalk",
-   "kind": "path",
-   "metres": 22,
-   "period": 8,
-   "ampCm": 5.1,
-   "swings": 5,
-   "walks": 4,
-   "score": 112.1,
-   "at": "-480.2, -357.5",
-   "from": "-485.9, -366.3",
-   "to": "-475.3, -347.9",
-   "street": "Rue Rouge 39"
   },
   {
    "tile": "E7",
@@ -12217,21 +12141,6 @@
    "street": ""
   },
   {
-   "tile": "D5",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 33.8,
-   "period": 8.7,
-   "ampCm": 3.3,
-   "swings": 8,
-   "walks": 1,
-   "score": 110,
-   "at": "-1275.6, 170.1",
-   "from": "-1264.3, 157.7",
-   "to": "-1287.8, 182.3",
-   "street": ""
-  },
-  {
    "tile": "M10",
    "surface": "dtm",
    "kind": "path",
@@ -12334,21 +12243,6 @@
    "at": "1008.7, 922.5",
    "from": "1001.5, 925.3",
    "to": "1015.4, 918.5",
-   "street": ""
-  },
-  {
-   "tile": "G2",
-   "surface": "road",
-   "kind": "path",
-   "metres": 17.5,
-   "period": 6.3,
-   "ampCm": 6.2,
-   "swings": 5,
-   "walks": 1,
-   "score": 108.6,
-   "at": "95.1, -1056.8",
-   "from": "90.5, -1049.4",
-   "to": "99.6, -1064.3",
    "street": ""
   },
   {
@@ -12472,6 +12366,21 @@
    "street": "Chaussée de Waterloo 1147C"
   },
   {
+   "tile": "D1",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 28.3,
+   "period": 6.2,
+   "ampCm": 3.8,
+   "swings": 9,
+   "walks": 4,
+   "score": 107.3,
+   "at": "-1410.9, -1536.4",
+   "from": "-1405.3, -1549.3",
+   "to": "-1416.0, -1523.2",
+   "street": ""
+  },
+  {
    "tile": "N5",
    "surface": "sidewalk",
    "kind": "kerb+",
@@ -12500,6 +12409,21 @@
    "from": "2938.4, 2131.0",
    "to": "2933.0, 2152.9",
    "street": ""
+  },
+  {
+   "tile": "F5",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 34.5,
+   "period": 6.8,
+   "ampCm": 3.1,
+   "swings": 10,
+   "walks": 3,
+   "score": 106.4,
+   "at": "-116.8, 290.3",
+   "from": "-132.1, 298.3",
+   "to": "-101.5, 282.3",
+   "street": "Dieweg 121"
   },
   {
    "tile": "M9",
@@ -12637,6 +12561,21 @@
    "street": "Chaussée de Waterloo 935"
   },
   {
+   "tile": "D4",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 19,
+   "period": 7.9,
+   "ampCm": 5.5,
+   "swings": 5,
+   "walks": 1,
+   "score": 105,
+   "at": "-1192.5, -21.2",
+   "from": "-1200.1, -15.5",
+   "to": "-1184.8, -26.8",
+   "street": "Avenue Adolphe Wansart 6"
+  },
+  {
    "tile": "E8",
    "surface": "dtm",
    "kind": "path",
@@ -12667,19 +12606,19 @@
    "street": ""
   },
   {
-   "tile": "E2",
+   "tile": "F4",
    "surface": "road",
-   "kind": "kerb-",
-   "metres": 21.8,
-   "period": 8.1,
-   "ampCm": 4.8,
+   "kind": "path",
+   "metres": 21.5,
+   "period": 9.1,
+   "ampCm": 4.9,
    "swings": 5,
    "walks": 1,
-   "score": 104.4,
-   "at": "-873.6, -1129.3",
-   "from": "-872.0, -1140.0",
-   "to": "-876.0, -1118.5",
-   "street": "Chaussée d'Alsemberg 575"
+   "score": 104.6,
+   "at": "-446.8, -325.3",
+   "from": "-446.6, -314.5",
+   "to": "-446.7, -336.0",
+   "street": "Rue Rouge 41"
   },
   {
    "tile": "F8",
@@ -12712,21 +12651,6 @@
    "street": ""
   },
   {
-   "tile": "G4",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 22,
-   "period": 8.6,
-   "ampCm": 4.7,
-   "swings": 5,
-   "walks": 1,
-   "score": 104.2,
-   "at": "67.2, -56.6",
-   "from": "74.2, -48.0",
-   "to": "60.6, -65.4",
-   "street": "Avenue Kamerdelle 85"
-  },
-  {
    "tile": "K6",
    "surface": "dtm",
    "kind": "path",
@@ -12739,6 +12663,21 @@
    "at": "2337.6, 510.9",
    "from": "2342.8, 517.6",
    "to": "2332.3, 503.9",
+   "street": ""
+  },
+  {
+   "tile": "G3",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 30,
+   "period": 6.6,
+   "ampCm": 3.5,
+   "swings": 9,
+   "walks": 4,
+   "score": 104,
+   "at": "254.8, -579.2",
+   "from": "239.9, -578.1",
+   "to": "269.8, -580.3",
    "street": ""
   },
   {
@@ -12847,6 +12786,21 @@
    "street": "Avenue de Mercure 15A"
   },
   {
+   "tile": "D3",
+   "surface": "square",
+   "kind": "kerb+",
+   "metres": 24.3,
+   "period": 8.8,
+   "ampCm": 4.2,
+   "swings": 5,
+   "walks": 3,
+   "score": 102.8,
+   "at": "-1104.6, -511.9",
+   "from": "-1116.0, -512.8",
+   "to": "-1092.9, -510.8",
+   "street": "Place Jean Vander Elst 13"
+  },
+  {
    "tile": "I7",
    "surface": "dtm",
    "kind": "path",
@@ -12892,21 +12846,6 @@
    "street": ""
   },
   {
-   "tile": "F7",
-   "surface": "road",
-   "kind": "path",
-   "metres": 27,
-   "period": 7.5,
-   "ampCm": 3.8,
-   "swings": 7,
-   "walks": 1,
-   "score": 102.5,
-   "at": "-194.2, 1369.6",
-   "from": "-193.4, 1356.1",
-   "to": "-194.9, 1383.1",
-   "street": ""
-  },
-  {
    "tile": "G7",
    "surface": "sidewalk",
    "kind": "kerb+",
@@ -12934,21 +12873,6 @@
    "at": "-124.8, 488.5",
    "from": "-117.4, 484.7",
    "to": "-132.3, 492.3",
-   "street": ""
-  },
-  {
-   "tile": "G2",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 21.5,
-   "period": 9.3,
-   "ampCm": 4.8,
-   "swings": 5,
-   "walks": 2,
-   "score": 102.2,
-   "at": "296.1, -1416.6",
-   "from": "306.0, -1411.1",
-   "to": "289.8, -1426.2",
    "street": ""
   },
   {
@@ -12997,21 +12921,6 @@
    "street": ""
   },
   {
-   "tile": "G7",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 21.8,
-   "period": 6.5,
-   "ampCm": 4.7,
-   "swings": 7,
-   "walks": 2,
-   "score": 102,
-   "at": "40.8, 1090.3",
-   "from": "38.4, 1100.7",
-   "to": "44.1, 1079.8",
-   "street": ""
-  },
-  {
    "tile": "G2",
    "surface": "dtm",
    "kind": "path",
@@ -13057,21 +12966,6 @@
    "street": "Rue de Stalle 25A"
   },
   {
-   "tile": "J7",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 23.3,
-   "period": 7.4,
-   "ampCm": 4.3,
-   "swings": 5,
-   "walks": 4,
-   "score": 101.1,
-   "at": "1569.5, 1203.5",
-   "from": "1560.4, 1206.2",
-   "to": "1578.0, 1207.7",
-   "street": "Avenue d'Orbaix 65"
-  },
-  {
    "tile": "G2",
    "surface": "dtm",
    "kind": "path",
@@ -13100,21 +12994,6 @@
    "from": "-1441.3, 1171.7",
    "to": "-1418.2, 1173.0",
    "street": ""
-  },
-  {
-   "tile": "E2",
-   "surface": "road",
-   "kind": "path",
-   "metres": 20.3,
-   "period": 7.2,
-   "ampCm": 5,
-   "swings": 6,
-   "walks": 1,
-   "score": 100.7,
-   "at": "-886.2, -1168.0",
-   "from": "-896.1, -1169.6",
-   "to": "-876.1, -1166.3",
-   "street": "Chaussée d'Alsemberg 563"
   },
   {
    "tile": "F8",
@@ -13192,21 +13071,6 @@
    "street": ""
   },
   {
-   "tile": "D1",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 20,
-   "period": 7.1,
-   "ampCm": 5,
-   "swings": 5,
-   "walks": 3,
-   "score": 100.1,
-   "at": "-1438.0, -1556.0",
-   "from": "-1429.4, -1561.2",
-   "to": "-1447.2, -1559.9",
-   "street": ""
-  },
-  {
    "tile": "D8",
    "surface": "road",
    "kind": "road",
@@ -13219,21 +13083,6 @@
    "at": "-1453.2, 1809.6",
    "from": "-1460.2, 1819.6",
    "to": "-1445.1, 1800.1",
-   "street": ""
-  },
-  {
-   "tile": "N5",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 34.3,
-   "period": 7.6,
-   "ampCm": 2.9,
-   "swings": 9,
-   "walks": 1,
-   "score": 99.7,
-   "at": "3775.4, 295.9",
-   "from": "3761.9, 285.6",
-   "to": "3789.4, 305.9",
    "street": ""
   },
   {
@@ -13282,21 +13131,6 @@
    "street": ""
   },
   {
-   "tile": "D1",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 20,
-   "period": 6.4,
-   "ampCm": 5,
-   "swings": 6,
-   "walks": 1,
-   "score": 99.4,
-   "at": "-1132.7, -1818.1",
-   "from": "-1125.1, -1825.1",
-   "to": "-1135.5, -1807.5",
-   "street": ""
-  },
-  {
    "tile": "D6",
    "surface": "ground",
    "kind": "path",
@@ -13342,6 +13176,21 @@
    "street": ""
   },
   {
+   "tile": "L5",
+   "surface": "road",
+   "kind": "path",
+   "metres": 24.8,
+   "period": 6,
+   "ampCm": 4,
+   "swings": 9,
+   "walks": 1,
+   "score": 99.2,
+   "at": "2839.8, 180.4",
+   "from": "2840.9, 192.6",
+   "to": "2838.7, 167.9",
+   "street": ""
+  },
+  {
    "tile": "F8",
    "surface": "road",
    "kind": "kerb-",
@@ -13357,36 +13206,6 @@
    "street": "Place Olivier Strebelle 3"
   },
   {
-   "tile": "D7",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 19.3,
-   "period": 6.5,
-   "ampCm": 5.1,
-   "swings": 6,
-   "walks": 1,
-   "score": 98.3,
-   "at": "-1084.2, 1083.2",
-   "from": "-1081.0, 1092.2",
-   "to": "-1087.5, 1074.0",
-   "street": "Rue Engeland 42"
-  },
-  {
-   "tile": "F3",
-   "surface": "road",
-   "kind": "road",
-   "metres": 21.3,
-   "period": 9.5,
-   "ampCm": 4.6,
-   "swings": 5,
-   "walks": 1,
-   "score": 98.1,
-   "at": "-425.7, -843.7",
-   "from": "-429.6, -834.0",
-   "to": "-421.7, -853.7",
-   "street": "Avenue Brugmann 366"
-  },
-  {
    "tile": "K11",
    "surface": "dtm",
    "kind": "path",
@@ -13400,21 +13219,6 @@
    "from": "2485.5, 3147.1",
    "to": "2472.0, 3175.0",
    "street": ""
-  },
-  {
-   "tile": "F6",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 14.3,
-   "period": 6.1,
-   "ampCm": 6.9,
-   "swings": 5,
-   "walks": 1,
-   "score": 98,
-   "at": "-132.3, 680.9",
-   "from": "-139.3, 681.8",
-   "to": "-125.4, 678.1",
-   "street": "Chaussée de Saint-Job 334"
   },
   {
    "tile": "G7",
@@ -13492,6 +13296,21 @@
    "street": "Rue du Repos 116"
   },
   {
+   "tile": "F2",
+   "surface": "sidewalk",
+   "kind": "path",
+   "metres": 25.3,
+   "period": 8,
+   "ampCm": 3.8,
+   "swings": 6,
+   "walks": 1,
+   "score": 96.4,
+   "at": "-313.4, -1098.2",
+   "from": "-318.0, -1086.6",
+   "to": "-308.6, -1110.0",
+   "street": "Avenue Brugmann 377"
+  },
+  {
    "tile": "F6",
    "surface": "dtm",
    "kind": "path",
@@ -13564,6 +13383,21 @@
    "at": "183.5, 1026.5",
    "from": "179.6, 1015.1",
    "to": "190.4, 1036.9",
+   "street": ""
+  },
+  {
+   "tile": "L5",
+   "surface": "road",
+   "kind": "path",
+   "metres": 13.5,
+   "period": 4.5,
+   "ampCm": 7.1,
+   "swings": 6,
+   "walks": 1,
+   "score": 95.2,
+   "at": "2840.2, 483.0",
+   "from": "2834.1, 486.0",
+   "to": "2846.2, 480.0",
    "street": ""
   },
   {
@@ -13642,21 +13476,6 @@
    "street": ""
   },
   {
-   "tile": "D7",
-   "surface": "ground",
-   "kind": "path",
-   "metres": 7.8,
-   "period": 3.3,
-   "ampCm": 12.2,
-   "swings": 5,
-   "walks": 1,
-   "score": 94.6,
-   "at": "-1339.8, 1103.6",
-   "from": "-1343.3, 1104.8",
-   "to": "-1335.9, 1102.6",
-   "street": ""
-  },
-  {
    "tile": "J8",
    "surface": "sidewalk",
    "kind": "kerb+",
@@ -13685,6 +13504,21 @@
    "from": "-409.9, -1849.7",
    "to": "-437.9, -1832.2",
    "street": ""
+  },
+  {
+   "tile": "F4",
+   "surface": "road",
+   "kind": "path",
+   "metres": 16.5,
+   "period": 6.9,
+   "ampCm": 5.7,
+   "swings": 5,
+   "walks": 1,
+   "score": 93.9,
+   "at": "-102.8, -176.8",
+   "from": "-109.6, -181.5",
+   "to": "-96.0, -172.1",
+   "street": "Chemin du Crabbegat 41"
   },
   {
    "tile": "I6",
@@ -13747,6 +13581,21 @@
    "street": ""
   },
   {
+   "tile": "E2",
+   "surface": "road",
+   "kind": "path",
+   "metres": 20.3,
+   "period": 7.2,
+   "ampCm": 4.6,
+   "swings": 6,
+   "walks": 1,
+   "score": 93.4,
+   "at": "-886.2, -1168.0",
+   "from": "-896.1, -1169.6",
+   "to": "-876.1, -1166.3",
+   "street": "Chaussée d'Alsemberg 563"
+  },
+  {
    "tile": "I7",
    "surface": "dtm",
    "kind": "path",
@@ -13777,21 +13626,6 @@
    "street": ""
   },
   {
-   "tile": "F4",
-   "surface": "road",
-   "kind": "path",
-   "metres": 16.5,
-   "period": 5.9,
-   "ampCm": 5.6,
-   "swings": 6,
-   "walks": 1,
-   "score": 93.2,
-   "at": "-418.8, -143.6",
-   "from": "-418.7, -151.9",
-   "to": "-420.1, -135.7",
-   "street": ""
-  },
-  {
    "tile": "K5",
    "surface": "dtm",
    "kind": "path",
@@ -13804,6 +13638,21 @@
    "at": "2411.2, 201.3",
    "from": "2413.4, 214.4",
    "to": "2409.0, 188.0",
+   "street": ""
+  },
+  {
+   "tile": "F7",
+   "surface": "road",
+   "kind": "path",
+   "metres": 18.5,
+   "period": 4.5,
+   "ampCm": 5,
+   "swings": 8,
+   "walks": 1,
+   "score": 93.1,
+   "at": "-109.1, 1203.8",
+   "from": "-116.2, 1209.7",
+   "to": "-102.0, 1197.9",
    "street": ""
   },
   {
@@ -13894,21 +13743,6 @@
    "at": "-1104.5, -78.5",
    "from": "-1111.0, -75.3",
    "to": "-1098.0, -81.7",
-   "street": ""
-  },
-  {
-   "tile": "F7",
-   "surface": "road",
-   "kind": "path",
-   "metres": 18.8,
-   "period": 6.3,
-   "ampCm": 4.9,
-   "swings": 6,
-   "walks": 1,
-   "score": 92.5,
-   "at": "-107.2, 1370.5",
-   "from": "-106.7, 1361.2",
-   "to": "-107.7, 1380.0",
    "street": ""
   },
   {
@@ -14047,6 +13881,21 @@
    "street": ""
   },
   {
+   "tile": "C3",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 19.8,
+   "period": 5.3,
+   "ampCm": 4.6,
+   "swings": 6,
+   "walks": 2,
+   "score": 90.9,
+   "at": "-1737.8, -652.2",
+   "from": "-1739.3, -644.5",
+   "to": "-1731.8, -657.2",
+   "street": "Avenue du Jonc 35"
+  },
+  {
    "tile": "I6",
    "surface": "dtm",
    "kind": "path",
@@ -14060,21 +13909,6 @@
    "from": "1165.1, 827.8",
    "to": "1149.1, 827.1",
    "street": "Montagne de Saint-Job 92"
-  },
-  {
-   "tile": "D6",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 21.5,
-   "period": 6.7,
-   "ampCm": 4.2,
-   "swings": 7,
-   "walks": 3,
-   "score": 90.7,
-   "at": "-1105.8, 621.8",
-   "from": "-1109.8, 631.8",
-   "to": "-1101.8, 611.9",
-   "street": "Chaussée d'Alsemberg 954"
   },
   {
    "tile": "D9",
@@ -14122,6 +13956,21 @@
    "street": ""
   },
   {
+   "tile": "D1",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 19.5,
+   "period": 6.7,
+   "ampCm": 4.6,
+   "swings": 6,
+   "walks": 3,
+   "score": 90.6,
+   "at": "-1437.6, -1557.1",
+   "from": "-1430.0, -1562.0",
+   "to": "-1446.0, -1560.1",
+   "street": ""
+  },
+  {
    "tile": "H6",
    "surface": "ground",
    "kind": "path",
@@ -14135,6 +13984,21 @@
    "from": "865.2, 553.4",
    "to": "873.8, 548.8",
    "street": ""
+  },
+  {
+   "tile": "G4",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 23.3,
+   "period": 6.3,
+   "ampCm": 3.9,
+   "swings": 7,
+   "walks": 6,
+   "score": 90.3,
+   "at": "174.7, -427.3",
+   "from": "186.0, -429.7",
+   "to": "163.2, -424.8",
+   "street": "Rue Groeselenberg 51"
   },
   {
    "tile": "C6",
@@ -14212,6 +14076,21 @@
    "street": ""
   },
   {
+   "tile": "J7",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 23.3,
+   "period": 7.7,
+   "ampCm": 3.8,
+   "swings": 6,
+   "walks": 3,
+   "score": 89.3,
+   "at": "1572.1, 1201.4",
+   "from": "1560.1, 1203.6",
+   "to": "1582.1, 1209.0",
+   "street": "Avenue d'Orbaix 34"
+  },
+  {
    "tile": "F9",
    "surface": "dtm",
    "kind": "path",
@@ -14270,21 +14149,6 @@
    "from": "2720.9, 1379.6",
    "to": "2734.0, 1373.3",
    "street": ""
-  },
-  {
-   "tile": "F2",
-   "surface": "sidewalk",
-   "kind": "path",
-   "metres": 25.3,
-   "period": 8,
-   "ampCm": 3.5,
-   "swings": 6,
-   "walks": 1,
-   "score": 88.5,
-   "at": "-313.4, -1098.2",
-   "from": "-318.0, -1086.6",
-   "to": "-308.6, -1110.0",
-   "street": "Avenue Brugmann 377"
   },
   {
    "tile": "M5",
@@ -14347,19 +14211,19 @@
    "street": ""
   },
   {
-   "tile": "J2",
+   "tile": "J5",
    "surface": "sidewalk",
    "kind": "kerb+",
-   "metres": 26.3,
-   "period": 6.5,
-   "ampCm": 3.3,
-   "swings": 8,
+   "metres": 19,
+   "period": 8.1,
+   "ampCm": 4.6,
+   "swings": 5,
    "walks": 1,
-   "score": 87.4,
-   "at": "1844.7, -1485.1",
-   "from": "1838.2, -1473.9",
-   "to": "1851.4, -1496.5",
-   "street": ""
+   "score": 87.5,
+   "at": "1980.2, 460.6",
+   "from": "1971.8, 456.0",
+   "to": "1988.8, 464.8",
+   "street": "Avenue des Chênes 67"
   },
   {
    "tile": "L11",
@@ -14375,6 +14239,21 @@
    "from": "2552.6, 3406.5",
    "to": "2575.0, 3410.2",
    "street": ""
+  },
+  {
+   "tile": "F9",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 14.3,
+   "period": 6,
+   "ampCm": 6.1,
+   "swings": 5,
+   "walks": 1,
+   "score": 87.3,
+   "at": "-174.5, 2031.2",
+   "from": "-169.0, 2035.3",
+   "to": "-180.1, 2026.6",
+   "street": "Avenue de la Gazelle 1"
   },
   {
    "tile": "D9",
@@ -14405,6 +14284,21 @@
    "from": "3658.0, 798.9",
    "to": "3675.8, 820.3",
    "street": ""
+  },
+  {
+   "tile": "F2",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 15.3,
+   "period": 6.6,
+   "ampCm": 5.7,
+   "swings": 5,
+   "walks": 5,
+   "score": 86.8,
+   "at": "-276.9, -1240.7",
+   "from": "-274.0, -1247.6",
+   "to": "-279.8, -1233.8",
+   "street": "Avenue de Messidor 203"
   },
   {
    "tile": "H10",
@@ -14572,21 +14466,6 @@
    "street": ""
   },
   {
-   "tile": "I2",
-   "surface": "road",
-   "kind": "path",
-   "metres": 23.8,
-   "period": 8.5,
-   "ampCm": 3.6,
-   "swings": 5,
-   "walks": 1,
-   "score": 86,
-   "at": "1277.9, -1444.3",
-   "from": "1289.4, -1446.6",
-   "to": "1266.2, -1441.9",
-   "street": "Avenue Winston Churchill 248"
-  },
-  {
    "tile": "L11",
    "surface": "dtm",
    "kind": "path",
@@ -14692,21 +14571,6 @@
    "street": ""
   },
   {
-   "tile": "D8",
-   "surface": "road",
-   "kind": "road",
-   "metres": 30,
-   "period": 8.9,
-   "ampCm": 2.8,
-   "swings": 7,
-   "walks": 1,
-   "score": 85.1,
-   "at": "-1412.3, 1830.7",
-   "from": "-1400.6, 1821.3",
-   "to": "-1423.9, 1840.2",
-   "street": ""
-  },
-  {
    "tile": "F5",
    "surface": "dtm",
    "kind": "path",
@@ -14780,21 +14644,6 @@
    "from": "-1422.4, 1909.9",
    "to": "-1413.0, 1886.2",
    "street": ""
-  },
-  {
-   "tile": "D3",
-   "surface": "square",
-   "kind": "kerb+",
-   "metres": 24.3,
-   "period": 8,
-   "ampCm": 3.5,
-   "swings": 6,
-   "walks": 2,
-   "score": 84.2,
-   "at": "-1104.2, -513.4",
-   "from": "-1116.1, -514.3",
-   "to": "-1092.0, -512.2",
-   "street": "Place Jean Vander Elst 13"
   },
   {
    "tile": "F6",
@@ -14917,21 +14766,6 @@
    "street": "Rue de Wansijn 4"
   },
   {
-   "tile": "D7",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 25.5,
-   "period": 8.4,
-   "ampCm": 3.2,
-   "swings": 6,
-   "walks": 1,
-   "score": 82.7,
-   "at": "-1164.7, 1157.1",
-   "from": "-1156.3, 1147.5",
-   "to": "-1173.3, 1166.6",
-   "street": "Rue du Château d'Or 16"
-  },
-  {
    "tile": "F6",
    "surface": "dtm",
    "kind": "path",
@@ -14960,21 +14794,6 @@
    "from": "-475.7, 2459.3",
    "to": "-469.3, 2476.9",
    "street": "Rue des Cabris 7"
-  },
-  {
-   "tile": "D6",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 22.5,
-   "period": 9,
-   "ampCm": 3.7,
-   "swings": 5,
-   "walks": 2,
-   "score": 82.5,
-   "at": "-1406.4, 816.0",
-   "from": "-1401.9, 806.1",
-   "to": "-1413.2, 824.7",
-   "street": "Avenue Ilya Prigogine 14"
   },
   {
    "tile": "L6",
@@ -15067,6 +14886,21 @@
    "street": "Avenue du Jonc 14"
   },
   {
+   "tile": "F4",
+   "surface": "ground",
+   "kind": "path",
+   "metres": 12.3,
+   "period": 2.5,
+   "ampCm": 6.6,
+   "swings": 10,
+   "walks": 1,
+   "score": 81,
+   "at": "-394.9, -393.4",
+   "from": "-397.7, -398.7",
+   "to": "-392.0, -387.9",
+   "street": "Chemin du Crabbegat 8"
+  },
+  {
    "tile": "K6",
    "surface": "ground",
    "kind": "path",
@@ -15124,21 +14958,6 @@
    "at": "-273.7, 1311.4",
    "from": "-276.3, 1309.0",
    "to": "-271.0, 1314.0",
-   "street": ""
-  },
-  {
-   "tile": "F4",
-   "surface": "road",
-   "kind": "path",
-   "metres": 13.8,
-   "period": 5.9,
-   "ampCm": 5.9,
-   "swings": 5,
-   "walks": 1,
-   "score": 80.6,
-   "at": "-413.0, -174.9",
-   "from": "-411.4, -181.5",
-   "to": "-414.6, -168.1",
    "street": ""
   },
   {
@@ -15232,36 +15051,6 @@
    "street": ""
   },
   {
-   "tile": "G5",
-   "surface": "sidewalk",
-   "kind": "path",
-   "metres": 18.3,
-   "period": 7.6,
-   "ampCm": 4.4,
-   "swings": 5,
-   "walks": 1,
-   "score": 79.6,
-   "at": "479.9, 488.1",
-   "from": "488.9, 487.5",
-   "to": "470.7, 488.6",
-   "street": ""
-  },
-  {
-   "tile": "J2",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 19.8,
-   "period": 6.7,
-   "ampCm": 4,
-   "swings": 6,
-   "walks": 1,
-   "score": 79.3,
-   "at": "1870.4, -1325.7",
-   "from": "1874.9, -1317.0",
-   "to": "1866.0, -1334.6",
-   "street": ""
-  },
-  {
    "tile": "F3",
    "surface": "dtm",
    "kind": "path",
@@ -15292,6 +15081,21 @@
    "street": "Avenue Montjoie 171"
   },
   {
+   "tile": "F2",
+   "surface": "sidewalk",
+   "kind": "path",
+   "metres": 18.5,
+   "period": 6.3,
+   "ampCm": 4.3,
+   "swings": 6,
+   "walks": 1,
+   "score": 78.7,
+   "at": "-226.8, -1366.8",
+   "from": "-223.4, -1375.4",
+   "to": "-230.3, -1358.2",
+   "street": "Avenue Brugmann 299"
+  },
+  {
    "tile": "G7",
    "surface": "dtm",
    "kind": "path",
@@ -15305,6 +15109,21 @@
    "from": "388.9, 1397.6",
    "to": "372.3, 1407.7",
    "street": ""
+  },
+  {
+   "tile": "D7",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 19.3,
+   "period": 6.5,
+   "ampCm": 4.1,
+   "swings": 6,
+   "walks": 1,
+   "score": 78.6,
+   "at": "-1084.2, 1083.2",
+   "from": "-1081.0, 1092.2",
+   "to": "-1087.5, 1074.0",
+   "street": "Rue Engeland 42"
   },
   {
    "tile": "F9",
@@ -15322,19 +15141,19 @@
    "street": "Avenue des Belettes 15"
   },
   {
-   "tile": "F4",
-   "surface": "ground",
+   "tile": "N11",
+   "surface": "road",
    "kind": "path",
-   "metres": 12.3,
-   "period": 2.5,
-   "ampCm": 6.4,
-   "swings": 10,
+   "metres": 18.3,
+   "period": 5.8,
+   "ampCm": 4.3,
+   "swings": 6,
    "walks": 1,
-   "score": 78.4,
-   "at": "-394.9, -393.4",
-   "from": "-397.7, -398.7",
-   "to": "-392.0, -387.9",
-   "street": "Chemin du Crabbegat 8"
+   "score": 78.6,
+   "at": "3976.0, 3159.2",
+   "from": "3974.6, 3168.1",
+   "to": "3977.5, 3150.1",
+   "street": ""
   },
   {
    "tile": "G5",
@@ -15395,6 +15214,21 @@
    "from": "666.1, -1247.1",
    "to": "676.9, -1242.6",
    "street": "Avenue Montjoie 173"
+  },
+  {
+   "tile": "E8",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 17.5,
+   "period": 6.3,
+   "ampCm": 4.4,
+   "swings": 6,
+   "walks": 1,
+   "score": 77.2,
+   "at": "-679.0, 1893.0",
+   "from": "-671.9, 1888.4",
+   "to": "-687.0, 1896.0",
+   "street": "Avenue d'Homborchveld 126"
   },
   {
    "tile": "H6",
@@ -15532,21 +15366,6 @@
    "street": ""
   },
   {
-   "tile": "L5",
-   "surface": "road",
-   "kind": "path",
-   "metres": 18.8,
-   "period": 6.7,
-   "ampCm": 4,
-   "swings": 5,
-   "walks": 1,
-   "score": 75.6,
-   "at": "2599.2, 421.3",
-   "from": "2608.0, 424.1",
-   "to": "2590.2, 418.2",
-   "street": ""
-  },
-  {
    "tile": "E7",
    "surface": "dtm",
    "kind": "path",
@@ -15559,21 +15378,6 @@
    "at": "-841.0, 1238.4",
    "from": "-841.4, 1247.1",
    "to": "-840.5, 1229.4",
-   "street": ""
-  },
-  {
-   "tile": "N11",
-   "surface": "road",
-   "kind": "path",
-   "metres": 18.3,
-   "period": 5.8,
-   "ampCm": 4.1,
-   "swings": 6,
-   "walks": 1,
-   "score": 75.5,
-   "at": "3976.0, 3159.2",
-   "from": "3974.6, 3168.1",
-   "to": "3977.5, 3150.1",
    "street": ""
   },
   {
@@ -15605,21 +15409,6 @@
    "from": "306.0, -1181.9",
    "to": "308.0, -1179.5",
    "street": "Avenue Léo Errera 47"
-  },
-  {
-   "tile": "D6",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 22.3,
-   "period": 6.3,
-   "ampCm": 3.4,
-   "swings": 7,
-   "walks": 1,
-   "score": 74.6,
-   "at": "-1175.3, 790.5",
-   "from": "-1178.9, 801.0",
-   "to": "-1171.1, 780.0",
-   "street": "Chaussée d'Alsemberg 998"
   },
   {
    "tile": "D4",
@@ -15682,21 +15471,6 @@
    "street": "Avenue du Directoire 87"
   },
   {
-   "tile": "J5",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 19,
-   "period": 8.1,
-   "ampCm": 3.9,
-   "swings": 5,
-   "walks": 1,
-   "score": 74.1,
-   "at": "1980.2, 460.6",
-   "from": "1971.8, 456.0",
-   "to": "1988.8, 464.8",
-   "street": "Avenue des Chênes 67"
-  },
-  {
    "tile": "E7",
    "surface": "dtm",
    "kind": "path",
@@ -15710,6 +15484,21 @@
    "from": "-723.1, 1319.9",
    "to": "-723.6, 1310.9",
    "street": "Rue Engeland 196"
+  },
+  {
+   "tile": "F5",
+   "surface": "ground",
+   "kind": "path",
+   "metres": 9,
+   "period": 3.9,
+   "ampCm": 8.2,
+   "swings": 5,
+   "walks": 1,
+   "score": 73.6,
+   "at": "-472.7, 5.0",
+   "from": "-470.7, 9.1",
+   "to": "-474.6, 0.9",
+   "street": ""
   },
   {
    "tile": "L11",
@@ -15757,21 +15546,6 @@
    "street": "Rue Victor Allard 256"
   },
   {
-   "tile": "E4",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 18.8,
-   "period": 7.1,
-   "ampCm": 3.9,
-   "swings": 5,
-   "walks": 1,
-   "score": 73.2,
-   "at": "-927.5, -430.1",
-   "from": "-935.9, -426.3",
-   "to": "-917.9, -433.3",
-   "street": "Chaussée d'Alsemberg 771A"
-  },
-  {
    "tile": "D9",
    "surface": "ground",
    "kind": "path",
@@ -15787,79 +15561,19 @@
    "street": ""
   },
   {
-   "tile": "L5",
-   "surface": "road",
-   "kind": "path",
-   "metres": 18.8,
-   "period": 5.6,
-   "ampCm": 3.9,
-   "swings": 7,
-   "walks": 1,
-   "score": 73.1,
-   "at": "2840.1, 183.4",
-   "from": "2840.9, 192.6",
-   "to": "2839.2, 173.9",
-   "street": ""
-  },
-  {
    "tile": "D4",
    "surface": "sidewalk",
    "kind": "kerb+",
    "metres": 20.5,
    "period": 8.8,
-   "ampCm": 3.6,
+   "ampCm": 3.5,
    "swings": 5,
    "walks": 1,
-   "score": 73,
+   "score": 72.3,
    "at": "-1085.2, -14.7",
    "from": "-1091.9, -7.0",
    "to": "-1078.4, -22.5",
    "street": ""
-  },
-  {
-   "tile": "B6",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 24.3,
-   "period": 7,
-   "ampCm": 3,
-   "swings": 7,
-   "walks": 2,
-   "score": 72.9,
-   "at": "-2018.4, 574.8",
-   "from": "-2012.8, 564.1",
-   "to": "-2024.5, 585.4",
-   "street": "Rue de l'Etoile 93"
-  },
-  {
-   "tile": "F2",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 12.3,
-   "period": 5,
-   "ampCm": 5.9,
-   "swings": 5,
-   "walks": 3,
-   "score": 72.8,
-   "at": "-285.4, -1171.6",
-   "from": "-287.8, -1166.3",
-   "to": "-283.5, -1177.5",
-   "street": "Avenue Brugmann 353A"
-  },
-  {
-   "tile": "D5",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 19.5,
-   "period": 7.8,
-   "ampCm": 3.7,
-   "swings": 5,
-   "walks": 3,
-   "score": 72.7,
-   "at": "-1437.2, 237.6",
-   "from": "-1428.7, 233.5",
-   "to": "-1446.0, 241.9",
-   "street": "Rue de Stalle 77"
   },
   {
    "tile": "F5",
@@ -15907,21 +15621,6 @@
    "street": "Avenue Jean et Pierre Carsoel 89"
   },
   {
-   "tile": "F5",
-   "surface": "ground",
-   "kind": "path",
-   "metres": 9,
-   "period": 3.9,
-   "ampCm": 8,
-   "swings": 5,
-   "walks": 1,
-   "score": 71.8,
-   "at": "-472.7, 5.0",
-   "from": "-470.7, 9.1",
-   "to": "-474.6, 0.9",
-   "street": ""
-  },
-  {
    "tile": "F8",
    "surface": "dtm",
    "kind": "path",
@@ -15965,6 +15664,21 @@
    "from": "816.9, 571.5",
    "to": "807.9, 576.4",
    "street": "Rue de la Pêcherie 26"
+  },
+  {
+   "tile": "F10",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 20,
+   "period": 6.4,
+   "ampCm": 3.6,
+   "swings": 6,
+   "walks": 1,
+   "score": 71.3,
+   "at": "-338.2, 2528.6",
+   "from": "-348.1, 2529.5",
+   "to": "-328.2, 2527.7",
+   "street": "Avenue des Hospices 57"
   },
   {
    "tile": "J5",
@@ -16012,21 +15726,6 @@
    "street": "Chaussée de Waterloo 1323A"
   },
   {
-   "tile": "C8",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 16.8,
-   "period": 5.3,
-   "ampCm": 4.2,
-   "swings": 6,
-   "walks": 2,
-   "score": 70.6,
-   "at": "-1584.7, 1792.1",
-   "from": "-1581.6, 1784.5",
-   "to": "-1587.8, 1800.0",
-   "street": "Chaussée d'Alsemberg 1306"
-  },
-  {
    "tile": "F10",
    "surface": "dtm",
    "kind": "path",
@@ -16057,34 +15756,19 @@
    "street": ""
   },
   {
-   "tile": "D5",
-   "surface": "road",
-   "kind": "road",
-   "metres": 17.8,
-   "period": 6.6,
-   "ampCm": 3.9,
-   "swings": 5,
-   "walks": 1,
-   "score": 69.9,
-   "at": "-1471.5, 268.4",
-   "from": "-1479.0, 272.9",
-   "to": "-1463.6, 264.0",
-   "street": "Rue Gatti de Gamond 337"
-  },
-  {
-   "tile": "F1",
+   "tile": "I7",
    "surface": "sidewalk",
    "kind": "kerb+",
-   "metres": 20.5,
-   "period": 7.9,
-   "ampCm": 3.4,
+   "metres": 14.8,
+   "period": 6.7,
+   "ampCm": 4.7,
    "swings": 5,
    "walks": 1,
-   "score": 69.8,
-   "at": "-142.8, -1557.5",
-   "from": "-146.6, -1548.0",
-   "to": "-139.0, -1567.0",
-   "street": "Avenue Brugmann 261"
+   "score": 70.1,
+   "at": "1157.5, 1483.5",
+   "from": "1164.0, 1480.3",
+   "to": "1150.8, 1486.8",
+   "street": "Avenue Jacques Pastur 110"
   },
   {
    "tile": "C7",
@@ -16132,6 +15816,21 @@
    "street": "Rue Basse 114F"
   },
   {
+   "tile": "F9",
+   "surface": "road",
+   "kind": "road",
+   "metres": 20.5,
+   "period": 6.5,
+   "ampCm": 3.4,
+   "swings": 6,
+   "walks": 1,
+   "score": 69.5,
+   "at": "-189.5, 2013.2",
+   "from": "-192.2, 2023.0",
+   "to": "-186.8, 2003.3",
+   "street": "Avenue de la Gazelle 1"
+  },
+  {
    "tile": "G3",
    "surface": "dtm",
    "kind": "path",
@@ -16147,21 +15846,6 @@
    "street": ""
   },
   {
-   "tile": "E4",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 17.5,
-   "period": 6.7,
-   "ampCm": 3.9,
-   "swings": 5,
-   "walks": 1,
-   "score": 69,
-   "at": "-909.3, -294.1",
-   "from": "-909.5, -285.4",
-   "to": "-909.0, -302.9",
-   "street": "Chaussée d'Alsemberg 726"
-  },
-  {
    "tile": "H6",
    "surface": "ground",
    "kind": "path",
@@ -16175,21 +15859,6 @@
    "from": "841.3, 566.4",
    "to": "848.1, 562.7",
    "street": "Rue de la Pêcherie 24"
-  },
-  {
-   "tile": "D7",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 20.8,
-   "period": 7.9,
-   "ampCm": 3.3,
-   "swings": 5,
-   "walks": 1,
-   "score": 68.9,
-   "at": "-1190.2, 1182.7",
-   "from": "-1182.5, 1176.0",
-   "to": "-1198.8, 1189.0",
-   "street": "Rue du Château d'Or 12"
   },
   {
    "tile": "D6",
@@ -16222,6 +15891,21 @@
    "street": "Drève Saint-Hubert 15"
   },
   {
+   "tile": "M7",
+   "surface": "ground",
+   "kind": "path",
+   "metres": 6.8,
+   "period": 2.8,
+   "ampCm": 10.2,
+   "swings": 5,
+   "walks": 1,
+   "score": 68.6,
+   "at": "3143.1, 1187.5",
+   "from": "3140.2, 1189.0",
+   "to": "3146.2, 1186.0",
+   "street": ""
+  },
+  {
    "tile": "B5",
    "surface": "dtm",
    "kind": "path",
@@ -16252,6 +15936,21 @@
    "street": "Avenue Juliette 13C"
   },
   {
+   "tile": "D7",
+   "surface": "sidewalk",
+   "kind": "path",
+   "metres": 13.5,
+   "period": 4.6,
+   "ampCm": 5,
+   "swings": 6,
+   "walks": 1,
+   "score": 67.9,
+   "at": "-1128.5, 1102.0",
+   "from": "-1121.8, 1101.3",
+   "to": "-1135.2, 1103.0",
+   "street": ""
+  },
+  {
    "tile": "F6",
    "surface": "dtm",
    "kind": "path",
@@ -16264,6 +15963,21 @@
    "at": "-76.2, 523.4",
    "from": "-83.3, 527.0",
    "to": "-69.1, 519.7",
+   "street": ""
+  },
+  {
+   "tile": "F8",
+   "surface": "road",
+   "kind": "path",
+   "metres": 14,
+   "period": 5.9,
+   "ampCm": 4.8,
+   "swings": 5,
+   "walks": 1,
+   "score": 67.6,
+   "at": "-168.7, 1992.7",
+   "from": "-170.4, 1999.5",
+   "to": "-167.0, 1986.0",
    "street": ""
   },
   {
@@ -16312,6 +16026,21 @@
    "street": ""
   },
   {
+   "tile": "D1",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 14.3,
+   "period": 6.2,
+   "ampCm": 4.7,
+   "swings": 5,
+   "walks": 1,
+   "score": 67.2,
+   "at": "-1424.5, -1548.6",
+   "from": "-1429.3, -1543.4",
+   "to": "-1419.5, -1553.9",
+   "street": ""
+  },
+  {
    "tile": "C5",
    "surface": "dtm",
    "kind": "path",
@@ -16325,36 +16054,6 @@
    "from": "-1501.7, 499.5",
    "to": "-1509.4, 487.0",
    "street": "Rue Pierre de Puysselaer 80"
-  },
-  {
-   "tile": "D4",
-   "surface": "road",
-   "kind": "road",
-   "metres": 18.8,
-   "period": 8.4,
-   "ampCm": 3.6,
-   "swings": 5,
-   "walks": 1,
-   "score": 67,
-   "at": "-1106.0, -6.7",
-   "from": "-1113.8, -2.1",
-   "to": "-1099.7, -13.8",
-   "street": ""
-  },
-  {
-   "tile": "E2",
-   "surface": "road",
-   "kind": "path",
-   "metres": 13.3,
-   "period": 5.2,
-   "ampCm": 5.1,
-   "swings": 5,
-   "walks": 1,
-   "score": 67,
-   "at": "-822.9, -1438.9",
-   "from": "-829.4, -1439.1",
-   "to": "-816.1, -1438.7",
-   "street": "Carré Pauwels 7"
   },
   {
    "tile": "E7",
@@ -16414,21 +16113,6 @@
    "at": "-189.1, 439.3",
    "from": "-196.0, 442.8",
    "to": "-181.9, 435.7",
-   "street": ""
-  },
-  {
-   "tile": "D1",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 18.8,
-   "period": 8.4,
-   "ampCm": 3.5,
-   "swings": 5,
-   "walks": 3,
-   "score": 65.9,
-   "at": "-1121.0, -1857.0",
-   "from": "-1119.1, -1866.0",
-   "to": "-1123.4, -1848.0",
    "street": ""
   },
   {
@@ -16492,6 +16176,21 @@
    "street": "Avenue d'Homborchveld 116"
   },
   {
+   "tile": "E2",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 18.8,
+   "period": 7.8,
+   "ampCm": 3.5,
+   "swings": 5,
+   "walks": 2,
+   "score": 65.2,
+   "at": "-540.0, -1065.5",
+   "from": "-536.3, -1074.3",
+   "to": "-541.0, -1056.1",
+   "street": "Avenue Henri Pirenne 11"
+  },
+  {
    "tile": "F5",
    "surface": "dtm",
    "kind": "path",
@@ -16505,21 +16204,6 @@
    "from": "-225.5, 452.5",
    "to": "-213.0, 446.1",
    "street": "Rue du Repos 113"
-  },
-  {
-   "tile": "C3",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 19,
-   "period": 7.4,
-   "ampCm": 3.4,
-   "swings": 5,
-   "walks": 1,
-   "score": 64.8,
-   "at": "-1999.4, -846.0",
-   "from": "-1998.0, -836.5",
-   "to": "-1995.4, -853.2",
-   "street": ""
   },
   {
    "tile": "G2",
@@ -16583,6 +16267,21 @@
   },
   {
    "tile": "F9",
+   "surface": "road",
+   "kind": "path",
+   "metres": 14.3,
+   "period": 5.4,
+   "ampCm": 4.5,
+   "swings": 5,
+   "walks": 1,
+   "score": 64.2,
+   "at": "-172.7, 2008.2",
+   "from": "-174.4, 2014.9",
+   "to": "-170.9, 2001.1",
+   "street": ""
+  },
+  {
+   "tile": "F9",
    "surface": "dtm",
    "kind": "path",
    "metres": 22.5,
@@ -16610,6 +16309,21 @@
    "from": "272.1, -1204.1",
    "to": "264.7, -1213.9",
    "street": "Avenue Adolphe Dupuich 7"
+  },
+  {
+   "tile": "C3",
+   "surface": "road",
+   "kind": "kerb-",
+   "metres": 19,
+   "period": 7.4,
+   "ampCm": 3.3,
+   "swings": 5,
+   "walks": 1,
+   "score": 63.3,
+   "at": "-1999.4, -846.0",
+   "from": "-1998.0, -836.5",
+   "to": "-1995.4, -853.2",
+   "street": ""
   },
   {
    "tile": "E2",
@@ -16642,49 +16356,19 @@
    "street": "Avenue Jean et Pierre Carsoel 176"
   },
   {
-   "tile": "G3",
-   "surface": "sidewalk",
-   "kind": "path",
-   "metres": 14.5,
-   "period": 5.8,
-   "ampCm": 4.3,
-   "swings": 5,
-   "walks": 1,
-   "score": 63,
-   "at": "247.3, -579.0",
-   "from": "240.0, -578.5",
-   "to": "254.5, -579.5",
-   "street": ""
-  },
-  {
-   "tile": "B6",
+   "tile": "G8",
    "surface": "road",
-   "kind": "kerb-",
-   "metres": 21.8,
-   "period": 6.8,
-   "ampCm": 2.9,
+   "kind": "road",
+   "metres": 20.5,
+   "period": 7.1,
+   "ampCm": 3.1,
    "swings": 6,
    "walks": 1,
-   "score": 62.6,
-   "at": "-2102.9, 713.8",
-   "from": "-2097.2, 704.7",
-   "to": "-2108.7, 723.2",
-   "street": "Rue de l'Etoile 175"
-  },
-  {
-   "tile": "C3",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 19.8,
-   "period": 8.7,
-   "ampCm": 3.2,
-   "swings": 5,
-   "walks": 3,
-   "score": 62.6,
-   "at": "-1741.5, -646.0",
-   "from": "-1740.4, -655.8",
-   "to": "-1743.2, -636.1",
-   "street": "Avenue du Jonc 35"
+   "score": 63,
+   "at": "410.4, 1839.5",
+   "from": "407.0, 1829.9",
+   "to": "414.0, 1849.2",
+   "street": "Avenue des Pâturins 11"
   },
   {
    "tile": "H7",
@@ -16897,21 +16581,6 @@
    "street": "Rue Engeland 497"
   },
   {
-   "tile": "H5",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 17.5,
-   "period": 7.6,
-   "ampCm": 3.4,
-   "swings": 5,
-   "walks": 1,
-   "score": 60.2,
-   "at": "703.0, 456.2",
-   "from": "694.8, 459.1",
-   "to": "711.3, 453.3",
-   "street": "Avenue Jean et Pierre Carsoel 55"
-  },
-  {
    "tile": "H3",
    "surface": "dtm",
    "kind": "path",
@@ -16942,21 +16611,6 @@
    "street": ""
   },
   {
-   "tile": "F10",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 16.8,
-   "period": 5.8,
-   "ampCm": 3.6,
-   "swings": 6,
-   "walks": 1,
-   "score": 59.7,
-   "at": "-336.7, 2528.5",
-   "from": "-344.9, 2529.2",
-   "to": "-328.2, 2527.7",
-   "street": "Avenue des Hospices 57"
-  },
-  {
    "tile": "H6",
    "surface": "dtm",
    "kind": "path",
@@ -16970,6 +16624,36 @@
    "from": "967.1, 817.3",
    "to": "979.0, 814.2",
    "street": "Chemin Avijl 10"
+  },
+  {
+   "tile": "D4",
+   "surface": "road",
+   "kind": "road",
+   "metres": 17.5,
+   "period": 5.9,
+   "ampCm": 3.4,
+   "swings": 6,
+   "walks": 1,
+   "score": 59,
+   "at": "-1105.5, -7.3",
+   "from": "-1112.7, -2.6",
+   "to": "-1099.7, -13.8",
+   "street": ""
+  },
+  {
+   "tile": "E1",
+   "surface": "square",
+   "kind": "road",
+   "metres": 20,
+   "period": 7,
+   "ampCm": 2.9,
+   "swings": 6,
+   "walks": 1,
+   "score": 58.8,
+   "at": "-895.7, -1989.9",
+   "from": "-897.5, -1999.7",
+   "to": "-894.0, -1980.0",
+   "street": ""
   },
   {
    "tile": "E7",
@@ -17257,19 +16941,19 @@
    "street": "Rue Egide Van Ophem 16"
   },
   {
-   "tile": "H5",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 17.3,
-   "period": 6.4,
-   "ampCm": 3.2,
-   "swings": 6,
-   "walks": 1,
-   "score": 55.6,
-   "at": "669.0, 463.6",
-   "from": "677.6, 459.9",
-   "to": "659.9, 463.1",
-   "street": "Avenue Jean et Pierre Carsoel 52"
+   "tile": "G2",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 18.5,
+   "period": 7.4,
+   "ampCm": 3,
+   "swings": 5,
+   "walks": 2,
+   "score": 55.5,
+   "at": "300.6, -1451.8",
+   "from": "294.6, -1445.3",
+   "to": "308.5, -1455.5",
+   "street": "Avenue Winston Churchill 112"
   },
   {
    "tile": "F8",
@@ -17285,21 +16969,6 @@
    "from": "-326.1, 1710.1",
    "to": "-327.5, 1700.0",
    "street": "Place Olivier Strebelle 1"
-  },
-  {
-   "tile": "G10",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 14.3,
-   "period": 4.5,
-   "ampCm": 3.8,
-   "swings": 6,
-   "walks": 2,
-   "score": 54.8,
-   "at": "301.8, 2759.3",
-   "from": "306.9, 2754.1",
-   "to": "294.6, 2760.5",
-   "street": "Avenue Buysdelle 30"
   },
   {
    "tile": "F6",
@@ -17397,7 +17066,7 @@
    "kind": "kerb-",
    "metres": 13.5,
    "period": 5.6,
-   "ampCm": 3.9,
+   "ampCm": 4,
    "swings": 5,
    "walks": 1,
    "score": 53.3,
@@ -17482,19 +17151,19 @@
    "street": ""
   },
   {
-   "tile": "F2",
+   "tile": "H8",
    "surface": "sidewalk",
-   "kind": "path",
-   "metres": 14.5,
-   "period": 5.6,
-   "ampCm": 3.6,
+   "kind": "kerb+",
+   "metres": 17.5,
+   "period": 7.1,
+   "ampCm": 2.9,
    "swings": 5,
    "walks": 1,
-   "score": 51.8,
-   "at": "-226.1, -1368.7",
-   "from": "-223.4, -1375.4",
-   "to": "-228.8, -1361.9",
-   "street": "Avenue Brugmann 299"
+   "score": 51.5,
+   "at": "541.0, 1760.4",
+   "from": "539.1, 1769.0",
+   "to": "542.9, 1751.9",
+   "street": "Avenue de la Chênaie 175"
   },
   {
    "tile": "E7",
@@ -17542,21 +17211,6 @@
    "street": "Rue de la Pêcherie 28"
   },
   {
-   "tile": "J7",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 16.3,
-   "period": 6.5,
-   "ampCm": 3.1,
-   "swings": 5,
-   "walks": 1,
-   "score": 49.9,
-   "at": "1646.8, 1143.9",
-   "from": "1653.8, 1140.0",
-   "to": "1639.4, 1147.5",
-   "street": "Drève de Carloo 27"
-  },
-  {
    "tile": "K9",
    "surface": "ground",
    "kind": "path",
@@ -17569,6 +17223,21 @@
    "at": "2478.8, 2472.9",
    "from": "2483.0, 2471.2",
    "to": "2474.7, 2474.5",
+   "street": ""
+  },
+  {
+   "tile": "F8",
+   "surface": "sidewalk",
+   "kind": "kerb+",
+   "metres": 11.5,
+   "period": 4.4,
+   "ampCm": 4.3,
+   "swings": 5,
+   "walks": 1,
+   "score": 49.7,
+   "at": "-173.1, 1979.8",
+   "from": "-174.5, 1985.2",
+   "to": "-172.4, 1973.9",
    "street": ""
   },
   {
@@ -17585,21 +17254,6 @@
    "from": "-13.2, -921.0",
    "to": "-24.1, -922.7",
    "street": "Avenue de la Ferme Rose 1"
-  },
-  {
-   "tile": "B6",
-   "surface": "road",
-   "kind": "kerb-",
-   "metres": 17.5,
-   "period": 6.5,
-   "ampCm": 2.7,
-   "swings": 5,
-   "walks": 1,
-   "score": 47.9,
-   "at": "-2150.1, 789.9",
-   "from": "-2145.4, 782.5",
-   "to": "-2154.7, 797.3",
-   "street": "Rue de l'Etoile 205"
   },
   {
    "tile": "D6",
@@ -17730,25 +17384,10 @@
    "ampCm": 6.2,
    "swings": 7,
    "walks": 1,
-   "score": 44.9,
+   "score": 44.7,
    "at": "4019.3, 3028.4",
    "from": "4017.7, 3031.5",
    "to": "4021.0, 3025.1",
-   "street": ""
-  },
-  {
-   "tile": "F4",
-   "surface": "ground",
-   "kind": "path",
-   "metres": 10.5,
-   "period": 2.5,
-   "ampCm": 4.2,
-   "swings": 9,
-   "walks": 1,
-   "score": 43.9,
-   "at": "-351.8, -282.0",
-   "from": "-353.4, -287.0",
-   "to": "-350.3, -276.9",
    "street": ""
   },
   {
@@ -17764,21 +17403,6 @@
    "at": "3349.5, 933.9",
    "from": "3345.0, 936.2",
    "to": "3353.9, 931.6",
-   "street": ""
-  },
-  {
-   "tile": "C3",
-   "surface": "sidewalk",
-   "kind": "kerb+",
-   "metres": 15,
-   "period": 5.8,
-   "ampCm": 2.9,
-   "swings": 5,
-   "walks": 1,
-   "score": 43.8,
-   "at": "-1884.7, -899.0",
-   "from": "-1882.2, -892.2",
-   "to": "-1886.3, -905.9",
    "street": ""
   },
   {
@@ -17840,6 +17464,21 @@
    "from": "884.7, 1265.4",
    "to": "890.3, 1277.9",
    "street": "Avenue Hoche 30"
+  },
+  {
+   "tile": "F8",
+   "surface": "ground",
+   "kind": "path",
+   "metres": 8,
+   "period": 2.2,
+   "ampCm": 5.2,
+   "swings": 7,
+   "walks": 1,
+   "score": 41.9,
+   "at": "-143.6, 1887.9",
+   "from": "-143.8, 1891.9",
+   "to": "-143.3, 1883.9",
+   "street": "Avenue Jacqueline Harpman 2"
   },
   {
    "tile": "H1",
@@ -17947,21 +17586,6 @@
    "street": ""
   },
   {
-   "tile": "F3",
-   "surface": "road",
-   "kind": "path",
-   "metres": 13.8,
-   "period": 5.4,
-   "ampCm": 2.8,
-   "swings": 5,
-   "walks": 1,
-   "score": 38.6,
-   "at": "-83.5, -723.5",
-   "from": "-90.0, -721.9",
-   "to": "-76.7, -725.2",
-   "street": "Avenue de la Ferme Rose 13"
-  },
-  {
    "tile": "L8",
    "surface": "ground",
    "kind": "path",
@@ -17977,19 +17601,19 @@
    "street": ""
   },
   {
-   "tile": "F8",
+   "tile": "L5",
    "surface": "ground",
    "kind": "path",
-   "metres": 8,
-   "period": 2.2,
-   "ampCm": 4.7,
+   "metres": 8.5,
+   "period": 2.4,
+   "ampCm": 4.4,
    "swings": 7,
-   "walks": 1,
-   "score": 37.9,
-   "at": "-143.6, 1887.9",
-   "from": "-143.8, 1891.9",
-   "to": "-143.3, 1883.9",
-   "street": "Avenue Jacqueline Harpman 2"
+   "walks": 2,
+   "score": 37.7,
+   "at": "2703.8, 344.8",
+   "from": "2707.6, 343.0",
+   "to": "2699.9, 346.6",
+   "street": ""
   },
   {
    "tile": "F4",
@@ -18000,7 +17624,7 @@
    "ampCm": 4.3,
    "swings": 6,
    "walks": 1,
-   "score": 36.8,
+   "score": 36.6,
    "at": "-483.1, -17.2",
    "from": "-481.3, -13.3",
    "to": "-484.9, -21.0",
@@ -18035,21 +17659,6 @@
    "from": "-2105.7, -42.4",
    "to": "-2108.2, -52.0",
    "street": "Chaussée de Neerstalle 390"
-  },
-  {
-   "tile": "L5",
-   "surface": "ground",
-   "kind": "path",
-   "metres": 8.5,
-   "period": 2.1,
-   "ampCm": 3.9,
-   "swings": 8,
-   "walks": 2,
-   "score": 33.3,
-   "at": "2694.7, 349.1",
-   "from": "2698.6, 347.2",
-   "to": "2691.0, 351.0",
-   "street": ""
   },
   {
    "tile": "G3",
