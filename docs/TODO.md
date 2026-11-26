@@ -30,6 +30,12 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    (2) TENNIS (see 5); (3) HORSE RIDING in the woods (Bois de la Cambre next door, Forêt de Soignes partly in the map:
    extend the map + a forest pass), maybe with the owner's ARROW system: the owner shares the paths to their two
    other projects (horse + arrows) so we check what can be reused (three.js code carries over, other engines: the logic).
+4b3. FALCON RINGS (owner 2026-11-26, "not realistic but it's about controlling the falcon well; the goal: the game
+   not boring"): flight courses through rings over the real city (between the Saint-Job and Saint-Pierre spires, down
+   streets, under the tram wires, a stoop gate off the Observatory), timed, with medals; plus my ideas to pick from:
+   stoop gates (dive through a falling line of rings), a slalom down an avenue of plane trees, a race against a
+   pigeon flock, a "thread the needle" between chimneys, ghost replay of your best run. Rings: one instanced mesh,
+   a few draws, only the active course loaded. After the falcon's landing fix + perf audit, before the merge.
 4c. LATER, after villa V3 is finished (owner 2026-11-26: "first finish the villa we do now to see how far we can go"):
    a BIGGER ESTATE villa with a large domain: from the street you see nothing but tall hedges and a big gate that opens
    onto a long drive up to a huge villa, with a large parking court and the rest of the domain. Reuse villa V3's
