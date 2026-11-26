@@ -119,10 +119,13 @@ function gridMesh(x0, x1, z0, z1, res, keep = null, H = testHeight, Sf = testSur
 }
 let look = null;
 if (W.city) gridMesh(W.bounds.x0, W.bounds.x1, W.bounds.z0, W.bounds.z1, 0.25, null, W.drawH, W.surface);
-else if (qs.get("look") !== "old") {
-  scene.background = null; scene.fog = null;
-  look = await buildLabLook({ renderer, scene, camera, FEATURES, testHeight, testSurface, BOUNDS, PARK, SNOW, quality: qs.get("grass") || "high" });
-  hemi = look.lighting.hemi; sun = look.lighting.sun;
+else if (qs.get("look") !== "old" && await (async () => {
+  try {
+    look = await buildLabLook({ renderer, scene, camera, FEATURES, testHeight, testSurface, BOUNDS, PARK, SNOW, quality: qs.get("grass") || "high" });
+    scene.background = null; scene.fog = null; hemi = look.lighting.hemi; sun = look.lighting.sun;
+    return true;
+  } catch (e) { console.error("[bike lab] the city look failed, the old lab look:", e); look = null; return false; }    // (never a dead lab)
+})()) {
 } else {
   hemi = new THREE.HemisphereLight(0xdfe9f5, 0x5d5a48, 1.1); sun = new THREE.DirectionalLight(0xfff1dc, 2.4); sun.castShadow = true;
   Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 90 }); scene.add(hemi, sun, sun.target);
