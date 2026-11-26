@@ -1,5 +1,37 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
+## THE WINTER LOOK (claude/xmasreview, owner 2026-11-26: "yes do the winter look for christmas")
+
+While the Christmas season is on, the city is in December (rules season-from-date, bare-winter-trees, walker-statics;
+gate row `winter`, tools/audit/winterCheck.mjs). `?season=summer` = the city as before (the A/B), `?season=winter`
+forces it, `?baretrees=0` keeps the leaves.
+- **One season resolver**, viewer/seasons/seasonMode.js (`SEASON`, three-free): winter in the season by the Brussels date
+  (xmasDate.js) or `?xmas=1` (then 21 Dec), summer = day 200 as before. lighting.js takes its day; the time presets are
+  times of DAY on it (golden 1.3 h before sunset, twilight 0.45 h after, misty 0.8 h after sunrise, midday 12:30 solar,
+  night unchanged): 15 Dec sunrise 8:40, sunset 16:38 Brussels clock, "golden" at ~15:22 with the sun 7.6 deg up.
+  `?day=` / `?hour=` / `?time=` / the sky panel still pin. main.js sets the season's uniforms (viewer/seasons/season.js:
+  lawns, shrubs, hedges, ivy, the weather's crown shelter) on that day at boot (before: only when the weather ran).
+- **Bare trees** (viewer/treesStylized.js `BARE`): the city's trees are one broadleaf form (UrbIS CHM: no species), so
+  all are treated as deciduous. The same leaf cards draw a fine TWIG spray (branching, buds) in grey-brown (the colours
+  x `WINTER_F`): the crown keeps its silhouette as a twig haze over the bark mesh's limbs. The mask is RG (.r leaves +
+  twigs, .g twigs): the pool's depth pass and the sun's shadow keep .g for the trees and the deciduous shrubs (hydrangea,
+  rose); the evergreen shrubs (box, laurel, rhododendron, lavender) keep their leaves and green (their tint / WINTER_F).
+  The far impostors (the kit, the old bake) are baked from the twig mask. No new view, mesh or pass: the same draws and
+  triangles as summer, fewer fragments (the twigs cover less than the leaves).
+- **Winter ground**: the textured ground's lawns duller and olive (per-cover tone x TONE_WINTER), more dull patches.
+  The garden plants / hedges follow the season's day (deciduous leaves shrink, beech hedges keep brown leaves).
+- **The walker and the fir**: the planter (octagon, body + camera) and the crown (body only, 2.4 m, to 3 m up) and the
+  chalets join the walker's collision world (`window.__walkerStatics`, cityHook.js takeExtras).
+- **Browser look** (2026-11-26, `?quick=1&xmas=1` vs `&season=summer`, golden + twilight presets; shots and the compare
+  sheet `C:/Users/tibog/Downloads/uccle-xmas/winter/winter_sheet.png`): Place Saint-Job from 20 m and from 60 m (the fir
+  now stands out of the bare plane trees), Avenue De Fre, Parc de Wolvendael from 70 m; the low December sun at 15:22
+  (golden) and its long thin twig shadows on the lawns; 0 console errors of ours. Structure, the same view and page
+  kind (renderer.info): Avenue De Fre 103 draws / 814,617 triangles winter = summer exactly; Wolvendael 142 / 1,315,028
+  winter vs 190 / 1,315,538 summer (the draw count moves with the sun cache's redraws). GPU timing: later, on a quiet
+  machine. The walker: the fir's planter + crown and the 6 chalets reach the collision world (`__walkerStaticsIn`).
+- Not done (optional in the brief): fallen-leaf decals, morning frost on lawns / roofs / cars. The far tiles' orthophoto
+  (past 250-550 m) is a leaf-on summer photo: from high up the far ground keeps green crowns.
+
 ## ART-DIRECTOR REVIEW IN GAME (claude/xmasreview, 2026-11-26, five days before 1 December)
 
 Looked at with `?quick=1&xmas=1` day and `&time=night`: Place Saint-Job (the fir at 8 / 20 / 46 m, the 45 m switch
