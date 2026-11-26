@@ -31,6 +31,22 @@ import { InstancePrev } from "../instMotion.js";
 import { PropWorld, CLASSES, PROPS_OLD, PROP, poseMatrix } from "./propWorld.js";
 
 export const PROPS_ON = !PROPS_OLD;
+// (claude/perf6, rule settled-props-in-pool; ?propsettle=old: every displaced prop drawn by the proxies, as before) A
+// SETTLED PROP GOES BACK INTO ITS POOL. The police drive knocked ~20-40 signs / bins / plates over; each displaced prop
+// stayed a proxy for good (until its tile unloads), one draw per piece and LOD in its band: 47 render objects a frame in
+// the main pass (16 % of the ~300, the largest single group: docs/perf/QUIET_2026-11-26.md round 3). A prop that has
+// fallen asleep where it landed (state 2, not moving) is written into its own layer's pool at its displaced pose
+// (StreamPool.patch: the source too, so the gathers keep it; a plain instanced mesh: its matrix), the pool's merged
+// multi-draw sets draw it; it needs no motion vectors (it does not move). Woken again (hit), it leaves the pool (hidden
+// in it: zero scale) in the same frame its proxy draws it; reset (its tile unloads): back to its rest, as before.
+const SETTLE = PROPS_ON && (typeof location === "undefined" || new URLSearchParams(location.search).get("propsettle") !== "old");
+const F16 = new Float32Array(16);
+// (claude/perf6, rule settled-props-in-pool; ?propshide=old: as before) AN EMPTY PROXY IS HIDDEN, EVERY FRAME. The police
+// drive drew all 48 proxy meshes in the main pass every frame with NOTHING to draw (count 0, visible, frustumCulled
+// false: their warm-up state put back by a later save / restore of the boot, while render() returned early with no
+// displaced prop): 47 render objects a frame (16 % of the main pass, ~25 us of three's CPU each) for no pixel. The check
+// runs before render()'s early returns and costs one test per proxy mesh.
+const HIDE_EMPTY = PROPS_ON && (typeof location === "undefined" || new URLSearchParams(location.search).get("propshide") !== "old");
 const CAP = 64;                                 // proxy instances per piece and LOD
 const prev = PROPS_ON ? new InstancePrev(6144, "propPrev") : null;
 const CELL = 16;
@@ -260,6 +276,7 @@ export const cityProps = {
   },
   /** a prop's members out of / back into their layers (hide: zero scale where the pools hold them) */
   show(p, back) {
+    p.inPool = false;
     for (const m of p.mem || []) {
       const h = m.h, vals = back ? Float32Array.from(m.rest) : hiddenOf(m.rest);
       if (!h.mesh) h.streamer?.patch(h.tile, h.key, h.i, "instanceMatrix", vals);
@@ -270,6 +287,21 @@ export const cityProps = {
       }
     }
     this.dirty = true;
+    window.__night?.refreshStatic?.();
+  },
+
+  /** (SETTLE) a settled prop's members into their pools at its pose P (column-major), or (out) hidden there again */
+  toPool(p, P, out) {
+    for (const m of p.mem || []) {
+      let vals;
+      if (out) vals = hiddenOf(m.rest);
+      else { mul4(P, 0, m.local, 0, M16, 0); for (let k = 0; k < 16; k++) F16[k] = M16[k]; vals = F16; }
+      const h = m.h;
+      if (!h.mesh) h.streamer?.patch(h.tile, h.key, h.i, "instanceMatrix", vals);
+      else { const A = h.mesh.instanceMatrix; A.array.set(vals, h.i * 16); A.addUpdateRange(h.i * 16, 16); A.needsUpdate = true; }
+    }
+    p.inPool = !out;
+    this.stats.settled = (this.stats.settled || 0) + (out ? 0 : 1);
     window.__night?.refreshStatic?.();
   },
 
@@ -298,6 +330,7 @@ export const cityProps = {
     if (!W) return;
     const t0 = performance.now();
     if (this.warmQ?.length || this.warming) { this.warm(cam.position); if (this.warming) return; }
+    if (HIDE_EMPTY) for (const K of this.kinds.values()) for (const L of K.lods) { const m = L.mesh; if (m.visible && m.count === 0) { m.visible = false; m.frustumCulled = true; this.stats.hidEmpty = (this.stats.hidEmpty || 0) + 1; } }
     const cp = cam.position, camMoved = cp.distanceToSquared(this.cam) > 1;
     let any = W.moved > 0 || this.dirty;
     for (let q = 0; q < W.dN && !any; q++) if (W.dmoved[q]) any = true;
@@ -312,6 +345,11 @@ export const cityProps = {
       if (W.dmoved[q]) W.dmoved[q]--;
       if (!p.mem) continue;
       poseMatrix(W.dpos[q * 3], W.dpos[q * 3 + 1], W.dpos[q * 3 + 2], W.dq[q * 4], W.dq[q * 4 + 1], W.dq[q * 4 + 2], W.dq[q * 4 + 3], P16, 0);
+      if (SETTLE) {
+        const still = p.state === 2 && !W.dmoved[q];
+        if (still) { if (!p.inPool) this.toPool(p, P16, false); continue; }
+        if (p.inPool) this.toPool(p, P16, true);            // (woken: out of the pool, the proxy below draws it this frame)
+      }
       for (let mi = 0; mi < p.mem.length; mi++) {
         const m = p.mem[mi], K = m.K;
         mul4(P16, 0, m.local, 0, M16, 0);
