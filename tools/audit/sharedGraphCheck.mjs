@@ -13,9 +13,15 @@
 //   2. roadPaint asphaltMaterial: two tiles' materials are clones of one graph (same colour node, same program cache
 //      key), each with its OWN atlas texture / scale / range in userData (and atlas.texture for the unload dispose);
 //      the no-atlas (deck) material is its own template
-//   3. the old paths (?kitfadeshare=old, ?asphaltshare=old, run in a child process) still give a graph per mesh / tile
-//      (the check would catch a regression to them)
-//   4. text: the switches' features rows
+//   3. (round 2) groundMaterial: two tiles' textured grounds are clones of one graph (same colour node, same program
+//      cache key) with their own mask / orthophoto / origin / 1 / size / ortho switch read per object (a tile without an
+//      orthophoto: the stand-in, switch 0); a different contour function = its own template
+//   4. (round 2) viewer/pinBuilds.js: a render object of a shared material (or the fading copy of one, or a template
+//      clone, or the shadow pass of one) pins its pipeline, programs and cached node build ONCE (one extra use); a
+//      tile's own material does not; the rail stand-in (railWarmData) builds every rail part; the flush's defaults
+//   5. the old paths (?kitfadeshare=old, ?asphaltshare=old, ?groundshare=old, run in a child process) still give a
+//      graph per mesh / tile (the check would catch a regression to them)
+//   6. text: the switches' features rows and main.js wiring
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -25,11 +31,12 @@ const QUIET = process.argv.includes("--quiet"), OLD = process.argv.includes("--o
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log("FAIL", m); } else if (!QUIET) console.log("ok  ", m); return c; };
 globalThis.window = globalThis;
-globalThis.location = { search: OLD ? "?kitfadeshare=old&asphaltshare=old" : "", href: "http://localhost/viewer/" };
+globalThis.location = { search: OLD ? "?kitfadeshare=old&asphaltshare=old&groundshare=old" : "", href: "http://localhost/viewer/" };
 const THREE = await import("three/webgpu");
 const imp = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 const PK = await imp("viewer/parkKit.js");
 const RP = await imp("viewer/roadPaint.js");
+const GR = await imp("viewer/ground.js");
 const key = (m) => m.customProgramCacheKey();
 
 // ---- 1. the park kit's fading copies
@@ -95,13 +102,79 @@ if (!OLD) {
   ok(m1.colorNode !== m2.colorNode && key(m1) !== key(m2), "(old path) a new asphalt graph per tile");
 }
 
-// ---- 3. the old paths (child process)
+// ---- 3. the terrain: one graph for every tile
+const LAYERS = ["lawn", "rough", "dry", "forest", "sand", "gravel", "soil"].map((cover, layer) => ({ cover, layer, size_m: 2, mean_albedo_linear: [0.2, 0.2, 0.2] }));
+const arr = () => { const t = new THREE.DataArrayTexture(new Uint8Array(4 * 7), 1, 1, 7); t.needsUpdate = true; return t; };
+GR.setGroundTextures({ albedo: arr(), nra: arr(), layers: LAYERS });
+const coverOf = (k, ortho) => {
+  const t = new THREE.DataTexture(new Uint8Array([k, 0, 0, 0]), 1, 1, THREE.RGBAFormat); t.magFilter = t.minFilter = THREE.LinearFilter;
+  return { tex: t, sdf: { range: 4 }, ortho: ortho ? Object.assign(new THREE.Texture(), { colorSpace: THREE.SRGBColorSpace }) : null };
+};
+const contourA = (col) => col.mul(1), contourB = (col) => col.mul(1);
+const cA = coverOf(1, true), cB = coverOf(2, false);
+const bA = { x0: 0, z0: 0, x1: 500, z1: 500 }, bB = { x0: 500, z0: 0, x1: 1000, z1: 400 };
+const g1 = GR.groundMaterial(cA, bA, contourA), g2 = GR.groundMaterial(cB, bB, contourA), g3 = GR.groundMaterial(coverOf(3, true), bA, contourB);
+if (!OLD) {
+  ok(g1 !== g2 && g1.colorNode === g2.colorNode && g1.normalNode === g2.normalNode, "two tiles' terrain materials are clones of one graph (the same colour / normal node objects)");
+  ok(key(g1) === key(g2), "... one program cache key: one node build for every tile");
+  ok(g3.colorNode !== g1.colorNode, "another contour function: its own template");
+  const u1 = g1.userData, u2 = g2.userData;
+  ok(u1.gCover === cA.tex && u2.gCover === cB.tex && u1.gOrtho === cA.ortho && u1.gOrthoOn === 1, "each tile reads its OWN mask and orthophoto (gCover / gOrtho), ortho switch on");
+  ok(u2.gOrtho && u2.gOrtho !== cA.ortho && u2.gOrthoOn === 0, "a tile without an orthophoto: the stand-in, ortho switch 0");
+  ok(u1.gOrigin.x === 0 && u2.gOrigin.x === 500 && Math.abs(u2.gInvSize.y - 1 / 400) < 1e-12 && Math.abs(u1.gInvSize.x - 1 / 500) < 1e-12, "each tile's own origin and 1 / size");
+  ok(u1.sharedGraph === true, "the clones are marked sharedGraph (their builds pinned)");
+  const GN = u1.groundNodes || {};
+  ok(GN.origin?.updateType === "object" && GN.invSize?.updateType === "object" && GN.orthoOn?.updateType === "object", "origin / 1 / size / ortho switch are object-update uniforms");
+  GN.origin?.update?.({ material: g2, object: null }); const o2 = GN.origin?.value; GN.origin?.update?.({ material: g1, object: null });
+  ok(o2 === u2.gOrigin && GN.origin?.value === u1.gOrigin, "... they take the values of the material being drawn");
+} else {
+  ok(g1.colorNode !== g2.colorNode && key(g1) !== key(g2), "(old path) a new terrain graph per tile");
+}
+
+// ---- 4. the pins, the rail stand-in, the flush defaults
+if (!OLD) {
+  const PB = await imp("viewer/pinBuilds.js");
+  const cache = new Map();
+  const R = { _currentSourceMaterial: null, _pipelines: { _getRenderPipeline: (ro) => ro.pipe }, _nodes: { get: (ro) => ({ nodeBuilderState: ro.st }), nodeBuilderCache: cache, getForRenderCacheKey: (ro) => ro.key } };
+  const stats = PB.installPinBuilds(R);
+  const mk = (mat, k) => { const st = { usedTimes: 1 }; cache.set(k, st); return { material: mat, key: k, st, pipe: { usedTimes: 1, vertexProgram: { usedTimes: 1 }, fragmentProgram: { usedTimes: 1 } } }; };
+  const shared = new THREE.MeshStandardNodeMaterial(); shared.userData.shared = true;
+  const fadeOfShared = new THREE.MeshStandardNodeMaterial(); fadeOfShared.userData.fadeOf = shared;
+  const own = new THREE.MeshStandardNodeMaterial();
+  const r1 = mk(shared, "a"), r2 = mk(fadeOfShared, "b"), r3 = mk(own, "c"), r4 = mk(m1, "d");
+  for (const r of [r1, r1, r2, r3, r4]) R._pipelines._getRenderPipeline(r);
+  ok(r1.pipe.usedTimes === 2 && r1.pipe.vertexProgram.usedTimes === 2 && r1.st.usedTimes === 2, "a shared material's pipeline, programs and node build get ONE extra use (asked twice: still one)");
+  ok(r2.pipe.usedTimes === 2 && r2.st.usedTimes === 2, "the fading copy of a shared material: pinned too");
+  ok(r4.pipe.usedTimes === 2, "an asphalt template clone (sharedGraph): pinned");
+  ok(r3.pipe.usedTimes === 1 && r3.st.usedTimes === 1, "a tile's own material: not pinned (released with its tile)");
+  const r5 = mk({ isShadowPassMaterial: true, userData: {} }, "e");
+  R._currentSourceMaterial = shared; R._pipelines._getRenderPipeline(r5); R._currentSourceMaterial = null;
+  ok(r5.pipe.usedTimes === 2, "the shadow pass of a shared material (the source material decides): pinned");
+  const r6 = mk(shared, "f"); cache.set("f", { usedTimes: 1 }); R._pipelines._getRenderPipeline(r6);
+  ok(r6.st.usedTimes === 1 && r6.pipe.usedTimes === 2, "an object-specific build (not the cached one): left alone, its pipeline pinned");
+  ok(stats.pipes === 5, `the pins count each pipeline once (${stats.pipes})`);
+  const RW = await imp("viewer/rail/railway.js");
+  const rw = RW.railTileMeshes(RW.railWarmData());
+  const names = new Set(); rw.group.traverse((o) => { if (o.isMesh) names.add(o.name); });
+  ok(["rail-ballast", "rail-rails", "rail-sleepers", "rail-masts", "rail-wires", "rail-fences", "rail-platforms", "rail-shelters", "rail-decks"].every((n) => names.has(n)), `the rail stand-in has every rail part (${[...names].join(", ")})`);
+  ok(Object.values(RW.railMaterials()).every((m) => m.userData.shared), "the rail materials are shared (their builds pinned once warmed)");
+  const W = fs.readFileSync(path.join(ROOT, "viewer/warmup.js"), "utf8");
+  ok(W.includes('const FLUSH_SPLIT = QS_F.get("flushsplit") !== "old";') && W.includes("FLUSH_ALONE ? 40 : 1500"), "the compile flush is split by default, ~40 ms chunks (?flushsplit=old / ?flushalone=old: before)");
+  ok(W.includes('for (const c of scene.children) if (!keep.has(c) && !c.isLight) set(c, "visible", false);') && W.includes("if (t?.parent === scene) keep.add(t);"), "a flush chunk draws only its own objects (the lights and the roots' own ancestors kept)");
+}
+
+// ---- 5. the old paths (child process)
 if (!OLD) {
   const r = spawnSync(process.execPath, ["--import", "./tools/christmas/hook.mjs", path.relative(ROOT, fileURLToPath(import.meta.url)), "--old", "--quiet"], { cwd: ROOT, encoding: "utf8" });
-  ok(r.status === 0, `the old paths (?kitfadeshare=old&asphaltshare=old) still build a graph per mesh / tile${r.status ? ": " + (r.stdout + r.stderr).trim().slice(0, 300) : ""}`);
-  // ---- 4. text: the features rows
+  ok(r.status === 0, `the old paths (?kitfadeshare=old&asphaltshare=old&groundshare=old) still build a graph per mesh / tile${r.status ? ": " + (r.stdout + r.stderr).trim().slice(0, 300) : ""}`);
+  // ---- 6. text: the features rows, main.js
   const F = fs.readFileSync(path.join(ROOT, "viewer/features.js"), "utf8");
-  for (const k of ["kitfadeshare", "asphaltshare"]) ok(new RegExp(`old\\("${k}"`).test(F), `viewer/features.js has the ?${k}=old row`);
+  for (const k of ["kitfadeshare", "asphaltshare", "groundshare", "pinbuilds", "railwarm", "flushsplit", "flushalone"]) ok(new RegExp(`old\\("${k}"`).test(F), `viewer/features.js has the ?${k}=old row`);
+  const M = fs.readFileSync(path.join(ROOT, "viewer/main.js"), "utf8");
+  ok(M.includes('if (params.get("pinbuilds") !== "old") window.__pinBuilds = installPinBuilds(renderer);'), "main.js installs the pins (?pinbuilds=old: off)");
+  ok(M.includes("const contour = contourFn(contourOn);"), "main.js: one contour graph per switch (the terrain template's key)");
+  ok(M.includes("railTileMeshes(rail.m.railWarmData())") && M.includes('RAIL_WARM = GAME_START && params.get("railwarm") !== "old"'), "main.js compiles the rail stand-in at a game start (?railwarm=old: not)");
+  ok(M.includes("shadowDirty: (objs) => markSunShadowDirty(objs)"), "main.js gives the flush the sun cache's dirty mark");
 }
 if (!QUIET || fails) console.log(fails ? `${fails} FAIL` : "sharedgraph: all ok");
 process.exit(fails ? 1 : 0);

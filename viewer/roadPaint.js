@@ -99,6 +99,7 @@ export function asphaltMaterial(atlas) {
   }
   const m = cloneMaterial(tpl);
   m.name = "";
+  m.userData.sharedGraph = true;                  // (viewer/pinBuilds.js keeps its build + pipelines)
   m.userData.atlas = atlas;
   if (atlas) {
     const tex = atlasTexture(atlas);

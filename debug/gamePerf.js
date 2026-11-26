@@ -12,7 +12,11 @@
 //   await G.falcon({ seconds: 40 })                 ?game=falcon: debug/falconGameAuto.js flies a fixed tour
 //   await G.idle({ seconds: 20 })                   the same probes with the camera where it is (default viewer views)
 //   G.last                                          the last report (also localStorage "gamePerf.last")
-// Rules: ONE tab in FRONT, preflight GREEN (or quote the noise), compare A/B by alternating page loads.
+// Rules: ONE tab in FRONT, preflight GREEN (or quote the noise), compare A/B by alternating page loads, each page load in a
+// FRESH TAB (rule perf-fresh-tab: open a new tab, close the old one; ~20 reloads in one tab filled the GPU's memory and
+// stalled the drives). Every report carries tabLoads / freshTab (debug/tabLoads.js); valid is false on a reused tab.
+import { tabInfo } from "./tabLoads.js";
+tabInfo();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
@@ -139,7 +143,7 @@ async function measure(seconds, onFrame = null, label = "") {
   const pipes = S.pipes.slice(pipes0).map(([t, k, l, st]) => [Math.round(t - t0), k.replace("create", ""), l, ...(st ? [st] : [])]);
   const loafs = S.loaf.slice(loaf0).filter((e) => e.t >= t0 - 50 && e.dur > 50);
   const report = {
-    label, seconds, valid: !hidden, frames: n,
+    label, seconds, valid: !hidden && tabInfo().freshTab, ...tabInfo(), hidden, frames: n,
     fps: +(1000 / (fs.reduce((a, b) => a + b, 0) / n)).toFixed(1),
     frameMs: { avg: avg(fs), p50: q(fs, 0.5), p95: q(fs, 0.95), p99: q(fs, 0.99), worst: q(fs, 1), low1pct: +(1000 / avg(worst1)).toFixed(1), over25: fs.filter((x) => x > 25).length, over33: fs.filter((x) => x > 33.4).length, over50: fs.filter((x) => x > 50).length, over100: fs.filter((x) => x > 100).length },
     cpuLoopMs: { avg: avg(loop), p95: q(loop, 0.95), p99: q(loop, 0.99), max: q(loop, 1) },
@@ -289,7 +293,7 @@ export async function idle({ seconds = 20 } = {}) { return measure(seconds, null
 
 /** a compact table of a report (for the doc) */
 export function brief(r = window.__gamePerfLast) {
-  return { label: r.label, fps: r.fps, avg: r.frameMs.avg, p99: r.frameMs.p99, low1: r.frameMs.low1pct, worst: r.frameMs.worst, o33: r.frameMs.over33, o50: r.frameMs.over50, cpu: r.cpuLoopMs.avg, cpu99: r.cpuLoopMs.p99, gpu: r.gpuMs.avg, gpu95: r.gpuMs.p95, draws: r.draws.avg, tris: r.trisK.avg, pipes: r.pipelines.n, gc: r.gc.n, tiles: r.tiles.events.length };
+  return { label: r.label, freshTab: r.freshTab, fps: r.fps, avg: r.frameMs.avg, p99: r.frameMs.p99, low1: r.frameMs.low1pct, worst: r.frameMs.worst, o33: r.frameMs.over33, o50: r.frameMs.over50, cpu: r.cpuLoopMs.avg, cpu99: r.cpuLoopMs.p99, gpu: r.gpuMs.avg, gpu95: r.gpuMs.p95, draws: r.draws.avg, tris: r.trisK.avg, pipes: r.pipelines.n, gc: r.gc.n, tiles: r.tiles.events.length };
 }
 
 /** the before/after protocol (docs/PERF_GAME.md): after a ?game=police page load, wait until play (loader gone or, with

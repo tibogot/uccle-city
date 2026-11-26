@@ -181,9 +181,20 @@ export function setCompileFlush(o) { flushWith = o; }
 // measured on the chunks before (first chunk 30 drawables, at most 80). The jobs resolve once every chunk's pipelines are ready.
 // (coordinator 2026-11-17: OPT-IN, ?flushsplit=1: on a noisy machine it added 1.3-3 s of redraw to the flush and the falcon
 // start showed more > 50 ms frames with it; re-measure on GREEN before making it the default)
-const FLUSH_SPLIT = typeof location !== "undefined" && /[?&]flushsplit=1(&|$)/.test(location.search);
-const FLUSH_TASK_MS = Math.max(100, +(typeof location !== "undefined" ? new URLSearchParams(location.search).get("flushtask") ?? 1500 : 1500));
-const FLUSH_MAX = 80;
+// (claude/perf5 round 2: ON by default, ?flushsplit=old = one forced frame; ?flushalone=old = each chunk redraws the
+// whole city pass, as perf9's opt-in did) THE CHUNKS DRAW ONLY THEMSELVES: the police spawn's first flush was 44 jobs in
+// ONE 6.4 s task (inside an 8.4-9.8 s long task, the loader frozen: docs/perf/QUIET_2026-11-26.md). perf9's split cost
+// +1.3-3 s because every chunk drew the whole city pass again; now the rest of the scene is hidden while a chunk draws
+// (lights, fog and environment stay: the same node-build keys as the real draws), so a chunk costs its own node builds
+// and ~1-2 ms of passes, and the chunks aim at FLUSH_TASK_MS = 40 ms of main thread (a drawable whose own build is
+// longer is a chunk by itself), with a plain task break between them (the loader's frame runs when one is due). The
+// sun's shadow cache is redrawn for each chunk (its casters' shadow builds done here too) and once more for the city
+// after the flush.
+const QS_F = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams("");
+const FLUSH_SPLIT = QS_F.get("flushsplit") !== "old";
+const FLUSH_ALONE = FLUSH_SPLIT && QS_F.get("flushalone") !== "old";
+const FLUSH_TASK_MS = Math.max(10, +(QS_F.get("flushtask") ?? (FLUSH_ALONE ? 40 : 1500)));
+const FLUSH_MAX = 80, FLUSH_FIRST = FLUSH_ALONE ? 4 : 30, FLUSH_MIN = FLUSH_ALONE ? 1 : 8;
 const drawablesOf = (roots) => { let n = 0; for (const r of [].concat(roots)) r?.traverse((o) => { if (o.isMesh || o.isPoints || o.isLine || o.isSprite) n++; }); return n; };
 async function flushJobs(take) {
   const t0 = performance.now();
@@ -191,7 +202,7 @@ async function flushJobs(take) {
   const wins = [];
   if (!FLUSH_SPLIT) { const r = flushDraw(take); rec.drawables = r.n; if (r.win) wins.push(r.win); }
   else {
-    let i = 0, perDrawable = 0, budget = 30;
+    let i = 0, perDrawable = 0, budget = FLUSH_FIRST;
     while (i < take.length) {
       const chunk = [];
       let n = 0;
@@ -208,10 +219,11 @@ async function flushJobs(take) {
       rec.drawables += r.n; rec.chunks.push([chunk.length, r.n, Math.round(ms)]);
       // (the cost per drawable swings 1-50 ms: a chunk of already-built materials is cheap, new ones are not: the estimate
       // follows a dearer chunk at once and a cheaper one slowly, and a chunk never takes more than FLUSH_MAX drawables)
-      if (r.n > 0) { const c = ms / r.n; perDrawable = perDrawable ? Math.max(c, 0.8 * perDrawable + 0.2 * c) : c; budget = Math.max(8, Math.min(FLUSH_MAX, Math.round(FLUSH_TASK_MS / Math.max(0.5, perDrawable)))); }
-      // a rendered frame, then a new task (the loader's frame is painted before the next chunk's node builds)
-      if (i < take.length) { await new Promise((res) => requestAnimationFrame(() => res())); await new Promise((res) => setTimeout(res, 0)); }
+      if (r.n > 0) { const c = ms / r.n; perDrawable = perDrawable ? Math.max(c, 0.8 * perDrawable + 0.2 * c) : c; budget = Math.max(FLUSH_MIN, Math.min(FLUSH_MAX, Math.round(FLUSH_TASK_MS / Math.max(0.5, perDrawable)))); }
+      // a new task (FLUSH_ALONE: the loader's frame runs in between when one is due); before: a rendered frame, then a task
+      if (i < take.length) { if (!FLUSH_ALONE) await new Promise((res) => requestAnimationFrame(() => res())); await new Promise((res) => setTimeout(res, 0)); }
     }
+    if (FLUSH_ALONE) flushWith.shadowDirty?.([...flushWith.scene.children]);   // (the city's casters back in the sun's cache)
   }
   for (const w of wins) { try { await w; } catch (e) { console.warn("[compile flush]", e); } }
   for (const j of take) j.resolve();                 // (on an error: their pipelines then build async at first draw)
@@ -252,6 +264,14 @@ function flushDraw(take) {
       });
     }
     scene.add(holder);
+    // (FLUSH_ALONE) the rest of the scene hidden for this draw (the lights kept: they are in every build's key)
+    if (FLUSH_ALONE) {
+      // (a root already in the scene keeps its own top-level ancestor drawn)
+      const keep = new Set([holder]);
+      for (const j of take) for (const r of [].concat(j.roots)) { let t = r; while (t?.parent && t.parent !== scene) t = t.parent; if (t?.parent === scene) keep.add(t); }
+      for (const c of scene.children) if (!keep.has(c) && !c.isLight) set(c, "visible", false);
+      flushWith.shadowDirty?.([holder]);                // (redrawn when the chunk casts into the sun's box: its shadow builds)
+    }
     const w = openParallelPipelines(renderer, scene);
     try { render(); } finally { restore(); win = w.end(); }
   } catch (e) {

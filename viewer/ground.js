@@ -63,7 +63,48 @@ export function coverWeights(cover, s, nA, nB) {
 /** The terrain material: grass by default, the mask's covers where OSM has them. Textured (CC0 scans per cover,
  *  groundTex.js) once setGroundTextures() has the arrays; ?groundtex=0 (or no textures) = the procedural ground. */
 export function groundMaterial(cover, bounds, contour) {
-  return GT ? texturedGround(cover, bounds, contour) : proceduralGround(cover, bounds, contour);
+  if (!GT) return proceduralGround(cover, bounds, contour);
+  return GROUND_SHARE ? sharedGround(cover, bounds, contour) : texturedGround(cover, bounds, contour);
+}
+
+// (claude/perf5 round 2, rule docs/rules/shared-node-graph.md; ?groundshare=old: a new graph per tile, as before) ONE
+// TERRAIN GRAPH FOR EVERY TILE. Each full tile built its textured ground from fresh nodes (its land-cover mask, its
+// orthophoto and its bounds inside the graph), so three r187 (node builds keyed by node ids) built the same big shader
+// again on the main thread the first time each tile drew: 18-26 ms in the frame a tile landed while driving
+// (docs/perf/QUIET_2026-11-26.md). Now one template per (contour function, mask kind, house cut) and each tile's
+// material is a clone of it (the same node objects: one build); the tile's mask, orthophoto, origin, 1 / size and the
+// ortho switch are read per object from its material's userData (gCover / gOrtho / gOrigin / gInvSize / gOrthoOn) by
+// object-update nodes. The template's stand-in textures carry the real ones' format, colour space and filters (the
+// colour-space decode is built into the shader from the texture seen at build time).
+const GROUND_SHARE = typeof location === "undefined" || new URLSearchParams(location.search).get("groundshare") !== "old";
+const groundTemplates = new Map();              // contour fn (or null) -> Map(kind -> template)
+const standMask = (() => { const t = new THREE.DataTexture(new Uint8Array([128, 128, 128, 0]), 1, 1, THREE.RGBAFormat); t.magFilter = t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true; t.name = "ground template mask"; return t; })();
+const standOrtho = (() => { const t = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1, THREE.RGBAFormat); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.needsUpdate = true; t.name = "ground template ortho"; return t; })();
+function cloneShallow(t) {                       // three's clone with a SHALLOW userData copy (lodFade.js cloneMaterial)
+  const ud = t.userData; t.userData = {};
+  let c;
+  try { c = t.clone(); } finally { t.userData = ud; }
+  c.userData = { ...ud };
+  return c;
+}
+function sharedGround(cover, bounds, contour) {
+  const kind = `${cover.sdf ? `sdf${cover.sdf.range}` : "mask"}|${houseCut.enabled ? "cut" : ""}`;
+  let byKind = groundTemplates.get(contour ?? null);
+  if (!byKind) groundTemplates.set(contour ?? null, (byKind = new Map()));
+  let tpl = byKind.get(kind);
+  if (!tpl) {
+    tpl = texturedGround({ tex: standMask, ortho: standOrtho, sdf: cover.sdf }, { x0: 0, z0: 0, x1: 1, z1: 1 }, contour, true);
+    tpl.name = "ground:textured";
+    byKind.set(kind, tpl);
+  }
+  const m = cloneShallow(tpl);
+  const u = m.userData;
+  u.sharedGraph = true;                           // (viewer/pinBuilds.js keeps its build + pipelines)
+  u.gCover = cover.tex; u.gOrtho = cover.ortho || standOrtho; u.gOrthoOn = cover.ortho ? 1 : 0;
+  u.gOrigin = new THREE.Vector2(bounds.x0, bounds.z0);
+  u.gInvSize = new THREE.Vector2(1 / (bounds.x1 - bounds.x0), 1 / (bounds.z1 - bounds.z0));
+  u.orthoOn = { value: u.gOrthoOn };
+  return m;
 }
 
 /** The procedural ground (before 2026-11-13; ?groundtex=0): value noise + flat colours. */
@@ -170,12 +211,19 @@ export const noiseTex = (() => {
 const placeholder = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1);
 placeholder.needsUpdate = true;
 
-function texturedGround(cover, bounds, contour) {
+function texturedGround(cover, bounds, contour, perObject = false) {
   const S = shared, I = S.idx;
   const P = positionWorld;
-  const uOrigin = uniform(new THREE.Vector2(bounds.x0, bounds.z0));
-  const uInvSize = uniform(new THREE.Vector2(1 / (bounds.x1 - bounds.x0), 1 / (bounds.z1 - bounds.z0)));
+  // (perObject: GROUND_SHARE's template, the drawn tile's values read from its material per object)
+  const uOrigin = uniform(new THREE.Vector2(bounds.x0, bounds.z0)), uInvSize = uniform(new THREE.Vector2(1 / (bounds.x1 - bounds.x0), 1 / (bounds.z1 - bounds.z0)));
   const uOrtho = uniform(cover.ortho ? 1 : 0);
+  const made = {};                // (the per-object texture nodes, made when the graph builds)
+  const texAt = (tex, at, key) => (perObject ? (made[key] = texture(tex, at).onObjectUpdate(({ material }) => material.userData[key])) : texture(tex, at));
+  if (perObject) {
+    uOrigin.onObjectUpdate(({ material }) => material.userData.gOrigin);
+    uInvSize.onObjectUpdate(({ material }) => material.userData.gInvSize);
+    uOrtho.onObjectUpdate(({ material }) => material.userData.gOrthoOn);
+  }
   const muv = vec2(P.x, P.z).sub(uOrigin).mul(uInvSize);
   const one = float(1);
   const dist = length(cameraPosition.sub(P));
@@ -186,7 +234,8 @@ function texturedGround(cover, bounds, contour) {
     const nzA = vec4(0).toVar(), nzB = vec4(0).toVar(), nzC = vec4(0).toVar();
     const xz0 = vec2(P.x, P.z);
     nzA.assign(texture(noiseTex, xz0.div(640))); nzB.assign(texture(noiseTex, xz0.div(176).add(0.37))); nzC.assign(texture(noiseTex, xz0.div(51).add(0.71)));
-    const cw = coverWeights(cover, texture(cover.tex, muv), nzC.g, nzB.a);
+    const coverTex = texAt(cover.tex, muv, "gCover");
+    const cw = coverWeights(cover, coverTex, nzC.g, nzB.a);
     mkV.assign(cw.mk); litV.assign(cw.litter);
     colV.assign(vec3(0.2)); nrmV.assign(vec2(0)); raV.assign(vec2(0.8, 1));     // declared HERE, not inside the If
     // (a node used in two blocks must be assigned BEFORE the blocks: TSL emits its assignment in the first block that
@@ -198,7 +247,7 @@ function texturedGround(cover, bounds, contour) {
     // noise at ~40 m (R n1, G macro), ~11 m (R n2, G worn, B macro), ~3 m (R n3): periods 640 / 176 / 51 m
     const mk = mkV;
     // ---- far: the tile's orthophoto (the far-LOD tiles' colour), no relief
-    const orthoTex = texture(cover.ortho || placeholder, vec2(muv.x, one.sub(muv.y)));
+    const orthoTex = texAt(cover.ortho || placeholder, vec2(muv.x, one.sub(muv.y)), "gOrtho");
     farV.assign(smoothstep(S.uOrthoNear, S.uOrthoFar, dist).mul(uOrtho).mul(one.sub(mk.a)));
     const far = farV;
     If(far.lessThan(0.999), () => {
@@ -330,5 +379,6 @@ function texturedGround(cover, bounds, contour) {
   m.name = "ground:textured";
   wxMat(m, { porosity: mix(float(0.85), float(0), mk.a), frost: true, map: true, snowMask: one.sub(mk.a) });   // the weather: wet grass / earth, snow, frost
   m.userData.orthoOn = uOrtho;
+  if (perObject) m.userData.groundNodes = { textures: made, origin: uOrigin, invSize: uInvSize, orthoOn: uOrtho };   // (tools/audit/sharedGraphCheck.mjs)
   return addLampLight(m);
 }

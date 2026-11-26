@@ -2,6 +2,8 @@
 // boot timeline's split when debug/bootTimeline.js ran as the init script), then a `seconds` drive on the gamePerf
 // autopilot (default route: the station -> Saint-Job) with debug/perf5Frames.js beside it.
 //   const P = await import('/debug/perf5Run.js'); await P.police({ seconds: 45 })
+import { tabInfo } from "./tabLoads.js";   // (rule perf-fresh-tab)
+tabInfo();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export async function waitPlay(max = 200000) {
   const t0 = performance.now();
@@ -24,7 +26,7 @@ export async function police({ seconds = 45, to } = {}) {
   const p = G.police({ seconds, warm: 1, ...(to ? { to } : {}) });
   await sleep(1200); F.start();
   const r = await p; const s = F.stop();
-  const out = { play, boot, brief: G.brief(r), frameMs: r.frameMs, cpu: r.cpuLoopMs, gpu: r.gpuMs, endAt: r.autopilot.endAt, tiles: r.tiles.events, spikes: r.spikes,
+  const out = { ...tabInfo(), play, boot, brief: G.brief(r), frameMs: r.frameMs, cpu: r.cpuLoopMs, gpu: r.gpuMs, endAt: r.autopilot.endAt, tiles: r.tiles.events, spikes: r.spikes,
     gc: [r.gc.n, r.gc.heapMB, r.gc.list.filter((g) => g[1] > 40)], sys: r.systems.slice(0, 14).map((x) => [x.sys.slice(0, 60), x.avg, x.p99, x.max]),
     sysMax: r.systems.filter((x) => x.max > 15).map((x) => [x.sys.slice(0, 70), x.max]), pipes: r.pipelines.n,
     lf: r.longFrames.filter((f) => f.dur > 45).slice(0, 20).map((f) => [f.t - r.t0, f.dur, f.block, f.render, f.scripts.slice(0, 4).map((x) => `${x.d} ${x.fn || x.inv} ${x.src}`).join(" | ")]),
@@ -40,5 +42,5 @@ export function buildClusters(t0 = window.__gamePerfLast?.t0 ?? 0, minMs = 15) {
 }
 export async function policeFull(o) {
   const r = await police(o);
-  return { play: r.play, cover: r.boot?.cover, url: location.search, brief: r.brief, frameMs: r.frameMs, probe: r.probe, lf: r.lf.map((f) => f.slice(0, 2)), clusters: buildClusters() };
+  return { tabLoads: r.tabLoads, freshTab: r.freshTab, play: r.play, cover: r.boot?.cover, url: location.search, brief: r.brief, frameMs: r.frameMs, probe: r.probe, lf: r.lf.map((f) => f.slice(0, 2)), clusters: buildClusters() };
 }
