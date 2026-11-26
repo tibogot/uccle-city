@@ -357,6 +357,68 @@ else {
       gltf.scene.traverse((o) => { if (o.isBone && !o.matrixWorld.elements.every(Number.isFinite)) nan++; });
       n++;
     }
+    // ---- RIDING POSES vs photos of kids on 20" BMXs (kid A round 6: "compare with images online of people riding bikes";
+    // the ranges from the photo notes in docs/KIDCHAR.md phase 5): per pose a few key angles in the BIKE's frame
+    if (bike === "bmx" && IS_A) {
+      const F = E.frame, inv = new THREE.Matrix4();
+      const loc = (v) => v.clone().applyMatrix4(inv);
+      const P = (n) => loc(wp(n));
+      const POSES = {
+        cruise: { mo: {}, cranks: [0, 6, 12, 18] }, sprint: { mo: { sprint: 1 }, cranks: [0, 6, 12, 18] },
+        descent: { mo: { preload: 1 }, cranks: [6] }, air: { mo: { air: true, legs: 0.3 }, cranks: [6] },
+        landing: { mo: { legs: -0.9 }, cranks: [6] }, berm: { mo: { lean: 0.55 }, cranks: [6] }, manual: { mo: { manual: 1, pitch: 0.45 }, cranks: [6] },
+      };
+      const RES = {};
+      for (const [pn, { mo, cranks }] of Object.entries(POSES)) {
+        const acc = { torso: [], head: [], elbow: [], knee: [], foot: [], hipX: [], elbowOut: [], kneeOut: [], roll: [] };
+        for (const c of cranks) {
+          Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: 0, air: false, footDown: 0, wobbleNow: 0, wobbleW: 0, grindSeg: -1, grindBal: 0 }, mo);
+          s.crank = c / 24 * Math.PI * 2; s.steerAngle = 0; s.prev.lean = s.lean; s.prev.pitch = s.pitch;
+          bikePose(s, 1, pose); bm.update(s, pose, () => 0); rig?.update(s); bm.root.updateMatrixWorld(true);
+          rider.ride(E, s, holder, 0); gltf.scene.updateMatrixWorld(true);
+          inv.copy(F.matrixWorld).invert();
+          const pel = P("pelvis"), nk = P("neck_01"), bbp = loc(E.bb.getWorldPosition(new THREE.Vector3()));
+          acc.torso.push(Math.atan2(nk.z - pel.z, nk.y - pel.y) * 57.3);                // forward lean from the frame's up
+          // the head's facing: the Head bone's world rotation x its bind offset, +z (the model's forward) in the frame
+          const hq = gltf.scene.getObjectByName("Head").getWorldQuaternion(new THREE.Quaternion()).multiply(rider.mq.Head.clone().invert());
+          const fw = new THREE.Vector3(0, 0, 1).applyQuaternion(hq);                          // (the WORLD: the eyes on the road)
+          acc.head.push(Math.atan2(-fw.y, Math.hypot(fw.x, fw.z)) * 57.3);               // + = looking down
+          for (const sd of ["l", "r"]) {
+            acc.elbow.push(angAt(`upperarm_${sd}`, `lowerarm_${sd}`, `hand_${sd}`));
+            acc.knee.push(angAt(`thigh_${sd}`, `calf_${sd}`, `foot_${sd}`));
+            const ft = P(`foot_${sd}`), ba = P(`ball_${sd}`);
+            acc.foot.push(Math.atan2(ft.y - ba.y, Math.hypot(ba.z - ft.z, ba.x - ft.x)) * 57.3);   // + = toes down
+            const sg = sd === "l" ? 1 : -1;
+            const sh = P(`upperarm_${sd}`), el = P(`lowerarm_${sd}`), ha = P(`hand_${sd}`), th = P(`thigh_${sd}`), kn = P(`calf_${sd}`), an = P(`foot_${sd}`);
+            acc.elbowOut.push(sg * (el.x - (sh.x + ha.x) / 2));                            // m outward of the shoulder-wrist line
+            acc.kneeOut.push(sg * (kn.x - (th.x + an.x) / 2));
+          }
+          acc.hipX.push((pel.z - bbp.z));                                                   // m, + = hips ahead of the BB
+          // the body's lean in the world vs the bike's: the spine's roll from the world vertical / the bike's lean
+          const pw = wp("pelvis"), nw = wp("neck_01"), lat = new THREE.Vector3(1, 0, 0).transformDirection(F.matrixWorld);
+          const d = nw.clone().sub(pw), rollW = Math.atan2(d.dot(new THREE.Vector3(lat.x, 0, lat.z).normalize()), d.y);
+          acc.roll.push(mo.lean ? -rollW / mo.lean : 0);
+        }
+        const avg = (a) => a.reduce((x, y) => x + y, 0) / a.length, mn = (a) => Math.min(...a), mx = (a) => Math.max(...a);
+        RES[pn] = { torso: avg(acc.torso), head: avg(acc.head), elbow: avg(acc.elbow), kneeMin: mn(acc.knee), kneeMax: mx(acc.knee), foot: avg(acc.foot), hipX: avg(acc.hipX), elbowOut: avg(acc.elbowOut), kneeOut: avg(acc.kneeOut), roll: avg(acc.roll) };
+      }
+      if (process.env.POSE_DEBUG || !quiet) for (const [k, r] of Object.entries(RES)) console.log(`  pose ${k}: torso ${r.torso.toFixed(0)} head ${r.head.toFixed(0)} elbow ${r.elbow.toFixed(0)} knee ${r.kneeMin.toFixed(0)}..${r.kneeMax.toFixed(0)} foot ${r.foot.toFixed(0)} hipX ${(r.hipX * 100).toFixed(0)} cm elbowOut ${(r.elbowOut * 100).toFixed(1)} kneeOut ${(r.kneeOut * 100).toFixed(1)} roll ${r.roll.toFixed(2)}`);
+      globalThis.__RIDE_POSES = RES;
+      // the photo notes' ranges (docs/KIDCHAR.md phase 5; elbow / knee = interior angles, foot = the foot's pitch, 24 deg
+      // = flat on the ground: less = heels down; hipX = the hips ahead of the bottom bracket; lean = body / bike lean)
+      const R = RES, bad = [];
+      const want = (pn, what, v, lo, hi) => { if (!(v >= lo && v <= hi)) bad.push(`${pn} ${what} ${typeof v === "number" ? v.toFixed(v < 2 && v > -2 ? 2 : 0) : v} (${lo}..${hi})`); };
+      for (const pn of Object.keys(R)) want(pn, "head", R[pn].head, -8, 25);
+      want("cruise", "torso", R.cruise.torso, 22, 50); want("cruise", "elbow", R.cruise.elbow, 110, 165); want("cruise", "foot", R.cruise.foot, 5, 35);
+      want("sprint", "torso", R.sprint.torso, 30, 60); want("sprint", "elbow", R.sprint.elbow, 85, 150); want("sprint", "elbowOut", R.sprint.elbowOut, 0.05, 0.2); want("sprint", "kneeOut", R.sprint.kneeOut, 0.02, 0.15);
+      want("descent", "hipX", R.descent.hipX, -0.35, -0.08); want("descent", "elbow", R.descent.elbow, 90, 150); want("descent", "foot", R.descent.foot, -10, 22);
+      want("air", "elbow", R.air.elbow, 90, 150); want("air", "kneeMin", R.air.kneeMin, 60, 125);
+      want("landing", "elbow", R.landing.elbow, 80, 130); want("landing", "kneeMin", R.landing.kneeMin, 40, 95); want("landing", "foot", R.landing.foot, -10, 22);
+      want("berm", "lean", Math.abs(R.berm.roll), 0.4, 0.95);
+      want("manual", "elbow", R.manual.elbow, 125, 175); want("manual", "hipX", R.manual.hipX, -0.4, -0.12);
+      check("riding poses vs photos of kids on 20\" BMXs (cruise, sprint, descent, air, landing, berm, manual)", bad.length === 0,
+        bad.join("; ") || Object.entries(R).map(([k, r]) => `${k}: torso ${r.torso.toFixed(0)} elbow ${r.elbow.toFixed(0)} knee ${r.kneeMin.toFixed(0)}`).join(" | "), "within the photo notes' ranges");
+    }
     check(`rider (${bike}): legs never stretched (${n} poses: 24 crank x 5 steer x ${Object.keys(modes).length} modes)`, legMax <= 1.0, `max reach ${(legMax * 100).toFixed(1)} % of the leg (hips fitted up to ${(fitMax * 100).toFixed(1)} cm)`, "<= 100 %");
     check(`rider (${bike}): arms reach with the elbows bent`, armMax <= 0.92, `max reach ${(armMax * 100).toFixed(1)} % of the arm (spine bent up to ${(spineMax * 57.3).toFixed(0)} deg)`, "<= 92 %");
     check(`rider (${bike}): feet on the pedals, hands on the grips`, legErr < 0.01 && armErr < 0.01, `feet ${(legErr * 1000).toFixed(1)} mm, hands ${(armErr * 1000).toFixed(1)} mm`, "< 10 mm");

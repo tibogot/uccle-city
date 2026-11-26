@@ -22,7 +22,11 @@ import * as THREE from "three/webgpu";
  *  shoulders, so at the default seat the spine's full bend left his shoulders 8 cm short of the grips and the body slid
  *  off the saddle toward the bars; the hips sit 4.5 cm further forward on the saddle (about 5 cm of slide left, spine 43 deg; 6 cm damped the landing wobble under the test's 5 cm).
  *  Applied by the lab for ?kid=a and by tools/kid/kidTest.mjs --model kidA. */
-export const RIDE_KIDA = { seatPost: 0.06, pelvisPitch: 0.6, ankling: 0.05, hipBack: -0.045 };
+export const RIDE_KIDA = { seatPost: 0.06, pelvisPitch: 0.6, ankling: 0.05, hipBack: -0.045,
+  // round 6, against photos of kids on 20" BMXs (docs/KIDCHAR.md phase 5): long arms, heels down, the bike leaning
+  // under him in a turn (the body less than the bike), the hips well back in a manual
+  reachArmMin: 0.9, reachArmCrouch: 0.14, reachArmManual: 0.02, spineMin: -0.4, standFwd: 0.0,
+  heelDrop: 0.12, heelDropStand: 0.2, leanExtra: -0.3, manualBack: 0.26 };
 export const RIDE = {
   hipUp: 0.075, hipBack: 0.0,                // seated: the pelvis joint above / behind the seat empty (m, frame axes)
   standUp: 0.16, standFwd: 0.12,             // standing (sprint, preload, air)
@@ -32,6 +36,9 @@ export const RIDE = {
   pelvisPitch: 0.18, standPitch: 0.22,       // rad forward
   leanExtra: 0.22,                           // the upper body leans this much more than the bike
   reachLeg: 0.965, reachArm: 0.86,           // fraction of the limb's length the targets are kept within
+  reachArmMin: 0, spineMin: -0.1,            // the arms never folded under this (0 = off); the back may come up to spineMin
+  reachArmCrouch: 0, reachArmManual: 0,      // that minimum less when crouched / landing (absorb), more in a manual
+  heelDrop: 0, heelDropStand: 0,             // rad: the heels down (seated / more when standing, crouched)
   ankleUp: 0.075, ankleBack: 0.055, ankling: 0,          // the ankle above / behind the pedal's centre (the ball on the pedal)
   wristBack: 0.045,                          // the wrist behind the grip's centre (the fist round the bar)
   headDown: 0.10,                            // the gaze a little down the road
@@ -285,6 +292,19 @@ export class RiderIK {
       }
     }
     if (hi > lo) for (let i = 0; i < 8; i++) { const mid = (lo + hi) / 2; if (bend(mid) > 0) lo = mid; else hi = mid; }
+    // (kid A round 6, photos of kids on BMXs: the arms are LONG on the bars - a little bent seated, bent ~120-150 deg
+    // standing - never folded: when even the least bend leaves the shoulders closer than reachArmMin of the arm, the back
+    // comes up (down to spineMin, a little behind upright) until the arms open to it)
+    if (P.reachArmMin > 0) {
+      // (landing / crouched: the arms bend to absorb; a manual: the arms straight, the hips pulled back on them)
+      const rMin = P.reachArmMin - (P.reachArmCrouch || 0) * crouch + (P.reachArmManual || 0) * manual;
+      const minD = rMin * Math.min(this.arm[0], this.arm[1]) + P.wristBack;     // (to the grip: the wrist sits wristBack behind it)
+      if (bend(hi) + want < minD) {
+        let a = P.spineMin ?? -0.1, z = hi;
+        if (bend(a) + want < minD) hi = a;
+        else { for (let i = 0; i < 10; i++) { const mid = (a + z) / 2; if (bend(mid) + want < minD) z = mid; else a = mid; } hi = a; }
+      }
+    }
     bend(hi); M.spine = hi; b.spine_01.updateMatrixWorld(true);
     // 4. the head: level, looking ahead (the heading's yaw, half the bike's lean)
     // (feel round 4: stabilised - its own smoothed yaw along the bike's path and into the turn (wt.hy), the eyes nearly
@@ -323,7 +343,8 @@ export class RiderIK {
       M.legErr[k] = ft.getWorldPosition(_e).distanceTo(T);
       // the foot along the frame, ankling with the crank (toes down at the bottom / back of the stroke)
       const ang = (s.crank || 0) + (k === 0 ? 0 : Math.PI);
-      _q.setFromAxisAngle(_X, 0.08 + 0.16 * Math.sin(ang - 0.4) * (1 - fd));
+      // (photos: heels DOWN - a little seated, clearly standing / crouched / landing: the weight through the pedals)
+      _q.setFromAxisAngle(_X, 0.08 - (P.heelDrop || 0) - (P.heelDropStand || 0) * Math.min(1, stand + crouch) + 0.16 * Math.sin(ang - 0.4) * (1 - fd));
       setWorldQuat(ft, _q3.copy(_qF).multiply(_q).multiply(k === 0 ? this.mq.foot_l : this.mq.foot_r));
     }
     return M;
