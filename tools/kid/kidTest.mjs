@@ -201,6 +201,80 @@ function deformStats(g) {
   return { regionFrac, bindErr, nan: worst.nan, hi: worst.hi, lo: worst.lo, frac: worst.over / Math.max(1, res.length), res };
 }
 
+// ------------------------------------------------------------------------------------------------ posture + chest (kid A)
+// (owner, 2026-11-26, kid A next to the bike: "his shoulders are far backward, he looks like he has breasts". Root
+// cause: MPFB's spine joints sat low and straight, the T-pose bent his trunk onto the UAL's curve (docs/KIDCHAR.md
+// phase 4). Measured on the CPU-skinned LOD0 in the Idle (t 0, 1.2 s) and two Walk frames, side view:
+//   - the shoulder joints in the middle of the torso's depth at shoulder height (not behind it), +-3 cm;
+//   - the head over the shoulders over the hips: the hip -> shoulder and shoulder -> head lines within 12 deg of vertical;
+//   - a flat chest: the jacket's front across the chest has no two mounds (the side of the chest no more than 8 mm in
+//     front of its middle), the chest depth (jacket front to back) 15-24 cm)
+function skinner(g) {
+  const m0 = g.json.meshes[0].primitives[0];
+  const P = g.accessor(m0.attributes.POSITION), J = g.accessor(m0.attributes.JOINTS_0), Wt = g.accessor(m0.attributes.WEIGHTS_0);
+  const SL = m0.attributes._SLOT !== undefined ? g.accessor(m0.attributes._SLOT) : null;
+  const ibm = g.accessor(g.json.skins[0].inverseBindMatrices), joints = g.json.skins[0].joints, nv = P.length / 3;
+  const mat = (w) => { const [x, y, z, ww] = w.q, s = w.s;
+    return [(1 - 2 * (y * y + z * z)) * s, 2 * (x * y + z * ww) * s, 2 * (x * z - y * ww) * s, 0, 2 * (x * y - z * ww) * s, (1 - 2 * (x * x + z * z)) * s, 2 * (y * z + x * ww) * s, 0,
+      2 * (x * z + y * ww) * s, 2 * (y * z - x * ww) * s, (1 - 2 * (x * x + y * y)) * s, 0, w.p[0], w.p[1], w.p[2], 1]; };
+  const mul = (a, b) => { const o = new Array(16); for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) { let sum = 0; for (let k = 0; k < 4; k++) sum += a[k * 4 + r] * b[c * 4 + k]; o[c * 4 + r] = sum; } return o; };
+  return (L) => {
+    const W = worldPose(g, L), Ms = joints.map((ji, k) => mul(mat(W[ji]), Array.from(ibm.subarray(k * 16, k * 16 + 16))));
+    const X = new Float64Array(nv * 3);
+    for (let i = 0; i < nv; i++) { const px = P[i * 3], py = P[i * 3 + 1], pz = P[i * 3 + 2]; let x = 0, y = 0, z = 0;
+      for (let k = 0; k < 4; k++) { const w = Wt[i * 4 + k]; if (!w) continue; const m = Ms[J[i * 4 + k]];
+        x += w * (m[0] * px + m[4] * py + m[8] * pz + m[12]); y += w * (m[1] * px + m[5] * py + m[9] * pz + m[13]); z += w * (m[2] * px + m[6] * py + m[10] * pz + m[14]); }
+      X[i * 3] = x; X[i * 3 + 1] = y; X[i * 3 + 2] = z; }
+    return { X, W, SL, nv };
+  };
+}
+function postureOf(g, torsoSlot, hipSlot) {
+  const sk = skinner(g), out = [];
+  for (const [clip, t] of [["Idle", 0], ["Idle", 1.2], ["Walk", 0.2], ["Walk", 0.85]]) {
+    const a = g.anims.find((x) => x.name === clip);
+    const { X, W, SL, nv } = sk(sampleAnim(g, a, t));
+    const ok = (i, slot) => slot < 0 || !SL || SL[i] === slot;
+    const J = (n) => W[g.byName.get(n)].p;
+    const sh = [0, 1, 2].map((c) => (J("upperarm_l")[c] + J("upperarm_r")[c]) / 2), hip = [0, 1, 2].map((c) => (J("thigh_l")[c] + J("thigh_r")[c]) / 2), hd = J("Head");
+    // the body's facing: from the hips' left -> right, forward = up x left
+    const lx = J("thigh_l")[0] - J("thigh_r")[0], lz = J("thigh_l")[2] - J("thigh_r")[2], ll = Math.hypot(lx, lz), fx = -lz / ll, fz = lx / ll;
+    const fwd = (p) => p[0] * fx + p[2] * fz, side = (p) => p[0] * (lx / ll) + p[2] * (lz / ll);
+    // the torso's depth in a band (vertices within 6 cm of the middle plane; columns across for the chest's shape)
+    const band = (y0, y1, slot, c0) => { let fr = -9, bk = 9; const cols = {};
+      for (let i = 0; i < nv; i++) { if (!ok(i, slot)) continue; const p = [X[i * 3], X[i * 3 + 1], X[i * 3 + 2]]; if (p[1] < y0 || p[1] > y1) continue;
+        const sd = side(p) - c0, f = fwd(p); if (Math.abs(sd) < 0.06) { fr = Math.max(fr, f); bk = Math.min(bk, f); }
+        if (Math.abs(sd) < 0.11) { const b = Math.round(sd * 100); cols[b] = Math.max(cols[b] ?? -9, f); } }
+      return { fr, bk, cols, mid: (fr + bk) / 2 }; };
+    const S = band(sh[1] - 0.05, sh[1] - 0.01, torsoSlot, side(sh)), Hb = band(hip[1] - 0.01, hip[1] + 0.05, hipSlot, side(hip));
+    const C = band(sh[1] - 0.16, sh[1] - 0.09, torsoSlot, side(sh));            // the chest (~10-15 cm under the shoulder joints)
+    const centre = Math.max(C.cols[2] ?? -9, C.cols[-2] ?? -9, C.cols[3] ?? -9, C.cols[-3] ?? -9);
+    const sideMax = Math.max(...[4, 5, 6, 7, 8, -4, -5, -6, -7, -8].map((b) => C.cols[b] ?? -9));
+    out.push({ at: `${clip}@${t}`, sh: fwd(sh) - S.mid, lean: Math.atan2(S.mid - Hb.mid, sh[1] - hip[1]) * 57.3, head: fwd(hd) - S.mid,
+      depth: C.fr - C.bk, mound: sideMax - centre, ph: J("pelvis")[1] });
+  }
+  return out;
+}
+// (owner, 2026-11-26, kid A next to the bike: "his shoulders are far backward, he looks like he has breasts". Root cause:
+// MPFB's spine joints sat low and straight; the T-pose bent his trunk onto the UAL's curve (docs/KIDCHAR.md phase 4).
+// Measured on the CPU-skinned LOD0, Idle (t 0, 1.2 s) and Walk (two frames), side view, ON THE MESH (joint lines are no
+// measure: the UAL mannequin's own shoulder joints sit 6 cm behind its neck):
+//   - the shoulder joints in the middle of the torso's depth at shoulder height (not behind it): <= 3 cm;
+//   - the torso upright: its middle line from the hips' band to the shoulders' band <= the UAL mannequin's lean + 4 deg;
+//   - the head over the shoulders: the head joint in front of the shoulders' middle <= the mannequin's (scaled) + 2 cm;
+//   - a flat chest: across the jacket's front no two mounds (the sides <= 8 mm in front of the middle), depth 15-24 cm)
+if (IS_A) {
+  const A = postureOf(kid, meta.kid.slots.indexOf("jacket"), meta.kid.slots.indexOf("shorts")), R = postureOf(ual, -1, -1);
+  const sc = A[0].ph / R[0].ph;
+  const worst = (f) => Math.max(...A.map(f)), notes = A.map((x, i) => `${x.at}: sh ${(x.sh * 100).toFixed(1)} cm, torso ${x.lean.toFixed(0)} deg (UAL ${R[i].lean.toFixed(0)}), head ${(x.head * 100).toFixed(1)} cm (UAL ${(R[i].head * sc * 100).toFixed(1)}), chest ${(x.depth * 100).toFixed(1)} cm, mound ${(x.mound * 1000).toFixed(0)} mm`);
+  if (!quiet) console.log("  posture: " + notes.join(" | "));
+  const wSh = worst((x) => Math.abs(x.sh)), wLean = Math.max(...A.map((x, i) => Math.abs(x.lean) - Math.abs(R[i].lean))), wHead = Math.max(...A.map((x, i) => x.head - R[i].head * sc));
+  check("posture (Idle + Walk, side view): shoulders in the torso's middle, torso + head as upright as the UAL mannequin's", wSh <= 0.03 && wLean <= 4 && wHead <= 0.02,
+    `shoulder joints ${(wSh * 100).toFixed(1)} cm off the torso's middle, torso ${wLean.toFixed(1)} deg and head ${(wHead * 100).toFixed(1)} cm past the mannequin's`, "<= 3 cm, <= 4 deg, <= 2 cm");
+  const wM = worst((x) => x.mound), dLo = Math.min(...A.map((x) => x.depth)), dHi = worst((x) => x.depth);
+  check("flat chest: no two mounds across the jacket's front, chest depth 15-24 cm", wM <= 0.008 && dLo >= 0.15 && dHi <= 0.24,
+    `sides ${(wM * 1000).toFixed(0)} mm in front of the middle, depth ${(dLo * 100).toFixed(1)}-${(dHi * 100).toFixed(1)} cm`, "<= 8 mm, 15-24 cm");
+}
+
 {
   const D = deformStats(kid), U = deformStats(ual);
   check("bind pose: the inverse bind matrices reproduce the mesh", D.bindErr < 1e-4, `${(D.bindErr * 1000).toFixed(3)} mm`, "< 0.1 mm");

@@ -265,8 +265,10 @@ def build_outfit():
         ang = math.atan2(co.x, -(co.y - spine_y)) % (2 * math.pi)          # 0 = the front (the zip gap)
         return cell_uv("jk_torso", ang / (2 * math.pi), min(1, max(0, (co.z - hem) / (collar - hem))))
     vc = (chest - hem) / (collar - hem); vn = (neck0 - 0.02 - hem) / (collar - hem)
-    GEN["jk_torso"] = band_tex(128, 128, [(0, 0.07, "navy"), (0.07, vc - 0.03, "purple"), (vc - 0.03, vc, "white"), (vc, vn, "teal"), (vn, 1.01, "navy")],
-                               extra=lambda u, v: "zip" if (u < 0.035 or u > 0.965) and v < vn else None)
+    # (the collar is teal like the yoke: a navy collar band cut by a HEIGHT ran across the near-flat shoulder tops in a
+    # jagged edge - the face close-up; the zip tape runs up to the collar's top)
+    GEN["jk_torso"] = band_tex(128, 128, [(0, 0.07, "navy"), (0.07, vc - 0.03, "purple"), (vc - 0.03, vc, "white"), (vc, 1.01, "teal")],
+                               extra=lambda u, v: "zip" if (u < 0.035 or u > 0.965) else None)
     GEN["jk_sleeve"] = band_tex(16, 128, [(0, 0.5, "teal"), (0.5, 0.86, "purple"), (0.86, 1.01, "navy")])
     # the windbreaker HANGS from the chest (kid A polish: it followed his belly and flared at the hem: "full at the
     # belly in profile"): below the chest no front vertex comes further forward than the chest's front line
@@ -283,6 +285,14 @@ def build_outfit():
             if v.co.z < pec and v.co.y < fy:
                 t = min(1.0, (pec - v.co.z) / 0.06)          # (blended in over 6 cm under the chest line)
                 v.co.y = v.co.y + (fy - v.co.y) * t
+        # a FLAT front (owner: "he looks like he has breasts"): an 11-year-old's chest is flat and a windbreaker does
+        # not follow the pectorals: the front panels' depth relaxed across (y only, 30 passes, the edges pinned) so the
+        # mounds over the chest fill in to the straight line between the shoulders and the zip (never pulled forward)
+        bm.normal_update()
+        front = [v for v in bm.verts if v.normal.y < -0.25 and hem - 0.02 < v.co.z < collar - 0.015 and abs(v.co.x) < 0.17 and not v.is_boundary]
+        for _ in range(30):
+            ny = {v: sum(e.other_vert(v).co.y for e in v.link_edges) / max(1, len(v.link_edges)) for v in front}
+            for v, y in ny.items(): v.co.y = max(v.co.y, 0.5 * v.co.y + 0.5 * y)
     jacket, inner_j = garment("kid_jacket", me, jk_region, jk_off, cuts, jk_uv, thick=0.004, smooth=3, ratio=0.5, shape=jk_shape)
     # ---------------- the socks: knee-high-ish, two stripes under a white top
     knee = min(bone_z("calf_l"), bone_z("calf_r"))
@@ -291,7 +301,10 @@ def build_outfit():
     sk_cuts = [(None, Vector((0, 0, s_hi)), Vector((0, 0, 1))), (None, Vector((0, 0, s_lo)), Vector((0, 0, -1)))]
     sk_uv = lambda f, co, i: cell_uv("socks", 0.5, min(1, max(0, (co.z - s_lo) / (s_hi - s_lo))))
     GEN["socks"] = band_tex(16, 128, [(0, 0.70, "sock"), (0.70, 0.75, "red"), (0.75, 0.79, "sock"), (0.79, 0.84, "navy"), (0.84, 1.01, "sock")])
-    socks, inner_s = garment("kid_socks", me, sk_region, lambda i, co, n: 0.0035, sk_cuts, sk_uv, thick=0.002, smooth=1)
+    # (the KNEE MARKS: the socks stood 3.5 mm off the leg up to their top edge: looking into the top you saw the dark gap
+    # and the skin's cut edge. The top 2 cm grip the leg like an elastic cuff: 1 mm off, the 2 mm shell sinks into the skin)
+    sk_off = lambda i, co, n: 0.0035 if co.z < s_hi - 0.02 else 0.0035 - 0.0025 * min(1.0, (co.z - (s_hi - 0.02)) / 0.012)
+    socks, inner_s = garment("kid_socks", me, sk_region, sk_off, sk_cuts, sk_uv, thick=0.002, smooth=1)
     # ---------------- the cap: the head's skin above a tilted rim plane, lifted over the hair (the hair stays: worn
     # backwards the fringe shows), a white centre panel, + a forward and a backward brim
     brows = parts[C["brows"]]
@@ -346,8 +359,21 @@ def build_outfit():
     # can poke through the jacket, fewer tris); the sneakers' own sock above the collar goes; chunkier sneakers
     tee = parts[C["shirt"]]
     bm = bmesh.new(); bm.from_mesh(tee.data)
-    gone_t = [v for v in bm.verts if not (abs((tee.matrix_world @ v.co).x) < 0.075 and (tee.matrix_world @ v.co).y < spine_y)]
+    gone_t = [v for v in bm.verts if not (abs((tee.matrix_world @ v.co).x) < 0.042 and (tee.matrix_world @ v.co).y < spine_y)]
     bmesh.ops.delete(bm, geom=gone_t, context="VERTS")
+    # (the tee strip kept 6 mm behind the jacket's flattened front, wherever it is: no poke-through at the zip)
+    from mathutils import kdtree as _kdt
+    JV = [jacket.matrix_world @ v.co for v in jacket.data.vertices]
+    kdj = _kdt.KDTree(len(JV))
+    for k, p_ in enumerate(JV): kdj.insert(p_, k)
+    kdj.balance()
+    tw0 = tee.matrix_world; tw0i = tw0.inverted()
+    for v in bm.verts:
+        p_ = tw0 @ v.co
+        near = [co_ for co_, k_, d_ in kdj.find_n(p_, 8) if abs(co_.z - p_.z) < 0.03]
+        if near:
+            fy_ = min(c.y for c in near) + 0.010
+            if p_.y < fy_: p_.y = fy_; v.co = tw0i @ p_
     if "y" in drape:     # (the tee strip stays 6 mm behind the jacket's hanging front: no poke-through at the zip)
         tw = tee.matrix_world; twi = tw.inverted()
         for v in bm.verts:
@@ -499,6 +525,84 @@ def tpose(arm):
     print(f"T-pose: {len(order)} bones, worst direction error {worst:.2f} deg")
     return worst
 
+SPINE = ["pelvis", "spine_01", "spine_02", "spine_03", "neck_01"]
+def respine(arm, meshes):
+    """POSTURE (owner, 2026-11-26: "his shoulders are far backward, he looks like he has breasts"). Root cause: MPFB's
+    spine joints sit low (pelvis -> spine_01 -> 02 -> 03: 8.0 / 6.2 / 5.1 cm, then spine_03 -> neck_01 27.8 cm) where
+    the UAL's are spread up the back (9.7 / 8.9 / 10.2 / 12.4 cm). The clips' spine_03 / neck rotation (the Idle's 14 deg
+    thoracic curve, the walk's sway) then pivoted his WHOLE chest about the bottom of the ribs: the chest pushed out,
+    the shoulders thrown back behind it, the head poking forward. Fix: the joints moved up his own back curve to the
+    UAL's arc-length fractions (pelvis 0, spine_01 .235, spine_02 .451, spine_03 .699, neck 1), and the torso's spine
+    weights re-made along that curve (hat functions on the bones' middles; the neck's, clavicles', arms', legs' weights
+    untouched)."""
+    # (round 2 of the root cause: re-spacing the joints was not enough. The T-pose turns every bone onto its UAL
+    # direction, and the UAL's spine joints follow ITS back curve (pelvis -> spine_01 14 deg forward, 7, -2, -2, the
+    # neck 11 forward) while MPFB's run straight up his torso: turning them bent his trunk forward at the lower back,
+    # the neck forward (the head poked out) and the clavicles back (the shoulders behind the torso). So the joints are
+    # PLACED along the UAL's own curve, scaled to his torso, ending at his neck: the spine and clavicles then need no
+    # turn at the T-pose (his torso keeps its own upright shape) and the clips' rotations mean the same.)
+    U = lambda n: gl2b(REST[n]["p"])
+    sel_only(arm); bpy.ops.object.mode_set(mode="EDIT")
+    eb = arm.data.edit_bones
+    P0, N0, H0 = eb["pelvis"].head.copy(), eb["neck_01"].head.copy(), eb["head"].head.copy()
+    seg = [(eb[SPINE[i + 1]].head - eb[SPINE[i]].head).length for i in range(4)]
+    chain = ["pelvis", "spine_01", "spine_02", "spine_03", "neck_01"]
+    d = [U(chain[i + 1]) - U(chain[i]) for i in range(4)]
+    sc = (N0.z - P0.z) / sum(x.z for x in d)
+    pts = [P0.copy()]
+    for x in d: pts.append(pts[-1] + x * sc)
+    err = N0 - pts[-1]
+    L = [0.0]
+    for i in range(4): L.append(L[-1] + (pts[i + 1] - pts[i]).length)
+    new = [pts[i] + err * (L[i] / L[-1]) for i in range(5)]
+    for i in (1, 2, 3):
+        eb[SPINE[i]].head = new[i]; eb[SPINE[i - 1]].tail = new[i]
+    eb["spine_03"].tail = new[4]
+    # the head joint: the UAL's neck -> Head direction at his neck length
+    dh = (U("Head") - U("neck_01")).normalized()
+    eb["head"].head = N0 + dh * (H0 - N0).length; eb["neck_01"].tail = eb["head"].head
+    # the clavicles: his shoulder joints stay; the clavicle's root placed so it already points the UAL's way
+    for sd in "lr":
+        c, u = eb[f"clavicle_{sd}"], eb[f"upperarm_{sd}"]
+        dc = (U(f"upperarm_{sd}") - U(f"clavicle_{sd}")).normalized()
+        Lc = (u.head - c.head).length
+        c.head = u.head - dc * Lc; c.tail = u.head.copy()
+    bpy.ops.object.mode_set(mode="OBJECT")
+    print("respine: segments", [round(x, 3) for x in seg], "->", [round((new[i + 1] - new[i]).length, 3) for i in range(4)],
+          "neck error", round(err.length, 3))
+    # the re-weighting: each vertex's pelvis + spine weight (its share) spread along the new joints by its height on
+    # the curve (projected on the polyline): hat functions centred on the bones' middles
+    mw = arm.matrix_world
+    P = [mw @ p for p in new]
+    mids = [(P[i] + P[i + 1]) * 0.5 for i in range(4)]            # pelvis, spine_01, spine_02, spine_03
+    def param(p):                                                     # arc parameter of p on the polyline of middles
+        best, bt, acc = None, 0.0, 0.0
+        for i in range(3):
+            a, b = mids[i], mids[i + 1]; ab = b - a; L = ab.length
+            t = max(0.0, min(1.0, (p - a).dot(ab) / (L * L)))
+            d = (a + ab * t - p).length
+            if best is None or d < best: best, bt = d, i + t
+            if (p - a).dot(ab) < 0 and i == 0: bt_low = True
+        # below the pelvis middle / above the spine_03 middle: clamp
+        if (p - mids[0]).dot(mids[1] - mids[0]) < 0: return 0.0
+        if (p - mids[3]).dot(mids[3] - mids[2]) > 0: return 3.0
+        return bt
+    for o in meshes:
+        gi = {g.name: g.index for g in o.vertex_groups}
+        if not all(n in gi for n in SPINE[:4]): continue
+        idx = [gi[n] for n in SPINE[:4]]; groups = [o.vertex_groups[n] for n in SPINE[:4]]
+        om = o.matrix_world
+        for v in o.data.vertices:
+            share = 0.0
+            for e in v.groups:
+                if e.group in idx: share += e.weight
+            if share <= 1e-4: continue
+            t = param(om @ v.co); k = min(2, int(t)); f = t - k
+            w = [0.0] * 4; w[k] = (1 - f) * share; w[k + 1] = f * share
+            for gidx_, wt in zip(range(4), w):
+                if wt > 1e-4: groups[gidx_].add([v.index], wt, "REPLACE")
+                else: groups[gidx_].remove([v.index])
+
 def bake_pose_as_rest(arm, meshes):
     for o in meshes:
         sel_only(o)
@@ -617,7 +721,8 @@ def game():
         for u in [u for u in uvs if u != act]: uvs.remove(u)
         uvs.active.name = "UVMap"
     atlas = build_atlas(slots)
-    # T-pose + bind
+    # the spine re-jointed to the UAL's proportions (+ the torso re-weighted), then the T-pose + bind
+    respine(arm, meshes)
     worst = tpose(arm)
     bake_pose_as_rest(arm, meshes)
     for b in arm.data.bones:
