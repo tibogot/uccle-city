@@ -52,7 +52,8 @@ import { loadTrackProfile, LIFT_CACHE } from "./trackProfile.js";   // (LIFT_CAC
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial, roadTextMaterial } from "./roadPaint.js";
 import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
-import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";   // (perfgame round 3: the sun's static shadow cache)
+import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";
+import { setDay as setCityDay } from "./seasons/season.js";   // (perfgame round 3: the sun's static shadow cache)
 import { createPipeline } from "./post.js";
 import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- upscale (docs/UPSCALE.md): TAAU + dynamic resolution
 import { buildTrees } from "./trees.js";
@@ -1401,6 +1402,9 @@ async function main() {
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   setTreeLighting(lighting);
+  // (claude/xmasreview, rule season-from-date) the season's uniforms (lawns, shrubs, hedges, ivy, the weather's crowns)
+  // on the lighting's day from the first frame (the weather sets them too, but only when it runs: ?weather=old / quick)
+  setCityDay(lighting.day);
   // --- perf4 (docs/perf/AUDIT.md step 13): the foliage materials (grass, plants, ivy) take the sun + hemisphere only
   setFoliageLights(lighting);
   setCellCullSun(lighting.sun?.shadow?.camera || null, lodEye);
