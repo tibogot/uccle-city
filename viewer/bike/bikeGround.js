@@ -135,7 +135,7 @@ feature("mud", MUD.x0, MUD.x1, MUD.z0, MUD.z1, SURF.mud, (x, z) => {
   const rut = Math.exp(-(((x - (MUD.x0 + MUD.x1) / 2 + 0.6) / 0.18) ** 2)) + Math.exp(-(((x - (MUD.x0 + MUD.x1) / 2 - 0.6) / 0.18) ** 2));
   return -(0.06 + 0.03 * rut) * e;
 }, 0.1);
-feature("snow", SNOW.x0, SNOW.x1, SNOW.z0, SNOW.z1, SURF.snow, () => 0, 1);
+feature("snow", SNOW.x0, SNOW.x1, SNOW.z0, SNOW.z1, SURF.snow, () => 0, 0.2);     // (fine: its round edge drawn per triangle, no saw-tooth)
 const slopeH = (s, G, run, flat) => G * (sm(s) - sm(s - run) - sm(s - run - flat) + sm(s - 2 * run - flat));
 // (owner 2026-11-26: "on a steep descent we are supposed to go way faster") two LONG descents along +x, a 10 m flat top
 // to start from, then 6 % over 220 m (13 m high) / 12 % over 160 m (19 m), a 60 m run-out: long enough to reach the coasting terminal speed

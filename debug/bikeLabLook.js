@@ -38,7 +38,7 @@ function mudMat() {
   const m = new THREE.MeshStandardNodeMaterial();
   const a = n2(0.5).mul(0.5).add(0.5), wet = smoothstep(0.45, 0.7, n2(0.8, 11).mul(0.5).add(0.5));
   m.colorNode = mix(color(0x5a4330), color(0x2f2318), a.mul(0.6).add(wet.mul(0.4)));
-  m.roughnessNode = mix(float(0.85), float(0.18), wet);            // the puddles shine
+  m.roughnessNode = mix(float(0.85), float(0.34), wet);            // the puddles shine (not mirrors)
   m.metalnessNode = float(0);
   return m;
 }
@@ -64,6 +64,18 @@ function woodMat() {
   m.metalnessNode = screw.mul(0.6);
   return m;
 }
+/** skatepark cast concrete: 3D noise (no stretch down a quarter pipe's steep face, as a planar scan had), saw-cut joints
+ *  every 2 m, darker wear and tyre smudges, a slight sheen where it is polished by wheels */
+function concreteMat() {
+  const m = new THREE.MeshStandardNodeMaterial();
+  const P = positionWorld, n3 = (k, o = 0) => mx_noise_float(P.mul(k).add(o));
+  const jx = abs(fract(P.x.div(2)).sub(0.5)), jz = abs(fract(P.z.div(2)).sub(0.5));
+  const joint = smoothstep(0.497, 0.4995, max(jx, jz));
+  const mott = n3(0.9).mul(0.5).add(0.5), fine = n3(9, 3).mul(0.5).add(0.5), wear = smoothstep(0.55, 0.85, n3(0.35, 7).mul(0.5).add(0.5));
+  m.colorNode = mix(color(0xc2beb5), color(0x9d998f), mott.mul(0.5).add(fine.mul(0.25))).mul(float(1).sub(wear.mul(0.16))).mul(float(1).sub(joint.mul(0.45)));
+  m.roughnessNode = mix(float(0.9), float(0.62), wear);
+  return m;
+}
 function steelMat() { return new THREE.MeshStandardNodeMaterial({ color: 0x9aa1a8, roughness: 0.38, metalness: 0.7 }); }
 
 const KEYS = ["asphalt", "concrete", "setts", "grass", "dirt", "roots", "sand", "mud", "snow", "wood"];
@@ -75,6 +87,7 @@ const SURF_KEY = ["asphalt", "setts", "dirt", "grass", "sand", "roots", "mud", "
  */
 export async function buildLabLook({ renderer, scene, camera, FEATURES, testHeight, testSurface, BOUNDS, PARK, SNOW = null, quality = "high" }) {
   const t0 = performance.now();
+  camera.far = Math.max(camera.far, 6000); camera.updateProjectionMatrix();     // (the sky dome: at 800 m it was clipped black)
   const lighting = new Lighting(scene, renderer, "midday");
   await lighting.attach(camera);
   const pipe = createPipeline(renderer, scene, camera);
@@ -85,22 +98,24 @@ export async function buildLabLook({ renderer, scene, camera, FEATURES, testHeig
   let scansOK = false;
   try {
     const man = await fetch("../viewer/materials/textures/scans.json").then((r) => r.json());
-    await loadScans(renderer, undefined, { skip: Object.keys(man).filter((k) => !["asphalt", "paving_concrete", "cobbles"].includes(k)) });
+    await loadScans(renderer, undefined, { skip: Object.keys(man).filter((k) => !["asphalt", "cobbles"].includes(k)) });
     scansOK = true;
   } catch (e) { console.warn("[bike lab look] scans failed, procedural:", e); }
   try { setGroundTextures(await loadGroundTextures(renderer)); } catch (e) { console.warn("[bike lab look] ground textures failed:", e); }
   const coverTex = new THREE.DataTexture(new Uint8Array(16), 2, 2, THREE.RGBAFormat); coverTex.needsUpdate = true;
   const M = {
     asphalt: createMaterial("asphalt", { mapping: "world" }),
-    concrete: createMaterial("paving_concrete", { mapping: "world" }),
+    // (the skatepark's cast concrete: the "render" kind maps walls too - the paving slabs smeared down a quarter pipe's face)
+    concrete: concreteMat(),
     setts: createMaterial("cobbles", { mapping: "world" }),
     grass: groundMaterial({ tex: coverTex, ortho: null }, BOUNDS, null),
     dirt: dirtMat(), roots: dirtMat(0x6b553c, 0x3e3022, 0.97), sand: sandMat(), mud: mudMat(), snow: snowMat(), wood: woodMat(),
   };
   const matArr = KEYS.map((k) => M[k]);
   const keyOf = (f, x, z) => {
-    if (f && f.park) return f.color === PARK.colors.wood ? "wood" : f.color === PARK.colors.concrete ? "concrete" : "dirt";
-    if (f && /kicker$|^stairs$|^slope$|^steep$|^hill/.test(f.name)) return f.name === "kicker" ? "wood" : "asphalt";
+    // (a park feature's material only on its shape: its rectangle's flat margins are the ground round it)
+    if (f && f.park && Math.abs(testHeight(x, z)) > 0.004) return f.color === PARK.colors.wood ? "wood" : f.color === PARK.colors.concrete ? "concrete" : "dirt";
+    if (f && /^kicker$|^stairs$|^slope$|^steep$|^hill/.test(f.name)) return f.name === "kicker" && testHeight(x, z) > 0.004 ? "wood" : "asphalt";
     return SURF_KEY[testSurface(x, z)] || "grass";
   };
 
@@ -206,7 +221,7 @@ export async function buildLabLook({ renderer, scene, camera, FEATURES, testHeig
 
   console.log(`[bike lab look] ${(performance.now() - t0).toFixed(0)} ms, ground ${pos.length / 3} verts, ${all.length / 3} tris, scans ${scansOK}, grass ${!!grass}, trees ${trees ? "yes" : "no"}`);
   return {
-    lighting, pipe, ground, materials: M, grass, trees, snow, steel: steelMat(), concreteWall: createMaterial("concrete_white", { mapping: "world" }),
+    lighting, pipe, ground, materials: M, grass, trees, snow, steel: steelMat(), concreteWall: concreteMat(),
     update(dt, focus, s) {
       lighting.update(camera.position.y, testHeight(camera.position.x, camera.position.z), focus, 60, dt);
       lodEye.value.copy(camera.position);
