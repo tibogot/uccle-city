@@ -1,6 +1,6 @@
 # Mesh audit
 
-7,640 triangles, 4,090 welded vertices, 294 open edges, 2,474 rays, 958 ms.
+7,640 triangles, 4,090 welded vertices, 294 open edges, 2,474 rays, 2250 ms.
 
 **0 blocking**, 138 warnings. Clean (no blocking item).
 

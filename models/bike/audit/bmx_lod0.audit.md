@@ -1,6 +1,6 @@
 # Mesh audit
 
-15,344 triangles, 8,361 welded vertices, 788 open edges, 5,760 rays, 2658 ms.
+15,344 triangles, 8,361 welded vertices, 788 open edges, 5,760 rays, 6281 ms.
 
 **0 blocking**, 72 warnings. Clean (no blocking item).
 
@@ -10,7 +10,7 @@
 | sliver | warn | 8 |
 | nonmanifold | warn | 42 |
 | tjunction | warn | 3 |
-| seam | info | 251 |
+| seam | info | 249 |
 | opening | info | 1 |
 | backtoback | info | 39 |
 
@@ -108,7 +108,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.21, 0.97, 0.29 | Steer_LOD0/bmx_grip | 0.007 |
 | -0.21, 0.96, 0.28 | Steer_LOD0/bmx_grip | 0.007 |
 
-## seam (info, 251)
+## seam (info, 249)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -153,7 +153,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.01, 0.57, 0.35 | Body_LOD0/bmx_paint + Steer_LOD0/bmx_metal | 0.13 | 46 | 24.1 |
 | -0.01, 0.56, -0.22 | Body_LOD0/bmx_metal + Body_LOD0/bmx_metal | 0.07 | 45 | 19.9 |
 
-(211 more in the JSON)
+(209 more in the JSON)
 
 ## opening (info, 1)
 

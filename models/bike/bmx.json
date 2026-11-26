@@ -83,7 +83,7 @@
   "trail": 0.0437,
   "bbHeight": 0.28999999165534973,
   "chainStay": 0.366,
-  "crankLength": 0.175,
+  "crankLength": 0.14,
   "barWidth": 0.674,
   "teeth": [
    44,
@@ -95,20 +95,20 @@
   "Body": {
    "parent": "BMX",
    "pos": [
-    0.0,
-    0.0,
-    0.0
+    0,
+    0,
+    0
    ]
   },
   "Steer": {
    "parent": "Body",
    "pos": [
-    0.0,
+    0,
     0.62117,
     0.34059
    ],
    "axis": [
-    0.0,
+    0,
     0.96126,
     -0.27564
    ],
@@ -117,7 +117,7 @@
   "Wheel_F": {
    "parent": "Steer",
    "pos": [
-    0.0,
+    0,
     0.254,
     0.475
    ],
@@ -126,7 +126,7 @@
   "Wheel_R": {
    "parent": "Body",
    "pos": [
-    0.0,
+    0,
     0.254,
     -0.475
    ],
@@ -135,7 +135,7 @@
   "Cog": {
    "parent": "Body",
    "pos": [
-    0.0,
+    0,
     0.254,
     -0.475
    ],
@@ -144,7 +144,7 @@
   "Crank": {
    "parent": "Body",
    "pos": [
-    0.0,
+    0,
     0.29,
     -0.109
    ],
@@ -155,7 +155,7 @@
    "pos": [
     0.13,
     0.29,
-    -0.284
+    -0.249
    ],
    "note": "rotation.x = -crank keeps it level"
   },
@@ -164,7 +164,7 @@
    "pos": [
     -0.13,
     0.29,
-    0.066
+    0.031
    ],
    "note": "rotation.x = -crank keeps it level"
   }
@@ -221,7 +221,7 @@
   "Seat": {
    "parent": "Body",
    "pos": [
-    0.0,
+    0,
     0.74048,
     -0.2596
    ]
@@ -231,7 +231,7 @@
    "pos": [
     0.13,
     0.3005,
-    -0.284
+    -0.249
    ]
   },
   "Foot_R": {
@@ -239,22 +239,22 @@
    "pos": [
     -0.13,
     0.3005,
-    0.066
+    0.031
    ]
   },
   "Contact_F": {
    "parent": "Steer",
    "pos": [
-    0.0,
-    0.0,
+    0,
+    0,
     0.475
    ]
   },
   "Contact_R": {
    "parent": "Body",
    "pos": [
-    0.0,
-    0.0,
+    0,
+    0,
     -0.475
    ]
   }
@@ -301,5 +301,56 @@
    "file": "bmx_spokes.ktx2",
    "alpha": "BLEND, double sided (pre-filtered cards)"
   }
+ },
+ "pack": {
+  "file": "bmx.glb",
+  "bytes": 708440,
+  "tris": {
+   "LOD0": 15344,
+   "LOD1": 7640,
+   "LOD2": 1794
+  },
+  "audit": {
+   "LOD0": {
+    "blocking": 0,
+    "warnings": 72,
+    "counts": {
+     "sliver": 8,
+     "nonmanifold": 42,
+     "backtoback": 39,
+     "near": 19,
+     "seam": 249,
+     "tjunction": 3,
+     "opening": 1
+    }
+   },
+   "LOD1": {
+    "blocking": 0,
+    "warnings": 138,
+    "counts": {
+     "sliver": 8,
+     "nonmanifold": 32,
+     "backtoback": 69,
+     "near": 93,
+     "seam": 148,
+     "tjunction": 5
+    }
+   },
+   "LOD2": {
+    "blocking": 0,
+    "warnings": 71,
+    "counts": {
+     "sliver": 8,
+     "backtoback": 4,
+     "near": 63,
+     "seam": 55
+    }
+   }
+  },
+  "lodRange": [
+   12,
+   40,
+   150
+  ]
  }
 }

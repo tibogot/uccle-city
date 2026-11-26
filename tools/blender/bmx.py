@@ -106,7 +106,7 @@ STj = st(0.262)                           # top tube meets the seat tube
 STtop = st(0.300)
 CL = -0.044                               # chain line (right side = -Y)
 R_RING, R_COG = 0.0127 / (2 * math.sin(math.pi / 44)), 0.0127 / (2 * math.sin(math.pi / 16))
-CRANK = 0.175
+CRANK = 0.140          # (owner 2026-11-26: a kid's 20" BMX: 140 mm junior cranks for an 11-year-old of 1.45 m; 175 closed his knee to ~55 deg at the top)
 PIVOT_STEER = ax(0.390)
 RIM_BED, RIM_HOLE = 0.1945, 0.1945        # spoke bed = nipple seat radius (the nipples sit in the rim)
 TYRE_RC = 0.2285                           # tyre section centre radius (carcass top 0.252, knobs to 0.2542)
@@ -753,7 +753,7 @@ def build_crank(P):
         if DET < 2:
             cyl(P, CHROME, c0 - Y * (s * (0.0165 if s < 0 else 0.010)), c0 + Y * (s * 0.009), 0.0170, segs=S(12, 8, 6), bevel=0.002)
             cyl(P, CHROME, c1 - Y * (s * 0.009), c1 + Y * (s * 0.009), 0.0125, segs=S(10, 8, 6), bevel=0.0)
-        tubep(P, CHROME, [c0 + d * 0.010, c0 + d * 0.06 + Y * (s * 0.002), c1 - d * 0.008], [0.0118, 0.0105, 0.0098], segs=S(10, 7, 5), per=2)
+        tubep(P, CHROME, [c0 + d * 0.010, c0 + d * (0.06 * CRANK / 0.175) + Y * (s * 0.002), c1 - d * 0.008], [0.0118, 0.0105, 0.0098], segs=S(10, 7, 5), per=2)
         if DET == 0:
             cyl(P, BLACK, c0 + Y * (s * 0.009), c0 + Y * (s * 0.0115), 0.0085, segs=6)   # the crank bolt
     # 5-arm spider (right side) flat on the ring, its arms ending under the ring bolts; the 44T ring (polished alloy,

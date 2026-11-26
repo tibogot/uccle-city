@@ -22,7 +22,7 @@ import * as THREE from "three/webgpu";
  *  shoulders, so at the default seat the spine's full bend left his shoulders 8 cm short of the grips and the body slid
  *  off the saddle toward the bars; the hips sit 4.5 cm further forward on the saddle (about 5 cm of slide left, spine 43 deg; 6 cm damped the landing wobble under the test's 5 cm).
  *  Applied by the lab for ?kid=a and by tools/kid/kidTest.mjs --model kidA. */
-export const RIDE_KIDA = { seatPost: 0.05, pelvisPitch: 0.6, ankling: 0.03, hipBack: -0.045 };
+export const RIDE_KIDA = { seatPost: 0.06, pelvisPitch: 0.6, ankling: 0.05, hipBack: -0.045 };
 export const RIDE = {
   hipUp: 0.075, hipBack: 0.0,                // seated: the pelvis joint above / behind the seat empty (m, frame axes)
   standUp: 0.16, standFwd: 0.12,             // standing (sprint, preload, air)
@@ -308,7 +308,7 @@ export class RiderIK {
       const pe = (k === 0 ? E.pedal_L : E.pedal_R).getWorldPosition(new THREE.Vector3());
       // ANKLING (kid A polish): the heel drops over the top of the stroke and lifts at the bottom (the ankle P.ankling
       // lower / higher at the crank's top / bottom): the knee opens where it closes most
-      const bbW = E.bb.getWorldPosition(_e), hTop = Math.max(-1, Math.min(1, _c.copy(pe).sub(bbW).dot(_up) / 0.175));
+      const bbW = E.bb.getWorldPosition(_e), hTop = Math.max(-1, Math.min(1, _c.copy(pe).sub(bbW).dot(_up) / crank));
       const T = pe.clone().addScaledVector(_up, P.ankleUp - (P.ankling || 0) * hTop).addScaledVector(_fwd, -P.ankleBack);
       const fd = k === 0 ? Math.min(1, Math.max(0, ((s.footDown || 0) - 0.5) * 2)) : 0;
       if (fd > 0 && groundY !== null) {

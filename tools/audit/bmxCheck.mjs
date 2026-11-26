@@ -77,7 +77,7 @@ if (!fails.length) {
   const cr = pos("Crank"); check(near(cr[1], 0.29, 0.003) && near(cr[0], 0, 1e-4), `bottom bracket ${cr[1].toFixed(3)} m high`);
   const pl = pos("Pedal_L"), pr = pos("Pedal_R");
   const rl = Math.hypot(pl[1] - cr[1], pl[2] - cr[2]), rr = Math.hypot(pr[1] - cr[1], pr[2] - cr[2]);
-  check(near(rl, 0.175, 0.002) && near(rr, 0.175, 0.002), `crank length ${rl.toFixed(3)} / ${rr.toFixed(3)} (0.175)`);
+  check(near(rl, 0.140, 0.002) && near(rr, 0.140, 0.002), `crank length ${rl.toFixed(3)} / ${rr.toFixed(3)} (0.140: kid cranks)`);
   check(near(pl[2] - cr[2], -(pr[2] - cr[2]), 1e-3) && pl[0] > 0.09 && pr[0] < -0.09 && near(pl[0], -pr[0], 1e-3), "pedals opposite, left on +x, right on -x, mirrored");
   const cg = pos("Cog"); check(near(Math.hypot(cg[0] - wr[0], cg[1] - wr[1], cg[2] - wr[2]), 0, 1e-4), "Cog pivot on the rear axle");
   const pair = (a, b, what) => { const A = pos(a), B = pos(b); check(near(A[0], -B[0], 1e-3) && near(A[1], B[1], 1e-3) && near(A[2], B[2], 1e-3) && A[0] > 0, `${what} mirrored (${A.map((v) => v.toFixed(3))})`); };

@@ -25,7 +25,7 @@ const BUDGET = IS_A ? [22000, 8500, 2200] : [15000, 6000, 2000];
 // (the top-of-stroke knee: a 0.705 m leg on the BMX's real 175 mm cranks closes to ~55-60 deg at best: the stroke takes
 // 2 x 175 mm out of a reach capped at 96.5 % of the leg (docs/KIDCHAR.md phase 3). A: >= 50 with no slide off the saddle
 // (he sat 41 deg, sliding 7 cm forward); the old kid as it rides (39))
-const KNEE = process.env.KNEE_RANGE ? process.env.KNEE_RANGE.split(",").map(Number) : (IS_A ? [50, 85] : [35, 85]);
+const KNEE = process.env.KNEE_RANGE ? process.env.KNEE_RANGE.split(",").map(Number) : (IS_A ? [68, 85] : [35, 85]);
 if (IS_A) { const R = await import("../../viewer/kid/riderIK.js"); Object.assign(R.RIDE, R.RIDE_KIDA); }
 const { RIDE: RIDE_NOW } = await import("../../viewer/kid/riderIK.js");
 const SEAT_DIR_T = new (await import("three")).Vector3(0, Math.sin(71 * Math.PI / 180), -Math.cos(71 * Math.PI / 180));
