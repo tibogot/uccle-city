@@ -24,6 +24,8 @@ import { Panel } from "../viewer/panelUI.js";
 import { BIKE, BIKE_RANGES, BIKE_PARK, BIKE_PARK_RANGES, SURFACES, SURF, DT, createBikeState, advanceBike, bikePose, bikeSpeed, getUp, groundQuery } from "../viewer/bike/bikePhysics.js";
 import { PARK, PARK_SPOTS, PARK_WALLRIDES } from "../viewer/bike/bikePark.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { buildLabLook } from "./bikeLabLook.js";
 import { createBikeEnv } from "../viewer/bike/bikeEnv.js";
 import { FEATURES, testHeight, testSurface, testColliders, SPOTS, BOUNDS, testGroundRamped, testHeightRamped, testEdges } from "../viewer/bike/bikeGround.js";
 import { loadCityDocs, buildCitySpot } from "../viewer/bike/bikeCitySpot.js";
@@ -45,7 +47,7 @@ const USE_KID = qs.get("kid") !== "0";
 const KID_A = qs.get("kid") !== "old";     // (kid A is the default since the polish round, 2026-11-26; ?kid=old: the scripted kid)
 if (KID_A) Object.assign(RIDE, RIDE_KIDA);
 const DEFAULTS = { ...BIKE }, PARK_DEFAULTS = { ...BIKE_PARK }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
-const renderer = new THREE.WebGPURenderer({ antialias: true });
+const renderer = new THREE.WebGPURenderer({ antialias: true, reversedDepthBuffer: !qs.get("city") });     // (the city's depth set-up: its lighting / post)
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
@@ -59,11 +61,16 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xa9bccd);
 scene.fog = new THREE.Fog(0xa9bccd, 90, 320);
 const camera = new THREE.PerspectiveCamera(64, innerWidth / innerHeight, 0.05, 800);
-const hemi = new THREE.HemisphereLight(0xdfe9f5, 0x5d5a48, 1.1);
-const sun = new THREE.DirectionalLight(0xfff1dc, 2.4);
-sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03;
-Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 90 });
-scene.add(hemi, sun, sun.target);
+// (owner round 2: the test ground under the CITY's lighting, sky, shadows and post: bikeLabLook.js; the city spot keeps
+// the plain pair. Either way a fixed light set, never changed at runtime)
+let hemi = null, sun = null;
+if (qs.get("city")) {
+  hemi = new THREE.HemisphereLight(0xdfe9f5, 0x5d5a48, 1.1);
+  sun = new THREE.DirectionalLight(0xfff1dc, 2.4);
+  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03;
+  Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 90 });
+  scene.add(hemi, sun, sun.target);
+}
 
 // ---------------------------------------------------------------- the world: the test ground or a real city spot
 const CITY = qs.get("city");
@@ -110,8 +117,15 @@ function gridMesh(x0, x1, z0, z1, res, keep = null, H = testHeight, Sf = testSur
   const m = new THREE.Mesh(geo, groundMat); m.receiveShadow = true; scene.add(m);
   return m;
 }
+let look = null;
 if (W.city) gridMesh(W.bounds.x0, W.bounds.x1, W.bounds.z0, W.bounds.z1, 0.25, null, W.drawH, W.surface);
-else {
+else if (qs.get("look") !== "old") {
+  scene.background = null; scene.fog = null;
+  look = await buildLabLook({ renderer, scene, camera, FEATURES, testHeight, testSurface, BOUNDS, PARK, quality: qs.get("grass") || "high" });
+  hemi = look.lighting.hemi; sun = look.lighting.sun;
+} else {
+  hemi = new THREE.HemisphereLight(0xdfe9f5, 0x5d5a48, 1.1); sun = new THREE.DirectionalLight(0xfff1dc, 2.4); sun.castShadow = true;
+  Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 90 }); scene.add(hemi, sun, sun.target);
 gridMesh(BOUNDS.x0, BOUNDS.x1, BOUNDS.z0, BOUNDS.z1, 1, (x, z) => !FEATURES.some((f) => inside(f, x, z)));
 for (const f of FEATURES) if (!f.park) gridMesh(f.x0, f.x1, f.z0, f.z1, f.res);
 // the park: every feature's grid in ONE geometry (one draw), coloured by its material (wood / concrete / dirt)
@@ -129,7 +143,7 @@ for (const f of FEATURES) if (!f.park) gridMesh(f.x0, f.x1, f.z0, f.z1, f.res);
 }
 }
 // skirts: a feature's border that stands above the base ground gets a vertical face down to it (the kerb, the slopes)
-if (!W.city) {
+if (!W.city && !look) {
   const pos = [], col = [];
   const c = new THREE.Color(0x77736b);
   for (const f of FEATURES) {
@@ -183,7 +197,8 @@ const solidMat = { [KIND.building]: new THREE.MeshStandardNodeMaterial({ color: 
     return P;
   };
   const benchMat = new THREE.MeshStandardNodeMaterial({ color: 0x8a5a33, roughness: 0.8 }), legMat = new THREE.MeshStandardNodeMaterial({ color: 0x3b3f44, roughness: 0.5, metalness: 0.5 });
-  const railMatP = new THREE.MeshStandardNodeMaterial({ color: 0xa7adb3, roughness: 0.45, metalness: 0.25 }), parkMat = {};   // (no env map: a metal one drew black)
+  const railMatP = look ? look.steel : new THREE.MeshStandardNodeMaterial({ color: 0xa7adb3, roughness: 0.45, metalness: 0.25 }), parkMat = {};
+  if (look) { solidMat[KIND.wall] = look.concreteWall; parkMat[PARK.colors.concrete] = look.concreteWall; parkMat[PARK.colors.wood] = look.materials.wood; }   // (no env map: a metal one drew black)
   for (const p of CL.polys) {
     if (p.kind === KIND.island || p.kind === KIND.hedge && W.city) continue;
     const r = p.rings[0], cx = r.reduce((a, q) => a + q[0], 0) / r.length, cz = r.reduce((a, q) => a + q[1], 0) / r.length, gy = W.drawH(cx, cz);
@@ -206,7 +221,7 @@ const solidMat = { [KIND.building]: new THREE.MeshStandardNodeMaterial({ color: 
   // the lab's handrail (an edge with no collider piece of its own: a steel tube + posts down to the steps)
   if (!W.city) {
     // (the park round: ONE merged geometry for every rail, its posts and the park's coping - was a mesh a segment)
-    const railMat = new THREE.MeshStandardNodeMaterial({ color: 0x9aa3ab, roughness: 0.35, metalness: 0.8 }), E = W.edges, parts = [];
+    const railMat = look ? look.steel : new THREE.MeshStandardNodeMaterial({ color: 0x9aa3ab, roughness: 0.35, metalness: 0.8 }), E = W.edges, parts = [];
     const tube = (a, b, r, sides) => { const g = new THREE.CylinderGeometry(r, r, a.distanceTo(b), sides, 1, false); g.deleteAttribute("uv");
       const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
       g.applyQuaternion(q); g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2); parts.push(g); };
@@ -237,7 +252,8 @@ const edgeLines = (() => {
     col.push(c.r, c.g, c.b, c.r, c.g, c.b);
   }
   const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
-  const m = new THREE.LineSegments(g, new THREE.LineBasicNodeMaterial({ vertexColors: true, depthTest: false, transparent: true, opacity: 0.85 }));
+  // (owner round 2: a DEBUG overlay - off by default, depth tested: it was drawn through the kid at the rail)
+  const m = new THREE.LineSegments(g, new THREE.LineBasicNodeMaterial({ vertexColors: true, depthTest: true, transparent: true, opacity: 0.85 }));
   m.renderOrder = 10; scene.add(m);
   return m;
 })();
@@ -252,7 +268,7 @@ const groundAt = (x, z) => W.height(x, z);
 const chase = new BikeCamera(camera, BIKE_CAMERA);
 if (qs.get("cam")) BIKE_CAMERA.mode = qs.get("cam");
 let s;
-const P = { pause: false, slow: +(qs.get("slow") || 1), spot: qs.get("spot") || (W.city ? (W.spots.stairs ? "stairs" : "centre") : "start"), info: "", card: true, edges: true, park: "park overview" };
+const P = { pause: false, slow: +(qs.get("slow") || 1), spot: qs.get("spot") || (W.city ? (W.spots.stairs ? "stairs" : "centre") : "start"), info: "", card: true, edges: qs.get("edges") === "1", park: "park overview" };
 // FEEL ROUND 3: the bike's sound (viewer/bike/bikeAudio.js), OFF by default: the speaker button (top centre, the city's
 // one sound switch: viewer/audio/soundGate.js) makes the context and bakes the textures in the background; off suspends it
 const snd = new BikeSound().followGate(() => s);
@@ -297,6 +313,7 @@ if (USE_KID) {
 }
 const keys = new BikeKeys({ onKey: (code) => {
   if (code === "KeyE") { K.e = true; return; }
+  if (code === "KeyO" || (code === "Escape" && ORB.on)) { orbitToggle(code === "KeyO" ? !ORB.on : false); return; }
   if (code === "KeyR" || code === "PadBack") place(P.spot);
   else if (code === "KeyV" || code === "PadY") banner(`camera: ${chase.next()}`);
   else if (code === "KeyP") P.pause = !P.pause;
@@ -312,10 +329,39 @@ const keys = new BikeKeys({ onKey: (code) => {
 } });
 
 window.__keys = keys;
+// ---------------------------------------------------------------- the ORBIT camera (owner round 2, as the falcon lab's)
+// O (or the panel) orbits round the kid + bike while riding AND paused: left-drag orbit, wheel zoom, right-drag pan,
+// presets (side / front / back / top / low, relative to the bike's heading), slow motion; Esc / O back to the ride camera.
+// The orbit's target rides with the bike (the camera keeps its offset), as labs/falcon-lab.js follows a bird.
+const ORB = { on: false, slow: 1 };
+const orbit = new OrbitControls(camera, renderer.domElement);
+orbit.enableDamping = true; orbit.enabled = false; orbit.minDistance = 1.2; orbit.maxDistance = 80;
+const FOCUS = new THREE.Vector3(), ORB_PREV = new THREE.Vector3();
+let orbSlowBefore = 1;
+function orbitToggle(on) {
+  ORB.on = on; orbit.enabled = on;
+  if (on) { const p = bikePose(s, 1, {}); ORB_PREV.set(p.x, p.y + 0.4, p.z); orbit.target.copy(ORB_PREV); orbitPreset("side"); }
+  else { chase.reset(); if (P.slow !== orbSlowBefore && ORB.slow !== 1) { P.slow = orbSlowBefore; } }
+  banner(on ? "orbit camera (drag / wheel / right-drag; Esc or O: back)" : "ride camera");
+  ui.controllersRecursive().forEach((c) => c.updateDisplay?.());
+}
+function orbitPreset(name) {
+  const p = bikePose(s, 1, {}), h = p.heading, fx = Math.sin(h), fz = Math.cos(h), lx = fz, lz = -fx, t = new THREE.Vector3(p.x, p.y + 0.4, p.z);
+  const off = { side: [lx * 4.5, 0.9, lz * 4.5], front: [fx * 4.5, 1.0, fz * 4.5], back: [-fx * 5, 1.6, -fz * 5], top: [-fx * 0.6, 9, -fz * 0.6], low: [lx * 2.2 + fx * 1.5, 0.15, lz * 2.2 + fz * 1.5] }[name];
+  orbit.target.copy(t); ORB_PREV.copy(t); camera.position.set(t.x + off[0], t.y + off[1], t.z + off[2]); orbit.update();
+}
+function orbitStep(p) {
+  const y = (p.y ?? 0) + 0.4;
+  FOCUS.set(p.x, y, p.z);
+  camera.position.add(FOCUS.clone().sub(ORB_PREV)); orbit.target.copy(FOCUS); ORB_PREV.copy(FOCUS);
+  orbit.update();
+}
 // ---------------------------------------------------------------- the controls card (rule 14: shown once + ?)
 const card = document.getElementById("card");
 card.textContent = [
-  "W / Up       pedal          Shift  stand up / sprint",
+  "W / Up       pedal (seated: ~17 km/h cruise)",
+  "Shift        STAND UP and sprint: much quicker,",
+  "             up to ~29 km/h (downhill: no limit)",
   "S / Down     rear brake (hold = skid)   Q  front brake",
   "A D / Left Right   steer (lean)",
   "Space        hold = crouch / preload / absorb",
@@ -325,6 +371,8 @@ card.textContent = [
   "             manual, nose dive, air pitch",
   "F            trick in the air (let go before landing!)",
   "R reset  G get up  V camera  P pause  1-9 spots",
+  "O            orbit camera round the kid (drag, wheel,",
+  "             right-drag; Esc / O back); panel: presets, slow-mo",
   "0 the BMX park   N / B next / previous park spot",
   "             (the panel's Park folder: every feature)",
   "E            get on / off the bike (walk up to it;",
@@ -415,8 +463,9 @@ async function kidCandidates(on) {
   // the pose sheet (the MPFB kid A in 9 extreme clip poses: tearing / poke-through by eye) and a night test light
   // (the same two lights, dimmed and tinted: no light added or removed)
   const PSs = { show: qs.get("poses") === "1", night: qs.get("night") === "1", api: null };
-  const DAY = { hemi: hemi.intensity, sun: sun.intensity, bg: scene.background.getHex(), sunCol: sun.color.getHex() };
+  const DAY = { hemi: hemi.intensity, sun: sun.intensity, bg: scene.background?.getHex?.() ?? 0, sunCol: sun.color.getHex() };
   const night = (on) => {
+    if (look) { look.lighting.apply(on ? "night" : "midday"); look.pipe.look(on ? "night" : "midday"); return; }
     hemi.intensity = on ? 0.12 : DAY.hemi; sun.intensity = on ? 0.35 : DAY.sun;
     sun.color.setHex(on ? 0x9fb4ff : DAY.sunCol); scene.background.setHex(on ? 0x0d1526 : DAY.bg); scene.fog.color.setHex(on ? 0x0d1526 : DAY.bg);
   };
@@ -440,11 +489,19 @@ async function kidCandidates(on) {
   if (PSs.show) poses(true);
   window.__kidLab = { KCs, PSs, night, poses, viewPoses };
 }
+const fo = ui.addFolder("Orbit camera (O)", { id: "bike-orbit", open: true });
+fo.add(ORB, "on").name("orbit (O / Esc)").onChange((v) => orbitToggle(v));
+fo.buttons(["side", "front", "back", "top", "low"].map((n) => [n, () => { if (!ORB.on) orbitToggle(true); orbitPreset(n); }]), 5);
+fo.buttons([["slow 0.25x", () => { orbSlowBefore = P.slow === 0.25 ? orbSlowBefore : P.slow; P.slow = 0.25; ORB.slow = 0.25; ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }],
+  ["slow 0.5x", () => { P.slow = 0.5; ORB.slow = 0.5; ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }],
+  ["normal 1x", () => { P.slow = 1; ORB.slow = 1; ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }],
+  ["pause (P)", () => { P.pause = !P.pause; ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }]], 4);
 const fr = ui.addFolder("Ride");
 fr.add(P, "pause").name("pause (P)");
 fr.add(P, "slow", 0.05, 1, 0.05).name("time scale");
 fr.add(P, "spot", Object.keys(W.spots)).name("start spot").onChange((v) => place(v));
-fr.add(P, "edges").name("show the edge layer").onChange((v) => { edgeLines.visible = v; });
+edgeLines.visible = P.edges;
+fr.add(P, "edges").name("debug: the edge layer (grind lines)").onChange((v) => { edgeLines.visible = v; });
 fr.buttons([["reset bike (R)", () => place(P.spot)], ["get up (G)", () => s.crashed && getUp(s, env)],
   ["camera (V)", () => banner(`camera: ${chase.next()}`)], ["constants to defaults", () => { Object.assign(BIKE, DEFAULTS); Object.assign(BIKE_PARK, PARK_DEFAULTS); SURFACES.forEach((x, i) => Object.assign(x, SURF_DEFAULTS[i])); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }],
   ["copy constants (JSON)", () => navigator.clipboard?.writeText(JSON.stringify({ BIKE: changed(BIKE, DEFAULTS), SURFACES: SURFACES.map((x, i) => changed(x, SURF_DEFAULTS[i])) }, null, 1))]], 2);
@@ -491,7 +548,7 @@ const graph = $("graph"), g2 = graph.getContext("2d");
 const HIST = 300, hist = { v: new Float32Array(HIST), lean: new Float32Array(HIST), slip: new Float32Array(HIST) };
 let hi = 0;
 
-window.__bike = { get state() { return s; }, BIKE, BIKE_PARK, SURFACES, env, chase, place, P, K, mount, RIDE, MOUNT, PARK, PARK_SPOTS, keys: null };
+window.__bike = { get state() { return s; }, ORB, orbitToggle, orbitPreset, get look() { return look; }, BIKE, BIKE_PARK, SURFACES, env, chase, place, P, K, mount, RIDE, MOUNT, PARK, PARK_SPOTS, keys: null };
 
 // ---------------------------------------------------------------- loop
 const pose = {};
@@ -557,7 +614,8 @@ renderer.setAnimationLoop(() => {
   }
   kidMs = kidMs * 0.95 + (performance.now() - tk) * 0.05;
   const onFoot = K.on && (mount.state === "foot" || mount.state === "dismounting" || mount.state === "pickUp");
-  if (!onFoot) chase.update(s, pose, dt, groundAt, env.solidAt);
+  if (ORB.on) orbitStep(onFoot ? K.tp : pose);
+  else if (!onFoot) chase.update(s, pose, dt, groundAt, env.solidAt);
   if (camBlend.t < 1) {
     camBlend.t = Math.min(1, camBlend.t + dt / camBlend.dur);
     const w = ease(camBlend.t);
@@ -566,8 +624,8 @@ renderer.setAnimationLoop(() => {
   if (KCs.api?.active) KCs.api.update(dt, camera);
   if (K.on) K.kid.autoLod(camera.position.distanceTo(K.tp.body.root.position));
   const fx = onFoot ? K.tp.x : pose.x, fy = onFoot ? K.tp.y : pose.y, fz = onFoot ? K.tp.z : pose.z;
-  sun.position.set(fx + 10, fy + 24, fz + 6); sun.target.position.set(fx, fy, fz);
-  renderer.render(scene, camera);
+  if (look) { FOCUS.set(fx, fy, fz); look.update(dt, FOCUS, s); look.render(); }
+  else { sun.position.set(fx + 10, fy + 24, fz + 6); sun.target.position.set(fx, fy, fz); renderer.render(scene, camera); }
   if (bannerT > 0 && (bannerT -= dt) <= 0) bannerEl.style.opacity = 0;
   if (s.crashed && s.crashT < 0.05 && s.crashT > 0) banner(`crash: ${s.crashCause}`);
   // history (10 s at 30 Hz)

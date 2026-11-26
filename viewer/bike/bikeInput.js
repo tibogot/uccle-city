@@ -21,7 +21,7 @@ export const KEYS = {
 };
 /** the lab's one-shot keys (onKey) */
 // (the BMX park, 2026-11-25: 0 = the park, N / B = the next / previous park spot)
-export const ONE_SHOT = ["KeyR", "KeyG", "KeyV", "KeyP", "Slash", "F1", ...Array.from({ length: 9 }, (_, i) => `Digit${i + 1}`), "KeyE", "Digit0", "KeyN", "KeyB"];
+export const ONE_SHOT = ["KeyR", "KeyG", "KeyV", "KeyP", "Slash", "F1", ...Array.from({ length: 9 }, (_, i) => `Digit${i + 1}`), "KeyE", "Digit0", "KeyN", "KeyB", "KeyO", "Escape"];
 export class BikeKeys {
   constructor({ active = () => true, onKey = null } = {}) {
     this.down = new Set(); this.onKey = onKey;

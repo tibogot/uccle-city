@@ -1524,6 +1524,8 @@ export function bikePose(s, alpha = s.alpha ?? 1, out = {}) {
   let dh = s.heading - p.heading; dh -= Math.round(dh / (Math.PI * 2)) * Math.PI * 2;
   out.x = p.x + (s.x - p.x) * a; out.y = p.y + (s.y - p.y) * a; out.z = p.z + (s.z - p.z) * a;
   out.heading = p.heading + dh * a; out.lean = p.lean + (s.lean - p.lean) * a; out.pitch = p.pitch + (s.pitch - p.pitch) * a;
+  // (owner round 2: standing on the pedals ROCKS the bike side to side with the stroke - drawn only, no physics)
+  out.lean += (s.sprint || 0) * (s.pedalling || 0) * 0.09 * Math.sin(s.crank || 0);
   return out;
 }
 
