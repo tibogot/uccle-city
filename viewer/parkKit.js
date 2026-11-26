@@ -379,7 +379,8 @@ export class KitField {
             const s = this.slotOverride[slot] ?? slot;
             let mat = this.kit.slotMaterial(s, vertexAo);
             if (fade) mat = fadeCopy(mat, attr);
-            const im = new THREE.InstancedMesh(geometry, mat, cap);
+            // (KIT_FADE_SHARE) the fade value rides on the fading mesh's own geometry (the piece's buffers shared)
+            const im = new THREE.InstancedMesh(fade && KIT_FADE_SHARE ? fadeGeometry(geometry, attr) : geometry, mat, cap);
             // static usage: uploaded on needsUpdate only (three r187 re-uploads a DynamicDrawUsage buffer WHOLE in every render pass)
             im.count = 0; im.frustumCulled = false; im.visible = false;
             im.castShadow = this.castShadow; im.receiveShadow = this.receiveShadow;
@@ -472,8 +473,50 @@ export class KitField {
   get instances() { return Object.values(this.inst).reduce((s, l) => s + l.length, 0); }
 }
 
+// (claude/perf5, rule docs/rules/shared-node-graph.md; ?kitfadeshare=old: as before) ONE FADING COPY PER SLOT MATERIAL.
+// The fading copy read its fade value with instancedBufferAttribute(attr): a node bound to THAT mesh's buffer, so every
+// fading mesh had its own node graph, and three r187 (node builds keyed by node ids) built each one on the main thread
+// the first time it drew: the Chenaie timber playground's three pieces cost 26-29 ms each in ONE frame (a 117-130 ms
+// frame ~36 s into every police drive from the station, docs/perf/QUIET_2026-11-26.md). Now the value is the geometry
+// attribute KIT_FADE_ATTR (each fading mesh gets a geometry that shares the piece's buffers and adds its own fade
+// buffer), the mask graph is built once, and the fading copy is cached per slot material: one build for all its pieces.
+const KIT_FADE_SHARE = typeof location === "undefined" || new URLSearchParams(location.search).get("kitfadeshare") !== "old";
+export const KIT_FADE_ATTR = "kitFade";
+let sharedKitMask = null;
+const kitFadeCopies = new WeakMap();
+/** the shared fade mask: the per-instance value from the geometry attribute (lodFade's objectFade convention) */
+function kitFadeMask() {
+  if (sharedKitMask) return sharedKitMask;
+  const f = attribute(KIT_FADE_ATTR, "float"), n = ditherNoise();
+  return (sharedKitMask = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f)));
+}
+/** a fading mesh's geometry: the piece's own attributes, index, groups and bounds (the same GPU buffers) + its fade value */
+export function fadeGeometry(g, attr) {
+  const w = new THREE.BufferGeometry();
+  w.name = `${g.name || "piece"} fade`;
+  w.index = g.index;
+  for (const [k, a] of Object.entries(g.attributes)) w.attributes[k] = a;
+  w.setAttribute(KIT_FADE_ATTR, attr);
+  w.groups = g.groups; w.drawRange = g.drawRange;
+  if (!g.boundingBox) g.computeBoundingBox();
+  if (!g.boundingSphere) g.computeBoundingSphere();
+  w.boundingBox = g.boundingBox; w.boundingSphere = g.boundingSphere;
+  return w;
+}
+
 /** the masked copy of a slot material for the fading instances (per-instance value: lodFade's objectFade convention) */
 function fadeCopy(mat, attr) {
+  if (KIT_FADE_SHARE) {
+    let m = kitFadeCopies.get(mat);
+    if (!m) {
+      m = cloneMaterial(mat);
+      m.maskNode = kitFadeMask();
+      m.userData.kitFadeShared = true;
+      m.name = mat.name + " (fading)";
+      kitFadeCopies.set(mat, m);
+    }
+    return m;
+  }
   // perf pass 2 (docs/perf/AUDIT.md step 12): lodFade's clone (no JSON deep copy of userData: three r187 serialised the
   // weather's dry nodes / textures here, a 920 ms long task when the public art landed while driving); ?fadeclone=old = before
   const m = cloneMaterial(mat);
