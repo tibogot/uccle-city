@@ -9547,6 +9547,162 @@ var KERB_DOWN = 0.03;
 var SKIRT_DOWN = 0.2;
 var KIND3 = { slab: 0, curb: 1, framed: 3 };
 var GRID = 0.5;
+var JOINT_LAMBDA = 2;
+var JOINT_MU = 0.02;
+var JOINT_RAIL = 30;
+var JOINT_EMPTY = 3;
+var JOINT_EMPTY_MAX = 0.15;
+var JOINT_MAX = 0.3;
+var JOINT_ITER = 300;
+var JOINT_TOL = 1e-10;
+function jointFit(street, corner, classAt, groundAt, clamp2, bounds, fitCorner, rails = []) {
+  const cells = /* @__PURE__ */ new Set();
+  for (let x2 = Math.floor(bounds.x0) + 0.5; x2 < bounds.x1; x2 += 1) for (let z2 = Math.floor(bounds.z0) + 0.5; z2 < bounds.z1; z2 += 1)
+    if (classAt(x2, z2) >= 0) cells.add(cellKey(Math.floor(x2 / CELL3), Math.floor(z2 / CELL3)));
+  const all = new Set(street);
+  for (const k of cells) for (const d of [0, 8192, 1, 8193]) all.add(k + d);
+  const keys = [...all], n = keys.length, id = new Map(keys.map((k, q) => [k, q]));
+  for (const k of keys) if (!corner.has(k)) corner.set(k, fitCorner((Math.floor(k / 8192) - 4096) * CELL3, (k % 8192 - 4096) * CELL3));
+  const c0 = Float64Array.from(keys, (k) => corner.get(k));
+  const lo = new Float64Array(n).fill(Infinity), hi = new Float64Array(n).fill(-Infinity), cnt = new Float64Array(n);
+  const slot = (di, dj) => (di + 2) * 5 + (dj + 2);
+  const ij = (k) => [Math.floor(k / 8192) - 4096, k % 8192 - 4096];
+  const M2 = new Float64Array(n * 25), rhs = new Float64Array(n);
+  for (const k of cells) {
+    const [i, j] = ij(k);
+    const q00 = id.get(k), q10 = id.get(cellKey(i + 1, j)), q01 = id.get(cellKey(i, j + 1)), q11 = id.get(cellKey(i + 1, j + 1));
+    for (let a = 0.5; a < CELL3; a += 1) for (let b = 0.5; b < CELL3; b += 1) {
+      const x2 = i * CELL3 + a, z2 = j * CELL3 + b, cls = classAt(x2, z2);
+      if (cls < 0) continue;
+      const y = groundAt(x2, z2, cls), fx = a / CELL3, fz = b / CELL3;
+      const P = fx >= fz ? [[q00, 0, 0, 1 - fx], [q10, 1, 0, fx - fz], [q11, 1, 1, fz]] : [[q00, 0, 0, 1 - fz], [q01, 0, 1, fz - fx], [q11, 1, 1, fx]];
+      for (const [qa, ia, ja, wa] of P) {
+        rhs[qa] += wa * y;
+        for (const [, ib, jb, wb] of P) M2[qa * 25 + slot(ib - ia, jb - ja)] += wa * wb;
+        if (y < lo[qa]) lo[qa] = y;
+        if (y > hi[qa]) hi[qa] = y;
+        cnt[qa] += wa;
+      }
+    }
+  }
+  for (const [x2, z2, y] of rails) {
+    const i = Math.floor(x2 / CELL3), j = Math.floor(z2 / CELL3), fx = x2 / CELL3 - i, fz = z2 / CELL3 - j;
+    const q00 = id.get(cellKey(i, j)), q10 = id.get(cellKey(i + 1, j)), q01 = id.get(cellKey(i, j + 1)), q11 = id.get(cellKey(i + 1, j + 1));
+    if (q00 === void 0 || q10 === void 0 || q01 === void 0 || q11 === void 0) continue;
+    const P = fx >= fz ? [[q00, 0, 0, 1 - fx], [q10, 1, 0, fx - fz], [q11, 1, 1, fz]] : [[q00, 0, 0, 1 - fz], [q01, 0, 1, fz - fx], [q11, 1, 1, fx]];
+    for (const [qa, ia, ja, wa] of P) {
+      rhs[qa] += JOINT_RAIL * wa * y;
+      for (const [, ib, jb, wb] of P) M2[qa * 25 + slot(ib - ia, jb - ja)] += JOINT_RAIL * wa * wb;
+      cnt[qa] += wa;
+    }
+  }
+  for (const k of keys) {
+    const [i, j] = ij(k), q0 = id.get(k);
+    for (const [di, dj] of [[1, 0], [0, 1], [1, 1]]) {
+      const qm = id.get(cellKey(i - di, j - dj)), qp = id.get(cellKey(i + di, j + dj));
+      if (qm === void 0 || qp === void 0) continue;
+      const T3 = [[qm, -1, 1], [q0, 0, -2], [qp, 1, 1]];
+      for (const [qa, sa, wa] of T3) for (const [, sb, wb] of T3) M2[qa * 25 + slot((sb - sa) * di, (sb - sa) * dj)] += JOINT_LAMBDA * wa * wb;
+    }
+  }
+  for (let q = 0; q < n; q++) {
+    M2[q * 25 + 12] += JOINT_MU;
+    rhs[q] += JOINT_MU * c0[q];
+  }
+  const nb = new Int32Array(n * 25).fill(-1);
+  keys.forEach((k, q) => {
+    const [i, j] = ij(k);
+    for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) {
+      const r2 = id.get(cellKey(i + di, j + dj));
+      if (r2 !== void 0) nb[q * 25 + slot(di, dj)] = r2;
+    }
+  });
+  const mul = (v, out) => {
+    for (let q = 0; q < n; q++) {
+      let s = 0;
+      const o = q * 25;
+      for (let t = 0; t < 25; t++) {
+        const r2 = nb[o + t];
+        if (r2 >= 0) s += M2[o + t] * v[r2];
+      }
+      out[q] = s;
+    }
+  };
+  const x = Float64Array.from(c0), r = new Float64Array(n), z = new Float64Array(n), p = new Float64Array(n), Ap = new Float64Array(n), dinv = new Float64Array(n);
+  mul(x, Ap);
+  for (let q = 0; q < n; q++) r[q] = rhs[q] - Ap[q];
+  for (let q = 0; q < n; q++) {
+    dinv[q] = 1 / M2[q * 25 + 12];
+    z[q] = r[q] * dinv[q];
+    p[q] = z[q];
+  }
+  let rz = 0;
+  for (let q = 0; q < n; q++) rz += r[q] * z[q];
+  const r0 = rz;
+  for (let it = 0; it < JOINT_ITER && rz > JOINT_TOL * Math.max(1e-6, r0); it++) {
+    mul(p, Ap);
+    let pAp = 0;
+    for (let q = 0; q < n; q++) pAp += p[q] * Ap[q];
+    if (!(pAp > 0)) break;
+    const al = rz / pAp;
+    for (let q = 0; q < n; q++) {
+      x[q] += al * p[q];
+      r[q] -= al * Ap[q];
+      z[q] = r[q] * dinv[q];
+    }
+    let rz2 = 0;
+    for (let q = 0; q < n; q++) rz2 += r[q] * z[q];
+    const be = rz2 / rz;
+    rz = rz2;
+    for (let q = 0; q < n; q++) p[q] = z[q] + be * p[q];
+  }
+  keys.forEach((k, q) => {
+    let v = x[q];
+    if (!Number.isFinite(v)) return;
+    const mx = cnt[q] < JOINT_EMPTY ? JOINT_EMPTY_MAX : JOINT_MAX;
+    v = Math.min(c0[q] + mx, Math.max(c0[q] - mx, v));
+    if (clamp2 && lo[q] <= hi[q]) v = Math.min(hi[q] + H_MARGIN, Math.max(lo[q] - H_MARGIN, v));
+    corner.set(k, v);
+  });
+}
+function tramRails(doc, bounds, classAt, G2) {
+  const out = [];
+  if (!doc?.strands) return out;
+  const R2 = 8;
+  for (const st of doc.strands) {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const p of st) {
+      if (p[0] < x0) x0 = p[0];
+      if (p[0] > x1) x1 = p[0];
+      if (p[1] < z0) z0 = p[1];
+      if (p[1] > z1) z1 = p[1];
+    }
+    if (x1 < bounds.x0 - R2 || x0 > bounds.x1 + R2 || z1 < bounds.z0 - R2 || z0 > bounds.z1 + R2) continue;
+    const S3 = [];
+    for (let k = 1; k < st.length; k++) {
+      const a = st[k - 1], b = st[k], L2 = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.round(L2));
+      for (let s = k === 1 ? 0 : 1; s <= n; s++) {
+        const t = s / n;
+        S3.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] || b[3]]);
+      }
+    }
+    const off = S3.map(([x, z, y, br]) => br ? 0 : G2(x, z) - y);
+    for (let k = 0; k < S3.length; k++) {
+      const [x, z, y, br] = S3[k];
+      if (br || x < bounds.x0 || x >= bounds.x1 || z < bounds.z0 || z >= bounds.z1 || classAt(x, z) < 0) continue;
+      let s = 0, w = 0;
+      for (let d = -R2; d <= R2; d++) {
+        const q = k + d;
+        if (q < 0 || q >= S3.length) continue;
+        const wd = R2 + 1 - Math.abs(d);
+        s += wd * Math.max(-0.02, Math.min(0.12, off[q]));
+        w += wd;
+      }
+      out.push([x, z, y + s / w]);
+    }
+  }
+  return out;
+}
 function clipHalf(poly, ax, az, bx, bz, s) {
   const out = [], n = poly.length;
   if (!n) return out;
@@ -10250,6 +10406,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
     const i = Math.floor(k / 8192) - 4096, j = k % 8192 - 4096;
     corner.set(k, fitCorner(i * CELL3, j * CELL3));
   }
+  if (opts.jointFit && street.size) jointFit(street, corner, classAt, groundAt, opts.clampH, bounds, fitCorner, tramRails(opts.tramProfile, bounds, classAt, G2));
   for (let pass = 0; pass < SMOOTH_PASSES; pass++) {
     const next = /* @__PURE__ */ new Map();
     for (const k of street) {
@@ -16479,7 +16636,7 @@ function buildRoadData(o) {
     t0 = t;
   };
   const ground = o.ground ?? hm.ground;
-  const prep = surf ? prepareSurfaces(surf, ground, bounds, o.trees ?? null, { clampH: o.clampH === true, kerbLevel: o.kerbLevel === true }) : null;
+  const prep = surf ? prepareSurfaces(surf, ground, bounds, o.trees ?? null, { clampH: o.clampH === true, kerbLevel: o.kerbLevel === true, jointFit: o.jointFit === true, tramProfile: o.tramProfile ?? null }) : null;
   const recentre = prep && o.recentre === true ? recentreRoads(roads, prep) : null;
   const v2 = o.paint === "v2" && !!prep;
   const ctx = v2 ? preparePaintV2(roads, prep, o.markings ?? null, bounds) : null;
@@ -23018,6 +23175,7 @@ async function buildTileData(entry, base) {
   const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, !!entry.gatesOld)) : null;
   const gardenNear = gardenDoc0 !== null || entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true, span: !entry.gatesOld }) : null;
   const streetModel = surf && paint === "v2" && entry.streetModel !== false ? await step("street model inputs", () => streetModelInputs({ base, name: entry.name, bounds, overrides: ov, ver: (entry.files.surfaces || "").split("?")[1] || "" })) : null;
+  const tramProfile = entry.sawtooth !== false && surf ? await step("tram profile", () => fetch(new URL("../transit/tram_profile.json", base)).then((r) => r.ok ? r.json() : null).catch(() => null)) : null;
   const rd = await step("roads", () => buildRoadData({
     streetModel,
     roads,
@@ -23040,6 +23198,8 @@ async function buildTileData(entry, base) {
     clampTop: entry.clampTop !== false,
     clampH: entry.surfH !== false,
     kerbLevel: entry.sidewalkLevel !== false,
+    jointFit: entry.sawtooth !== false,
+    tramProfile,
     gardenNear,
     gateNear,
     publicAt: gardenNear ? publicAreas(feats) : null,
@@ -23816,4 +23976,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "17052418de2147b0";
+self.__TILE_CODE_HASH = "a9b6138b6472e8c8";
