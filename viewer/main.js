@@ -81,7 +81,7 @@ import { addLamps } from "./lampLight.js";
 import { installWgslIntern } from "./wgslIntern.js";
 import { installPinBuilds } from "./pinBuilds.js";   // perf5: the shared materials' builds kept (rule shared-node-graph)
 import { installHeapDrop, dropAfterUpload, dropTextureData, heapOn } from "./heapDrop.js";   // heap: CPU copies let go after their upload (docs/HEAP.md)
-import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp, RETIRE_WARM, fadeVariant } from "./lodFade.js";
+import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp, RETIRE_WARM, fadeVariant, fadeShadowProxies, FADE_SHADOW_WARM } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
@@ -204,7 +204,10 @@ const preCompile = async (roots, fading) => {
   if (fp.length) await compileFor(fp, { first: true });
   // boot3 (docs/BOOT.md section 5; ?tileshadowwarm=0: off): the tile's shadow pass too (not in compileAsync), two meshes a
   // frame far under the city (warmup.js warmShadows): its first shadow node builds were one 60-100 ms frame at its landing
-  if (shadowWarm) await shadowWarm([...[].concat(roots), ...fp]);
+  // (claude/perf7, rule fade-shadow-warm) the shadow stand-ins of EVERY fading copy not shadow-warmed yet (new or not):
+  // fp holds only the copies made now, so a shared copy made under a cover was never warmed in the shadow pass
+  const sp = FADE_SHADOW_WARM ? [].concat(roots).map(fadeShadowProxies).filter(Boolean) : fp;
+  if (shadowWarm) await shadowWarm([...[].concat(roots), ...sp]);
 };
 let shadowWarm = null;
 const dropMat = (m) => { if (!m.userData?.shared) { dropFadeVariant(m); m.dispose?.(); } };
@@ -1311,6 +1314,11 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (holdFast && compileFor && TILE_FADE) {
     const fp = Object.values(own).map(fadeProxies).filter(Boolean);
     if (fp.length) compileFor(fp, { last: true }).catch(() => {});  // (background, not awaited; perf8: behind every other job, warmup.js FADE_LAST)
+    // (claude/perf7, rule fade-shadow-warm; ?fadeshadowwarm=old: as before) and their SHADOW pass, in the background too
+    // (not awaited: the play loader does not wait for it): without it the first tile fade while driving built the
+    // shared walls' fading copy in the sun's pass in that frame ("walls:fade" SH, 29-38 ms)
+    const sp = shadowWarm ? Object.values(own).map(fadeShadowProxies).filter(Boolean) : [];
+    if (sp.length) shadowWarm(sp);
   }
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }

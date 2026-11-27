@@ -186,6 +186,41 @@ export function fadeProxies(obj) {
   });
   return g.children.length ? g : null;
 }
+/** Stand-ins for the sun's SHADOW pass of obj's fading copies (claude/perf7, rule fade-shadow-warm; ?fadeshadowwarm=old:
+ *  none, as before). fadeProxies() above makes a stand-in only for a fading copy that does not exist yet, and the play
+ *  loader's tiles (main.js holdFast) compile their fading copies for the scene pass only, so a SHARED material's fading
+ *  copy made under a cover (the walls, roofs, details, kit walls ...) never had its shadow pass built: the first tile
+ *  fade while driving built it in that frame ("walls:fade" SH, 29-38 ms, police drives 2026-11-26). This one tracks the
+ *  shadow pass itself: one stand-in per (fading copy, geometry layout) never shadow-warmed, whether the copy is new or
+ *  not. warmup.js warmShadows draws them far under the city; null when there is nothing new. */
+export const FADE_SHADOW_WARM = qs.get("fadeshadowwarm") !== "old";
+const shadowDone = new WeakMap();      // fading copy -> Set of geometry layouts whose shadow pass was warmed
+export const fadeLayoutKey = (o) => `${o.isInstancedMesh ? 1 : 0}${o.instanceColor ? 1 : 0}${o.geometry.index ? 1 : 0}|${Object.keys(o.geometry.attributes).sort().join(",")}`;
+export function fadeShadowProxies(obj) {
+  if (!SMOOTH || !FADE_SHADOW_WARM) return null;
+  const g = new THREE.Group(); g.name = "fade-shadow-warm";
+  obj.traverse((o) => {
+    if (!o.isMesh || !o.castShadow) return;
+    const own = o.userData.fadeOrig || o.material;
+    const mats = RETIRE_WARM ? [own, o.userData.cutMat, o.userData.plainMat] : [own];
+    for (const m of new Set(mats)) {
+      if (!m || Array.isArray(m) || !swappable(m)) continue;
+      const v = fadeVariant(m), k = fadeLayoutKey(o);
+      let done = shadowDone.get(v);
+      if (!done) shadowDone.set(v, (done = new Set()));
+      if (done.has(k)) continue;
+      done.add(k);
+      const p = o.isInstancedMesh ? new THREE.InstancedMesh(o.geometry, v, 1) : new THREE.Mesh(o.geometry, v);
+      if (o.isInstancedMesh && o.instanceColor) p.instanceColor = o.instanceColor;
+      p.castShadow = true; p.receiveShadow = o.receiveShadow; p.name = `${o.name || "mesh"}:fade-shadow-warm`;
+      p.matrixWorld.copy(o.matrixWorld);
+      g.add(p);
+    }
+  });
+  return g.children.length ? g : null;
+}
+/** was the shadow pass of `v` (a fading copy) warmed for this mesh's geometry layout? (the gate row fadeshadow) */
+export const fadeShadowWarmed = (v, o) => !!shadowDone.get(v)?.has(fadeLayoutKey(o));
 /** boot3 (docs/BOOT.md section 5): stand-ins drawn with the OWN materials of obj's meshes that are fading right now (a tile
  *  streamed under the boot cover holds its fade: the warm-up drew only its fading copies, and the end of its fade, ~1 s
  *  after the reveal, built the own materials on a frame: 9-16 node builds + sync pipelines, a 160-260 ms long task).
