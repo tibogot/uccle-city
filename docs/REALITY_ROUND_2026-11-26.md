@@ -234,7 +234,35 @@ fronts with a trade word (BOUTIQUE, COIFFURE, À LOUER, IMMOBILIER...), never an
 neighbours within 13 m do not show (rule shop-room-layers). Rue Xavier De Bue 9.6 -> 12.1 fronts per 100 m, the
 Chaussée d'Alsemberg 1.4 -> 3.5 and de Waterloo 2.9 -> 4.2 over their whole lengths. C3: real names, colours and sign
 types (Street View, look only, no logos): Bleus d'Encre, Vapshop, IMMO DUGO (letters on an anthracite fascia, new extra
-POI at Ch. de Waterloo 1167), traKKs (navy + orange, a vertical blade, new extra POI); **chains for the owner's call**
+POI at Ch. de Waterloo 1167), traKKs (navy + orange, a vertical blade, new extra POI); **chains (owner decision 2026-11-26: they keep the real name + colours in our lettering, no logos; settled for every later round)**
 (name + colours in our lettering, or an invented name): Kruidvat x 2 (red lit sign, red flag blades), TUI (sky-blue panel,
 flag blade), Pearle (green totem as a tall blade). Not done: MELINI, ambiance cuisine, Ma Poule (not in OSM; their
 address points not confirmed).
+
+## Round 4 (claude/reality2): C1 leftover, C5 garage drives, C7 lamps, C8 kerb furniture
+
+Shots (ours only, no Google imagery): `C:\Users\tibog\Downloads\uccle-reality\round4\`.
+
+Owner decisions 2026-11-26: (1) chain shops keep their REAL name and real colours in our own lettering, no logos
+(Kruidvat, TUI, Pearle and any future chain; rule shop-street-fill); (2) the Brussels heritage inventory
+(urban.brussels, CC BY 4.0) is kept: owner-confirmed in docs/DATA_LICENCES.md, credited in CREDITS.md and on screen.
+
+1. **C1 leftover** (rule bldclass-evidence): a solid on a commercial row (a street-life front on its BU_ID, pre-war or
+   unknown era, party walls > 15 %, <= 24 m) is a shop house (maison de maitre type), never a balcony block; interwar
+   Modernisme / Art Deco apartments (1919-45) take the buff / yellow brick wall (style 2). Balcony blocks 1,539 -> 1,390.
+   Fixtures: shop house 528748 (the Kruidvat row, Rue Xavier De Bue), buff block 564563. Shots c1_*.
+2. **C5 garage drives** (rule garage-has-drive, row `garagedrive`): 6,458 painted garage doors, 3,137 with a paved drive
+   from the door to the line (the boundary opened there), 3,321 on the sidewalk line; fitGardens --lanes clears the
+   rings last (8 hedges split, 4 piers dropped). `?garagedrive=old`. Shots c5_garage_drive_new / _old. Seen in both: a
+   long thin sliver at the garden edge by the sidewalk (F3, -312, -500), not from this job: left for the defects list.
+3. **C7 lamps** (rules lamps-from-osm, lamp-extras, row `lampextras`): the 243 OSM street lamps (92 in built tiles, 91
+   drawn where surveyed) replace the generated row on their roads (`?osmlamps=old`); on the shop streets 87 green swan-neck
+   wall lanterns (4.5 m up, only where the front's own eaves leave room: a one-storey shop extension gets none), 117
+   red-flower baskets on the posts, the tram poles with >= 2 shopfronts within 22 m painted the lamp green with a lantern
+   (`?lampextras=0`). No light added. Not done: double-headed lantern posts (a Blender variant of the lamp).
+   Shots c7_*.
+4. **C8 kerb furniture** (rule kerb-furniture, row `kerbfurniture`): hairpin barriers at 13 school fronts (78; the other
+   19 schools have no measured kerb parallel to their front in reach), timber bollards with a red band on the green
+   edges (57 of 1,048 on the checked tiles; a first cut at 30 m from any green put them on a maison-de-maitre street in
+   E4: tightened to 15 m from a green >= 2,500 m2, shot c8_timber_bollards_overreach_before_fix). Bins and bike hoops
+   were already drawn from OSM. Not done: black kerb railings on the shop streets, textile containers (no data source).

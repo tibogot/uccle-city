@@ -1,5 +1,11 @@
 // LAMP SITES (no three.js: viewer/lamps.js draws them, tools/audit/streetAudit.mjs checks them in node).
 import { ROAD_TYPES } from "../../vendor/roads/roadCrossSection.js";
+// (claude/reality2, rule lamps-from-osm, class C7) the OSM street lamps (data/lamps/osm_lamps.json, tools/lamps/
+// build_osm_lamps.py): a road with >= 2 of them along it takes their positions instead of the generated row; every
+// consumer (city, drive colliders, audits, Christmas poles) reads the same list through placedLampSites
+import OSM_LAMPS from "../../data/lamps/osm_lamps.json" with { type: "json" };
+const OSM_OLD = typeof location !== "undefined" && /[?&]osmlamps=old(&|$)/.test(location.search);
+const OSM_NEAR = 9;                                   // m from the road's centre line: a lamp of this road
 
 function kerbOffset(type) {
   const t = ROAD_TYPES[type] || ROAD_TYPES.local;
@@ -12,14 +18,22 @@ function kerbOffset(type) {
 }
 
 /** Lamp sites {x, z, yaw (arm points to the road)} from roads.json. */
-export function lampSites(roads, bounds) {
+export function lampSites(roads, bounds, osm = OSM_OLD ? null : OSM_LAMPS.lamps) {
   const N = new Map(roads.nodes.map((n) => [n.id, n]));
   const out = [];
+  // the OSM lamps near this tile, and the generated row of a road dropped when >= 2 of them stand along it
+  const near = (osm || []).filter((l) => l.x >= bounds.x0 - 40 && l.x <= bounds.x1 + 40 && l.z >= bounds.z0 - 40 && l.z <= bounds.z1 + 40);
+  const segD = (x, z, a, b) => { const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1e-9, t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / L2)); return Math.hypot(x - a.x - dx * t, z - a.z - dz * t); };
   for (const r of roads.roads) {
     if (r.meta?.highway === "service" || r.meta?.highway === "footway") continue;
     const k = kerbOffset(r.type);
     if (!k.spacing) continue;
     const pts = [N.get(r.a), ...r.pts, N.get(r.b)].filter(Boolean);
+    if (near.length) {
+      let n = 0;
+      for (const l of near) { for (let i = 1; i < pts.length; i++) if (segD(l.x, l.z, pts[i - 1], pts[i]) < OSM_NEAR) { n++; break; } if (n >= 2) break; }
+      if (n >= 2) continue;
+    }
     let total = 0;
     const segL = [];
     for (let i = 1; i < pts.length; i++) { const L = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z); segL.push(L); total += L; }
@@ -34,6 +48,19 @@ export function lampSites(roads, bounds) {
       if (x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1) out.push({ x, z, yaw: Math.atan2(nx, nz) });   // local -z (the arm) -> toward the road
       s += k.spacing; side = -side;
     }
+  }
+  // the OSM lamps of the tile: their own spot (placeLamp moves them onto the sidewalk), the arm to the nearest road
+  for (const l of near) {
+    if (!(l.x >= bounds.x0 && l.x <= bounds.x1 && l.z >= bounds.z0 && l.z <= bounds.z1)) continue;
+    let best = null, bd = Infinity;
+    for (const r of roads.roads) {
+      const pts = [N.get(r.a), ...r.pts, N.get(r.b)].filter(Boolean);
+      for (let i = 1; i < pts.length; i++) { const d = segD(l.x, l.z, pts[i - 1], pts[i]); if (d < bd) { bd = d; best = [pts[i - 1], pts[i]]; } }
+    }
+    if (!best || bd > 25) continue;
+    const [a, b] = best, dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1e-9, t = Math.max(0, Math.min(1, ((l.x - a.x) * dx + (l.z - a.z) * dz) / L2));
+    const px = a.x + dx * t, pz = a.z + dz * t, nx = l.x - px, nz = l.z - pz;
+    out.unshift({ x: l.x, z: l.z, yaw: Math.atan2(nx, nz), osm: l.id, ...(l.mount ? { mount: l.mount } : {}) });   // (first: a generated lamp of a crossing road within 6 m gives way)
   }
   // two roads sharing a kerb: drop lamps closer than 6 m to one already kept
   const kept = [];

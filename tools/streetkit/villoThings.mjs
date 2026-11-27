@@ -27,5 +27,12 @@ export async function villoThings(S, sk) {
   for (let i = 0; i < bx.length; i += 3) things.push({ x: bx[i], z: bx[i + 2], r: 0.1, kind: "bollard" });
   for (const t of feats.trees || []) if (!driven.inside(t.x, t.z, 0)) things.push({ x: t.x, z: t.z, r: 0.3, kind: "tree" });
   for (const p of tramPoleSites(tram, inB, { fit, driven })) things.push({ x: p.x, z: p.z, r: 0.15, kind: "tram pole" });
+  // (reality2, rule kerb-furniture) the school hairpin barriers along the kerb (viewer/streets/kerbFurniture.js, as main.js:
+  // the street life's school faces): each hairpin's two legs (LEG either side of its centre, along the kerb)
+  const { schoolBarriers, LEG } = await imp("viewer/streets/kerbFurniture.js");
+  const sl = json(join(ROOT, "data/streetlife", `${T}.json`)) || {};
+  const schools = (sl.pois || []).filter((p) => p.face && p.kind === "school").map(({ face: f }) => ({ x: f.x, z: f.z, y: f.y, nx: f.nx, nz: f.nz, w: f.w }));
+  if (fit) for (const b of schoolBarriers(schools, fit.nearKerb, (x, z) => !driven.inside(x, z, 0.1), inB))
+    for (const sg of [-1, 0, 1]) things.push({ x: b.x + Math.cos(b.yaw) * LEG * sg, z: b.z - Math.sin(b.yaw) * LEG * sg, r: 0.05, kind: "school barrier" });
   return things;
 }

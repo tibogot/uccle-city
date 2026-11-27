@@ -39,7 +39,7 @@ const STATIC = {
   "carFleet.js": "parked cars: written when a tile comes / goes",
   "cars.js": "parked cars (old path): per tile, once",
   "facadeKit/kitField.js": "facade kit pieces: per tile",
-  "fuel/cityFuel.js": "fuel stations: once", "furniture.js": "street furniture: per tile", "furniture2/cityFurniture.js": "street furniture: per tile", "tlights/cityTLights.js": "traffic light posts: per tile (collision stand-ins, never move)",
+  "fuel/cityFuel.js": "fuel stations: once", "kerbBarriers.js": "school hairpin barriers (reality2 round 4.4): per tile, never move", "furniture.js": "street furniture: per tile", "furniture2/cityFurniture.js": "street furniture: per tile", "tlights/cityTLights.js": "traffic light posts: per tile (collision stand-ins, never move)",
   "gardens/cityGardens.js": "gardens: per tile", "fences/timberFence.js": "timber post-and-rail fences (claude/reality1): written once when the tile is built, never moved", "grass/grassField.js": "grass trunks: once (grass default off)",
   "impostorKit/sources/stylizedTrees.js": "impostor bake source: one identity instance", "impostors.js": "impostor bake: identity instance",
   "lamps.js": "street lamps: per tile", "nightLights/cityNight.js": "night light cards: on change", "nightLights/nightStreet.js": "night lab street: once",

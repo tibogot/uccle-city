@@ -1,0 +1,503 @@
+{
+ "_doc": "claude/reality2 (rule garage-has-drive, gates census gateLostToGarage): the door paths next to a garage drive with no gate leaf within 8 m that are allowed: fronts that had no gate on claude/foundation either. Any other place is a lost gate (a builder bug). Frozen: built from the foundation-vs-branch gates census diff (tools/audit/census/gates.mjs --list on claude/foundation 82d295b3 data/gardens vs claude/reality2 at 03d2e7a8, then the door-rule rebuild of 2026-11-27); a later round rebuilds it the same way, never by hand.",
+ "places": [
+  {
+   "key": "B4 -2142.1, -96.4",
+   "street": "Rue Jean d'Osta - Jean d'Ostastraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "B5 -2085.6, 205.6",
+   "street": "Rue Zwartebeek - Zwartebeekstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "B6 -2017.6, 830.7",
+   "street": "Rue du Melkriek - Melkriekstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "B7 -2096.5, 1351",
+   "street": "Rue des Trois Rois - Drie Koningenstraat",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "C4 -1560.6, -199.2",
+   "street": "Rue Gatti de Gamond - Gatti de Gamondstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "C4 -1560, -202.6",
+   "street": "Rue Gatti de Gamond - Gatti de Gamondstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "C5 -1656.6, 63.4",
+   "street": "Rue du Roetaert - Roetaertstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "C6 -1859, 728.2",
+   "street": "Rue Edouard Michiels - Edouard Michielsstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "C6 -1858, 722.3",
+   "street": "Rue Edouard Michiels - Edouard Michielsstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "C6 -1858.5, 716.1",
+   "street": "Rue Edouard Michiels - Edouard Michielsstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "C7 -1917.6, 1439",
+   "street": "Chaussée de Drogenbos - Drogenbossesteenweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "C7 -1892.9, 1431.3",
+   "street": "Chaussée de Drogenbos - Drogenbossesteenweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "D4 -1048.1, -428.9",
+   "street": "Rue Beeckman - Beeckmanstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "D5 -1064.4, 176.3",
+   "street": "Rue Camille Van Exter - Camille Van Exterstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "D5 -1201.6, 270.1",
+   "street": "Rue des Trois Arbres - Drie Bomenstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "D5 -1463.2, 148.6",
+   "street": "Avenue Adolphe Wansart - Adolphe Wansartlaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E2 -803, -1355.7",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E2 -551.9, -1238.4",
+   "street": "Avenue de Messidor - Messidorlaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E3 -889, -874.5",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E4 -821.6, -148.6",
+   "street": "Place Émile Danco - Émile Dancoplein",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E4 -694.9, -90.4",
+   "street": "Avenue Arnold Delvaux - Arnold Delvauxlaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E6 -978.4, 868.1",
+   "street": "Avenue Groelstveld - Groelstveldlaan",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E6 -525.4, 912.7",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E7 -596.3, 1287.5",
+   "street": "Rue de Verrewinkel - Verrewinkelstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E8 -948.3, 1948.3",
+   "street": "Rue de la Cueillette - Plukstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E8 -968.9, 1969.4",
+   "street": "Rue de la Cueillette - Plukstraat",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F2 -334.5, -1292",
+   "street": "Rue de la Mutualité - Onderlinge Bijstandstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F4 -367.8, -437.8",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F4 -323, -366.7",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F4 -342, -426.8",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F5 -184.3, 294.4",
+   "street": "Avenue Wolvendael - Wolvendaellaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F5 -433.6, 283.5",
+   "street": "Rue Colonel Chaltin - Kolonel Chaltinstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F5 -461.5, 242.9",
+   "street": "Rue Colonel Chaltin - Kolonel Chaltinstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -241.9, 952.9",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -224.3, 498.1",
+   "street": "Rue du Repos - Ruststraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -223.4, 990.4",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -230, 971.8",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -464.7, 807.5",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -301, 871.6",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -285, 896.5",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -302.1, 862.2",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -297.2, 869.4",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -248, 952.5",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -248.8, 942.5",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -333.1, 816.2",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F6 -66.6, 992.7",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F7 -166.7, 1049.1",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F7 -203.2, 1014.4",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F7 -118.3, 1023",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F7 -109, 1008.5",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F7 -89.4, 1004.5",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F7 -209, 1012.3",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F7 -106, 1012.4",
+   "street": "Chemin privé 't Cortenbosch - Private Weg 't Cortenbosch",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F9 -371.8, 2477.4",
+   "street": "Avenue Reinaert de Vos - Reinaert de Voslaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "F9 -55.5, 2312.4",
+   "street": "Chemin de la Forêt - Woudweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "G1 256.3, -1580.9",
+   "street": "Rue Joseph Cuylits - Joseph Cuylitsstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "G1 502.9, -1578.9",
+   "street": "Rue Edith Cavell - Edith Cavellstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "G4 268, -460.6",
+   "street": "Chemin de la Source - Bronweg",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "G5 87.4, 219.6",
+   "street": "Dieweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "G6 134.7, 910.7",
+   "street": "Clos Bourgmestre De Keyser - Burgemeester De Keysergaarde",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "G6 292.1, 607.1",
+   "street": "Clos du Drossart - Drossaardgaarde",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "H1 969.5, -1761.5",
+   "street": "Rue Lincoln - Lincolnstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "H4 664.5, -339.4",
+   "street": "Avenue Houzeau - Houzeaulaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "H5 916.5, 419.6",
+   "street": "Rue de l'Équateur - Evenaarsstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "H5 774.3, 492.5",
+   "street": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "H6 722.2, 722.5",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "I10 1263.5, 2930",
+   "street": "Avenue des Aubépines - Hagedoornlaan",
+   "type": "villa",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "I2 1070.6, -1218.1",
+   "street": "Avenue Montjoie - Montjoielaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "I6 1080.6, 541.9",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "I6 1137.5, 903.6",
+   "street": "Montagne de Saint-Job - Berg van Sint-Job",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "I6 1202.7, 953.1",
+   "street": "Vieille rue du Moulin - Oude Molenstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "I6 1206.9, 953.5",
+   "street": "Vieille rue du Moulin - Oude Molenstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "I6 1144.9, 587.9",
+   "street": "Montagne de Saint-Job - Berg van Sint-Job",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "I7 1042.9, 1060.5",
+   "street": "Vieille rue du Moulin - Oude Molenstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "I7 1380.2, 1386.5",
+   "street": "Avenue Jacques Pastur - Jacques Pasturlaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "J4 1598.5, -462.6",
+   "street": "Rue Joseph Vanderlinden - Joseph Vanderlindenstraat",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "J5 1983.1, 74.5",
+   "street": "Avenue Montana - Montanalaan",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "J6 1770.6, 868.2",
+   "street": "Chaussée de Waterloo - Waterloosesteenweg",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "K5 2104.6, 219.8",
+   "street": "Drève des Gendarmes - Gendarmendreef",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E3 -750.9, -962.6",
+   "street": "Square Coghen",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "H7 866.3, 1413.2",
+   "street": "Avenue Bonaparte",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either"
+  },
+  {
+   "key": "J5 1829, 80.2",
+   "street": "Chaussee de Waterloo",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either"
+  },
+  {
+   "key": "G4 264.2, -494.4",
+   "street": "Chemin de la Source",
+   "type": "terraced",
+   "why": "its gate is still built, 2.1 m from the door at (262.1, -494.32), moved 1.5 m from the foundation spot by the garage opening; the census sees none within 8 m (its leaf where the census clears pieces in a driven lane): to look at in the next round"
+  }
+ ]
+}

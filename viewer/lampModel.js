@@ -71,6 +71,9 @@ function mergeTwo(a, b) {
 }
 
 let MATS = null;
+/** the lamp's shared iron + glass materials (no GLB needed): the wall / tram-pole lanterns and the flower baskets' iron
+ *  (viewer/lampExtras.js, claude/reality2) draw with the same two, so they add no pipeline and glow with the lamps */
+export const lampMaterials = () => materials();
 function materials() {
   if (MATS) return MATS;
   const iron = new THREE.MeshStandardNodeMaterial({ roughness: 0.42, metalness: 0.35 });

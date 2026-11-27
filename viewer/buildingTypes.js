@@ -114,6 +114,7 @@ function mergeEv(a, b) {
   const o = { ...a };
   if (b.inst && !o.inst) o.inst = b.inst;
   if (b.wall && !o.wall) o.wall = b.wall;
+  if (b.shop) o.shop = true;
   if (b.era && (!o.era || ERA_RANK[b.era] < ERA_RANK[o.era])) { o.era = b.era; o.year = b.year; }   // the oldest part dates the group
   if (!o.era && b.near && !o.near) o.near = b.near;
   return o;
@@ -264,6 +265,10 @@ export function classify(doc, P, I, legacyStyle) {
       if (flat > 0.6) type = p === 1 || r2 < 0.3 ? TYPE.DECO : TYPE.VILLA;
       else type = p === 0 && g.area > 140 && r2 < 0.5 ? TYPE.MAITRE : TYPE.VILLA;
     }
+    // (claude/reality2, rule bldclass-evidence: the shop house) a ROW building of <= 20 m with a shop on its ground floor
+    // (data/bldclass shop: a street-life front on it, real or the shop-street fill) and no post-war evidence is a shop
+    // house of a commercial row, not a balcony block (Rue Xavier De Bue: Kruidvat's sign under a balcony slab)
+    if (BC && type === TYPE.BLOCK && g.ev?.shop && g.ev.era !== "post" && g.ev.near !== "new" && partyShare > 0.15 && g.h <= 24) type = TYPE.MAITRE;
     // the wall material per type (0 red brick, 1 brown / klinker, 2 yellow / beige brick, 3 white render, 4 cream
     // render, 5 grey render / concrete)
     const rs = h01(key + "s");
@@ -281,8 +286,8 @@ export function classify(doc, P, I, legacyStyle) {
     // (round 3, rule bldclass-evidence) the wall the evidence dates: the inventory style's material (brick = red brick with
     // white stone bands, 15 % the dark klinker; stone = a pale stone / cream render), and a dated pre-1946 maison de maitre
     // with no style word leans brick (Uccle's 1900-1930 fronts: brick + stone far more than render)
-    const wl = BC && (type === TYPE.MAITRE || type === TYPE.DECO) ? g.ev?.wall : null;
-    const styleW = wl === "brick" ? (h01(key + "|klinker") < 0.15 ? 1 : 0) : wl === "stone" ? 4
+    const wl = BC && (type === TYPE.MAITRE || type === TYPE.DECO || (type === TYPE.BLOCK && g.ev?.wall === "buff")) ? g.ev?.wall : null;
+    const styleW = wl === "brick" ? (h01(key + "|klinker") < 0.15 ? 1 : 0) : wl === "stone" ? 4 : wl === "buff" ? 2
       : BC && type === TYPE.MAITRE && (g.ev?.era === "pre" || g.ev?.era === "inter" || g.ev?.near === "old") && !g.ev?.inst ? pick(rs, [[0, 0.6], [1, 0.15], [4, 0.15], [3, 0.1]]) : null;
     const garage = g.ev?.inst && BC ? 0 : type === TYPE.BELETAGE || (type === TYPE.VILLA && h01(key + "|gar") < 0.45) ? 1 : 0;
     T.set(key, { type, style: styleW ?? styleI ?? style, garage, form, flat, steep, row: steepRow(g, partyShare), ev: BC ? g.ev : null });

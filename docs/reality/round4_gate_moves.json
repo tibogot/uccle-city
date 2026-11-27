@@ -1,0 +1,347 @@
+{
+ "_doc": "claude/reality2 round 4 final (a604b03f gardens, rule garage-has-drive): gates census --list on claude/foundation 82d295b3 data/gardens vs this branch. paths: gated on foundation, read as ungated now (nearestGateM: the nearest gate leaf now); pathsGained: the reverse; villaDrives: villa driveways gated on foundation, open now.",
+ "paths": [
+  {
+   "tile": "E6",
+   "x": -503.1,
+   "z": 842.2,
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "nearestGateM": 0.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E6",
+   "x": -618.2,
+   "z": 527.6,
+   "street": "Dieweg",
+   "type": "terraced",
+   "nearestGateM": 3.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F5",
+   "x": -10.2,
+   "z": 256,
+   "street": "Dieweg",
+   "type": "terraced",
+   "nearestGateM": 4.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F5",
+   "x": -466.6,
+   "z": 234.3,
+   "street": "Rue Colonel Chaltin - Kolonel Chaltinstraat",
+   "type": "terraced",
+   "nearestGateM": 0.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F6",
+   "x": -325.7,
+   "z": 812.1,
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "type": "terraced",
+   "nearestGateM": 0.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G2",
+   "x": 340.9,
+   "z": -1187.2,
+   "street": "Avenue Léo Errera - Léo Erreralaan",
+   "type": "apartment",
+   "nearestGateM": 4.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G4",
+   "x": 264.2,
+   "z": -494.4,
+   "street": "Chemin de la Source - Bronweg",
+   "type": "terraced",
+   "nearestGateM": 2.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G6",
+   "x": 443.5,
+   "z": 533.5,
+   "street": "Avenue Den Doorn - Den Doornlaan",
+   "type": "terraced",
+   "nearestGateM": 4,
+   "garageDrive6m": false
+  },
+  {
+   "tile": "I5",
+   "x": 1085.6,
+   "z": 478,
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "shop",
+   "nearestGateM": 3.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I5",
+   "x": 1053.5,
+   "z": 359.7,
+   "street": "Rue Copernic - Copernicusstraat",
+   "type": "terraced",
+   "nearestGateM": 3.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I6",
+   "x": 1265.5,
+   "z": 592,
+   "street": "Avenue Victor-Emmanuel III - Victor-Emmanuel III laan",
+   "type": "terraced",
+   "nearestGateM": 4.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K8",
+   "x": 2101.9,
+   "z": 1546.4,
+   "street": "Avenue des Châlets - Kasteeltjeslaan",
+   "type": "terraced",
+   "nearestGateM": 0.5,
+   "garageDrive6m": true
+  }
+ ],
+ "pathsGained": 158,
+ "villaDrives": [
+  {
+   "tile": "C5",
+   "x": -1837.7,
+   "z": 62.5,
+   "street": "Rue du Merlo - Merlostraat",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D4",
+   "x": -1349.6,
+   "z": -17.4,
+   "street": "Avenue Joseph Jongen - Joseph Jongenlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D5",
+   "x": -1469.4,
+   "z": 1.4,
+   "street": "Avenue Joseph Jongen - Joseph Jongenlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E6",
+   "x": -834.5,
+   "z": 694.3,
+   "street": "Dieweg",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F4",
+   "x": -60.2,
+   "z": -396.1,
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F9",
+   "x": -281,
+   "z": 2047.5,
+   "street": "Avenue de la Gazelle - Gazellelaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G4",
+   "x": 209.5,
+   "z": -166,
+   "street": "Avenue des Statuaires - Beeldhouwerslaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G5",
+   "x": 80.5,
+   "z": 374.6,
+   "street": "Avenue Georges Lecointe - Georges Lecointelaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G5",
+   "x": 156,
+   "z": 103.4,
+   "street": "Avenue Kamerdelle - Kamerdellelaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G8",
+   "x": 331,
+   "z": 1596.1,
+   "street": "Avenue de la Chênaie - Eikenboslaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H8",
+   "x": 855.3,
+   "z": 1642.5,
+   "street": "Avenue Jacques Pastur - Jacques Pasturlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H8",
+   "x": 954.7,
+   "z": 1595.5,
+   "street": "Avenue Jacques Pastur - Jacques Pasturlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H8",
+   "x": 752.8,
+   "z": 1846.9,
+   "street": "Avenue du Prince d'Orange - Prins van Oranjelaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H8",
+   "x": 856.8,
+   "z": 1713,
+   "street": "Square Masséna - Massénasquare",
+   "garageDrive6m": false
+  },
+  {
+   "tile": "H9",
+   "x": 910.8,
+   "z": 2205,
+   "street": "Avenue Maréchal Ney - Maarschalk Neylaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I3",
+   "x": 1059.5,
+   "z": -871,
+   "street": "Bosveldweg",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I7",
+   "x": 1343.1,
+   "z": 1137.7,
+   "street": "Vallon d'Ohain - Ohaindal",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I8",
+   "x": 1328.6,
+   "z": 1588.6,
+   "street": "Avenue de Foestraets - de Foestraetslaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I9",
+   "x": 1188.5,
+   "z": 2234.4,
+   "street": "Avenue Blücher - Blücherlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I9",
+   "x": 1453.2,
+   "z": 2107.4,
+   "street": "Avenue Maréchal Ney - Maarschalk Neylaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J10",
+   "x": 1748.2,
+   "z": 2868.4,
+   "street": "Avenue des Sorbiers - Lijsterbessenbomenlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J5",
+   "x": 1953.4,
+   "z": 425.9,
+   "street": "Avenue des Chênes - Eikenlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J6",
+   "x": 1599.2,
+   "z": 678.1,
+   "street": "Avenue Alphonse XIII - Alphonse XIII laan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J7",
+   "x": 1501.9,
+   "z": 1409.4,
+   "street": "Avenue Wellington - Wellingtonlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J7",
+   "x": 1697.3,
+   "z": 1407.9,
+   "street": "Avenue de Foestraets - de Foestraetslaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J7",
+   "x": 1866.3,
+   "z": 1144.9,
+   "street": "Avenue du Fort-Jaco - Fort-Jacolaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J7",
+   "x": 1592,
+   "z": 1149,
+   "street": "Avenue Fond'Roy - Vronerodelaan",
+   "garageDrive6m": false
+  },
+  {
+   "tile": "J7",
+   "x": 1952.6,
+   "z": 1272.6,
+   "street": "Avenue des Ronces - Braamstruikenlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J9",
+   "x": 1513.8,
+   "z": 2073,
+   "street": "Avenue Maréchal Ney - Maarschalk Neylaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K6",
+   "x": 2009.4,
+   "z": 683.7,
+   "street": "Avenue du Maréchal - Maarschalklaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K7",
+   "x": 2360.9,
+   "z": 1412.6,
+   "street": "Avenue des Châlets - Kasteeltjeslaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K8",
+   "x": 2088.8,
+   "z": 1555.5,
+   "street": "Avenue des Châlets - Kasteeltjeslaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K9",
+   "x": 2168.5,
+   "z": 2413.1,
+   "street": "Avenue des Aubépines - Hagedoornlaan",
+   "garageDrive6m": true
+  }
+ ]
+}
