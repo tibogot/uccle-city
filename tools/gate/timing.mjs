@@ -147,7 +147,7 @@ let timingFails = 0;
 /** a timing verdict: returns ok, counts a failure as timing-only */
 export function timed(ok) { if (!ok) timingFails++; return !!ok; }
 /** the row's exit code: 0 none failed, TIMING_EXIT every failure a timing verdict, 1 any other */
-export function gateExit(fails) { return !fails ? 0 : fails <= timingFails ? TIMING_EXIT : 1; }
+export function gateExit(fails) { return !fails ? 0 : fails === timingFails ? TIMING_EXIT : 1; }
 
 // ------------------------------------------------------------------ a deliberately slowed path (the self-test)
 // GATE_SLOW=<name>[,<name>...] (GATE_SLOW_X, default 4): slow(name, t0) at the end of a timed block busy-waits until the

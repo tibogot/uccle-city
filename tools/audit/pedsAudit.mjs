@@ -46,7 +46,7 @@ const TILES = ["H5", "I5", "H6", "I6", "F4"];
 const MAX_CARRIAGE = 0.01, LINKED = 0.85, COVER = 0.9, WG_MS = 800;
 const MIN_AM = 60, MAX_AM = 260, MAX_NIGHT = 30, ALLOC_KB_STEP = 0.5, STEP_MS = 0.5;
 const CARRIAGE = new Set([1, 2, 3, 4, 7]);            // class + 1: roadway, tram road, tram site, parking, median
-const fails = [], fail = (c, m) => fails.push(`${c}: ${m}`), timingFail = (c, m) => { timed(false); fail(c, m); }, log = (...a) => { if (!QUIET) console.log(...a); };
+const fails = [], fail = (c, m) => fails.push(`${c}: ${m}`), log = (...a) => { if (!QUIET) console.log(...a); };
 const out = { tiles: {}, sim: null };
 
 const built = new Map();
@@ -115,7 +115,7 @@ if (DO_G) for (const [T, d] of built) {
   // carries the time of the build that stored it, maybe under another agent's load: H5 809 / 908 ms stored, ~430 fresh)
   const W = await walkGraphMs(T, d);
   if (!W.same) fail("W6", `${T}: the re-timed walk graph differs from the tile's (${W.same === null ? "no graph" : "not the same work"})`);
-  else if (!timed(W.ms <= WG_MS * W.k)) timingFail("W6", `${T}: walk graph ${W.ms.toFixed(0)} ms (max ${WG_MS} ms x k, ${W.note})`);
+  else if (!timed(W.ms <= WG_MS * W.k)) fail("W6", `${T}: walk graph ${W.ms.toFixed(0)} ms (max ${WG_MS} ms x k, ${W.note})`);
   out.tiles[T] = { nodes: st.nodes, edges: st.edges, lineM: st.lineM, pathM: st.pathM, crossings: `${st.crossingsLinked}/${st.crossings}`, signalled: st.crossingsSignal, platforms: st.platforms, square: st.squareNodes,
     roadPct: +(roadShare * 100).toFixed(3), solidSamples: solidN, coverPct: +(cover * 100).toFixed(1), walkGraphMs: Math.round(W.ms), k: +W.k.toFixed(2) };
   log(T, JSON.stringify(out.tiles[T]));
@@ -174,7 +174,7 @@ if (DO_S) {
   if (onRoad / Math.max(1, samples) > 0.002) fail("S2", `${onRoad} of ${samples} person samples on the carriageway off a crossing, e.g. ${JSON.stringify(roadAt)}`);
   if (inSolid / Math.max(1, samples) > 0.001) fail("S2", `${inSolid} of ${samples} person samples inside a solid`);
   if (globalThis.gc && out.alloc > ALLOC_KB_STEP) fail("S3", `the sim step keeps ${out.alloc.toFixed(2)} KB a step (max ${ALLOC_KB_STEP}; run with --expose-gc)`);
-  if (!timed(stepMs <= STEP_MS * k4)) timingFail("S4", `the sim step ${stepMs.toFixed(3)} ms for ${alive} people (max ${STEP_MS} ms x k ${k4.toFixed(2)})`);
+  if (!timed(stepMs <= STEP_MS * k4)) fail("S4", `the sim step ${stepMs.toFixed(3)} ms for ${alive} people (max ${STEP_MS} ms x k ${k4.toFixed(2)})`);
   out.sim = { stjobAm: nAm, stjobNight: nNight, wolvendaelAm: pkAm, wolvendaelPm: pkPm, alive, stepMs: +stepMs.toFixed(3), allocKBStep: out.alloc == null ? null : +out.alloc.toFixed(3), samples, onRoad, inSolid, counters: sim.counters, graph: graph.stats };
   log("sim", JSON.stringify(out.sim));
 }

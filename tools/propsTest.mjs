@@ -305,7 +305,8 @@ check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.ba
 // (a tight in-cache loop); the solver's 24 bodies walk more memory and lose more to a neighbour's cache pressure than
 // the loop does (2026-11-26 under load: 0.32 ms at k 2.70, i.e. 0.118 ms / k, vs 0.075 ms at k 1.52 = 0.049 / k alone).
 // The budget is 0.1 ms x k x COST_NOISE; a load spike beyond that is a timing-only failure (exit 75) that mergeGate
-// re-runs alone up to 3 times. The code measures ~0.05 ms / k: a solver 2.5 x dearer fails on every run
+// re-runs alone up to 3 times. The code measures 0.03-0.05 ms / k alone (0.045 ms at k 1.38 on claude/gateflakes):
+// a solver ~2.5-4 x dearer fails on every run (the timingretry row slows it 8 x)
 const COST_NOISE = 1.25;
 {
   const props = [];
