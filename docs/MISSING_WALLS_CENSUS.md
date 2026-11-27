@@ -295,3 +295,20 @@ Left (not touched, Street View look first):
   at (-877.6, 1702.9), 2.5 m2 (with the old E8 garden file: 8 on the tile, now 9). Ceiling 555, named in the row.
 - `trafmix` failed once on "sim cost: too noisy to measure" (another agent's gate ran at the same time): a timing read,
   rerun on a quiet machine.
+
+## E3 (-740, -670): the spot claude/reality1 saw (claude/defects3, 2026-11-26)
+
+"Floating wall fragments and missing walls, present with every switch old" (docs REALITY_ROUND_2026-11-26). Looked at
+from four cameras (24 m over the block south-east, 12 m from the south-west, the street, 20 m from the west; shots in
+C:/Users/tibog/Downloads/uccle-defects3/e3_*.png): the buildings there (506811, the 73-vertex block with a light well,
+and the garages 546708 / 527164 / 527132) are closed. The census had two blind spots, now covered:
+- **Courtyards / light wells** (footprint rings 1..): only footprint[0] was ever tested. Now every ring (a hole's
+  outward = into the hole), counted apart in `tally.court` (reported; the outer ceilings unchanged). City-wide the
+  courtyards add 1 open building (389 -> 390 >= 1 m2); F2 holds most (a courtyard UrbIS gives no walls: data).
+  `--outeronly` = before.
+- **The far tiles** (tileData.js buildLiteData: the UrbIS solids as they are, no wall repair / feet / kit): `--far`
+  judges that shell. E3 far: 10 buildings open >= 1 m2 (data 8, srcIn 2), near: 19 (+ 10 small "lost"); nothing at
+  (-740, -670) either way.
+- Left for the next look: the garden walls there are fragmented (style 9 piers 0.5 m apart with 0.25 m wall pieces
+  between them at -752.8, -683.5; 1,748 garden segments under 0.4 m city-wide): the likeliest "floating fragments".
+  Not changed here (no browser confirmation of the reported view).

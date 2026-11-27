@@ -377,8 +377,10 @@ check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.ba
   if (!OLD) {
     const { spawnSync } = await import("node:child_process");
     const r = spawnSync(process.execPath, ["--import", "./tools/christmas/hook.mjs", "tools/props/glueSmoke.mjs"], { cwd: new URL("..", import.meta.url), encoding: "utf8", timeout: 120000 });
-    const lines = ((r.stdout || "") + (r.stderr || "")).trim().split(/\r?\n/);
-    ok = r.status === 0;
+    // (claude/perf6, rule settled-props-in-pool) and the old path (?propsettle=old: asleep props stay proxies)
+    const r2 = spawnSync(process.execPath, ["--import", "./tools/christmas/hook.mjs", "tools/props/glueSmoke.mjs", "--settleold"], { cwd: new URL("..", import.meta.url), encoding: "utf8", timeout: 120000 });
+    const lines = ((r.stdout || "") + (r.stderr || "") + (r2.status ? (r2.stdout || "") + (r2.stderr || "") : "")).trim().split(/\r?\n/);
+    ok = r.status === 0 && r2.status === 0 && lines.some((l) => l.startsWith("pass settled in its pool"));
     msg = ok ? `cityProps.js on real three.js pools / meshes: hide by one range, proxies draw + move (ranges), shape from the drawn geometry, sleep, reset on tile unload (${lines.filter((l) => l.startsWith("pass")).length} pass)` : lines.filter((l) => /FAIL|Error/.test(l)).slice(0, 3).join(" / ");
   }
   check("glue", ok, msg);

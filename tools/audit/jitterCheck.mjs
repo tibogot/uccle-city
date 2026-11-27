@@ -174,6 +174,33 @@ try {
   check("blended", !bad.length, `the cards blended at their coverage, writing depth only where it is >= ${TB.CARD_DEPTH_CUT * 100} % (a depth cut, not a visible edge: without depth the TAAU reprojected them at the depth behind and they smeared away while moving, browser turn), no alpha to coverage, no shadow: ${props.map(([n]) => n).join(", ")}${bad.length ? `; NOT: ${bad.map(([n]) => n).join(", ")}` : ""}`);
 } catch (e) { check("wgsl", false, `materials / WGSL: ${e.message.split("\n")[0]} (run with node --preserve-symlinks --import ./tools/characters/threeHook.mjs)`); }
 
+// ---- 4. (claude/defects3, rule 35 round 2) the heroes' thin strokes: every straight stroke under 1 internal px at 20 m is
+// WIRED (viewer/heroWires.js: widened to >= wireHalfPx in the vertex stage, dithered to its true coverage), at every
+// level of the four heroes the census named (docs/JITTER.md section 2 / 6); the ones left (bent / arched) under ceilings
+{
+  const { wireData } = await import("../../viewer/heroWireData.js");
+  const HEROES = { "police_rouge/police": 13, "latourdefrein/latourdefrein": 0, "papenkasteel/papenkasteel": 3, "wolvendael_chateau/wolvendael": 52 };
+  const parts = [];
+  let worst = 0;
+  for (const [h, ceil] of Object.entries(HEROES)) {
+    const g = await readGlb(path.join(ROOT, "models", h + ".glb"));
+    let S = 0, W = 0, left = 0;
+    for (const p of g.parts) {
+      const r = wireData(p.positions, p.index);
+      S += r.strokes; W += r.wired;
+      // strokes not wired that are under 1 px at 20 m (TB.px): the raster lottery is still theirs
+      const cc = TB.components(p.positions, p.index), st = TB.strokes(p.positions, p.index, cc);
+      const wiredComp = new Set(); for (let i = 0; i < p.positions.length / 3; i++) if (r.data[i * 4 + 3] > 0) wiredComp.add(cc.comp[i]);
+      st.forEach((x, c) => { if (x.thin && !wiredComp.has(c) && TB.px(x.w, 20) < 1) left++; });
+    }
+    parts.push(`${h.split("/")[0]} ${W}/${S} wired, ${left} sub-px left (<= ${ceil})`);
+    if (left > ceil) worst++;
+  }
+  check("herowires", worst === 0, `the heroes' straight thin strokes wired (widened >= ${0.6 * 2} internal px, dithered to their coverage, every pass): ${parts.join("; ")}`);
+  check("herowires-hook", ["viewer/policeModel.js", "viewer/papenkasteelModel.js", "viewer/wolvendaelModel.js", "viewer/landmark5Model.js"].every((f) => /wireGeometries\(/.test(rd(f)) && /withWire\(m\)/.test(rd(f))) && /herowire/.test(rd("viewer/heroWires.js")) && /new Worker\(/.test(rd("viewer/heroWires.js")),
+    "the four loaders compute the wire data off the main thread (heroWireWorker.js) and wrap the slots that carry strokes; ?herowire=old");
+}
+
 // ---- 5. rules (the ?jitter features row, no DynamicDrawUsage / no light in the changed files: the meta row,
 // tools/audit/gate.d/jitter.mjs)
 check("switch", ["viewer/gardens/gardenKit.js", "viewer/facadeKit/kitField.js", "viewer/facadeKit/kitMaterials.js"].every((f) => /JITTER_OLD/.test(rd(f))), "?jitter=old: gardenKit.js, kitField.js, kitMaterials.js honour it");

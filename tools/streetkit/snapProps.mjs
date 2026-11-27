@@ -43,7 +43,7 @@ const sk = json(join(ROOT, "data/streetkit", `${T}.json`)) || {};
 const r2 = (v) => Math.round(v * 100) / 100, r4 = (v) => Math.round(v * 1e4) / 1e4;
 const rise = (x0, z0, x1, z1) => (fit ? fit.lift(x1, z1) - fit.lift(x0, z0) : 0) + ground(x1, z1) - ground(x0, z0);
 const bad = (x, z) => lanes.inside(x, z, 0) || tracks.dist(x, z) < TRAM_CLEAR;
-const out = { tile: T, plates: [], posts: [], postboxes: [], villo: [], stuck: { plates: 0, postboxes: 0, villoPieces: 0 }, dropped: { docks: 0, bikes: 0, totems: 0 } };
+const out = { tile: T, plates: [], posts: [], postboxes: [], glass: [], villo: [], stuck: { plates: 0, postboxes: 0, villoPieces: 0 }, dropped: { docks: 0, bikes: 0, totems: 0 } };
 // the original spot of an item (its `was` when an earlier pass moved it)
 const orig = (p) => (p.was ? { x: p.was[0], y: p.was[1], z: p.was[2], ...(p.was.length > 3 ? { nx: p.was[3], nz: p.was[4] } : {}) } : p);
 
@@ -69,6 +69,15 @@ const posts = sk.posts || [];
   const r = offLane(b.x, b.z, lanes, fit, OPT);
   if (!r.moved) { if (bad(b.x, b.z)) out.stuck.postboxes++; return; }
   out.postboxes.push([i, r2(r.x), r2(b.y + rise(b.x, b.z, r.x, r.z)), r2(r.z), r4(r.nx), r4(r.nz)]);
+});
+
+// ---- (defects3) the street life's underground glass chutes (drawn by the street-life layer, never snapped): as the boxes
+(sl.glass || []).forEach((g0, i) => {
+  if (!g0.underground) return;                         // (the overground banks: data/furniture banks, snapped at load)
+  const g = orig(g0);
+  const r = offLane(g.x, g.z, lanes, fit, OPT);
+  if (!r.moved) { if (bad(g.x, g.z)) out.stuck.glass = (out.stuck.glass || 0) + 1; return; }
+  out.glass.push([i, r2(r.x), r2(g.y + rise(g.x, g.z, r.x, r.z)), r2(r.z), r4(r.nx), r4(r.nz)]);
 });
 
 // ---- Villo stations (rule 30, round 2): ONE straight row on paving, never bent round a corner, never on a lawn / verge.
