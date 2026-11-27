@@ -743,7 +743,13 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                     # jamb piers stand clear of the paved drive)
                     over = [o for o in ops if o[2] == "car" and o[0] < sgar + gw / 2 and sgar - gw / 2 < o[1]]
                     if over:
-                        for o in over: o[0] = min(o[0], sgar - gw / 2); o[1] = max(o[1], sgar + gw / 2)
+                        # (widened about its own middle, so the driveway's gate roll (h01 of the rounded middle) stays the
+                        # same, and never past 4.6 m, where the driveway rule reads an open forecourt: gates census
+                        # villaDriveGatedPm 320 -> 302 when it was widened one-sided)
+                        for o in over:
+                            mid = (o[0] + o[1]) / 2; half = max((o[1] - o[0]) / 2, abs(sgar + gw / 2 - mid), abs(mid - (sgar - gw / 2)))
+                            if (o[1] - o[0]) <= 4.6 and half * 2 > 4.6: half = max((o[1] - o[0]) / 2, 2.3)
+                            o[0] = mid - half; o[1] = mid + half
                         stats["drive_garage_widened"] += 1
                     else:
                         ops.append([sgar - gw / 2, sgar + gw / 2, "car"]); stats["drive_garage"] += 1
