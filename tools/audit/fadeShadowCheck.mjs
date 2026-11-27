@@ -81,6 +81,8 @@ for (const f of ["policeCity", "calevoetCity", "papenkasteelCity", "vanbuurenCit
 }
 const CN = fs.readFileSync(path.join(ROOT, "viewer/nightLights/cityNight.js"), "utf8");
 ok(/if \(FADE_SHADOW_WARM\) for \(let i = 0, n = warmNow\.length; i < n; i\+\+\)[\s\S]{0,900}fadeVariant\(m\), key = fadeLayoutKey\(o\)[\s\S]{0,900}p\.layers\.set\(WARM_LAYER\)/.test(CN) && CN.includes("fadeWarmGroup.clear(); fadeWarmGroup.removeFromParent();"), "cityNight.js: the lamps' warm-up draws each caster's fading copy too (once per layout, warm layer only, removed after)");
+const W = fs.readFileSync(path.join(ROOT, "viewer/warmup.js"), "utf8");
+ok(/const frame = SHADOW_DRAWN \? \(\) => shadowDrawn\(\)/.test(W) && /st\.frames - f0 < min/.test(W) && /old\("shadowdrawn"/.test(F), "warmup.js warmShadows: a batch stays until the sun's pass drew it (sunCache.stats.frames), not two rAFs (?shadowdrawn=old)");
 ok(fs.existsSync(path.join(ROOT, "docs/rules/fade-shadow-warm.md")), "docs/rules/fade-shadow-warm.md exists");
 
 console.log(fails ? `fadeshadow: ${fails} FAIL` : "fadeshadow: all ok");
