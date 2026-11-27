@@ -170,8 +170,10 @@ if (!OLD) {
   ok(r.status === 0, `the old paths (?kitfadeshare=old&asphaltshare=old&groundshare=old) still build a graph per mesh / tile${r.status ? ": " + (r.stdout + r.stderr).trim().slice(0, 300) : ""}`);
   // ---- 6. text: the features rows, main.js
   const F = fs.readFileSync(path.join(ROOT, "viewer/features.js"), "utf8");
-  for (const k of ["kitfadeshare", "asphaltshare", "groundshare", "pinbuilds", "railwarm", "flushsplit", "flushalone"]) ok(new RegExp(`old\\("${k}"`).test(F), `viewer/features.js has the ?${k}=old row`);
+  for (const k of ["kitfadeshare", "asphaltshare", "groundshare", "pinbuilds", "railwarm", "flushsplit", "flushalone", "kitshadowwarm"]) ok(new RegExp(`old\\("${k}"`).test(F), `viewer/features.js has the ?${k}=old row`);
   const M = fs.readFileSync(path.join(ROOT, "viewer/main.js"), "utf8");
+  // (claude/perf6) the façade kit walls' shadow-pass fading copies warmed under the play loader (both shared materials)
+  ok(M.includes('const KIT_SHADOW_WARM = params.get("kitshadowwarm") !== "old";') && M.includes("[B.kitWalls.userData.cutMat, B.kitWalls.userData.plainMat]") && /fadeVariant\(m\)\); w\.castShadow = true;/.test(M) && M.includes("shadowWarm([kg]);"), "main.js warms the kit walls' fading copies in the shadow pass under the play loader (?kitshadowwarm=old: not)");
   ok(M.includes('if (params.get("pinbuilds") !== "old") window.__pinBuilds = installPinBuilds(renderer);'), "main.js installs the pins (?pinbuilds=old: off)");
   ok(M.includes("const contour = contourFn(contourOn);"), "main.js: one contour graph per switch (the terrain template's key)");
   ok(M.includes("railTileMeshes(rail.m.railWarmData())") && M.includes('RAIL_WARM = GAME_START && params.get("railwarm") !== "old"'), "main.js compiles the rail stand-in at a game start (?railwarm=old: not)");

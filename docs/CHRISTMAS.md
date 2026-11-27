@@ -1,5 +1,46 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
+## SEASON CHECK BY DATE (claude/xmascheck, 2026-11-27, four days before 1 December)
+
+`?quick=1&day=335|350|362`, day (`time=midday`) and `time=night`, `&with=weather,traffic`: Place Saint-Job (fir, market,
+garlands, the Chaussee with traffic), the Parvis Saint-Pierre, Rue Xavier De Bue (garlands, swags, December windows), Rue
+du Ham, the police yard (the police game's start). Shots: `C:/Users/tibog/Downloads/uccle-xmas/check1127/`.
+- **Fixed: snow wedges in the middle of the road on the snow days** (rule wx-road-edge, row `wxroadedge`): the asphalt's
+  weather edge read each lane's aLateral, so every mid-road lane line kept a snow band that stopped dead at the junction
+  pads and fanned into wedges where the lanes diverge. Now the carriageway's drain (aPiece.y): slush at the kerbs only.
+- Fine: 1 Dec dry, bare trees, December sun; the fir (both squares) day and night, its foot on the paving; the LEDs, star,
+  pole and wall garlands, De Bue swags and stars, the December window strands; 15 Dec cover by day (roofs, the fir, the
+  chalets, parked cars) and the night's snowfall; 28 Dec dry; 0 console errors of ours (one 404: the favicon).
+- Open, NOT Christmas code (the weather system; the same with `?xmas=0&wx=snow_cover`): on Place Saint-Job's paving a
+  polygonal patch with only a thin material cover (cobbles showing) at 15 cm depth, and the snow layer's edge round it in
+  ~25 cm saw-teeth (the coarse outer chunks of snowLayer.js); dark rings round the police yard's tree pits; white domes
+  on young trees (garden caps); thin white zigzags on wall copings. Worth a snow job before 15 Dec.
+- Seen, kept: under the night snowfall the fir reads as a flocked white tree; its LEDs are clear within ~15 m and fainter
+  from the square's edge (the snow is lit by the city, the glow uses the needles' own albedo).
+- GPU (RED preflight: two other agents' jobs, GPU 58 % busy at rest, power cap; read as noise): whole frame p50 at the
+  stjob-street spot, native scale: 1 Dec night 12.8-15.3 ms vs `?xmas=0` night 13.0-14.9 (no difference visible in the
+  noise); 15 Dec night (cover + snowfall) 16.8-17.0. debug/xmasPerf.js run(): layer-street 0.67 +- 0.19, fir-8m 0.48 +-
+  0.12 (over budget, as the first hot-machine numbers of 7.2; re-measure on GREEN), extras within 0.05.
+
+## THE SNOW (claude/snowseason, owner 2026-11-27: chose snow, "why no snow")
+
+The season snows in its second half (rule snow-schedule, gate row `snowsched`, tools/audit/snowScheduleCheck.mjs):
+viewer/seasons/snowSchedule.js (three-free, read once at boot by cityWeather.js) picks the START weather.
+Quick mode (`?quick=1`, every tour view) keeps the weather off unless asked (`&with=weather`, `?wx=`): no tour
+baseline flips on 15 December. (quick.js imports nothing but the places table: an early version imported the
+schedule there and the merge was blocked, see the rule.)
+- 1-14 Dec: dry (the winter look only). 15-26 Dec: the existing **snow cover** (roofs, cars, ground, the chalets: the
+  layer, caps, tracks) by day; **cover + light snowfall** (0.4-0.9 cm/h, the existing snowfall path, snow2) from 18:00
+  to 08:00 Brussels clock. 27 Dec - 6 Jan: dry.
+- Seeded by the day of the year: cover depth 10-17 cm, the night's snowfall, wind, cloud; the same date = the same
+  weather. Real date: the Brussels date + clock hour (a 02:00 visit on 15 Dec snows: the first snow night). A pinned
+  `?day=` uses the scene's hour (`?time=night` = night, golden by default = day, `?hour=` solar), never the wall clock.
+- Overrides: any `?wx=` (incl. clear, live) wins; `?season=summer`, `?xmas=0`, `?weather=old`: no snow; `?xmas=1` /
+  `?season=winter` outside the real season (the forced 21 Dec look, the Christmas tour) stay dry: use `?day=350`;
+  `?snowsched=old` = no automatic snow (as before). The dev panel's weather menu still changes it live.
+- Cost: nothing new per frame (the schedule only chooses the preset at boot); outside the snow days the start is clear,
+  exactly as before (no bake shown, nothing drawn). Shots: C:\Users\tibog\Downloads\uccle-xmas\snow\ (outside git).
+
 ## THE WINTER LOOK (claude/xmasreview, owner 2026-11-26: "yes do the winter look for christmas")
 
 While the Christmas season is on, the city is in December (rules season-from-date, bare-winter-trees, walker-statics;

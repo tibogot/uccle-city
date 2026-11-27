@@ -159,3 +159,31 @@ room behind it (interior parallax) and its 16 mm bars at ~1.2 px; its handrail a
 - **Shots** (`docs/jitter/shots/`): `jitter-gate-8m-{new,old}.jpg`, `jitter-wolv-8m-{new,old}.jpg`,
   `jitter-dandoy-8m-new.jpg`, strips (frames + |difference| x4) `jitter-dandoy-8m-strip-{old,new}.jpg`,
   `jitter-gate-20m-strip-{old,new}.jpg`, `jitter-dandoy-8m-strip-blend-nodepth.jpg` (the bug).
+
+## 6. Heroes, round 2 (claude/defects3, 2026-11-26): the widen + dither step, measured, opt-in
+
+The cheapest step of the section 2 plan that needs no pack change and no new texture: every STRAIGHT thin stroke of
+the four heroes (viewer/heroWireData.js: thinBars `strokes()` + a principal axis per stroke, bent ones left) gets a
+per-vertex offset from its axis + its half-width (`aWire`, computed in a worker: 150-210 ms a hero, never on the main
+thread); the slot material (only joinery / ironwork slots) widens it in the vertex stage to >= `wireHalfPx` (0.6
+internal px half-width, the tram wire's) and keeps 1 / widening of its pixels by the lodFade screen dither, every
+pass (Persson's phone-wire AA). Wired: police 739 / 752 strokes, La Tour de Frein 1,165 / 1,165, Papenkasteel
+649 / 652, Wolvendael 293 / 345 (the rest bent / arched). `?herowire=1`.
+
+Browser A/B (RTX 4050, one tab, `?quick=1&dynres=0`, debug/jitterCheck.js: still 16 frames, dolly 48 frames; shimmer
+= median high-pass change x/255, hot = % of the crop changing > 8/255; views `police8/20/40` added, La Tour de Frein's
+south-east front injected at 20 / 40 / 70 m):
+
+| view | speed | old shimmer / hot | wire shimmer / hot |
+|---|---|---|---|
+| La Tour de Frein 20 m | 1.5 / 8 | 2.39 / 8.1, 4.15 / 18.1 | 2.42 / 8.3, 4.10 / 18.0 |
+| La Tour de Frein 40 m | 1.5 / 8 | 0.97 / 0.2, 3.08 / 10.3 | 0.96 / 0.2, 3.22 / 11.2 |
+| La Tour de Frein 70 m | 1.5 / 8 | 5.04 / 20.3, 6.39 / 27.4 | 5.01 / 20.1, 6.42 / 27.8 |
+| police yard 8 / 20 / 40 m | 1.5 | 3.58 / 2.62 / 2.07 | 3.60 / 2.62 / 1.99 |
+
+No measurable gain (within +-5 %, the run noise): the frame-to-frame change of a dithered stroke under the moving
+dither phase is about what the raster lottery gave; the TAAU's clamp does not resolve a 1-in-3 dither on a 1 px line
+better than the missed hits. So it ships OFF (opt-in for the next round) and nothing changes by default; the gate row
+`jitter` now counts the heroes (`herowires`). The police view's crop shows the city's yard mesh fence more than the
+hero's grille (the police20 camera stands inside a building: its walls culled, its window frames floating: a view to
+re-aim). Next step per section 2: the pack-side coverage cards (the only path that measured -43..-60 % on the Lycée).

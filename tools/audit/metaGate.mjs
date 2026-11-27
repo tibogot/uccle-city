@@ -119,6 +119,28 @@ ok(nMeta > 0, `${nMeta} rows declare meta checks`);
   }
   ok(!bad.length, `timing rows measure through tools/gate/timing.mjs, no process.cpuUsage() in a row script (rule timing-rows)${bad.length ? `: ${bad.join("; ")}` : ""}`);
 }
+// ------------------------------------------------------------------ 1c. timing rows alone, retried (rule timing-rows-alone, claude/gateflakes)
+{
+  // a row with a timing verdict exits through gateExit (75 = only timing verdicts failed: mergeGate re-runs it alone up
+  // to 3 times); a row script that measures (measure / bestOf / cleanSteps / cpuAB / calibrate of tools/gate/timing.mjs)
+  // is a timing row or marks its verdicts timed(); no verdict on a build time stored with a (cached) tile
+  const bad = [];
+  // (the measuring names imported from tools/gate/timing.mjs: a row's own function called measure is not one)
+  const measures = (code) => { const m = code.match(/import\s*\{([^}]*)\}\s*from\s*["'][^"']*gate\/timing\.mjs["']/); return !!m && /\b(measure|bestOf|cleanSteps|cpuAB|calibrate)\b/.test(m[1]); };
+  for (const r of rows) {
+    if (!existsSync(path.join(ROOT, r.script)) || r.name === "meta") continue;
+    const code = stripComments(rd(r.script)), exits = /\bgateExit\s*\(/.test(code), marks = /\btimed\s*\(/.test(code);
+    if (r.timing && !exits) bad.push(`${r.name}: a timing row whose script does not exit with gateExit(fails) (its timing-only failures are never retried)`);
+    if (marks && !exits) bad.push(`${r.name}: ${r.script} marks timed() verdicts but does not exit with gateExit(fails)`);
+    if (!r.timing && !r.alone && measures(code) && !(marks && exits)) bad.push(`${r.name}: ${r.script} measures a time but is neither a timing row nor marks its verdicts timed() + gateExit()`);
+    const stored = code.split("\n").filter((l) => /\.times\s*(\?\.)?\s*\[|\.times\?*\.\w/.test(l) && /\b(fail|check|ok)\s*\(/.test(l));
+    if (stored.length) bad.push(`${r.name}: ${r.script} judges a stored build time (${stored[0].trim().slice(0, 80)}): time the step in the row itself (a cached tile carries the time of the build that stored it)`);
+  }
+  const mg = stripComments(rd("tools/audit/mergeGate.mjs"));
+  if (!/withRetries\s*\(/.test(mg) || !/timingOnly\s*\(/.test(mg)) bad.push("tools/audit/mergeGate.mjs does not retry timing-only failures (tools/gate/retry.mjs withRetries / timingOnly)");
+  if (!rows.some((r) => r.name === "timingretry" && r.timing)) bad.push("no `timingretry` timing row (the self-test that a slowed path still fails after the retries)");
+  ok(!bad.length, `timing verdicts exit 75 through gateExit and are retried alone by mergeGate, measuring rows are timing rows or mark timed(), no verdict on a stored build time, the timingretry self-test row (rule timing-rows-alone)${bad.length ? `: ${bad.join("; ")}` : ""}`);
+}
 
 // ------------------------------------------------------------------ 3. every module parses and links
 {

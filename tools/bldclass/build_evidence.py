@@ -90,13 +90,16 @@ WALL_BRICK = ("clectisme", "Néo-Renaissance flamande", "Néo-gothique", "Néogo
 WALL_STONE = ("Néoclassicisme", "Classicisme", "Néo-Renaissance", "Louis XVI")
 
 
-def wall_of(style):
+def wall_of(style, typo="", year=None):
     """(round 3, Street View 2026-11-26) the facade material an inventory style dates: the eclectic / Beaux-Arts /
     Flemish neo-Renaissance / regionalist fronts of Uccle are red brick with white stone bands (Av. Churchill 4,
     Rue Alphonse Renard), the neoclassical ones a pale stone (Rue Edith Cavell 143); Art Deco / modernist stays the
     draw (white render or yellow brick); None = no word for it"""
     if any(k in style for k in WALL_BRICK) and not style.startswith("Néoclassicisme"): return "brick"
     if any(k in style for k in WALL_STONE): return "stone"
+    # (claude/reality2) an interwar modernist BLOCK of flats is face brick in buff / yellow / beige tiles far more often
+    # than white render in Uccle (Avenue Brugmann 304, 1938); the modernist villas and houses keep the draw
+    if style.startswith(("Modernisme", "Art Déco")) and "appartements" in typo and year and 1919 <= year < 1946: return "buff"
     return None
 
 
@@ -181,6 +184,9 @@ def main():
         S = [s for s in sites if any(x0 <= x <= x1 and z0 <= z <= z1 for r in s["rings"] for x, z in r[::max(1, len(r) // 8)])]
         out = {}
         rings = [(b["id"].split("/")[-1], b["footprint"][0], b) for b in doc["buildings"]]
+        # (claude/reality2) the solids with a shop front on them (data/streetlife/<T>.json: real shops + the fill)
+        slf = ROOT / "data" / "streetlife" / f"{T}.json"
+        shop_bu = {p["face"]["bu"] for p in json.loads(slf.read_text(encoding="utf8"))["pois"] if p.get("face") and p.get("kind") not in ("atm",)} if slf.exists() else set()
         # inventory point -> the solid containing it, else the nearest within 4 m (address points sit on the facade)
         own = {}
         for p in P:
@@ -218,10 +224,10 @@ def main():
                 if p["year"]:
                     e["year"] = p["year"]
                 src.append(f'inv:{p["id"]}')
-            wl = next((wall_of(p["style"]) for p in ps if wall_of(p["style"])), None)
+            wl = next((wall_of(p["style"], p["typo"], p["year"]) for p in ps if wall_of(p["style"], p["typo"], p["year"])), None)
             if wl:
                 e["wall"] = wl
-                if not src: src.append(f'inv:{next(p for p in ps if wall_of(p["style"]))["id"]}')
+                if not src: src.append(f'inv:{next(p for p in ps if wall_of(p["style"], p["typo"], p["year"]))["id"]}')
             sch = [p for p in ps if "scolaire" in p["typo"]]
             if sch:
                 e["inst"] = "school"
@@ -252,6 +258,8 @@ def main():
                         e["near"] = "old"
                     elif len(near) - old >= 0.8 * len(near):
                         e["near"] = "new"
+            if (b.get("attrs") or {}).get("BU_ID") in shop_bu:
+                e["shop"] = True
             if e:
                 e["src"] = src
                 out[sid] = e

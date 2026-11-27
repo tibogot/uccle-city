@@ -97,7 +97,7 @@
   body.devpanel #hud label, body.devpanel #hud button:not(.hbtn), body.devpanel #hud a, body.devpanel #help { display: none; }
   /* the data credits, always on screen (OSM's ODbL requires "© OpenStreetMap contributors" where its data shows) */
   #credits { position: fixed; bottom: 4px; left: 50%; transform: translateX(-50%); z-index: 2; font: 11px/1.3 system-ui, sans-serif;
-             color: rgba(255, 255, 255, .85); text-shadow: 0 1px 2px rgba(0, 0, 0, .8); white-space: nowrap; pointer-events: none; }
+             color: rgba(255, 255, 255, .85); text-shadow: 0 1px 2px rgba(0, 0, 0, .8); white-space: normal; width: max-content; max-width: calc(100vw - 16px); text-align: center; pointer-events: none; }   /* (claude/reality2: the heritage credit made it long: wraps on a phone) */
   #credits a { color: inherit; pointer-events: auto; }
 </style>
 <!-- three.js pinned to an exact version. "three/src/" is needed by vendor/roads/mesh/triangulate.js (earcut). -->
@@ -138,7 +138,7 @@
   <details id="logBox"><summary>log <span class="lcount" id="logCount">0</span><input type="text" id="logFilter" placeholder="filter the log" spellcheck="false"><button class="hbtn" id="logCopy" title="copy the (filtered) log">⧉</button></summary><div id="logWrap"><div id="log"></div><div id="logView" hidden></div></div></details>
   <div id="help">Orbit: drag = orbit round the point under the cursor, right-drag = pan, wheel = zoom to the cursor, double-click / F = frame, WASD = move, E/Q or PgUp/PgDn = up/down (Shift faster), hold right + WASD = fly, ? = controls. Walk: WASD or arrows, drag to look, Shift = run, Esc = back to orbit. Fly: W/S dive/climb, A/D bank, Space flap, Shift dive, drag to look.</div>
 </div>
-<div id="credits">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · UrbIS © CIRB/BRIC · STIB-MIVB · SNCB/NMBS · Brussels Mobility · Digitaal Vlaanderen</div>
+<div id="credits">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · UrbIS © CIRB/BRIC · STIB-MIVB · SNCB/NMBS · Brussels Mobility · Digitaal Vlaanderen · Inventaire du patrimoine architectural, urban.brussels (CC BY 4.0)</div>
 <script type="module" src="./loader/loader.js"></script>
 <script type="module" src="./main.js"></script>
 </body>

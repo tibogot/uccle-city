@@ -33,6 +33,7 @@ import { ironCards, NEAR, BAND, CARD_IN, CARD_DEPTH_CUT } from "./thinBars.js";
 import { atlasTexture } from "./thinCards.js";
 import { tileItems, boxSoup, docTiles, IRON, STONE, BRICK, PIECES, entranceZones, inZone, treesOutOfEntrances } from "./parkFenceLayout.js";
 import { wxMat } from "./weather/cityWeatherize.js";
+import { MultiDrawSet, multiDrawOK } from "./multiDraw.js";
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search : "");
 /** ?parkfence=0: no park fences (as before) */
@@ -221,6 +222,37 @@ class Stage {
   }
 }
 
+// (claude/perf6, rule shared-node-graph's merge note; ?fencecards=old: one InstancedMesh per card, as before) THE IRON
+// CARDS IN ONE RENDER OBJECT. Every iron piece's coverage card (one quad each, the same card material and atlas) was its
+// own InstancedMesh: 4-5 render objects a frame along the park (8.2 a frame on the police drive's census, with the
+// near ironwork). They are now the parts of one multi-draw set (viewer/multiDraw.js: one render object, one indirect draw
+// per part and chunk), filled exactly as the stages were.
+const CARD_MERGE = qs.get("fencecards") !== "old";
+/** a card stage drawn as part k of a shared multi-draw set (the Stage interface: fill(list, eye) -> n) */
+export class CardPart {
+  constructor(set, k, name, cap, lo, hi, tris) {
+    Object.assign(this, { set, k, name, cap, lo, hi, tris });
+    this.M = new Float32Array(cap * 16); this.V = new Float32Array(cap * 4); this.box = new Float64Array(6);
+    this.cols = { instanceMatrix: this.M, iVar: this.V };
+    this.mesh = set.views[0].mesh;                      // (the shared view: the compile and the gate find it here)
+  }
+  fill(list, eye) {
+    const M = this.M, V = this.V, B = this.box;
+    B[0] = B[1] = B[2] = Infinity; B[3] = B[4] = B[5] = -Infinity;
+    let n = 0;
+    for (let li = 0; li < list.length; li++) {
+      const it = list[li];
+      const d = Math.hypot(it.c[0] - eye.x, it.c[1] - eye.y, it.c[2] - eye.z);
+      if (d - it.r > this.hi || d + it.r < this.lo || n >= this.cap) continue;
+      M.set(it.m, n * 16); V.set(it.v, n * 4); n++;
+      for (let i = 0; i < 3; i++) { B[i] = Math.min(B[i], it.c[i] - it.r); B[i + 3] = Math.max(B[i + 3], it.c[i] + it.r); }
+    }
+    if (!n) B.fill(0);
+    this.set.write(this.k, n, this.cols, B);
+    return n;
+  }
+}
+
 export const parkFence = {
   doc: null, docP: null, clearIdx: null, keepIdx: null, tiles: new Map(), group: null, stages: null, roots: new Map(), stats: { instances: 0, draws: 0, tris: 0, tiles: 0 },
   /** the line's plan (once) */
@@ -331,15 +363,31 @@ export const parkFence = {
     const group = this.group = new THREE.Group(); group.name = "parkfence";
     const near = solidMaterial("iron"), card = cardMaterial(atlas), stone = [0, 1, 2].map((k) => solidMaterial("stone", k)), brick = [0, 1, 2].map((k) => solidMaterial("brick", k));
     const stages = this.stages = {};
+    const cardGeo = {};
     for (const p of IRON) {
       const c = C.cards[p], g = new THREE.BufferGeometry();
       g.setAttribute("position", new THREE.Float32BufferAttribute(c.pos, 3)); g.setAttribute("normal", new THREE.Float32BufferAttribute(c.nrm, 3));
       g.setAttribute("uv", new THREE.Float32BufferAttribute(c.uv, 2)); g.setIndex(c.idx);
+      cardGeo[p] = g;
+    }
+    // (CARD_MERGE) the cards as the parts of one multi-draw set (the device needs indirect-first-instance: else as before)
+    let cardSet = null;
+    if (CARD_MERGE && multiDrawOK()) {
+      try {
+        cardSet = new MultiDrawSet({ name: "parkfence cards", parts: IRON.length, attrs: [["instanceMatrix", 16], ["iVar", 4]], cap0: Math.max(16, ...IRON.map((p) => cap[p])) });
+        cardSet.pad = 4;
+        const v = cardSet.addView({ geoms: IRON.map((p) => cardGeo[p]), material: card, castShadow: false, receiveShadow: true, name: "parkfence-cards:merged" });
+        group.add(v.mesh);
+      } catch (e) { console.warn(`park fences: cards not merged (${e.message})`); cardSet = null; }
+    }
+    IRON.forEach((p, k) => {
       stages[p] = [
         new Stage(`parkfence-${p}`, kit.pieces[p].lods[0], near, cap[p], 0, Math.max(NEAR + BAND, SHADOW_END), true, group),
-        new Stage(`parkfence-${p}-card`, g, card, cap[p], CARD_IN[0], CARD_END, false, group),
+        cardSet ? new CardPart(cardSet, k, `parkfence-${p}-card`, cap[p], CARD_IN[0], CARD_END, cardGeo[p].index.count / 3)
+          : new Stage(`parkfence-${p}-card`, cardGeo[p], card, cap[p], CARD_IN[0], CARD_END, false, group),
       ];
-    }
+    });
+    this.cardSet = cardSet;
     const [s1, s2, end] = STONE_BANDS;
     for (const p of STONE) stages[p] = kit.pieces[p].lods.map((geo, k) => new Stage(`parkfence-${p}-lod${k}`, geo, stone[k], cap[p], k === 0 ? 0 : k === 1 ? s1 * 0.9 : s2 * 0.9, k === 0 ? s1 * 1.1 : k === 1 ? s2 * 1.1 : end, k < 2, group));
     const [b1, b2, bEnd] = BRICK_BANDS;
@@ -351,9 +399,13 @@ export const parkFence = {
     for (let w = 0; !compile && compiler && w < 40; w++) { await new Promise((r) => setTimeout(r, 250)); compile = compiler(); }
     const all = Object.values(stages).flat();
     const I = new THREE.Matrix4().makeTranslation(0, -3000, 0).toArray();
-    for (const s of all) { s.mesh.instanceMatrix.array.set(I, 0); s.mesh.count = 1; s.mesh.visible = true; s.mesh.instanceMatrix.needsUpdate = true; }
+    const plain = all.filter((s) => !(s instanceof CardPart)), parts = all.filter((s) => s instanceof CardPart);
+    for (const s of plain) { s.mesh.instanceMatrix.array.set(I, 0); s.mesh.count = 1; s.mesh.visible = true; s.mesh.instanceMatrix.needsUpdate = true; }
+    const far = { c: [0, -3000, 0], r: 1, m: I, v: [0, 0, 0, 0] };
+    for (const s of parts) s.fill([far], { x: 0, y: -3000 + (s.lo + s.hi) / 2, z: 0 });   // (one instance each, in its band)
     if (compile) await compile([group]).catch(() => {});
-    for (const s of all) { s.mesh.count = 0; s.mesh.visible = false; }
+    for (const s of plain) { s.mesh.count = 0; s.mesh.visible = false; }
+    for (const s of parts) s.fill([], { x: 0, y: 0, z: 0 });
     this.dirty = true;
     const last = new THREE.Vector3(1e9, 0, 0);
     let frame = 0, shownKey = "";

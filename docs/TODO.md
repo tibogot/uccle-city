@@ -28,6 +28,12 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    UA, HU+EU, BG+EU, RO+EU, KE, SZ, BF, ER, AF, NI, AO), 6 no, 2 unseen; the real Commons flags (PD) in one atlas, real
    proportions, a local wind along the front; rule embassy-flags, row embassyflags. Left: generic blocks where the real
    embassies are villas (Hungary, Eswatini, Afghanistan); Romania's garden pole not placed.
+4a2. GATE FLAKES (coordinator 2026-11-26): (a) pedsgraph's W6 "walk graph <= 800 ms" reads the build time stored WITH
+   the cached tile (tile cache), so one slow build (809 ms) failed it on every run until TILE_CACHE=0; the timing must
+   come from the row's own build (or be skipped for cache hits), rule tile-cache; (b) trafmix's sim-cost twins fail TOO
+   NOISY whenever anything else runs (4 merges tripped): give merge.mjs a "timing rows alone, first, retry x3" step.
+   DONE on claude/gateflakes (rule timing-rows-alone, row timingretry): timing verdicts exit 75, mergeGate re-runs them
+   alone x3; W6 timed in the row (never the cached time), S4 / props calibrated, props' noise margin explicit.
 4b2. ACTIVITIES, one at a time, each self-contained (loaded only where it happens, own perf budget + checks; owner
    2026-11-26 agreed the order: core city perf + the three games first): (1) SNOOKER in the villa (mouse play: aim,
    pull back, shoot; real ball physics: collisions, cushions, spin, pockets; no character; loads with the interior);
@@ -48,6 +54,13 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 5. Later: TENNIS (owner 2026-11-26: 159 OSM tennis pitches in the area, drawn as ground only today: courts first (lines,
    nets, wind-screen fences, instanced, near only), then an arcade tennis game lab (ball physics, AI, scoring), then E at
    any court; swings: the owner checks Mixamo), then the ideas list.
+6. Later (claude/reality2, rule garage-has-drive): DROPPED KERBS at the garage drives. 1,933 of the 3,089 drives meet a
+   full kerb (garageDriveCheck K counts them). A pipeline job: pipeline/build_surfaces.py takes the data/gardens drives as
+   driveway input next to UrbIS CR42L, then the full gate (a patch of surfaces.json in place, 2026-11-27, stopped K8 / H8
+   building and sent the ground tilt 610 -> 4,755: withdrawn). Same job: the 4,685 flat asphalt needles on the sidewalks'
+   back edges (row streetslivers, the light line at the garden join).
+   Reality rounds: facade-kit garage door without a real garage makes a drive (Delvaux 36: Street View shows a low plinth,
+   railing and a garden gate, no garage; the facade kit paints one, so the gardens draw a drive there).
 
 ## OWNER PLAYTEST 2026-11-18 (car, live site) — TOP PRIORITY
 Owner's point: don't fix these one by one; find the CLASS of each defect, fix it at the generator, and add a city-wide detector so it can't come back unseen.
