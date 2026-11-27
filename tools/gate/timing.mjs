@@ -64,6 +64,9 @@ export async function measure(fn, { tries = TRIES } = {}) {
   return best;
 }
 
+/** the slow-down k of two calibrations taken around a measurement in this process (as measure() gives), >= 1, capped */
+export function slowdown(c0, c1) { return Math.min(K_MAX, Math.max(1, Math.max(c0, c1) / reference(Math.min(c0, c1)))); }
+
 /** the smallest of n results of fn() (fn returns a number, or an object with the number at `key`) */
 export async function bestOf(n, fn, key = null) {
   let best = null;
@@ -131,4 +134,28 @@ export function cpuAB({ make, reps = 4, rounds = 30, batches = 3 }) {
   const cost = Array.from(us, (u, k) => u / Math.max(1, units[k]));
   let sa = 0, sb = 0, na = 0, nb = 0; cost.forEach((c, k) => { if (kind[k]) { sb += c; nb++; } else { sa += c; na++; } });
   return { ratio: sa / sb, twin: cost[1] / cost[2], a: sa / na, b: sb / nb, cpuMs: us.reduce((x, y) => x + y, 0) / 1000, reps, rounds, runners: us.length, ms: performance.now() - t0 };
+}
+
+// ------------------------------------------------------------------ timing-only failures (rule timing-rows-alone)
+// A row whose ONLY failures are timing checks exits TIMING_EXIT (75): mergeGate.mjs re-runs it alone, up to 3 more
+// times (tools/gate/retry.mjs), and fails it only when every run is over budget. A structural failure (exit 1) is
+// never retried. A row marks each timing verdict with timed(ok) and exits with gateExit(fails):
+//   check("cost", timed(ms < 0.1 * MT.k * NOISE), ...);  ...  process.exitCode = gateExit(fails);
+// (in a check that mixes both, wrap only the timing part: `structural && timed(ms <= budget)`)
+export const TIMING_EXIT = 75;
+let timingFails = 0;
+/** a timing verdict: returns ok, counts a failure as timing-only */
+export function timed(ok) { if (!ok) timingFails++; return !!ok; }
+/** the row's exit code: 0 none failed, TIMING_EXIT every failure a timing verdict, 1 any other */
+export function gateExit(fails) { return !fails ? 0 : fails <= timingFails ? TIMING_EXIT : 1; }
+
+// ------------------------------------------------------------------ a deliberately slowed path (the self-test)
+// GATE_SLOW=<name>[,<name>...] (GATE_SLOW_X, default 4): slow(name, t0) at the end of a timed block busy-waits until the
+// block took X times as long as its own work: a real regression in that path, at any machine load. Off: one Set lookup.
+const SLOW = new Set((process.env.GATE_SLOW || "").split(",").map((s) => s.trim()).filter(Boolean));
+const SLOW_X = Math.max(1, +process.env.GATE_SLOW_X || 4);
+export function slow(name, t0) {
+  if (!SLOW.has(name)) return;
+  const until = t0 + (performance.now() - t0) * SLOW_X;
+  while (performance.now() < until) { /* busy wait: CPU time, like the code it stands for */ }
 }

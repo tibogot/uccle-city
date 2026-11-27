@@ -99,6 +99,12 @@ A row that asserts a wall time is `timing: true` and uses `tools/gate/timing.mjs
   clean steps the way `sliced()` does. Check those slices, and check that a real `sliced()` run yields at least half
   as often.
 - No `process.cpuUsage()` for a window under 1 s: on Windows it counts in 15.6 ms ticks.
+- Mark every timing verdict `timed(ok)` and exit `gateExit(fails)`: 75 = only timing verdicts failed. The gate re-runs
+  such a row alone up to 3 more times (tools/gate/retry.mjs) and fails it only when every run failed; exit 1 (a
+  structural failure) is never retried. A structural row with a calibrated timing inside (pedsgraph W6, pedssim S4)
+  stays in the parallel group: its exit 75 is re-run alone after the parallel phase. Never judge a time stored with a
+  cached tile (`d.times`): time the step in the row. `GATE_SLOW=<name>` + `slow(name, t0)` slows a timed path for
+  the self-test (row `timingretry`, rule timing-rows-alone).
 
 The gate runs the timing rows alone, first, one at a time. Then it runs the other rows in parallel:
 - a CPU budget (the logical cores);

@@ -22,7 +22,7 @@ import { readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { OfflineAudioContext, ClockAudioContext } from "./miniWebAudio.mjs";
-import { measure, bestOf } from "../gate/timing.mjs";
+import { measure, bestOf, timed, gateExit } from "../gate/timing.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const QUIET = process.argv.includes("--quiet"), WHY = process.argv.includes("--why");
@@ -232,7 +232,7 @@ async function renderDrive(seconds, script, { sr = 48000, file = null } = {}) {
   // (between two calibrations, budget * k: tools/gate/timing.mjs)
   const MT = await measure(() => bestOf(3, () => { const ms = new Float64Array(1200); for (let i = 0; i < 1200; i++) ms[i] = frame(); ms.sort(); const mean = ms.reduce((a, b) => a + b, 0) / ms.length; return { mean, p99: ms[1188], max: ms[1199] }; }, "mean"));
   const best = MT.value;
-  check("cost", !!pe.voice && best.mean < 0.05 * MT.k, `the engine voice per frame (model + 18 loops' setIf writes + tone, voice ${pe.voice ? "held" : "MISSING"}; best of 3 x 1200): ${f2(best.mean, 4)} ms mean, p99 ${f2(best.p99, 4)}, max ${f2(best.max, 3)} ms (budget 0.05 ms mean, ${MT.note})`);
+  check("cost", !!pe.voice && timed(best.mean < 0.05 * MT.k), `the engine voice per frame (model + 18 loops' setIf writes + tone, voice ${pe.voice ? "held" : "MISSING"}; best of 3 x 1200): ${f2(best.mean, 4)} ms mean, p99 ${f2(best.p99, 4)}, max ${f2(best.max, 3)} ms (budget 0.05 ms mean, ${MT.note})`);
   const { Session } = await import("node:inspector/promises");
   const ses = new Session(); ses.connect();
   await ses.post("HeapProfiler.enable");
@@ -302,4 +302,4 @@ if (DEMO) {
 
 if (!QUIET || fails) console.log(["| check | result | detail |", "|---|---|---|", ...out].join("\n"));
 console.log(fails ? `engine: ${fails} FAIL` : "engine: all pass");
-process.exit(fails ? 1 : 0);
+process.exit(gateExit(fails));   // (75: only timing verdicts failed, rule timing-rows-alone)

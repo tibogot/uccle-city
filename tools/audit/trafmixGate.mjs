@@ -19,7 +19,7 @@ import { join } from "node:path";
 import { readFileSync } from "node:fs";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
-import { cpuAB } from "../gate/timing.mjs";
+import { cpuAB, timed, gateExit } from "../gate/timing.mjs";
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
 const OLD = argv.includes("--old"), QUIET = argv.includes("--quiet");
@@ -517,7 +517,7 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
   // dropped. Ceiling 1.3 x the foundation's 509)
   const clamps = A.stats.parkClamped || 0;
   check("wide vehicles clamped beside parked cars", clamps <= PARK_CLAMP_MAX, `parkClamped ${clamps} (ceiling ${PARK_CLAMP_MAX}: 1.3 x claude/foundation 358ec924's 509; claude/lanes5 before its fix 2,796)`);
-  check("sim cost", TRAFMIX_OLD || (!noisy && ratio <= COST_MAX), `${noisy ? `TOO NOISY TO MEASURE: rerun on a quiet machine (no clean read: twin within ${TWIN_TOL} of 1 in ${reads.filter(clean).length} of ${reads.length}): ` : ""}${reads.length > 1 ? `reads x${reads.map((r) => `${r.ratio.toFixed(3)}${clean(r) ? "" : `(twin ${r.twin.toFixed(3)}: noisy)`}`).join(" / ")}, median of the clean ones: ` : ""}${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
+  check("sim cost", TRAFMIX_OLD || timed(!noisy && ratio <= COST_MAX), `${noisy ? `TOO NOISY TO MEASURE: rerun on a quiet machine (no clean read: twin within ${TWIN_TOL} of 1 in ${reads.filter(clean).length} of ${reads.length}): ` : ""}${reads.length > 1 ? `reads x${reads.map((r) => `${r.ratio.toFixed(3)}${clean(r) ? "" : `(twin ${r.twin.toFixed(3)}: noisy)`}`).join(" / ")}, median of the clean ones: ` : ""}${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
 }
 console.log(fails ? `${fails} trafmix check(s) FAILED${OLD ? " (?trafmix=old: expected)" : ""}` : "all trafmix checks pass");
-process.exitCode = fails ? 1 : 0;
+process.exitCode = gateExit(fails);   // (75: only the sim cost failed (over the limit or TOO NOISY): mergeGate re-runs it alone, rule timing-rows-alone)
