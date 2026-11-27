@@ -195,7 +195,9 @@ export function fadeProxies(obj) {
  *  not. warmup.js warmShadows draws them far under the city; null when there is nothing new. */
 export const FADE_SHADOW_WARM = qs.get("fadeshadowwarm") !== "old";
 const shadowDone = new WeakMap();      // fading copy -> Set of geometry layouts whose shadow pass was warmed
-export const fadeLayoutKey = (o) => `${o.isInstancedMesh ? 1 : 0}${o.instanceColor ? 1 : 0}${o.geometry.index ? 1 : 0}|${Object.keys(o.geometry.attributes).sort().join(",")}`;
+// (as three r187's RenderObject.getGeometryCacheKey: the attribute names, item sizes and normalized flags; the index is not
+// in the node key, and cellCull.js gives the big meshes one when they land)
+export const fadeLayoutKey = (o) => `${o.isInstancedMesh ? 1 : 0}${o.instanceColor ? 1 : 0}|${Object.keys(o.geometry.attributes).sort().map((k) => { const a = o.geometry.attributes[k]; return `${k}${a.itemSize}${a.normalized ? "n" : ""}`; }).join(",")}`;
 export function fadeShadowProxies(obj) {
   if (!SMOOTH || !FADE_SHADOW_WARM) return null;
   const g = new THREE.Group(); g.name = "fade-shadow-warm";
