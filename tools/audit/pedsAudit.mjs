@@ -52,7 +52,14 @@ const fails = [], fail = (c, m) => fails.push(`${c}: ${m}`), log = (...a) => { i
 const out = { tiles: {}, sim: null };
 
 const built = new Map();
-for (const T of TILES) built.set(T, await buildTile(T, {}));
+const TB = await import("../gate/tileBuild.mjs");
+for (const T of TILES) {
+  let d = await buildTile(T, {});
+  // (claude/reality2) W6 is a TIMING: a tile the gate cache served carries the worker time of the build that stored it,
+  // maybe under another agent's load (H5 908 ms stored, 417-438 ms fresh): over the limit, it is timed again fresh
+  if (DO_G && TB.lastInfo?.hit && d.times?.["walk graph"] > WG_MS) { const was = process.env.TILE_CACHE; process.env.TILE_CACHE = "0"; try { d = await buildTile(T, {}); } finally { if (was == null) delete process.env.TILE_CACHE; else process.env.TILE_CACHE = was; } }
+  built.set(T, d);
+}
 
 // W6: buildWalkGraph on the inputs tileData.js gives it (viewer/tileData.js "walk graph" step), the best of 3 between
 // two calibrations; same = the graph equals the tile's (deterministic build: the same work was timed)

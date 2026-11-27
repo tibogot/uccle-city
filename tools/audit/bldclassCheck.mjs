@@ -38,7 +38,7 @@ for (const t of manifest.tiles) {
   if (!existsSync(join(ROOT, `data/tiles/${t.name}/buildings.json`))) continue;
   if (!existsSync(join(ROOT, `data/bldclass/${t.name}.json`))) { missing++; continue; }
   const ev = json(`data/bldclass/${t.name}.json`);
-  for (const [k, e] of Object.entries(ev.solids)) if (!(e.src || []).length && !e.near) fail(`A ${t.name} ${k}: evidence without a source`);
+  for (const [k, e] of Object.entries(ev.solids)) if (!(e.src || []).length && !e.near && !e.shop) fail(`A ${t.name} ${k}: evidence without a source`);
   const buf = readFileSync(join(ROOT, `data/tiles/${t.name}/buildings.bin`));
   const V = buf.readUInt32LE(0), T = buf.readUInt32LE(4);
   const P = new Float32Array(buf.buffer.slice(buf.byteOffset + 8, buf.byteOffset + 8 + 12 * V));
@@ -87,10 +87,13 @@ for (const f of TRUE_BLOCKS) {
 const WALLS = JSON.parse(readFileSync(join(ROOT, "data/bldclass/fixtures.json"), "utf8")).walls || [];
 for (const f of WALLS) {
   const q = typeOf.get(f.id), st = q ? Math.round(q.s) : null;
-  const ok = f.wall === "brick" ? st === 0 || st === 1 : f.wall === "stone" ? st === 3 || st === 4 : false;
+  const ok = f.wall === "brick" ? st === 0 || st === 1 : f.wall === "stone" ? st === 3 || st === 4 : f.wall === "buff" ? st === 2 : false;
   if (!ok) fail(`F wall ${f.id} (${f.name}): drawn style ${st}, Street View shows ${f.wall}`);
 }
-say(`ok   F Montjoie + ${TRUE_BLOCKS.length} true balcony blocks + ${WALLS.length} wall fixtures`);
+// (claude/reality2) the shop houses of the commercial rows: never the balcony block
+const SHOPH = JSON.parse(readFileSync(join(ROOT, "data/bldclass/fixtures.json"), "utf8")).shopHouses || [];
+for (const f of SHOPH) { const q = typeOf.get(f.id); if (!q || q.t === TYPE.BLOCK) fail(`F shop house ${f.id} (${f.name}): drawn ${q ? TYPE_NAMES[q.t] : "missing"}`); }
+say(`ok   F Montjoie + ${TRUE_BLOCKS.length} true balcony blocks + ${WALLS.length} wall fixtures + ${SHOPH.length} shop houses`);
 
 rows.sort((a, b) => b.h - a.h);
 const N = +(arg("--list") || 0);

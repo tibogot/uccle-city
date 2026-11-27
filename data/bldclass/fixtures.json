@@ -45,6 +45,19 @@
       "tile": "G3",
       "wall": "stone",
       "name": "Rue Edith Cavell 143 (neoclassical school): pale beige stone front, slate mansard, bell turret"
+    },
+    {
+      "id": "564563",
+      "tile": "F2",
+      "wall": "buff",
+      "name": "Avenue Brugmann 304 (1938, Modernisme, apartments): a beige tile / brick front, horizontal window rows, no balconies"
+    }
+  ],
+  "shopHouses": [
+    {
+      "id": "528748",
+      "tile": "E3",
+      "name": "Rue Xavier De Bue, Kruidvat's building: a 1900 shop house with stone oriels over the shop (Street View Apr 2024), drawn a balcony block before"
     }
   ]
 }

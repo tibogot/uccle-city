@@ -16,6 +16,11 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { InspectControls, cityField } from "./orbitCam.js";
 import { heroBVHs } from "./heroBVH.js";
 import { buildLamps, setLampModel, lampLightPool, setLampPool } from "./lamps.js";
+import { buildLampExtras, LAMP_EXTRAS } from "./lampExtras.js";
+import { lampExtraSites } from "./streets/lampExtrasPlace.js";
+import { lampMaterials } from "./lampModel.js";
+import { schoolBarriers, bollardKinds, greenNear } from "./streets/kerbFurniture.js";
+import { buildKerbBarriers, barrierLegs, KERB_BARRIERS } from "./kerbBarriers.js";
 import { loadLampModel } from "./lampModel.js";
 import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
 import { addStalle } from "./stalleCity.js";
@@ -1028,6 +1033,12 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const skP = cityStreetKit.fetchTile(entry.name);      // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
   const twP = cityTwoWheelers.fetchTile(entry.name);    // (motorbike round 2: the shops the parked two-wheelers gather near)
   if (VILLA_GARDEN_V3) cityGardens.extraHedges = { H9: VILLA_HEDGE_RUNS };   // (villa3 job 5: the villa's hedges are the city's modules)
+  // (claude/reality2, rule lamp-extras) the street life's shopfront faces: wall lanterns, baskets, green tram poles
+  // (rule kerb-furniture) and its school faces: the hairpin barriers along their kerb
+  const slDocP = LAMP_EXTRAS || KERB_BARRIERS ? fetch(new URL(`../streetlife/${entry.name}.json`, DATA)).then((r) => (r.ok ? r.json() : null)).catch(() => null) : Promise.resolve(null);
+  const faceOf = ({ face: f }) => ({ x: f.x, z: f.z, y: f.y, nx: f.nx, nz: f.nz, w: f.w, eaves: f.eaves });
+  const frontsP = slDocP.then((d) => (d?.pois || []).filter((p) => p.face && !["atm", "school", "civic"].includes(p.kind)).map(faceOf));
+  const schoolsP = slDocP.then((d) => (d?.pois || []).filter((p) => p.face && p.kind === "school").map(faceOf));
   const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
   const ivyP = cityIvy.fetchTile(entry.name);           // ivy on walls, climbers on railings (viewer/plants/cityIvy.js), ?ivy=0 off
   const plantsP = cityPlants.fetchTile(entry.name);     // shrubs, bed plants, beds, window boxes (viewer/plants/), on by default, ?plants=0 off
@@ -1090,7 +1101,14 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (cortenbosch) hard grounds OSM's recreation grounds drew as lawn: the Lycée Français's yards, track and courts
   // (data/overrides.json grounds, viewer/grounds.js: one mesh, one draw); each entry's own "switch" (?key=old) drops it
   // (?cortenbosch=old: the Lycée's, ?forecourts=old: the church forecourts of claude/snow2)
-  const grounds = buildGrounds(((await loadOverrides(DATA)).grounds || []).filter(groundOn), bounds, (x, z) => hm.surface(x, z));
+  // (claude/reality2, rule garage-has-drive) + the paved drive in front of every garage door the facade draws (data/gardens
+  // drives: tools/gardens/build_gardens.py, the boundary cut there too); ?garagedrive=old: none
+  // (a drive whose end meets the drawn sidewalk over a step > 0.3 m (a retaining wall, the gate's steps: H2, the DTM
+  // shows no jump there, the drawn street does) is not drawn: no car gets in, no pavers draped down the steps)
+  const driveFlat = (d) => { const r = d.ring, m0x = (r[0][0] + r[1][0]) / 2, m0z = (r[0][1] + r[1][1]) / 2, m1x = (r[2][0] + r[3][0]) / 2, m1z = (r[2][1] + r[3][1]) / 2, L = Math.hypot(m1x - m0x, m1z - m0z) || 1, nx = (m1x - m0x) / L, nz = (m1z - m0z) / L;
+    return Math.abs(hm.surface(m1x + nx * 0.4, m1z + nz * 0.4) - hm.surface(m1x - nx * 0.8, m1z - nz * 0.8)) <= 0.3; };
+  const garageDrives = params.get("garagedrive") === "old" ? [] : ((await waitFor(gardensP))?.drives || []).filter(driveFlat).map((d, i) => ({ id: `drive-${entry.name}-${i}`, surface: "pavers", courseDeg: 0, ring: d.ring, edge: 0.6, lift: 0.06 }));
+  const grounds = buildGrounds([...((await loadOverrides(DATA)).grounds || []).filter(groundOn), ...garageDrives], bounds, (x, z) => hm.surface(x, z));
   if (grounds.mesh) { own.roads.add(grounds.mesh); say(`grounds: ${grounds.tris} triangles (data/overrides.json grounds)`); }
   R.textures.push(...terr.userData.textures);
   await frame("terrain");
@@ -1154,9 +1172,18 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // station stop on the Carsoel deck, citydefects 2026-11-16; ?bridgeplan=old as before)
   const deckAt = (x, z) => { for (const e of bridgeDeckRefs.values()) { const y = e.fn(x, z); if (y != null) return y; } return null; };
   const tramSurface = BRIDGE_PLAN ? (x, z) => deckAt(x, z) ?? hm.surface(x, z) + CARVE : (x, z) => hm.surface(x, z) + CARVE;
-  const tram = buildTram(feats, tramSurface, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on, fit, driven: drivenAt, keepOut: PARKFENCE ? await parkFence.keepOutTest() : null });   // (parkfence: no tram pole in a park entrance's approach)
+  const lampFronts = LAMP_EXTRAS ? await frontsP : [];
+  const tram = buildTram(feats, tramSurface, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on, fit, driven: drivenAt, keepOut: PARKFENCE ? await parkFence.keepOutTest() : null, ...(LAMP_EXTRAS && lampFronts.length ? { decoPoles: (poles) => lampExtraSites(lampFronts, [], poles).poles, decoMat: lampMaterials().iron } : {}) });   // (parkfence: no tram pole in a park entrance's approach)
   await split("tram");
   own.features.add(tram.group);
+  if (LAMP_EXTRAS && lampFronts.length) {
+    // wall lanterns, decorated tram poles' lanterns, flower baskets (viewer/lampExtras.js): no light added, their heads
+    // paint the lamp light map as the posts' do
+    const inB = (x, z) => x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1;
+    const ex = buildLampExtras(lampFronts, lamps.sites, tram.poleSites || [], (x, z) => hm.ground(x, z), inB);
+    own.features.add(ex.group);
+    addLamps(entry.name + "/extras", ex.heads);
+  }
   // citydefects: the baked data layers' points that stand in a driven lane go onto the sidewalk behind the nearest kerb
   // (viewer/streets/carriageway.js docOffLanes; ?furnsnap=old: where their builders put them)
   // (streetprops, rule 30; ?streetprops=old: as before) also where there is no measured street (Flanders: the OSM width
@@ -1262,7 +1289,11 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const twCounts = cityTwoWheelers.addTile(entry.name, cars.twoSites, own.features, parkGround);
   if (twCounts) say(`two-wheelers: ${twCounts.bikes} parked in ${twCounts.slots} slots (viewer/moto/cityTwoWheelers.js)`);
   await frame("parked cars");
-  const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
+  // (claude/reality2, rule kerb-furniture) the bollards near public green timber with a red band (?kerbbarriers=0: all cast iron)
+  const bollards = fit ? buildBollards(d.road.surfaceData.bollards, KERB_BARRIERS ? bollardKinds(d.road.surfaceData.bollards || [], greenNear(feats), await frontsP) : null) : null;
+  const barrierSites = fit && KERB_BARRIERS ? schoolBarriers(await schoolsP, fit.nearKerb, (x, z) => !drivenAt.inside(x, z, 0.1), (x, z) => x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1) : [];
+  const barriers = buildKerbBarriers(barrierSites, (x, z) => hm.ground(x, z) + (fit?.lift?.(x, z) ?? 0));
+  if (barriers) own.features.add(barriers);
   if (bollards) own.features.add(bollards);
   if (fit) say(`street on the measured surfaces: ${lamps.count} lamps on the sidewalks, ${cars.count} parked cars against the kerbs (${d.parked ? `by the measured width: ${JSON.stringify(d.parked.stats)}, ${parkDropped} off for furniture` : "the old slots"}), ${bollards?.count ?? 0} bollards (UrbIS Topo CR5702P / CR57L)`);
   own.features.add(cars.group);
@@ -1331,10 +1362,12 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("tram line snap");
   const bxyz = d.road.surfaceData?.bollards || [];
   // (props, docs/PROPS.md) each drawn bollard a prop (bends / snaps when hit hard): its circle collider carries the ref
-  const bref = (i) => (bollards && cityProps.on ? cityProps.make("bollard", entry.name, bxyz[i * 3], bxyz[i * 3 + 1], bxyz[i * 3 + 2], 0, [{ mesh: bollards, i }])?.ref : null);
-  const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2], ref: bref(i) })),
+  // (claude/reality2: the bollards drawn by kind, iron / timber: bollards.slot[i] = [its mesh, its instance])
+  const bref = (i) => (bollards && cityProps.on ? cityProps.make("bollard", entry.name, bxyz[i * 3], bxyz[i * 3 + 1], bxyz[i * 3 + 2], 0, [{ mesh: bollards.slot[i][0], i: bollards.slot[i][1] }])?.ref : null);
+  const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: [...Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2], ref: bref(i) })), ...barrierLegs(barrierSites)],   // (+ the school barriers' legs: hard posts, rule colliders-match-drawn)
     hiddenBuildings: d.drive?.counts?.hidden || 0 };
-  if (bollards && cityProps.on) bollards.userData.refs = drawn.bollards.map((q) => q.ref);   // (props: the walker's bollard posts follow a snapped / bent one, cityHook.js)
+  if (bollards && cityProps.on) for (const m of bollards.children) m.userData.refs = [];
+  if (bollards && cityProps.on) for (let i = 0; i < bxyz.length / 3; i++) { const [m, j] = bollards.slot[i]; m.userData.refs[j] = drawn.bollards[i].ref; }   // (props: the walker's bollard posts follow a snapped / bent one, cityHook.js)
   const drive = tileDrive(d.drive, roads, bounds, drawn, COLFIX ? own.features : null);
   frame("drive colliders");
   // (claude/peds2) the tile's walk graph to the people (viewer/pedestrians/cityPeds.js): cleared of the drawn furniture
