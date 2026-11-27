@@ -3,7 +3,10 @@
 ## THE SNOW (claude/snowseason, owner 2026-11-27: chose snow, "why no snow")
 
 The season snows in its second half (rule snow-schedule, gate row `snowsched`, tools/audit/snowScheduleCheck.mjs):
-viewer/seasons/snowSchedule.js (three-free, read once at boot by cityWeather.js and quick.js) picks the START weather.
+viewer/seasons/snowSchedule.js (three-free, read once at boot by cityWeather.js) picks the START weather.
+Quick mode (`?quick=1`, every tour view) keeps the weather off unless asked (`&with=weather`, `?wx=`): no tour
+baseline flips on 15 December. (quick.js imports nothing but the places table: an early version imported the
+schedule there and the merge was blocked, see the rule.)
 - 1-14 Dec: dry (the winter look only). 15-26 Dec: the existing **snow cover** (roofs, cars, ground, the chalets: the
   layer, caps, tracks) by day; **cover + light snowfall** (0.4-0.9 cm/h, the existing snowfall path, snow2) from 18:00
   to 08:00 Brussels clock. 27 Dec - 6 Jan: dry.

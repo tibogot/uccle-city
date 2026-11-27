@@ -1,5 +1,6 @@
 // THE SNOW SCHEDULE (claude/snowseason, owner 2026-11-27: chose snow for Christmas, "why no snow"; rule snow-schedule):
-// the weather the city STARTS with in the Christmas season, three-free (cityWeather.js and quick.js read it at boot).
+// the weather the city STARTS with in the Christmas season, three-free (cityWeather.js reads it at boot;
+// quick mode (?quick=1) keeps the weather off unless asked for: &with=weather, ?wx=).
 //
 //   1 - 14 Dec     dry: the winter look only (bare trees, a December sun: seasonMode.js)
 //   15 - 26 Dec    SNOW COVER all day (roofs, cars, ground, the chalets: the weather's existing "snow cover" layer), and

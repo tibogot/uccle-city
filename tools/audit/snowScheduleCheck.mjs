@@ -70,6 +70,22 @@ out(Math.abs(brusselsHour(U(2026, 11, 15, 21)) - 22) < 1e-9 && Math.abs(brussels
     "light snowfall: 0.4-0.9 cm/h below 0 C, cover 10-17 cm (the 'snowfall' preset itself is 1.5 cm/h)");
   out(dayR.every((r) => r.state.depth === night[dayR.indexOf(r)].state.depth), "a day's cover depth is the same by day and by night");
 }
+// ---- the tours: every view of tools/tour/views*.json is a quick boot (?quick=1): quick.js sets ?weather=old unless the
+// view asks for the weather (&with=weather / ?wx=), so the schedule stays out of every tour on every date, snow days too
+{
+  const dir = path.join(ROOT, "tools/tour"), bad = [];
+  let n = 0;
+  for (const f of fs.readdirSync(dir).filter((x) => /^views.*\.json$/.test(x))) {
+    const V = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+    for (const v of V.views ?? []) {
+      const q = new URLSearchParams({ ...(V.common ?? {}), ...(v.q ?? {}) });
+      const asks = q.get("quick") !== "1" || q.has("wx") || (q.get("with") || "").split(",").includes("weather");
+      if (q.get("quick") === "1" && !asks) q.set("weather", "old");         // (quick.js SYSTEMS.weather)
+      for (const t of [U(2026, 11, 20, 11), U(2026, 11, 20, 21)]) { n++; const r = snowSchedule(q, t); if (r.on && !asks) bad.push(`${f}:${v.id}`); }
+    }
+  }
+  out(n > 0 && bad.length === 0, `tours: ${n / 2} views x 20 Dec noon / 22:00: no view gets the schedule's weather (${bad.join(", ") || "none"})`);
+}
 // ---- wiring
 {
   const C = src("viewer/weather/cityWeather.js"), Q = src("viewer/quick.js"), S = src("viewer/seasons/snowSchedule.js").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|\s)\/\/[^\n]*/g, "$1");
@@ -78,7 +94,11 @@ out(Math.abs(brusselsHour(U(2026, 11, 15, 21)) - 22) < 1e-9 && Math.abs(brussels
   out(/want === "live"\) this\.goLive\(\);\s*else if \(sched\.on\)/.test(C), "cityWeather.js: ?wx=live before the schedule (and the schedule itself is off under any ?wx=)");
   const upd = C.slice(C.indexOf("  update(camPos, cam) {"), C.indexOf("  night() {"));
   out(upd.length > 100 && !/sched|snowSchedule/.test(upd), "per frame: nothing new (update() does not read the schedule)");
-  out(/if \(snowSchedule\(P\)\.on\) withSet\.add\("weather"\)/.test(Q), "quick.js: a snow day brings the weather system (as ?wx= does)");
+  // (merge blocked 2026-11-27, tour snow1127: quick.js is main.js's FIRST import and must import nothing but the places
+  // table: its body rewrites the URL before any other module reads it; the schedule's import evaluated seasonMode.js's
+  // SEASON before that rewrite. Quick mode keeps its rule instead: optional systems only when asked (&with=weather / ?wx=))
+  out(!/snowSchedule|seasons\//.test(Q) && [...Q.matchAll(/^import .* from "([^"]+)"/gm)].map((m) => m[1]).join() === "./places.js",
+    "quick.js: imports the places table only (no schedule: quick mode's weather only with &with=weather / ?wx=)");
   out(!/from "three|Math\.random|Date\.now/.test(S), "snowSchedule.js: three-free, no random, no Date.now (the instant is a parameter)");
 }
 if (fails) { console.log(`snowsched: ${fails} FAIL`); process.exit(1); }
