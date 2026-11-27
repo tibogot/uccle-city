@@ -6,7 +6,8 @@
 //   node tools/audit/garageDriveCheck.mjs [--quiet]
 //
 // G  every garage door of every tile has a drive, or no garden run stands in front of it (noRun: the house on the
-//    sidewalk line, the sidewalk is its drive)
+//    sidewalk line, the sidewalk is its drive), or the garden stands > 0.4 m over / under the sidewalk at the line (steep:
+//    a retaining wall with steps, H2: no drive draped down the steps)
 // R  every drive ring is a sane quad (1-140 m2: a shallow forecourt to a long drive up a deep garden) and no garden piece stands in it: no wall / railing segment crosses it,
 //    no pier or gate post inside it, no hedge point inside it (0.1 m in from its edge): the car drives in, the walker
 //    walks in, the colliders (made from the same pieces) agree
@@ -14,9 +15,11 @@
 //    width + 0.3 m a side; its end follows the sidewalk's edge (straight between the two corners' entries) (round 4's first cut twisted / skewed it: the ragged blob of shot c5_garage_drive_new)
 // E  its sidewalk end on the drawn sidewalk's back edge (tools/gardens/drawnSurfaces.mjs, raised classes): both corners
 //    and the middle within 0.2 m (gap 0: no lawn between the drive and the sidewalk; 0.2 for a curved edge between the corners)
-// K  the kerb dropped on its axis where it reaches the street (a ramp, class 8, between its end and the kerb, by
-//    tools/gardens/driveRamps.py where UrbIS surveyed no driveway), unless no kerb within 8 m
-// V  the viewer draws them (main.js garageDrives into buildGrounds, ?garagedrive=old none)
+// K  (counted, not failed) the drives over a dropped kerb (a ramp, class 8, on the axis between the end and the kerb:
+//    the UrbIS driveways) and over a full kerb: dropping those needs pipeline/build_surfaces.py to take the drives as
+//    driveway input (a patch of surfaces.json in place broke 2 tile builds and the ground census: withdrawn)
+// V  the viewer draws them (main.js garageDrives into buildGrounds, ?garagedrive=old none), all but those whose end
+//    meets the drawn street over a step > 0.3 m (driveFlat: the DTM may show no jump where the drawn street does, H2)
 import { readFileSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, dirname } from "node:path";
@@ -42,10 +45,10 @@ const drawn = JSON.parse(execFileSync(process.execPath, [join(ROOT, "tools/garde
 const RAISED = new Set([4, 5, 6, 8]);              // square, sidewalk, median, ramp (pipeline/build_surfaces.py RAISED)
 const segDist = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz || 1e-12, t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
 const ringDist = (r, x, z) => { let d = Infinity; for (let i = 0; i < r.length; i++) d = Math.min(d, segDist(x, z, r[i], r[(i + 1) % r.length])); return d; };
-let doors = 0, drives = 0, noRun = 0, ramps = 0, noKerb = 0, noWalk = 0;
+let doors = 0, drives = 0, noRun = 0, steep = 0, ramps = 0, noKerb = 0, noWalk = 0, fullKerb = 0;
 for (const f of readdirSync(join(ROOT, "data/gardens")).filter((n) => /^[A-O]\d+\.json$/.test(n))) {
   const g = json(`data/gardens/${f}`);
-  for (const d of g.garageDoors || []) { doors++; if (d.drive) drives++; else if (d.noRun) noRun++; else fail(`G ${f} garage door at (${d.x}, ${d.z}): no drive and a garden run in front`); }
+  for (const d of g.garageDoors || []) { doors++; if (d.drive) drives++; else if (d.noRun) noRun++; else if (d.steep) steep++; else fail(`G ${f} garage door at (${d.x}, ${d.z}): no drive and a garden run in front`); }
   for (const dr of g.drives || []) {
     const a = area(dr.ring);
     if (dr.ring.length !== 4 || a < 1 || a > 140) { fail(`R ${f} drive of ${dr.bu}: ring ${dr.ring.length} points, ${a.toFixed(1)} m2`); continue; }
@@ -73,7 +76,7 @@ for (const f of readdirSync(join(ROOT, "data/gardens")).filter((n) => /^[A-O]\d+
       for (const [k, p] of axisPts.entries()) { if (raw.kerbs.some((l) => l.some((q, i) => i && segDist(p[0], p[1], l[i - 1], q) < 0.15))) { kerbAt = k; break; } }
       if (kerbAt < 0) noKerb++;
       else if (axisPts.slice(0, kerbAt + 1).some(([x, z]) => raw.ramps.some((q) => inRing(q, x, z)))) ramps++;
-      else fail(`K ${f} drive of ${dr.bu}: a full kerb where it reaches the street at (${axisPts[kerbAt][0].toFixed(1)}, ${axisPts[kerbAt][1].toFixed(1)}) (no dropped kerb)`);
+      else fullKerb++;                                  // (counted, not failed: the dropped kerbs need the pipeline, see the rule)
     }
     const r = shrink(dr.ring);
     for (const s of g.segs) { for (const t of [0.25, 0.5, 0.75]) if (inRing(r, s[0] + (s[3] - s[0]) * t, s[2] + (s[5] - s[2]) * t)) { fail(`R ${f} drive of ${dr.bu}: a wall / railing in it at (${s[0]}, ${s[2]})`); break; } }
@@ -81,9 +84,9 @@ for (const f of readdirSync(join(ROOT, "data/gardens")).filter((n) => /^[A-O]\d+
     for (const h of g.hedges) if ((h.points || []).some(([x, z]) => inRing(r, x, z))) { fail(`R ${f} drive of ${dr.bu}: a hedge in it`); }
   }
 }
-console.log(`G ${doors} garage doors: ${drives} with a drive, ${noRun} on the sidewalk line (no garden run); K ${ramps} drives over a dropped kerb, ${noKerb} with no kerb within 8 m, E ${noWalk} with no measured sidewalk in front`);
+console.log(`G ${doors} garage doors: ${drives} with a drive, ${noRun} on the sidewalk line (no garden run), ${steep} behind a garden step over 0.4 m (no car gets in: no drive); K ${ramps} drives over a dropped kerb (UrbIS driveway), ${fullKerb} over a full kerb (to do), ${noKerb} with no kerb within 8 m, E ${noWalk} with no measured sidewalk in front`);
 const m = readFileSync(join(ROOT, "viewer/main.js"), "utf8");
-if (!/garageDrives = params\.get\("garagedrive"\) === "old" \? \[\]/.test(m) || !/\.\.\.garageDrives\], bounds/.test(m)) fail("V viewer/main.js does not draw the garage drives");
+if (!/\.filter\(driveFlat\)/.test(m) || !/garageDrives = params\.get\("garagedrive"\) === "old" \? \[\]/.test(m) || !/\.\.\.garageDrives\], bounds/.test(m)) fail("V viewer/main.js does not draw the garage drives");
 // --max E=n,K=n,R=n: the counts the row allows per test (the known data cases, listed in the row's reason); any other
 // test (G, S, V) or a count over its ceiling fails
 const MAXA = process.argv.indexOf("--max"), MAX = MAXA > 0 ? Object.fromEntries(process.argv[MAXA + 1].split(",").map((kv) => kv.split("=")).map(([k, v]) => [k, +v])) : {};

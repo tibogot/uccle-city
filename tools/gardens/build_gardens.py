@@ -41,7 +41,7 @@ len of that direction when the garden is on the left.
 """
 from __future__ import annotations
 
-import argparse, json, math, subprocess, sys, time
+import argparse, json, math, os, subprocess, sys, time
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -731,36 +731,43 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                 q = q if q.geom_type == "Point" else q.centroid
                 sgar = ls.project(q)
                 gw = max(2.8, ga["w"] + 1.1)                 # (the drive + 0.25 m each side: the jamb piers clear of it)
-                # (a driveway opening that already reaches the door's span serves it: no second car opening beside it, its gate
-                # stays as the driveway rule drew it (gates census villaDriveGatedPm); it is widened to the drive's span so its
-                # jamb piers stand clear of the paved drive)
-                over = [o for o in ops if o[2] == "car" and o[0] < sgar + gw / 2 and sgar - gw / 2 < o[1]]
-                if over:
-                    for o in over: o[0] = min(o[0], sgar - gw / 2); o[1] = max(o[1], sgar + gw / 2)
-                    stats["drive_garage_widened"] += 1
+                # a garden standing over (or under) the sidewalk at the line by the DTM (a retaining wall; where only the drawn street
+                # shows the step, main.js driveFlat drops the drive: H2 2026-11-27,
+                # the drive draped down a flight of garden steps): no car gets in there, no drive and no car opening
+                jump = abs(T.ground(q.x - f["nx"] * 0.5, q.y - f["nz"] * 0.5) - T.floor_y(q.x + f["nx"] * 0.3, q.y + f["nz"] * 0.3))
+                if jump > 0.4:
+                    garage_doors.append({"x": ga["x"], "z": ga["z"], "w": ga["w"], "drive": False, "steep": r2(jump)}); stats["drive_garage_steep"] += 1
                 else:
-                    ops.append([sgar - gw / 2, sgar + gw / 2, "car"]); stats["drive_garage"] += 1
-                ta = (f["b"][0] - f["a"][0], f["b"][1] - f["a"][1]); tl = math.hypot(*ta) or 1; tx, tz = ta[0] / tl, ta[1] / tl
-                hw = ga["w"] / 2 + 0.3                     # the door's width + 0.3 m each side
-                d = math.hypot(q.x - ga["x"], q.y - ga["z"])
-                garage_doors.append({"x": ga["x"], "z": ga["z"], "w": ga["w"], "drive": 0.5 < d < REACH})
-                if 0.5 < d < REACH:
-                    # a RECTANGLE square to the facade, from the door straight out to the drawn sidewalk's back edge (the exact
-                    # entry into the street surfaces along the door's normal, R.refine) + 5 cm under it: flush, no lawn between.
-                    # (round 4 first cut: the line end took the garden line's own points, sgar +- hw along the line: a line
-                    # running the other way twisted it into a bow tie, a skewed line gave a trapezoid, and it stopped 0.25 m
-                    # short of the line: the ragged blob with lawn before the sidewalk, owner shot c5_garage_drive_new)
-                    # Each side runs out to where ITS ray enters the street surfaces (R.refine from each corner): on a sidewalk
-                    # edge oblique to the facade the end follows the edge (flush at both corners, no overlap with the paving:
-                    # a drive drawn over the sidewalk would z-fight it), the sides stay square to the door.
-                    nx_, nz_ = f["nx"], f["nz"]
-                    c0 = (ga["x"] - tx * hw, ga["z"] - tz * hw); c1 = (ga["x"] + tx * hw, ga["z"] + tz * hw)
-                    lm = R.refine(ga["x"], ga["z"], nx_, nz_, d)
-                    e0 = R.entry(c0[0], c0[1], nx_, nz_, d + 3); e1 = R.entry(c1[0], c1[1], nx_, nz_, d + 3)
-                    l0 = (e0 if e0 is not None and abs(e0 - lm) < hw * 2 else lm) + 0.02   # (a corner ray that misses the street,
-                    l1 = (e1 if e1 is not None and abs(e1 - lm) < hw * 2 else lm) + 0.02   # or meets another one: the axis' length)
-                    out_drives.append({"bu": bu, "w": r2(2 * hw), "ring": [[r2(c0[0]), r2(c0[1])], [r2(c1[0]), r2(c1[1])],
-                                                          [r2(c1[0] + nx_ * l1), r2(c1[1] + nz_ * l1)], [r2(c0[0] + nx_ * l0), r2(c0[1] + nz_ * l0)]]})
+                    # (a driveway opening that already reaches the door's span serves it: no second car opening beside it, its gate
+                    # stays as the driveway rule drew it (gates census villaDriveGatedPm); it is widened to the drive's span so its
+                    # jamb piers stand clear of the paved drive)
+                    over = [o for o in ops if o[2] == "car" and o[0] < sgar + gw / 2 and sgar - gw / 2 < o[1]]
+                    if over:
+                        for o in over: o[0] = min(o[0], sgar - gw / 2); o[1] = max(o[1], sgar + gw / 2)
+                        stats["drive_garage_widened"] += 1
+                    else:
+                        ops.append([sgar - gw / 2, sgar + gw / 2, "car"]); stats["drive_garage"] += 1
+                    ta = (f["b"][0] - f["a"][0], f["b"][1] - f["a"][1]); tl = math.hypot(*ta) or 1; tx, tz = ta[0] / tl, ta[1] / tl
+                    hw = ga["w"] / 2 + 0.3                     # the door's width + 0.3 m each side
+                    d = math.hypot(q.x - ga["x"], q.y - ga["z"])
+                    garage_doors.append({"x": ga["x"], "z": ga["z"], "w": ga["w"], "drive": 0.5 < d < REACH})
+                    if 0.5 < d < REACH:
+                        # a RECTANGLE square to the facade, from the door straight out to the drawn sidewalk's back edge (the exact
+                        # entry into the street surfaces along the door's normal, R.refine) + 5 cm under it: flush, no lawn between.
+                        # (round 4 first cut: the line end took the garden line's own points, sgar +- hw along the line: a line
+                        # running the other way twisted it into a bow tie, a skewed line gave a trapezoid, and it stopped 0.25 m
+                        # short of the line: the ragged blob with lawn before the sidewalk, owner shot c5_garage_drive_new)
+                        # Each side runs out to where ITS ray enters the street surfaces (R.refine from each corner): on a sidewalk
+                        # edge oblique to the facade the end follows the edge (flush at both corners, no overlap with the paving:
+                        # a drive drawn over the sidewalk would z-fight it), the sides stay square to the door.
+                        nx_, nz_ = f["nx"], f["nz"]
+                        c0 = (ga["x"] - tx * hw, ga["z"] - tz * hw); c1 = (ga["x"] + tx * hw, ga["z"] + tz * hw)
+                        lm = R.refine(ga["x"], ga["z"], nx_, nz_, d)
+                        e0 = R.entry(c0[0], c0[1], nx_, nz_, d + 3); e1 = R.entry(c1[0], c1[1], nx_, nz_, d + 3)
+                        l0 = (e0 if e0 is not None and abs(e0 - lm) < hw * 2 else lm) + 0.02   # (a corner ray that misses the street,
+                        l1 = (e1 if e1 is not None and abs(e1 - lm) < hw * 2 else lm) + 0.02   # or meets another one: the axis' length)
+                        out_drives.append({"bu": bu, "w": r2(2 * hw), "ring": [[r2(c0[0]), r2(c0[1])], [r2(c1[0]), r2(c1[1])],
+                                                              [r2(c1[0] + nx_ * l1), r2(c1[1] + nz_ * l1)], [r2(c0[0] + nx_ * l0), r2(c0[1] + nz_ * l0)]]})
         # merge: overlapping driveways join. (claude/gates) A door inside / against a driveway gets its own pedestrian
         # gate BESIDE the driveway (sharing a pier: the Brussels pair, a driveway gate + a garden gate), on the door's
         # side where the run has room, else carved from a driveway >= 4.1 m wide; only where neither fits does the walk

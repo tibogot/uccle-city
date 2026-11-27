@@ -1,7 +1,7 @@
 ---
 status: provisional
 added: 2026-11-26
-check: `garagedrive` (tools/audit/garageDriveCheck.mjs: G every garage door served, S square to its door, E flush with the sidewalk, K over a dropped kerb, R no garden piece in it, V the viewer draws them); the ground rows on the rebuilt data
+check: `garagedrive` (tools/audit/garageDriveCheck.mjs: G every garage door served, S square to its door, E flush with the sidewalk, K the drives over a full kerb counted, R no garden piece in it, V the viewer draws them); the ground rows on the rebuilt data
 ---
 **Rule.** A garage door the facade draws opens onto a drive, never onto lawn or a hedge. tools/gardens/build_gardens.py
 asks tools/gardens/faces.mjs `garageAt` where each house's painted garage doors are, opens the front-garden boundary in
@@ -11,9 +11,10 @@ whose house stands on the sidewalk line has no garden run: the sidewalk is its d
 The drive is a rectangle square to the facade, the door's width + 0.3 m a side, from the door straight out to where each
 side's ray enters the drawn street surfaces (flush with the sidewalk's back edge, no lawn between, no overlap with the
 paving; on an oblique edge the end follows it); a driveway opening already there is widened to the drive's span so its
-jamb piers stand clear. Where it crosses the sidewalk the kerb is dropped: tools/gardens/driveRamps.py cuts a ramp
-(the pipeline's dropped kerb: 1 m deep, the drive's width + 0.3 m a side) out of the sidewalk where UrbIS surveyed no
-driveway (then build_gardens.py runs again: the ramps are a street surface its rays read). `?garagedrive=old`: no drives drawn; `build_gardens.py --garage old`: the boundary closed in front of doors (the data before).
+jamb piers stand clear. Where it crosses the sidewalk the kerb should be dropped: the UrbIS driveways already are (pipeline/build_surfaces.py
+cuts a ramp at every CR42L line); the drives over a full kerb are counted by the check (K) for a pipeline job that takes
+the drives as driveway input (a patch of surfaces.json in place was tried 2026-11-27: 2 tiles stopped building, the
+ground census tilt went 610 -> 4,755: withdrawn). No drive where the garden stands over the sidewalk: a step > 0.4 m by the DTM at the line (build_gardens.py, the door counted `steep`), or > 0.3 m in the drawn street at the drive's end (main.js driveFlat: H2, pavers draped down a gate's steps). `?garagedrive=old`: no drives drawn; `build_gardens.py --garage old`: the boundary closed in front of doors (the data before).
 
 **Why.** Reality round 2026-11-26 class C5: Street View (look only) on Avenue De Fre and the bel-etage streets showed a
 paved or gravel drive from every garage door to the street, the gate opening wide; the kit drew the boundary and lawn
