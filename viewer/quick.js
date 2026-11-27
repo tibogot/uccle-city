@@ -12,12 +12,14 @@
 //   &radius=<m>  &with=a,b  &view=walk|third|drive|fly (a mode started at the spot instead of the orbit camera)
 //   &fov=<deg>   &ready=<ms> (the ready check's time limit, default 90000)
 //
-// HOW: this module is main.js's FIRST import (no imports of its own but the places table), so its body runs before any
+// HOW: this module is main.js's FIRST import (no imports of its own but the places table and the three-free snow
+// schedule), so its body runs before any
 // other module of the viewer reads location.search: it rewrites the URL's switches (history.replaceState) into the
 // existing ones (tile, at, cam, view, ring, far, game=0, boothold=old, traffic=0, <landmark>=0, ...). A switch already in
 // the URL is never overwritten (an explicit &traffic=1 wins). main.js then only adds the radius filter to the
 // streaming, the exact camera and the ready check (all behind `QUICK`). Without ?quick=1 this module does nothing.
 import { PLACES } from "./places.js";
+import { snowSchedule } from "./seasons/snowSchedule.js";
 
 const P = new URLSearchParams(location.search);
 const ON = P.get("quick") === "1";
@@ -59,6 +61,7 @@ function setup() {
   const radius = Math.max(50, +(P.get("radius") ?? 250) || 250);
   const withSet = new Set((P.get("with") || "").split(",").map((s) => s.trim()).filter(Boolean));
   if (P.get("wx")) withSet.add("weather");                                 // a weather asked for brings its system
+  if (snowSchedule(P).on) withSet.add("weather");                         // so does a snow day (rule snow-schedule)
   if (["night", "twilight"].includes(P.get("time")) || P.get("hour")) withSet.add("night");   // night lights at night
   // weather WITHOUT the night system is not a combination the city runs (night is on by default): ?night=0&wx=snow_cover
   // gives the façade kit's LOD1 material 17 sampled textures (> the 16 WebGPU limit), a validation error, measured

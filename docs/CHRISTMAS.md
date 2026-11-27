@@ -1,5 +1,21 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
+## THE SNOW (claude/snowseason, owner 2026-11-27: chose snow, "why no snow")
+
+The season snows in its second half (rule snow-schedule, gate row `snowsched`, tools/audit/snowScheduleCheck.mjs):
+viewer/seasons/snowSchedule.js (three-free, read once at boot by cityWeather.js and quick.js) picks the START weather.
+- 1-14 Dec: dry (the winter look only). 15-26 Dec: the existing **snow cover** (roofs, cars, ground, the chalets: the
+  layer, caps, tracks) by day; **cover + light snowfall** (0.4-0.9 cm/h, the existing snowfall path, snow2) from 18:00
+  to 08:00 Brussels clock. 27 Dec - 6 Jan: dry.
+- Seeded by the day of the year: cover depth 10-17 cm, the night's snowfall, wind, cloud; the same date = the same
+  weather. Real date: the Brussels date + clock hour (a 02:00 visit on 15 Dec snows: the first snow night). A pinned
+  `?day=` uses the scene's hour (`?time=night` = night, golden by default = day, `?hour=` solar), never the wall clock.
+- Overrides: any `?wx=` (incl. clear, live) wins; `?season=summer`, `?xmas=0`, `?weather=old`: no snow; `?xmas=1` /
+  `?season=winter` outside the real season (the forced 21 Dec look, the Christmas tour) stay dry: use `?day=350`;
+  `?snowsched=old` = no automatic snow (as before). The dev panel's weather menu still changes it live.
+- Cost: nothing new per frame (the schedule only chooses the preset at boot); outside the snow days the start is clear,
+  exactly as before (no bake shown, nothing drawn). Shots: C:\Users\tibog\Downloads\uccle-xmas\snow\ (outside git).
+
 ## THE WINTER LOOK (claude/xmasreview, owner 2026-11-26: "yes do the winter look for christmas")
 
 While the Christmas season is on, the city is in December (rules season-from-date, bare-winter-trees, walker-statics;
