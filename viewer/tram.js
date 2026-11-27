@@ -53,6 +53,41 @@ function wireMaterial() {
 // bridge, a solid parapet on the free sides. Flat faces, uv in metres, one shared material.
 const DECK = { half: 2.15, depth: 0.95, parapetW: 0.32, parapetH: 1.05 };
 let deckMat = null;
+// (claude/perf7, rule fewer-draws; ?tramplat=old: two meshes, as before) A TILE'S PLATFORMS IN ONE DRAW: the slabs (grey
+// 0x8d8c88, roughness 0.85) and their kerb edges (light 0x c9c6bd, 0.7) were two meshes with two materials made per tile
+// (2 draws per tram tile in the main pass and 2 in the sun's). Now one mesh: each part's normals computed on its own as
+// before, the two merged, the colour and roughness per vertex (the same linear values), ONE material for every tile
+// (made once: one node build, rule shared-node-graph). Named "tram-platforms" (/^tram-platform/ for its readers).
+export const PLAT_ONE = !(typeof location !== "undefined" && /[?&]tramplat=old/.test(location.search));
+const PLAT_LOOK = [[0x8d8c88, 0.85], [0xc9c6bd, 0.7]];
+let platMat = null;
+export function platformMaterial() {
+  if (platMat) return platMat;
+  const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
+  m.colorNode = attribute("aCol", "vec3");
+  m.roughnessNode = attribute("aRough", "float");
+  m.name = "tram-platforms"; m.userData.shared = true;
+  return (platMat = m);
+}
+/** the slab and edge triangle soups (flat xyz lists) as ONE mesh added to `group` (null when both are empty) */
+export function platformMesh(group, slab, edge) {
+  const parts = [slab, edge].map((arr, k) => {
+    if (!arr.length) return null;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
+    g.computeVertexNormals();                                       // (per part, as the two meshes did)
+    const n = arr.length / 3, c = new THREE.Color(PLAT_LOOK[k][0]), col = new Float32Array(n * 3), r = new Float32Array(n).fill(PLAT_LOOK[k][1]);
+    for (let i = 0; i < n; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }   // (Color: linear working space, as material.color)
+    g.setAttribute("aCol", new THREE.BufferAttribute(col, 3)); g.setAttribute("aRough", new THREE.BufferAttribute(r, 1));
+    return g;
+  }).filter(Boolean);
+  if (!parts.length) return null;
+  const g = parts.length > 1 ? mergeGeometries(parts) : parts[0];
+  const m = new THREE.Mesh(g, platformMaterial());
+  m.receiveShadow = true; m.castShadow = true; m.name = "tram-platforms";
+  group.add(m);
+  return m;
+}
 function deckMaterial() {
   if (deckMat) return deckMat;
   const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.88, metalness: 0 });
@@ -324,8 +359,11 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
     m.receiveShadow = true; m.castShadow = true; m.name = name;
     group.add(m);
   };
-  mkMesh(slab, new THREE.MeshStandardNodeMaterial({ color: 0x8d8c88, roughness: 0.85, side: THREE.DoubleSide }), "tram-platforms");
-  mkMesh(edge, new THREE.MeshStandardNodeMaterial({ color: 0xc9c6bd, roughness: 0.7, side: THREE.DoubleSide }), "tram-platform-edges");
+  if (PLAT_ONE) platformMesh(group, slab, edge);   // (claude/perf7, rule fewer-draws: the slabs + their edges in one draw)
+  else {
+    mkMesh(slab, new THREE.MeshStandardNodeMaterial({ color: 0x8d8c88, roughness: 0.85, side: THREE.DoubleSide }), "tram-platforms");
+    mkMesh(edge, new THREE.MeshStandardNodeMaterial({ color: 0xc9c6bd, roughness: 0.7, side: THREE.DoubleSide }), "tram-platform-edges");
+  }
   const shelterSites = opts.shelterSites ? shelters.map((s, i) => ({ x: s.x, y: s.y, z: s.z, yaw: s.yaw - Math.PI, posters: [(i * 3 + 2) % 8, (i * 5 + 4) % 8] })) : null;
   if (shelters.length && !shelterSites) {
     const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.4, metalness: 0.2 });
