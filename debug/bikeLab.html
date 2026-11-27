@@ -46,6 +46,10 @@
 <div id="card"></div>
 <div id="banner"></div>
 <div id="tele">loading…</div>
-<script type="module" src="./bikeLab.js"></script>
+<script type="module">
+  // bike lab 2 (2026-11-28): the BMX spot by default (debug/bikeSpot.js); ?lab=old (or ?city=) the old test ground (debug/bikeLab.js)
+  const q = new URLSearchParams(location.search);
+  import(q.get("lab") === "old" || q.get("city") ? "./bikeLab.js" : "./bikeSpot.js");
+</script>
 </body>
 </html>

@@ -650,3 +650,15 @@ on its face (the ledge rule) instead of a drop; the casual rider does not yet ri
     roll 0.15, FOV kick; never inside the kicker / table.
 13. **Gamepad**: stick expo, trigger pedal + brakes, A hop timing.
 14. Perf: the lab's `phys` ms in the panel's state line (target << 0.1 ms a frame); one tab only.
+
+## Bike lab 2: the BMX spot (2026-11-28, claude/bikelab2)
+debug/bikeLab.html now opens THE BMX SPOT (debug/bikeSpot.js; ?lab=old or ?city= the old test ground, debug/bikeLab.js
+unchanged): a compact 90s Brussels waste-ground spot, every line a few seconds from the next. World: viewer/bike/bikeSpot.js
+(heights, surfaces, paint weights, solids, colliders, edge layer, spots); meshes: viewer/bike/bikeSpotMeshes.js (one fine
+0.25 m ground grid + a far 4 m grid cut out under it, solids as side profiles extruded with a 12 mm bevel, a 2 cm toe plate
+so no top is ever coplanar with the ground, every piece closed and standing on the ground); look: debug/bikeSpotLook.js
+(the city's lighting / sky / post, CC0 scans blended by soft paint weights, grass blades, stylised trees, terraces on the
+hills). Obstacles: funbox + rail, quarter pipe (2.1 m R, 80 deg) with coping, ledge, manual pad, stair block + handrail, two
+wooden kickers to landings, dirt pump-track loop with berms, dirt table, whoops, a hill, a gravel drift pad with cones.
+Gate row `bikespot` (tools/bike/spotTest.mjs): the meshes closed / grounded / tops = ridden height / no coplanar ground,
+and a scripted ride over every obstacle.
