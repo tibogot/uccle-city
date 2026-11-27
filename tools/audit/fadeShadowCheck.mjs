@@ -63,6 +63,16 @@ const fading = mesh(wall); fading.userData.fadeOrig = wall; fading.material = v;
 const t6 = new THREE.Group(); t6.add(fading);
 ok(L.fadeShadowProxies(t6) === null, "a mesh fading right now (its copy swapped in): reads its own material, no copy of a copy");
 
+// 1b. (option 2) the split: shared copies' stand-ins (the walls, roofs, details, kit) apart from a tile's own copies
+{
+  const sm = new THREE.MeshStandardNodeMaterial(); sm.userData.shared = true;
+  const om = new THREE.MeshStandardNodeMaterial();
+  const t = new THREE.Group(); t.add(mesh(sm)); t.add(mesh(om));
+  const [sh, ow] = L.splitFadeShadow([L.fadeShadowProxies(t)]);
+  ok(sh.length === 1 && ow.length === 1 && sh[0].children.length === 1 && ow[0].children.length === 1 && sh[0].children[0].material.userData.shared === true && !ow[0].children[0].material.userData.shared, "splitFadeShadow: the shared copy's stand-in apart from the tile's own");
+  ok(L.splitFadeShadow([]).every((x) => x.length === 0), "... nothing: two empty lists");
+}
+
 // 2. the old path
 const r = spawnSync(process.execPath, ["--import", "./tools/christmas/hook.mjs", fileURLToPath(import.meta.url), "--old"], { cwd: ROOT, encoding: "utf8" });
 let old = null; try { old = JSON.parse(r.stdout.trim().split("\n").pop()); } catch { /* */ }
@@ -71,7 +81,8 @@ ok(old?.old === true, `?fadeshadowwarm=old: no stand-ins, as before (${r.stdout.
 // 3. text
 const M = fs.readFileSync(path.join(ROOT, "viewer/main.js"), "utf8"), F = fs.readFileSync(path.join(ROOT, "viewer/features.js"), "utf8");
 ok(/const sp = FADE_SHADOW_WARM \? \[\]\.concat\(roots\)\.map\(fadeShadowProxies\)/.test(M) && M.includes("if (shadowWarm) await shadowWarm([...[].concat(roots), ...sp]);"), "main.js preCompile warms every fading copy's shadow pass (not only new copies)");
-ok(/holdFast && compileFor && TILE_FADE\) \{[\s\S]{0,900}Object\.values\(own\)\.map\(fadeShadowProxies\)[\s\S]{0,120}shadowWarm\(sp\)\.finally\(\(\) => \{ fadeShadowLeft--; \}\)/.test(M), "main.js: the play loader's (holdFast) tiles warm their fading copies' shadow pass");
+ok(/holdFast && compileFor && TILE_FADE\) \{[\s\S]{0,1400}Object\.values\(own\)\.map\(fadeShadowProxies\)[\s\S]{0,200}FADE_SHARED_FIRST \? splitFadeShadow\(sp\) : \[sp, \[\]\][\s\S]{0,80}if \(spShared\.length\) \{ fadeShadowLeft\+\+; shadowWarm\(spShared\)\.finally\(\(\) => \{ fadeShadowLeft--; \}\); \}\s*if \(spOwn\.length\) lateFadeShadow\(spOwn\);/.test(M), "main.js: the play loader's (holdFast) tiles: the loader waits for the SHARED copies' shadow warm-ups, a tile's own copies go to the late queue (?fadesharedfirst=old: all waited for)");
+ok(/function lateFadeShadow\(groups\)[\s\S]{0,400}while \(playLoader\.active\)[\s\S]{0,120}while \(lateFadeQ\.length\) await shadowWarmSlow\(lateFadeQ\.splice\(0\)\)/.test(M) && /shadowWarmSlow = \(roots\) => warmShadows\(renderer, scene, roots, \{ perFrame: 1 \}\)/.test(M) && /old\("fadesharedfirst"/.test(F), "main.js: the late queue warms after play, one mesh a batch (one 1-7 ms build per sun pass at most)");
 ok(M.includes("const gpuOk = st.jobs === 0 && st.pipes === 0 && fadeShadowLeft === 0 && settled;"), "main.js areaReady: the play loader waits for those warm-ups (fully built before play)");
 ok(/old\("fadeshadowwarm"/.test(F), "viewer/features.js has the ?fadeshadowwarm=old row");
 // (round 2) the landmarks' own shadow warm-ups (every level's layouts) and the night lamps' pass

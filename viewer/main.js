@@ -81,7 +81,7 @@ import { addLamps } from "./lampLight.js";
 import { installWgslIntern } from "./wgslIntern.js";
 import { installPinBuilds } from "./pinBuilds.js";   // perf5: the shared materials' builds kept (rule shared-node-graph)
 import { installHeapDrop, dropAfterUpload, dropTextureData, heapOn } from "./heapDrop.js";   // heap: CPU copies let go after their upload (docs/HEAP.md)
-import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp, RETIRE_WARM, fadeVariant, fadeShadowProxies, FADE_SHADOW_WARM } from "./lodFade.js";
+import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp, RETIRE_WARM, fadeVariant, fadeShadowProxies, FADE_SHADOW_WARM, splitFadeShadow } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
@@ -185,6 +185,21 @@ let compileFor = null;
 // of every rail part (viewer/rail/railway.js railWarmData) as soon as the precompile queue exists: the play loader waits
 // for the queue, so the rail materials' first node builds (40-61 ms, at the first rail tile landing ~7 s into a police
 // drive) are done before the game starts; the stand-in is never in the scene (roSweep releases it, its builds pinned)
+const FADE_SHARED_FIRST = params.get("fadesharedfirst") !== "old";
+/** (claude/perf7 option 2) the play loader's tiles' OWN fading copies' shadow stand-ins: warmed after play, one mesh a
+ *  batch (warmup.js warmShadows perFrame 1: one 1-7 ms build at most per sun pass), in the order queued */
+const lateFadeQ = [];
+let lateFadeRunning = false;
+function lateFadeShadow(groups) {
+  lateFadeQ.push(...groups);
+  if (lateFadeRunning || !shadowWarmSlow) return;
+  lateFadeRunning = true;
+  (async () => {
+    while (playLoader.active) await new Promise((r) => setTimeout(r, 500));
+    while (lateFadeQ.length) await shadowWarmSlow(lateFadeQ.splice(0));
+  })().finally(() => { lateFadeRunning = false; });
+}
+let shadowWarmSlow = null;
 let railWarmed = false, kitShadowWarmed = false, fadeShadowLeft = 0;   // (fadeShadowLeft: the play loader's tiles' fading-copy shadow warm-ups still running, claude/perf7)
 const KIT_SHADOW_WARM = params.get("kitshadowwarm") !== "old";
 const RAIL_WARM = GAME_START && params.get("railwarm") !== "old";
@@ -1317,9 +1332,14 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     // (claude/perf7, rule fade-shadow-warm; ?fadeshadowwarm=old: as before) and their SHADOW pass, in the background too
     // (not awaited: the play loader does not wait for it): without it the first tile fade while driving built the
     // shared walls' fading copy in the sun's pass in that frame ("walls:fade" SH, 29-38 ms)
-    // (the play loader waits for them: areaReady's fadeShadowLeft, so none is left for the first seconds of play)
+    // (claude/perf7 option 2; ?fadesharedfirst=old: the loader waits for all of them) the play loader waits for the SHARED
+    // copies' stand-ins only (areaReady's fadeShadowLeft: walls, roofs, details, kit, the 20-34 ms builds); a tile's own
+    // copies (1-7 ms builds) warm in the background after play, one a batch (lateFadeShadow): the loader's re-take
+    // measured 1-3 s of hold spent on them (docs/perf/QUIET_2026-11-27.md 3b)
     const sp = shadowWarm ? Object.values(own).map(fadeShadowProxies).filter(Boolean) : [];
-    if (sp.length) { fadeShadowLeft++; shadowWarm(sp).finally(() => { fadeShadowLeft--; }); }
+    const [spShared, spOwn] = FADE_SHARED_FIRST ? splitFadeShadow(sp) : [sp, []];
+    if (spShared.length) { fadeShadowLeft++; shadowWarm(spShared).finally(() => { fadeShadowLeft--; }); }
+    if (spOwn.length) lateFadeShadow(spOwn);
   }
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
@@ -1501,7 +1521,7 @@ async function main() {
 
   const scene = new THREE.Scene();
   const bootPipes = params.get("warmup") !== "0" ? openBootPipelines(renderer, scene) : null;   // ?warmup=0: old boot, for A/B
-  if (params.get("tileshadowwarm") !== "0") shadowWarm = (roots) => warmShadows(renderer, scene, roots).catch(() => {});   // boot3 (preCompile)
+  if (params.get("tileshadowwarm") !== "0") { shadowWarm = (roots) => warmShadows(renderer, scene, roots).catch(() => {}); shadowWarmSlow = (roots) => warmShadows(renderer, scene, roots, { perFrame: 1 }).catch(() => {}); }   // boot3 (preCompile); perf7: the late one, one mesh a batch
   setStagedShadowWarm((roots) => warmShadows(renderer, scene, roots, { perFrame: 1 }).catch(() => {}));   // (falconstutter: a staged landmark's released parts)
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });

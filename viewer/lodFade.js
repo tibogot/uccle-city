@@ -221,6 +221,14 @@ export function fadeShadowProxies(obj) {
   });
   return g.children.length ? g : null;
 }
+/** (claude/perf7 option 2) fadeShadowProxies' groups split into [shared, own]: the stand-ins of SHARED fading copies (the
+ *  walls, roofs, details, kit: made once, used by every tile: the big builds) and those of a tile's own copies */
+export function splitFadeShadow(groups) {
+  const shared = new THREE.Group(), own = new THREE.Group();
+  shared.name = own.name = "fade-shadow-warm";
+  for (const g of groups) for (const c of [...g.children]) (c.material?.userData?.shared ? shared : own).add(c);
+  return [shared.children.length ? [shared] : [], own.children.length ? [own] : []];
+}
 /** was the shadow pass of `v` (a fading copy) warmed for this mesh's geometry layout? (the gate row fadeshadow) */
 export const fadeShadowWarmed = (v, o) => !!shadowDone.get(v)?.has(fadeLayoutKey(o));
 /** boot3 (docs/BOOT.md section 5): stand-ins drawn with the OWN materials of obj's meshes that are fading right now (a tile
