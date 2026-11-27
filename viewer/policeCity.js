@@ -13,7 +13,7 @@ import * as THREE from "three/webgpu";
 import { loadPolice, PO_LODS, setLodFades, poLodState } from "./policeModel.js";
 import { buildPoliceYard } from "./policeYard.js";
 import { buildPoliceCars } from "./policeCars.js";
-import { SMOOTH, fadeProxies } from "./lodFade.js";
+import { SMOOTH, fadeProxies, fadeShadowProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { Heightmap } from "./heightmap.js";
 import { liteShown } from "./liteShown.js";
@@ -92,6 +92,10 @@ export async function addPolice({ scene, updaters, hide, world, manifest, log, c
     const meshes = [yard.mesh];
     for (const lv of levels) lv.traverse((o) => { if (o.isMesh) meshes.push(o); });
     if (fp) fp.traverse((o) => { if (o.isMesh) meshes.push(o); });
+    // (claude/perf7, rule fade-shadow-warm) every (fading copy, geometry layout) in the shadow pass: fp has one stand-in per
+    // NEW copy, on its first mesh's geometry, so a level with another layout built its copy's shadow on screen at its first
+    // LOD fade (the police station's levels: 9 builds, 90 ms in one frame, ~9 s into a police drive)
+    for (const r of [root, cars?.group].filter(Boolean)) fadeShadowProxies(r)?.traverse((o) => { if (o.isMesh) meshes.push(o); });
     if (cars) cars.group.traverse((o) => { if (o.isMesh) meshes.push(o); });
     if (fpc) fpc.traverse((o) => { if (o.isMesh) meshes.push(o); });
     const warm = await warmShadowPass(renderer, scene, meshes);

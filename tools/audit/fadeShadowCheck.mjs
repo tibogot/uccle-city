@@ -13,7 +13,9 @@
 //      drawn with that copy, casting; a second call nothing; another layout (instanced) one more; the kit walls'
 //      cutMat / plainMat copies too; a mesh that casts no shadow none
 //   2. ?fadeshadowwarm=old (child process): none, as before
-//   3. text: main.js warms them in preCompile and on the play loader's (holdFast) tiles; the features row
+//   3. text: main.js warms them in preCompile and on the play loader's (holdFast) tiles; the features row; the landmarks'
+//      own shadow warm-ups (every LOD level's layouts: the police station's 9 builds, 90 ms, ~9 s into a drive) and the
+//      night lamps' warm-up (a caster is warmed only while not fading: "walls:fade" in a spot's pass, 87 ms at 18:40)
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -72,6 +74,13 @@ ok(/const sp = FADE_SHADOW_WARM \? \[\]\.concat\(roots\)\.map\(fadeShadowProxies
 ok(/holdFast && compileFor && TILE_FADE\) \{[\s\S]{0,900}Object\.values\(own\)\.map\(fadeShadowProxies\)[\s\S]{0,120}shadowWarm\(sp\)\.finally\(\(\) => \{ fadeShadowLeft--; \}\)/.test(M), "main.js: the play loader's (holdFast) tiles warm their fading copies' shadow pass");
 ok(M.includes("const gpuOk = st.jobs === 0 && st.pipes === 0 && fadeShadowLeft === 0 && settled;"), "main.js areaReady: the play loader waits for those warm-ups (fully built before play)");
 ok(/old\("fadeshadowwarm"/.test(F), "viewer/features.js has the ?fadeshadowwarm=old row");
+// (round 2) the landmarks' own shadow warm-ups (every level's layouts) and the night lamps' pass
+for (const f of ["policeCity", "calevoetCity", "papenkasteelCity", "vanbuurenCity", "wolvendaelCity", "villa/villaCity"]) {
+  const t = fs.readFileSync(path.join(ROOT, `viewer/${f}.js`), "utf8");
+  ok(/fadeShadowProxies\(r\)\?\.traverse\(\(\w\) => \{ if \(\w\.isMesh\) meshes\.push\(\w\); \}\)/.test(t), `viewer/${f}.js: its shadow warm-up gets a stand-in per fading copy x layout (every LOD level)`);
+}
+const CN = fs.readFileSync(path.join(ROOT, "viewer/nightLights/cityNight.js"), "utf8");
+ok(/if \(FADE_SHADOW_WARM\) for \(let i = 0, n = warmNow\.length; i < n; i\+\+\)[\s\S]{0,900}fadeVariant\(m\), key = fadeLayoutKey\(o\)[\s\S]{0,900}p\.layers\.set\(WARM_LAYER\)/.test(CN) && CN.includes("fadeWarmGroup.clear(); fadeWarmGroup.removeFromParent();"), "cityNight.js: the lamps' warm-up draws each caster's fading copy too (once per layout, warm layer only, removed after)");
 ok(fs.existsSync(path.join(ROOT, "docs/rules/fade-shadow-warm.md")), "docs/rules/fade-shadow-warm.md exists");
 
 console.log(fails ? `fadeshadow: ${fails} FAIL` : "fadeshadow: all ok");

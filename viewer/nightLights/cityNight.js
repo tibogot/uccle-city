@@ -38,6 +38,7 @@ import { carFleet } from "../carFleet.js";
 import { wx } from "../weather/weatherState.js";
 import { cityWeather } from "../weather/cityWeather.js";
 import { cityStops } from "../stops/cityStops.js";
+import { fadeVariant, fadeLayoutKey, FADE_SHADOW_WARM } from "../lodFade.js";   // (claude/perf7, rule fade-shadow-warm: the lamps' pass of the fading copies)
 
 const qp = new URLSearchParams(location.search);
 export const pool = new LightPool(256);
@@ -549,6 +550,8 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   const WARM_DELAY = 4000;
   const warmList = [], warmNow = [];
   let warming = 0;
+  const lampFadeDone = new WeakMap(), fadeWarmGroup = new THREE.Group();   // (claude/perf7: fading copy -> layouts warmed in the lamps' pass)
+  fadeWarmGroup.name = "lamp-fade-warm";
   const warmShadows = (camPos) => {
     if (warming === 1) {                                              // (the warm render happened last frame: restore)
       shadowLights.forEach((L, k) => { L.shadow.camera.layers.set(LAMP_SHADOW_LAYER); L.shadow.camera.layers.enable(PROXY_LAYER + k); if (LAMP_CACHE) L.shadow.camera.layers.enable(MOVER_LAYER); L.shadow.camera.far = 26; L.shadow.camera.updateProjectionMatrix(); L.distance = nightParams.lampRange; L.shadow.needsUpdate = false; });
@@ -558,6 +561,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
         if (o.userData.__warmHid0) { o.layers.enable(0); delete o.userData.__warmHid0; }
         if (o.userData.__warmEmpty) { const M = o.instanceMatrix.array; if (o.count === 1 && M[0] === 0 && M[5] === 0 && M[10] === 0) { o.count = 0; if (o.userData.__warmEmpty === 2) o.visible = false; } delete o.userData.__warmEmpty; }
       }
+      fadeWarmGroup.clear(); fadeWarmGroup.removeFromParent();
       stats.warmed += warmNow.length; warmNow.length = 0; warming = 0;
       return;
     }
@@ -608,6 +612,25 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     warmList.splice(0, k);
     for (const o of retry) warmList.push(o, performance.now());
     if (!warmNow.length) return;
+    // (claude/perf7, rule fade-shadow-warm; ?fadeshadowwarm=old: as before) a caster is warmed only while it is NOT fading,
+    // so the lamps' pass of its FADING copy (lodFade.js fadeVariant) was built on screen the first time a tile faded in
+    // or out inside a shadowed lamp's reach at night ("walls:fade" in the spot's pass: 87 ms in one frame, police drive
+    // at 18:40): a stand-in drawn with the fading copy, once per (copy, geometry layout), on the warm layer only
+    if (FADE_SHADOW_WARM) for (let i = 0, n = warmNow.length; i < n; i++) {
+      const o = warmNow[i], m = o.material;
+      if (o.userData.proxyOf || o.userData.__warmEmpty || !o.isMesh || Array.isArray(m) || !m?.isNodeMaterial || m.userData.objectFade || m.userData.noFade) continue;
+      const v = fadeVariant(m), key = fadeLayoutKey(o);
+      let done = lampFadeDone.get(v);
+      if (!done) lampFadeDone.set(v, (done = new Set()));
+      if (done.has(key)) continue;
+      done.add(key);
+      const p = o.isInstancedMesh ? new THREE.InstancedMesh(o.geometry, v, 1) : new THREE.Mesh(o.geometry, v);
+      if (o.isInstancedMesh) { p.instanceMatrix.array.set(o.instanceMatrix.array.subarray(0, 16)); if (o.instanceColor) p.instanceColor = o.instanceColor; }
+      p.matrixAutoUpdate = false; p.matrix.copy(o.matrixWorld); p.matrixWorld.copy(o.matrixWorld); p.castShadow = true; p.receiveShadow = o.receiveShadow;
+      p.frustumCulled = false; p.userData.fade = 0.5; p.layers.set(WARM_LAYER); p.name = "lamp-fade-warm";
+      fadeWarmGroup.add(p);
+    }
+    if (fadeWarmGroup.children.length) { fadeWarmGroup.matrixAutoUpdate = false; scene.add(fadeWarmGroup); stats.fadeWarmed = (stats.fadeWarmed || 0) + fadeWarmGroup.children.length; }
     // both lamp maps (each light has its own shadow material: its own render objects), from 350 m up looking down, a
     // 2.5 km deep cone (155 deg): every caster tagged since the last warm-up, nothing else (WARM_LAYER); light 0 W
     for (const L of shadowLights) {

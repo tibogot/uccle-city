@@ -11,7 +11,7 @@
 //    (setLodFades): outside the bands every material is opaque without a discard. ?smooth=0: hard switches.
 import * as THREE from "three/webgpu";
 import { loadVanBuuren, VB_LODS, setLodFades, vbLodState } from "./vanbuurenModel.js";
-import { SMOOTH, fadeProxies } from "./lodFade.js";
+import { SMOOTH, fadeProxies, fadeShadowProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { liteShown } from "./liteShown.js";
 import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
@@ -77,6 +77,10 @@ export async function addVanBuuren({ scene, updaters, hide, world, manifest, log
     const meshes = [];
     for (const lv of levels) lv.traverse((o) => { if (o.isMesh) meshes.push(o); });
     if (fp) fp.traverse((o) => { if (o.isMesh) meshes.push(o); });
+    // (claude/perf7, rule fade-shadow-warm) every (fading copy, geometry layout) in the shadow pass: fp has one stand-in per
+    // NEW copy, on its first mesh's geometry, so a level with another layout built its copy's shadow on screen at its first
+    // LOD fade (the police station's levels: 9 builds, 90 ms in one frame, ~9 s into a police drive)
+    for (const r of [root]) fadeShadowProxies(r)?.traverse((o) => { if (o.isMesh) meshes.push(o); });
     const warm = await warmShadowPass(renderer, scene, meshes);
     const tWarm = performance.now() - tw;
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&
