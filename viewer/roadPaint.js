@@ -75,6 +75,8 @@ export function courses(a, b, la, lb, jw, seed, fw = null) {
 // from its material's userData (markTex / markScale / markRange) by object-update nodes, like lodFade's objectFade.
 const ASPHALT_SHARE = typeof location === "undefined" || new URLSearchParams(location.search).get("asphaltshare") !== "old";
 const asphaltTemplates = new Map();
+// (claude/xmascheck, rule wx-road-edge) ?wxedge=old: the weather's road edge from each lane's aLateral, as before
+const WX_EDGE_OLD = typeof location !== "undefined" && new URLSearchParams(location.search).get("wxedge") === "old";
 /** the per-tile marking atlas as a texture (the viewer disposes atlas.texture when the tile unloads) */
 function atlasTexture(atlas) {
   const r8 = atlas.format === "R8";                // compacted by the tile worker (R only, half resolution)
@@ -241,7 +243,12 @@ function buildAsphalt(atlas, shared) {
   m.roughnessNode = mix(rough, float(0.62), paint);
   if (T) { m.normalNode = pavingNormal(T.n, t, s, T.nK.mul(float(1).sub(paint.mul(0.7)))); m.aoNode = mix(T.ao, float(1), paint); }
   // weather: wet asphalt + puddles in the gutters (lane edges), salted in winter: black wet road, slush at the edges
-  { const edge = smoothstep(float(0.7), float(1.0), abs(lat)); const sr = floor(surf.add(0.5)), saltMask = select(sr.equal(1).or(sr.equal(3)).or(sr.equal(4)), float(0.15), float(1));   // sett lanes, gravel: hardly salted
+  // (claude/xmascheck, rule wx-road-edge; ?wxedge=old = before) the weather's "edge" is the GUTTER: the drain coordinate
+  // aPiece.y (-1..1 across the CARRIAGEWAY, 0 at the crown). It was aLateral (-1..1 across EACH LANE): every lane line
+  // in the middle of the road kept a snow / slush band (85 % of the cover on a salted road) that stopped dead where the
+  // lane strips meet a junction pad (aLateral 0), and fanned into white wedges where the lanes diverge (Place Saint-Job
+  // on a snow day, 2026-11-27). Puddles collect in the gutters for the same reason.
+  { const edge = smoothstep(float(0.7), float(1.0), abs(WX_EDGE_OLD ? lat : piece.y)); const sr = floor(surf.add(0.5)), saltMask = select(sr.equal(1).or(sr.equal(3)).or(sr.equal(4)), float(0.15), float(1));   // sett lanes, gravel: hardly salted
     wxMat(m, { porosity: 0.75, puddles: true, puddleBias: edge.mul(0.22), slush: true, road: true, edge, saltMask, map: true }); }
   return addLampLight(m);
 }
