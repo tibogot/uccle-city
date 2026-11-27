@@ -69,7 +69,8 @@ ok(old?.old === true, `?fadeshadowwarm=old: no stand-ins, as before (${r.stdout.
 // 3. text
 const M = fs.readFileSync(path.join(ROOT, "viewer/main.js"), "utf8"), F = fs.readFileSync(path.join(ROOT, "viewer/features.js"), "utf8");
 ok(/const sp = FADE_SHADOW_WARM \? \[\]\.concat\(roots\)\.map\(fadeShadowProxies\)/.test(M) && M.includes("if (shadowWarm) await shadowWarm([...[].concat(roots), ...sp]);"), "main.js preCompile warms every fading copy's shadow pass (not only new copies)");
-ok(/holdFast && compileFor && TILE_FADE\) \{[\s\S]{0,900}Object\.values\(own\)\.map\(fadeShadowProxies\)[\s\S]{0,80}shadowWarm\(sp\)/.test(M), "main.js: the play loader's (holdFast) tiles warm their fading copies' shadow pass");
+ok(/holdFast && compileFor && TILE_FADE\) \{[\s\S]{0,900}Object\.values\(own\)\.map\(fadeShadowProxies\)[\s\S]{0,120}shadowWarm\(sp\)\.finally\(\(\) => \{ fadeShadowLeft--; \}\)/.test(M), "main.js: the play loader's (holdFast) tiles warm their fading copies' shadow pass");
+ok(M.includes("const gpuOk = st.jobs === 0 && st.pipes === 0 && fadeShadowLeft === 0 && settled;"), "main.js areaReady: the play loader waits for those warm-ups (fully built before play)");
 ok(/old\("fadeshadowwarm"/.test(F), "viewer/features.js has the ?fadeshadowwarm=old row");
 ok(fs.existsSync(path.join(ROOT, "docs/rules/fade-shadow-warm.md")), "docs/rules/fade-shadow-warm.md exists");
 

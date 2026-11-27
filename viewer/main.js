@@ -185,7 +185,7 @@ let compileFor = null;
 // of every rail part (viewer/rail/railway.js railWarmData) as soon as the precompile queue exists: the play loader waits
 // for the queue, so the rail materials' first node builds (40-61 ms, at the first rail tile landing ~7 s into a police
 // drive) are done before the game starts; the stand-in is never in the scene (roSweep releases it, its builds pinned)
-let railWarmed = false, kitShadowWarmed = false;
+let railWarmed = false, kitShadowWarmed = false, fadeShadowLeft = 0;   // (fadeShadowLeft: the play loader's tiles' fading-copy shadow warm-ups still running, claude/perf7)
 const KIT_SHADOW_WARM = params.get("kitshadowwarm") !== "old";
 const RAIL_WARM = GAME_START && params.get("railwarm") !== "old";
 const preCompile = async (roots, fading) => {
@@ -1317,8 +1317,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     // (claude/perf7, rule fade-shadow-warm; ?fadeshadowwarm=old: as before) and their SHADOW pass, in the background too
     // (not awaited: the play loader does not wait for it): without it the first tile fade while driving built the
     // shared walls' fading copy in the sun's pass in that frame ("walls:fade" SH, 29-38 ms)
+    // (the play loader waits for them: areaReady's fadeShadowLeft, so none is left for the first seconds of play)
     const sp = shadowWarm ? Object.values(own).map(fadeShadowProxies).filter(Boolean) : [];
-    if (sp.length) shadowWarm(sp);
+    if (sp.length) { fadeShadowLeft++; shadowWarm(sp).finally(() => { fadeShadowLeft--; }); }
   }
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
@@ -2561,7 +2562,7 @@ async function main() {
       // (perfgame round 2, ?settlejobs=loads: the far landmarks' COMPILE jobs are not waited for: 25-37 s
       // of serial compile queue after the cover; once loaded they compile in slices and show when done, the pipelines async)
       const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000 && !(NIGHT_HOLD && cityNight?.warmPending?.()));   // (perf8 ?nighthold=old: the lamp-shadow warm-up of what the area brought done too)
-      const gpuOk = st.jobs === 0 && st.pipes === 0 && settled;
+      const gpuOk = st.jobs === 0 && st.pipes === 0 && fadeShadowLeft === 0 && settled;
       q = tilesOk && gpuOk ? q + 1 : 0;
       // (perf8 debug: when each condition first held, ms after the start of the hold: window.__areaTrace)
       { const tr = ((window.__areaTrace ||= {})[label || "?"] ||= {}), now = Math.round(performance.now() - t0); if (tilesOk) tr.tiles ??= now; if (st.jobs === 0) tr.nearJobs ??= now; if (st.pipes === 0) tr.pipes ??= now; if (gatesPending() === 0) tr.gates ??= now; if (settled) tr.settled ??= now;
