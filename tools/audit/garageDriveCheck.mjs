@@ -45,10 +45,10 @@ const drawn = JSON.parse(execFileSync(process.execPath, [join(ROOT, "tools/garde
 const RAISED = new Set([4, 5, 6, 8]);              // square, sidewalk, median, ramp (pipeline/build_surfaces.py RAISED)
 const segDist = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz || 1e-12, t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
 const ringDist = (r, x, z) => { let d = Infinity; for (let i = 0; i < r.length; i++) d = Math.min(d, segDist(x, z, r[i], r[(i + 1) % r.length])); return d; };
-let doors = 0, drives = 0, noRun = 0, steep = 0, ramps = 0, noKerb = 0, noWalk = 0, fullKerb = 0;
+let doors = 0, drives = 0, noRun = 0, steep = 0, beside = 0, ramps = 0, noKerb = 0, noWalk = 0, fullKerb = 0;
 for (const f of readdirSync(join(ROOT, "data/gardens")).filter((n) => /^[A-O]\d+\.json$/.test(n))) {
   const g = json(`data/gardens/${f}`);
-  for (const d of g.garageDoors || []) { doors++; if (d.drive) drives++; else if (d.noRun) noRun++; else if (d.steep) steep++; else fail(`G ${f} garage door at (${d.x}, ${d.z}): no drive and a garden run in front`); }
+  for (const d of g.garageDoors || []) { doors++; if (d.drive) drives++; else if (d.noRun) noRun++; else if (d.steep) steep++; else if (d.doorBeside) beside++; else fail(`G ${f} garage door at (${d.x}, ${d.z}): no drive and a garden run in front`); }
   for (const dr of g.drives || []) {
     const a = area(dr.ring);
     if (dr.ring.length !== 4 || a < 1 || a > 140) { fail(`R ${f} drive of ${dr.bu}: ring ${dr.ring.length} points, ${a.toFixed(1)} m2`); continue; }
@@ -84,7 +84,7 @@ for (const f of readdirSync(join(ROOT, "data/gardens")).filter((n) => /^[A-O]\d+
     for (const h of g.hedges) if ((h.points || []).some(([x, z]) => inRing(r, x, z))) { fail(`R ${f} drive of ${dr.bu}: a hedge in it`); }
   }
 }
-console.log(`G ${doors} garage doors: ${drives} with a drive, ${noRun} on the sidewalk line (no garden run), ${steep} behind a garden step over 0.4 m (no car gets in: no drive); K ${ramps} drives over a dropped kerb (UrbIS driveway), ${fullKerb} over a full kerb (to do), ${noKerb} with no kerb within 8 m, E ${noWalk} with no measured sidewalk in front`);
+console.log(`G ${doors} garage doors: ${drives} with a drive, ${noRun} on the sidewalk line (no garden run), ${steep} behind a garden step over 0.4 m (no car gets in: no drive), ${beside} where the drive would reach over the house door's opening (the door keeps its gate: no drive); K ${ramps} drives over a dropped kerb (UrbIS driveway), ${fullKerb} over a full kerb (to do), ${noKerb} with no kerb within 8 m, E ${noWalk} with no measured sidewalk in front`);
 const m = readFileSync(join(ROOT, "viewer/main.js"), "utf8");
 if (!/\.filter\(driveFlat\)/.test(m) || !/garageDrives = params\.get\("garagedrive"\) === "old" \? \[\]/.test(m) || !/\.\.\.garageDrives\], bounds/.test(m)) fail("V viewer/main.js does not draw the garage drives");
 // --max E=n,K=n,R=n: the counts the row allows per test (the known data cases, listed in the row's reason); any other

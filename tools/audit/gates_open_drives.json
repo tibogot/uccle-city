@@ -1,5 +1,5 @@
 {
- "_doc": "claude/reality2 (rule garage-has-drive, gates census gateLostToGarage): the door paths next to a garage drive with no gate leaf within 8 m that are allowed: fronts that had no gate on claude/foundation either. Any other place is a lost gate (a builder bug).",
+ "_doc": "claude/reality2 (rule garage-has-drive, gates census gateLostToGarage): the door paths next to a garage drive with no gate leaf within 8 m that are allowed: fronts that had no gate on claude/foundation either. Any other place is a lost gate (a builder bug). Frozen: built from the foundation-vs-branch gates census diff (tools/audit/census/gates.mjs --list on claude/foundation 82d295b3 data/gardens vs claude/reality2 at 03d2e7a8, then the door-rule rebuild of 2026-11-27); a later round rebuilds it the same way, never by hand.",
  "places": [
   {
    "key": "B4 -2142.1, -96.4",
@@ -474,6 +474,30 @@
    "street": "Drève des Gendarmes - Gendarmendreef",
    "type": "terraced",
    "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "E3 -750.9, -962.6",
+   "street": "Square Coghen",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either (an open front beside the new garage drive)"
+  },
+  {
+   "key": "H7 866.3, 1413.2",
+   "street": "Avenue Bonaparte",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either"
+  },
+  {
+   "key": "J5 1829, 80.2",
+   "street": "Chaussee de Waterloo",
+   "type": "terraced",
+   "why": "no gate at this door on claude/foundation 82d295b3 either"
+  },
+  {
+   "key": "G4 264.2, -494.4",
+   "street": "Chemin de la Source",
+   "type": "terraced",
+   "why": "its gate is still built, 2.1 m from the door at (262.1, -494.32), moved 1.5 m from the foundation spot by the garage opening; the census sees none within 8 m (its leaf where the census clears pieces in a driven lane): to look at in the next round"
   }
  ]
 }

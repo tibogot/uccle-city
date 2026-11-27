@@ -722,6 +722,7 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
         # a car opening in front of it where no driveway already covers it, and a paved drive from the door to the line
         # (Avenue De Fre: garage doors opened onto the lawn); ?garagedrive=old (--garage old): none
         ga = f.get("garageAt") if GARAGE else None
+        drv0, gd0 = len(out_drives), len(garage_doors)
         if ga:
             seen_garage.add(id(f))
             ray = LineString([(ga["x"] + f["nx"] * 0.1, ga["z"] + f["nz"] * 0.1), (ga["x"] + f["nx"] * (REACH + 1), ga["z"] + f["nz"] * (REACH + 1))])
@@ -798,6 +799,18 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
         for o in sorted([o for o in ops if o[2] == "car" and o[1] - o[0] >= 0.6]):
             if cars and o[0] < cars[-1][1] + 0.5: cars[-1][1] = max(cars[-1][1], o[1])
             else: cars.append(o)
+        # (claude/reality2, rule garage-has-drive: a drive never crosses a door's opening) on a front with a garage door
+        # the car openings stop 0.55 m short of every door opening (closer, the door reads "against the driveway" and on
+        # a narrow terrace loses its gate: E8 Rue des Bigarreaux, G5 Av. Paul Stroobant, K9 Av. des Aubepines, 9 houses);
+        # one left narrower than 2.2 m is no car opening
+        if ga:
+            for pd in [o for o in ops if o[2] == "ped" and o[1] - o[0] >= 0.6]:
+                for c in cars:
+                    if c[0] < pd[1] + 0.55 and c[1] > pd[0] - 0.55:
+                        if (pd[0] + pd[1]) / 2 >= (c[0] + c[1]) / 2: c[1] = min(c[1], pd[0] - 0.55)
+                        else: c[0] = max(c[0], pd[1] + 0.55)
+            n_c = len(cars); cars = [c for c in cars if c[1] - c[0] >= 2.2]
+            if len(cars) < n_c: stats["car_opening_dropped_for_door"] += n_c - len(cars)
         peds = []
         for o in sorted([o for o in ops if o[2] == "ped" and o[1] - o[0] >= 0.6]):
             if peds and o[0] < peds[-1][1] + 0.5: continue        # (two doors at one spot: one gate)
@@ -819,6 +832,15 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
             if put is not None: peds.append(put); stats["ped_beside_drive"] += 1
             else: stats["door_through_drive"] += 1
         merged = sorted([list(c) for c in cars] + peds)
+        # (rule garage-has-drive) the face's garage drive: its street end may not reach over a door's opening on the line
+        # (the door keeps its gate; the drive stops beside it, or there is none: the door counted `doorBeside`)
+        if ga and len(out_drives) > drv0:
+            keep = []
+            for dv in out_drives[drv0:]:
+                e = sorted([ls.project(Point(*dv["ring"][2])), ls.project(Point(*dv["ring"][3]))])
+                if any(p_[0] < e[1] and e[0] < p_[1] for p_ in peds): stats["drive_door_beside"] += 1; [g_.update({"drive": False, "doorBeside": True}) for g_ in garage_doors[gd0:]]
+                else: keep.append(dv)
+            out_drives[drv0:] = keep
         for o in merged:
             # slivers at the run ends: a driveway takes them in; (claude/gates) a pedestrian opening moves to the end
             # instead (its pier on the run end), so it stays a gate's width (before: widened past 1.6 m, no leaf)
