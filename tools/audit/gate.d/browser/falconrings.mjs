@@ -1,0 +1,5 @@
+// browser gate row `falconrings` (run on a browser turn; docs/WORKFLOW.md)
+export default {
+  name: "falconrings",
+  text: "THE FALCON'S RING COURSES (rule falcon-rings): /?game=falcon, the start menu shows the three ring modes (Rings: the spires / the avenue / the stoop); each starts in the air before its first ring with no console error from our modules, the rings drawn (the next one gold and pulsing, the passed ones dim, the rest pale), the arrow on the screen's edge when the next ring is off screen, the HUD line (the course, ring n / N, the time, the medal it is on, the best); flying through the rings counts them in order, the finish says the time and the medal, R starts again at the course's start and a finished best flies as a translucent ghost; the rings re-checked against the live world (window.__falconRings.check(): every ring clear); with ?falconctl=gym and ?falconmodel=v2 as well; Esc / quit takes the rings, the arrow, the HUD and the ghost away (claude/falconfun)",
+};

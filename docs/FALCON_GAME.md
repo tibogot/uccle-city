@@ -83,6 +83,48 @@ See `S.duskEntity()`, `S.mobEntity()` and `S.hungerEntity()`: the kit releases e
 `deliverStep(S)` is the reusable "land on the eyrie's ledge" step. Add the new mission to `order` in `makeMissions()`
 for the campaign, and give it a line in `onMissionEnd`.
 
+## Falcon fun (claude/falconfun, 2026-11-24: the default; `?falconfun=old` = the catch below)
+
+The owner's playtest found the catch too hard and the falcon never fast. The rule is `docs/rules/falcon-catch-fun.md`:
+a first-time player must be able to catch a pigeon within ~30 s of the start. The code is
+`viewer/falconFlight/falconFun.js`, and the gate row `falconfun` checks it headless with a simple player.
+
+- **Look, hold, catch.**
+  - The pigeon nearest the view centre is locked: a soft ring with its kind (easy / RACER x2 / tired) and "hold F".
+  - Hold **F** (gamepad **X**, touch **STRIKE**), or **Shift** while a bird is locked. The falcon dives onto it by
+    itself: the lead point, over the roofs in the way, a swoop that bottoms at the bird, homing in the last 14 m.
+  - **A / D** and **W / S** still nudge the dive. Let go to fly yourself.
+- **The grab** is automatic within 5.5 m. Just before contact the game slows down for a moment, then the hit-stop.
+  Speed and angle are bonus points, never a miss:
+
+  | bonus | when |
+  |---|---|
+  | PERFECT STOOP x2 | >= 108 km/h, diving |
+  | HEAD-ON +5 | within 15 deg |
+  | RACER x2 | a racer pigeon |
+  | COMBO up to x3 | catches within 30 s of each other |
+  | run +100 | "Catch 5 in 2:00" (the card at the top) |
+
+- **After a catch:** 2.5 s before the next lock, and +25 % stamina. You keep hunting with prey in the talons. Landing on
+  the eyrie's ledge is still a bonus (and still a mission step), but you never need it to score.
+- **Speed:**
+  - a 50 m stoop reaches ~150 km/h, 150 m ~250 km/h (`flightModel.js` arcade); the pull-out is guarded
+  - tap **Space** (gamepad **RB**, a tap on FLAP) to sprint
+  - the FOV, the air streaks and the wind come in earlier
+- **Pigeons:**
+  - most are easy: feeding, slow to notice, slow off the ground, low and slow in flight
+  - every 8th is a pale racer: fast and dodgy
+  - a dodge is warned (hard wingbeats, the ring turns orange "DODGE!")
+  - after two escapes a bird is tired: slow, no dodge
+- **Where:** with nothing locked, an arrow points to the nearest pigeons (or the nearest square with a flock). The two
+  nearest squares with pigeons also show on the minimap and the full map as a flock glyph (three dots).
+- **The camera:** in a hard pull-out the chase camera turns with the path faster, pulls back and up with the g, and a
+  frame guard keeps the falcon within 60 % of the half field of view. When street-tree crowns hide the falcon (whole
+  crowns, not only their cores), the camera first lifts over them (1.5-8 m) before coming in, eased in ~0.1 s.
+- **The first catch:** a tame pigeon sits on a roof straight ahead under the eyrie's launch. The hint says "hold Shift
+  (or F) to dive onto it". While it is uncaught it holds the lock whenever it is in range and within 70 deg of the view,
+  so the ring, the hint and the first catch are the same bird.
+
 ## The catch (`viewer/falconGame/hunt.js`, on top of `falconFlight/falconGame.js`)
 
 - **Prey**: a single prey source for the strike, `PreyMux`. Indices 0-255 are the pigeons of the nearest drawn square

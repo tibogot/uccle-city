@@ -259,6 +259,34 @@ export function roofSurface(bDoc, bBuf, b) {
   return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: S, q: ROOF_SURF_Q };
 }
 
+/** (round 5, rule falcon-gym "landing on what is drawn") the same grid from the DRAWN roof triangles (viewer/facadeGeom.js
+ *  analyseBuildings' roofs.position, non-indexed: after its roof work: the flat roofs, the parapets' tops, the repairs);
+ *  roofSurface read buildings.bin's own roofs, up to ~0.3 m off what is drawn (a falcon floating over or sunk into it) */
+export function roofSurfaceDrawn(pos, b0, S = 0.5, q = 200, M = 20) {
+  // (M m past the tile's edges: a building this tile owns that reaches over its edge is in no other tile's grid; the
+  // falcon's world reads the grids round a point near an edge, cityStream.js roof)
+  const b = { x0: b0.x0 - M, x1: b0.x1 + M, z0: b0.z0 - M, z1: b0.z1 + M };
+  // (q = 200: 5 mm steps, to 327 m TAW; the 2 cm steps of ROOF_SURF_Q sank the bird up to 1 cm)
+  // (0.5 m: the drawn roofs' hips, valleys and dormers between 1 m samples put the bird's tail into them; 2 MB a tile)
+  const nx = Math.ceil((b.x1 - b.x0) / S), nz = Math.ceil((b.z1 - b.z0) / S);
+  const g = new Uint16Array(nx * nz);
+  for (let t = 0; t + 8 < pos.length; t += 9) {
+    const ax = pos[t], ay = pos[t + 1], az = pos[t + 2], bx = pos[t + 3], by = pos[t + 4], bz = pos[t + 5], cx = pos[t + 6], cy = pos[t + 7], cz = pos[t + 8];
+    const den = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+    if (Math.abs(den) < 1e-9) continue;
+    const i0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - b.x0) / S - 0.5)), i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx, cx) - b.x0) / S - 0.5));
+    const j0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - b.z0) / S - 0.5)), j1 = Math.min(nz - 1, Math.floor((Math.max(az, bz, cz) - b.z0) / S - 0.5));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const x = b.x0 + (i + 0.5) * S, z = b.z0 + (j + 0.5) * S;
+      const w1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / den, w2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / den, w3 = 1 - w1 - w2;
+      if (w1 < -1e-6 || w2 < -1e-6 || w3 < -1e-6) continue;
+      const y = w1 * ay + w2 * by + w3 * cy, v = Math.min(65535, Math.max(1, Math.round(y * q)));
+      if (v > g[j * nx + i]) g[j * nx + i] = v;
+    }
+  }
+  return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: S, q, drawn: true };
+}
+
 /** Is (x, z) under a building (roof grid cell > 0)? */
 export const onRoof = (g, x, z) => {
   const i = Math.floor((x - g.x0) / g.step), j = Math.floor((z - g.z0) / g.step);
@@ -653,6 +681,8 @@ export async function buildTileData(entry, base) {
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, wallEmpty: entry.wallEmpty !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
+  // (round 5) the falcon's drawn-roof grid from the roofs as drawn (entry.surfDrawn === false = ?falconroof=old: buildings.bin's)
+  if (entry.surfDrawn !== false && buildings.roofs?.position?.length && roofs.surf) roofs.surf = await step("roof surface (drawn)", () => roofSurfaceDrawn(buildings.roofs.position, bounds));
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(upass ? underpassLines(feats) : feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));   // joins2: distance-field edges, ?groundsdf=old the coverage mask   // (Square des Heros: its paths are the hero ground's)
   // (vivier) the drawn street's top near (x, z): the nearest road-surface cell of the drive raster within 2 m (a plan

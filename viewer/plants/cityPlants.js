@@ -43,11 +43,7 @@ const BOX_BAND = [22, 22, 130];
 const BED_END = 90;
 const STRIDE_SILL = 14;
 
-const h01 = (x, z, salt = 0) => {
-  let h = Math.imul(Math.floor(x * 100) | 0, 73856093) ^ Math.imul(Math.floor(z * 100) | 0, 19349663) ^ Math.imul(salt + 1, 83492791);
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-};
+import { h01, sillHasBox } from "./windowBoxRule.js";   // (the window boxes' rule, shared with the falcon's perches)
 
 /** a plant LOD repacked to 4 vertex buffers (WebGPU allows 8 with the instance columns): position, normal,
  *  pdat = (AO, random per leaf, slot), pbase = (the part's base x y z, kind) (from the GLB's uv1 / uv2 / uv3 / slot) */
@@ -233,14 +229,11 @@ export const cityPlants = {
     if (this.boxes && S) {
       const seen = new Set();                                                       // (a window's sill can come more than once)
       for (let o = 0; o + STRIDE_SILL <= S.length; o += STRIDE_SILL) {
-        const x = S[o], y = S[o + 1], z = S[o + 2], nx = S[o + 3], nz = S[o + 4], w = S[o + 5], seed = S[o + 8], base = S[o + 12], F3 = S[o + 13];
+        const x = S[o], y = S[o + 1], z = S[o + 2], nx = S[o + 3], nz = S[o + 4], w = S[o + 5], seed = S[o + 8];
         const key = `${Math.round(x * 10)},${Math.round(y * 10)},${Math.round(z * 10)}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        const maitre = F3 >= 1023.5, floor = Math.round((y - base) / 3.1);
-        const hb = h01(seed * 1000, 0.5, 61);
-        if (hb > (maitre ? 0.3 : 0.09) || floor > 2) continue;
-        if (h01(x, z, 62) > (floor === 0 ? 0.6 : 0.85)) continue;                 // not every window of the house
+        if (!sillHasBox(S, o)) continue;                                            // (the houses that have them; not every window)
         const bw = Math.max(0.5, w - 0.06), tx = nz, tz = -nx;                      // along the wall (the box's +x: a right-handed frame, +z out of the wall)
         boxes.push([tx * bw, 0, tz * bw, 0, 0, 1, 0, 0, nx, 0, nz, 0, x + nx * 0.05, y + 0.002, z + nz * 0.05, 1], Math.floor(h01(seed * 1000, 1.5, 63) * BOX_VARIANTS) % BOX_VARIANTS);
         const n = Math.max(2, Math.round(bw / 0.3));

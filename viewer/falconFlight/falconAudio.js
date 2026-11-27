@@ -11,6 +11,7 @@
 //   strike    a thump and the falcon's "kek-kek-kek" (saw chirps ~2.2 kHz)
 // Starts on the first click / key (browsers need a gesture).
 import { soundGate } from "../audio/soundGate.js";
+import { windLevels } from "./falconFun.js";
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 
@@ -61,11 +62,12 @@ export class FalconAudio {
     if (!this.ctx) return;
     const ctx = this.ctx, t = ctx.currentTime, V = b.V;
     this.master.gain.setTargetAtTime(this.on ? this.volume : 0, t, 0.1);
-    const lvl = clamp((V / 30) ** 1.6, 0.02, 2.2);
+    // (falcon fun: falconFun.js windLevels, the wind louder earlier: a 150 km/h stoop roars; ?falconfun=old the old ramp)
+    const WL = this.levels = windLevels(V, b.fold);
     this.windBand.frequency.setTargetAtTime(280 + V * 22, t, 0.08);
-    this.windGain.gain.setTargetAtTime(0.16 * lvl, t, 0.08);
-    this.hissGain.gain.setTargetAtTime(0.25 * smooth(V, 38, 95), t, 0.1);
-    const tuck = smooth(b.fold, 0.6, 1) * smooth(V, 35, 80);
+    this.windGain.gain.setTargetAtTime(WL.wind, t, 0.08);
+    this.hissGain.gain.setTargetAtTime(WL.hiss, t, 0.1);
+    const tuck = WL.tuck;
     this.lfo.frequency.setTargetAtTime(8 + V * 0.08, t, 0.2);
     this.lfoGain.gain.setTargetAtTime(0.35 * tuck, t, 0.1);
     this.pan.pan.setTargetAtTime(clamp(-b.phi * 0.35, -0.6, 0.6), t, 0.1);
@@ -114,6 +116,14 @@ export class FalconAudio {
       const o = this.tone(t + 0.25 + i * 0.13, 2300, 0.09, 0.07, "sawtooth");
       o.frequency.setValueAtTime(2600, t + 0.25 + i * 0.13); o.frequency.exponentialRampToValueAtTime(1900, t + 0.33 + i * 0.13);
     }
+  }
+  /** (falcon fun round 3) the catch's feathers: a smack (a short bright clap) and a rustle of plumage (band-passed noise,
+   *  ~0.3 s); nothing without an AudioContext (sound stays off until the player turns it on) */
+  rustle() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.burst(t, { f: 1800, q: 0.9, dur: 0.05, gain: 0.45, type: "bandpass" });
+    this.burst(t + 0.03, { f: 3400, q: 0.6, dur: 0.32, gain: 0.22, type: "bandpass" });
   }
   thud(hard) { if (this.ctx) this.burst(this.ctx.currentTime, { f: hard ? 120 : 260, q: 0.6, dur: hard ? 0.25 : 0.1, gain: hard ? 0.8 : 0.25, type: "lowpass" }); }
   /** brushing through a crown's leaves: a short high rustle */

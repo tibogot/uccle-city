@@ -18,6 +18,8 @@ import { makeMissions } from "./falconMissions.js";
 import { warm } from "../police/warm.js";
 import { PLACE } from "../falconFlight/church.js";
 import { CTL_OLD } from "../falconFlight/falconInput.js";
+import { FUN_OLD, placeStarter } from "../falconFlight/falconFun.js";
+import { startRings, stopRings, ringsActive } from "./ringsGame.js";
 
 const DEG = Math.PI / 180;
 const S = {
@@ -78,14 +80,16 @@ function duskHour(L, elev) {
 }
 
 /** a catch / a delivery: score (the game record), a radio line now and then */
-function onCatch(t, kmh) {
+function onCatch(t, kmh, g) {
   const kit = S.kit, rec = kit.record;
-  const pts = Math.round(10 + kmh / 6);
+  // (falcon fun: the game's bonus score: PERFECT STOOP x2, HEAD-ON, RACER, COMBO, the run's +100; falconFun.js score)
+  const pts = g?.fun && g.lastCatch?.pts != null ? g.lastCatch.pts : Math.round(10 + kmh / 6);
   rec.score += pts; kit.save.touch();
   const fl = S.flyer();
-  if (fl.bird.prey && t && t.kind !== "feral pigeon" && t.kind !== "jackdaw") fl.bird.prey.scale.multiplyScalar(t.kind === "starling" ? 0.55 : 0.75);
+  // (round 3 part B: the held bird has its own species' size, heldPrey.js; this only for the nest's prey_carry)
+  if (fl.bird.prey && !fl.bird.hold?.own && t && t.kind !== "feral pigeon" && t.kind !== "jackdaw") fl.bird.prey.scale.multiplyScalar(t.kind === "starling" ? 0.55 : 0.75);
   if (kit.current?.mode === "free" && (S.freeCatches = (S.freeCatches || 0) + 1) === 1)
-    kit.radio("The falcon", `A ${t?.kind ?? "catch"} at ${kmh} km/h! Bring it to the eyrie: land on the ledge.`, { icon: "falcon" });
+    kit.radio("The falcon", g?.fun ? `A ${t?.kind ?? "catch"} at ${kmh} km/h! Hunt on (the arrow shows the next pigeons): bringing prey to the eyrie's ledge is a bonus.` : `A ${t?.kind ?? "catch"} at ${kmh} km/h! Bring it to the eyrie: land on the ledge.`, { icon: "falcon" });
 }
 function onDeliver(t) {
   const kit = S.kit, H = S.hunt.hunger;
@@ -109,16 +113,29 @@ function offer(kit, def, text) {
 export const FALCON_GAME = {
   id: "falcon", title: "Falcon", icon: "falcon",
   tagline: "The Saint-Job peregrines: you are the tiercel. Stoop on pigeons and starlings, feed the three eyases, drive the crows off the eyrie.",
-  modes: [{ id: "missions", label: "Missions", desc: "hunt, feed the eyases, defend the eyrie", primary: true }, { id: "free", label: "Free flight", desc: "fly over Uccle, hunt when you like" }],
+  modes: [{ id: "missions", label: "Missions", desc: "hunt, feed the eyases, defend the eyrie", primary: true }, { id: "free", label: "Free flight", desc: "fly over Uccle, hunt when you like" },
+    // (rule falcon-rings: the ring courses, ringsGame.js)
+    { id: "rings-spires", label: "Rings: the spires", desc: "Saint-Job's tower to Saint-Pierre's, over the roofs" },
+    { id: "rings-avenue", label: "Rings: the avenue", desc: "down Avenue Brugmann, under the tram wires" },
+    { id: "rings-stoop", label: "Rings: the stoop", desc: "dive through the rings off the Observatory" }],
   options: [{ id: "assist", label: "Aim assist in the strike", default: true }, { id: "avoid", label: "Flight assist: steer clear of roofs, trees and the ground", default: true }],   // (no sound tick: the speaker button is the one switch, docs/SOUND_CITY.md)
-  idleText: { missions: "Rest on a perch or circle the tower: the falcon will call.", free: "Free flight. Hunt anytime: pigeons on the squares, starlings and parakeets over the parks." },
+  idleText: { "rings-spires": "Fly through the rings, the gold one is next. R: start again.", "rings-avenue": "Fly through the rings, the gold one is next. R: start again.", "rings-stoop": "Fly through the rings, the gold one is next. R: start again.", missions: "Rest on a perch or circle the tower: the falcon will call.", free: "Free flight. Hunt anytime: pigeons on the squares, starlings and parakeets over the parks." },
   keys: { default: CTL_OLD ? "<kbd>W S A D</kbd> fly · <kbd>Space</kbd> flap · <kbd>Shift</kbd> stoop · <kbd>F</kbd> talons · <kbd>E</kbd> land · <kbd>V</kbd> camera · click: mouse aim · <kbd>Esc</kbd> pause"
-    : "click + mouse or <kbd>A D</kbd> steer · <kbd>W S</kbd> down / up · <kbd>Space</kbd> climb · <kbd>Shift</kbd> stoop · <kbd>E</kbd> land · <kbd>F</kbd> talons · <kbd>V</kbd> camera · <kbd>Esc</kbd> pause" },
+    : FUN_OLD ? "click + mouse or <kbd>A D</kbd> steer · <kbd>W S</kbd> down / up · <kbd>Space</kbd> climb · <kbd>Shift</kbd> stoop · <kbd>E</kbd> land · <kbd>F</kbd> talons · <kbd>V</kbd> camera · <kbd>Esc</kbd> pause"
+    : "click + mouse or <kbd>A D</kbd> steer · look at a pigeon, hold <kbd>F</kbd> (or <kbd>Shift</kbd>) = dive onto it · <kbd>Space</kbd> climb, tap = sprint · <kbd>Shift</kbd> stoop · <kbd>E</kbd> land · <kbd>V</kbd> camera · <kbd>Esc</kbd> pause" },
 
   async start(kit, { mode, options }) {
     S.kit = kit;
     const host = kit.host, fl = host.flyer;
     if (!fl?.ready) { kit.hud.toast({ kind: "bad", title: "No falcon flight", text: "This page runs the old flight (?falcon=old)." }, 6000); return; }
+    // (rule falcon-rings) a ring course: its own light layer (no hunt, no pigeons, no mobbers)
+    if (mode?.startsWith("rings-")) {
+      await fl.ready;
+      if (fl.game.assist) fl.game.assist.avoid = options.avoid !== false && !/[?&]falconavoid=0(&|$)/.test(location.search);
+      await startRings(kit, mode.slice(6));
+      tiercel(fl, true);
+      return;
+    }
     kit.hud.toast({ title: "Saint-Job church", text: "The tiercel wakes in the belfry…" }, 0);
     try {
       await fl.ready;
@@ -176,6 +193,8 @@ export const FALCON_GAME = {
         }
         S.hunt.frame(dt);
         const g = fl.game;
+        // (falcon fun, round 2) the two nearest squares with pigeons on the minimap / the full map (the flock glyph)
+        if (g.fun && (S.flockT = (S.flockT || 0) + dt) >= 1) { S.flockT = 0; flockMarkers(kit, fl); }
         if ((S.hudT = (S.hudT || 0) + dt) >= 0.25) { S.hudT = 0; S.hunt.hud(); }
         if (S.mobbers.active) {
           S.mobbers.update(dt * g.timeScale, g.f, !!fl.bird.prey, (x, z) => fl.w.floor(x, z));
@@ -192,6 +211,12 @@ export const FALCON_GAME = {
       if (S.eyrie && host.areaReady && window.__playLoader?.active) await host.areaReady({ x: S.eyrie.x, z: S.eyrie.z, label: "Falcon", near: 550 });
       // the nest start (the intro: the scrape, the hop to the ledge, the launch; Space skips)
       await host.fly();
+      // (falcon fun) the first catch near-free: a tame pigeon on a roof right under the launch from the eyrie
+      if (fl.game.fun && fl.pigeons && S.out) {
+        const st = placeStarter(fl.pigeons, S.eyrie, S.out);
+        fl.game.fun.starter = st ? { i: st.i, flock: fl.pigeons } : null;
+        host.log(st ? `falcon fun: the first pigeon on a roof ${Math.hypot(st.x - S.eyrie.x, st.z - S.eyrie.z).toFixed(0)} m out, ${(S.eyrie.y - st.y).toFixed(0)} m under the eyrie, crowns ${st.gap == null ? "-" : st.gap.toFixed(1)} m off${st.clear === false ? " (no clear spot: the clearest)" : ""}` : "falcon fun: no roof under the launch for the first pigeon");
+      }
       S.prev = { P: fl.game.f.P };
       // the tiercel: a fit adult (the flight lab's numbers are a juvenile's): wingbeats last ~22 s, rest back in ~20 s
       const P0 = fl.game.f.P;
@@ -209,6 +234,8 @@ export const FALCON_GAME = {
   },
   stop(kit) {
     const fl = kit.host.flyer;
+    if (ringsActive()) { stopRings(kit); if (fl?.game) tiercel(fl, false); return; }
+    kit.markers?.set("flock0", null); kit.markers?.set("flock1", null); S.flockKey = "";
     const i = kit.host.updaters.indexOf(S.frameFn); if (i >= 0) kit.host.updaters.splice(i, 1); S.frameFn = null;
     S.mobbers?.stop();
     if (S.hunt) { S.hunt.show(false); S.hunt.hunger = null; }
@@ -239,9 +266,25 @@ export const FALCON_GAME = {
   },
 };
 
+/** (falcon fun) the nearest two squares with a flock (the Place de Saint-Job + cityFlyer's squares not known empty) as
+ *  map markers; set only when the pair changes (a redraw), the city map's own overlay (viewer/game/mapMarkers.js) */
+function flockMarkers(kit, fl) {
+  const f = fl.game.f, L = (S._sq ??= []);
+  L.length = 0;
+  L.push({ name: "Place de Saint-Job", x: PLACE.x, z: PLACE.z });
+  for (const q of fl.squares || []) if (q.state !== "none") L.push(q);
+  L.sort((a, b) => Math.hypot(a.x - f.pos.x, a.z - f.pos.z) - Math.hypot(b.x - f.pos.x, b.z - f.pos.z));
+  const key = `${L[0]?.name}|${L[1]?.name}`;
+  if (key === S.flockKey && kit.markers?.list.some((m) => m.id === "flock0")) return;    // (a mission's end clears the markers)
+  S.flockKey = key;
+  for (let k = 0; k < 2; k++) kit.markers?.set(`flock${k}`, L[k] ? { x: L[k].x, z: L[k].z, color: k ? "#d9e6f2" : "#ffffff", kind: "flock", label: L[k].name } : null);
+}
+
 /** the player as the tiercel: the adult plumage on the player's bird, the family's own male out of the way */
 function tiercel(fl, on) {
   const fam = window.__falcons;
+  // (?falconmodel=v2: its own plumages, gymBird.js)
+  if (fl.bird?.setPlumage) fl.bird.setPlumage(on ? "adult" : "juvenile");
   const mat = fl.bird?.mesh?.material;
   let n = mat?.colorNode;
   for (let k = 0; k < 4 && n && !n.isTextureNode; k++) n = n.node;
