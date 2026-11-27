@@ -94,6 +94,16 @@ from the data). The rules are in the script's header; in short (all positions fr
   their WFS points are in the Chaussée d'Alsemberg's tram road with only 1-2 m sidewalks within 10 m), 425 docks. A measured kerb further than the road's own half width + 2.5 m is another street's (the
   pole stood across the side street, facing across it): the OSM width is used instead. The signs of the old rules are
   kept as `signsOld` where they differ (`?streetprops=old`).
+- **Villo rows clear** (claude/fixes4, rule villo-row-clear, gate row `villorows`): the row's whole footprint
+  (viewer/streetkit/villoFootprint.js: each dock base's corners, the bike out to its rear tyre 1.9 m toward the road,
+  the terminal) on the mode's paving, and nothing else the city draws in it (tools/streetkit/villoThings.mjs: sign /
+  plate / stop / tram poles, trunks, UrbIS bollards, benches, bins, hoops, shelters). `snapProps.mjs` relays a row that
+  fails (sidewalk rows also 2.4 / 2.8 m back behind a bollard line; within 18 m when 14 m holds none: Rittweger); the
+  lamps keep out of the rows at load (`lampKeepClear`, slid up to 12 m; `?villorow=old` = 1.2 m off each dock point).
+  Before: 157 findings in 27 stations (5 lamps, 23 bollards, 3 trees, 2 tram poles, signs / stop poles / a shelter /
+  a bin; Churchill's end docks over the roadway, Calevoet's over a tree pit and the bus road); after: 0, 27 stations
+  kept (none dropped), 445 docks (454 before: Vanderkindere 23 -> 8, Floreal 19 -> 10, Domaine-Domein 23 -> 12 shortened
+  round trees / poles; Rittweger 7 -> 12, Houzeau 7 -> 14, Sainte-Elisabeth 6 -> 14 longer).
 - **Out of the road** (rule 30): after the tiles are written, `tools/streetkit/snapProps.mjs` moves the post plates +
   their posts (one move for both), the bpost boxes (turned to the road) and the Villo stations (row slid back <= 2 m,
   else the docks still in a lane / on a track dropped) out of the driven lanes and >= 1.5 m off the tram tracks, with
