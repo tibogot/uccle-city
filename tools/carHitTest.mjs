@@ -14,7 +14,7 @@
 //   cost                 the solver per contact pair (us), a body's substep (us)
 //   allocation           20 000 substeps of 4 bodies sliding into walls and each other: no heap growth (< 32 KB)
 import { register } from "node:module";
-import { measure } from "./gate/timing.mjs";
+import { measure, timed, gateExit } from "./gate/timing.mjs";
 
 const STUB = `export class Vector3 { constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;} }`;
 register("data:text/javascript," + encodeURIComponent(`
@@ -238,7 +238,7 @@ function rnd(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s ^= 
   return { usPair, usBody };
   }, { tries: 1 });
   const { usPair, usBody } = MT.value;
-  check("solver cost", usPair < 5 * MT.k && usBody < 20 * MT.k, `${f2(usPair, 2)} us per contact pair (SAT + point + impulse + friction + dents), ${f2(usBody, 2)} us per body substep (tyres + walls + body pairs); 16 awake bodies at 120 Hz < ${f2(usBody * 16 * 120 / 1000, 2)} ms/s (${MT.note})`);
+  check("solver cost", timed(usPair < 5 * MT.k && usBody < 20 * MT.k), `${f2(usPair, 2)} us per contact pair (SAT + point + impulse + friction + dents), ${f2(usBody, 2)} us per body substep (tyres + walls + body pairs); 16 awake bodies at 120 Hz < ${f2(usBody * 16 * 120 / 1000, 2)} ms/s (${MT.note})`);
 }
 // ---------------------------------------------------------------- 10 allocation in the step (V8's sampling heap profiler)
 {
@@ -275,4 +275,4 @@ function rnd(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s ^= 
 
 console.log(`\n## carHitTest (docs/CARHIT.md, rule 37)\n| check | result | measured |\n|---|---|---|\n${out.join("\n")}`);
 if (!QUIET || fails) console.log(fails ? `\n${fails} check(s) FAILED` : "\nall checks pass");
-process.exitCode = fails ? 1 : 0;
+process.exitCode = gateExit(fails);   // (75: only timing verdicts failed, rule timing-rows-alone)

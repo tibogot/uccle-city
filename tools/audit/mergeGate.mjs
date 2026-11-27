@@ -7,6 +7,9 @@
 //     --changed [--base REF]   only the rows whose deps changed vs REF (default: the merge base with claude/foundation),
 //                         + meta (tools/merge.mjs auto)
 //     --serial            one row at a time (default: the timing rows alone first, then the rest in parallel)
+//   (rule timing-rows-alone: a row that exits 75, every failure a timing verdict (tools/gate/timing.mjs gateExit), is
+//   run again ALONE up to 3 more times (tools/gate/retry.mjs): the timing rows at once, a parallel row after the
+//   parallel phase; it fails only when every run failed. A structural failure (exit 1) is never retried)
 //     --jobs N            the parallel CPU budget (default: the logical cores); --mem MB the memory budget (60 % of RAM)
 //     --list              the row names, one a line
 //     --no-tile-cache     the rows build every tile fresh (TILE_CACHE=0; tools/gate/tileCache.mjs, rule tile-cache)
@@ -21,6 +24,7 @@ import { loadRows, loadBrowser } from "../gate/rowFiles.mjs";
 import { rawDir, collectTrace, readTrace, CACHE } from "../gate/deps.mjs";
 import { rowKey, writePass, saveHashes } from "../gate/memo.mjs";
 import { selectRows, gitChanges } from "../gate/select.mjs";
+import { withRetries, timingOnly, RETRIES, PAUSE_MS } from "../gate/retry.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const CHECKS = await loadRows(ROOT);
@@ -84,7 +88,7 @@ function treeKill(p) {
   else try { process.kill(-p.pid, "SIGKILL"); } catch { p.kill("SIGKILL"); }
 }
 
-function runRow(c, { timeoutScale = 1 } = {}) {
+function runOnce(c, { timeoutScale = 1 } = {}) {
   return new Promise((done) => {
     const raw = rawDir(c.name), t0 = Date.now(), limit = c.timeout * timeoutScale;
     const env = { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ""} --import=${TRACE}`.trim(), GATE_TRACE_OUT: raw, GATE_TRACE_ROOT: ROOT, GATE_TRACE_LINKS: JSON.stringify(LINKS), GATE_ROW: c.name, ...(NO_TILE_CACHE ? { TILE_CACHE: "0" } : {}) };
@@ -94,24 +98,44 @@ function runRow(c, { timeoutScale = 1 } = {}) {
     const timer = setTimeout(() => { timedOut = true; treeKill(p); }, limit * 1000);
     p.on("close", (code) => {
       clearTimeout(timer);
-      const secs = (Date.now() - t0) / 1000, ok = code === 0 && !timedOut;
-      writeFileSync(path.join(LOGS, `${c.name}.txt`), out);
-      const trace = collectTrace(c, raw, { links: LINKS, secs, ok });
-      // the memo: a PASS whose deps did not change while it ran (a file edited mid-run is not what it tested)
-      let memo = "";
-      if (ok) {
-        const moved = trace.files.filter((f) => { try { return statSync(path.join(ROOT, f)).mtimeMs > t0; } catch { return false; } });
-        if (moved.length) memo = `not memoised: ${moved.slice(0, 3).join(", ")} changed while it ran`;
-        else writePass(c.name, rowKey(c, trace), { secs: +secs.toFixed(1), files: trace.files.length });
-      }
-      const lines = out.trim().split("\n");
-      const fails = lines.filter((l) => /FAIL/.test(l)).slice(0, 3).map((l) => l.trim().slice(0, 120));
-      const why = timedOut ? `timeout after ${limit} s` : `exit ${code}`;
-      results.set(c.name, { ok, secs, text: ok ? c.guards : [fails.join(" / "), why].filter(Boolean).join(" / "), memo, trace });
-      console.log(`[${String(results.size).padStart(2)}/${RUN.length}] ${c.name.padEnd(16)} ${ok ? "PASS" : "FAIL"} ${secs.toFixed(1).padStart(6)} s  (${((Date.now() - T0) / 1000) | 0} s in)${ok ? "" : `  log: .cache/gate/logs/${c.name}.txt`}${memo ? "  " + memo : ""}`);
-      done();
+      done({ code, timedOut, out, t0, raw, limit, secs: (Date.now() - t0) / 1000 });
     });
   });
+}
+
+// one row: run, and while it is a timing-only failure (exit 75) and `retry`, again (alone: the caller's job), then
+// the bookkeeping. retry false: a timing-only failure is handed back ({ again: true }) for the alone phase
+async function runRow(c, { timeoutScale = 1, retry = true, prior = 0 } = {}) {
+  const first = await runOnce(c, { timeoutScale });
+  if (!retry && timingOnly(first)) {
+    console.log(`     ${c.name.padEnd(16)} timing-only failure (exit 75, ${first.secs.toFixed(1)} s): re-run alone after the parallel rows`);
+    return { again: true };
+  }
+  const r = !timingOnly(first) ? { ...first, attempts: 1, codes: [first.code] } : await withRetries((a) => (a === 0 ? first : runOnce(c)), {
+    retries: RETRIES - prior, pauseMs: PAUSE_MS,
+    onRetry: (a, x) => { console.log(`     ${c.name.padEnd(16)} timing-only failure (exit 75, ${x.secs.toFixed(1)} s): retry ${a + prior}/${RETRIES} alone in ${PAUSE_MS / 1000} s`); },
+  });
+  finish(c, r, prior);
+  return { again: false };
+}
+
+function finish(c, { code, timedOut, out, t0, raw, limit, secs, attempts }, prior) {
+  const ok = code === 0 && !timedOut, tries = attempts + prior;
+  writeFileSync(path.join(LOGS, `${c.name}.txt`), out);
+  const trace = collectTrace(c, raw, { links: LINKS, secs, ok });
+  // the memo: a PASS whose deps did not change while it ran (a file edited mid-run is not what it tested)
+  let memo = "";
+  if (ok) {
+    const moved = trace.files.filter((f) => { try { return statSync(path.join(ROOT, f)).mtimeMs > t0; } catch { return false; } });
+    if (moved.length) memo = `not memoised: ${moved.slice(0, 3).join(", ")} changed while it ran`;
+    else writePass(c.name, rowKey(c, trace), { secs: +secs.toFixed(1), files: trace.files.length });
+  }
+  const lines = out.trim().split("\n");
+  const fails = lines.filter((l) => /FAIL/.test(l)).slice(0, 3).map((l) => l.trim().slice(0, 120));
+  const why = timedOut ? `timeout after ${limit} s` : `exit ${code}${code === 75 ? ` (timing only, every one of ${tries} runs over budget)` : ""}`;
+  const runs = tries > 1 ? ` (${tries} runs: the earlier ${tries - 1} timing-only failures)` : "";
+  results.set(c.name, { ok, secs, text: ok ? c.guards + (tries > 1 ? ` [passed on run ${tries}]` : "") : [fails.join(" / "), why].filter(Boolean).join(" / "), memo, trace });
+  console.log(`[${String(results.size).padStart(2)}/${RUN.length}] ${c.name.padEnd(16)} ${ok ? "PASS" : "FAIL"} ${secs.toFixed(1).padStart(6)} s  (${((Date.now() - T0) / 1000) | 0} s in)${runs}${ok ? "" : `  log: .cache/gate/logs/${c.name}.txt`}${memo ? "  " + memo : ""}`);
 }
 
 // ------------------------------------------------------------------ the scheduler
@@ -137,6 +161,7 @@ if (SERIAL) {
   if (rest.length) console.log(`\n== the other rows, one at a time (--serial)`);
   for (const c of rest) await runRow(c);
 } else if (rest.length) {
+  const again = [];
   const HEAVY_MAX = 3;
   const C = new Map(rest.map((c) => [c.name, cost(c)]));
   console.log(`\n== the other ${rest.length} rows in parallel (CPU ${CPU}, memory ${MEM} MB, heavy <= ${HEAVY_MAX}; heavy: ${rest.filter((c) => C.get(c.name).heavy).map((c) => c.name).join(" ") || "-"})`);
@@ -160,7 +185,7 @@ if (SERIAL) {
         queue.splice(i--, 1);
         mem += k.mem; cpu += k.cpu; heavy += k.heavy ? 1 : 0; free -= k.mem;
         started.push({ t: now, mem: k.mem });
-        const pr = runRow(c, { timeoutScale: 2 }).then(() => { mem -= k.mem; cpu -= k.cpu; heavy -= k.heavy ? 1 : 0; live.delete(pr); pump(); });
+        const pr = runRow(c, { timeoutScale: 2, retry: false }).then((x) => { if (x.again) again.push(c); mem -= k.mem; cpu -= k.cpu; heavy -= k.heavy ? 1 : 0; live.delete(pr); pump(); });
         live.add(pr);
       }
       clearTimeout(timer);
@@ -169,6 +194,9 @@ if (SERIAL) {
     };
     pump();
   });
+  // (rule timing-rows-alone) the parallel rows whose only failures were timing verdicts: again, alone, one at a time
+  if (again.length) console.log(`\n== timing-only failures under the parallel load, again alone: ${again.map((c) => c.name).join(" ")}`);
+  for (const c of again) await runRow(c, { prior: 1 });
 }
 saveHashes();
 

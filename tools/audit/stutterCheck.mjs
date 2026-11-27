@@ -25,7 +25,7 @@ import * as THREE from "three/webgpu";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { measure, bestOf } from "../gate/timing.mjs";
+import { measure, bestOf, timed, gateExit } from "../gate/timing.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const QUIET = process.argv.includes("--quiet");
 let fails = 0;
@@ -90,7 +90,7 @@ globalThis.requestAnimationFrame = (f) => { rafQ.push(f); setTimeout(() => { con
   };
   const M = await measure(() => bestOf(3, tickRun, "over"));
   const { first, per, droppedNow, n } = M.value;
-  ok(first <= (3 + 3 * per + 2) * M.k && droppedNow < n, `a tick: ${first.toFixed(1)} ms (<= 3 ms + one geometry, ${per.toFixed(1)} ms; best of 3, ${M.note}), ${droppedNow}/${n} dropped, the rest later`);
+  ok(droppedNow < n && timed(first <= (3 + 3 * per + 2) * M.k), `a tick: ${first.toFixed(1)} ms (<= 3 ms + one geometry, ${per.toFixed(1)} ms; best of 3, ${M.note}), ${droppedNow}/${n} dropped, the rest later`);
   for (let i = 0; i < 200 && geos.some((g) => g.attributes.position.array.length); i++) await new Promise((r) => setTimeout(r, 60));
   ok(geos.every((g) => g.attributes.position.array.length === 0 && g.boundingSphere), "every geometry dropped in later tasks, bounds first");
   const hd = src("viewer/heapDrop.js");
@@ -113,4 +113,4 @@ globalThis.requestAnimationFrame = (f) => { rafQ.push(f); setTimeout(() => { con
   ok(st.includes("STAGED_SHADOW && warmShadow ? warmShadow(d.roots)") && /stagedshadow=old/.test(st), "stagedCompile.js: a released landmark's shadow pass warmed, one mesh a frame (?stagedshadow=old)");
 }
 console.log(fails ? `${fails} stutter check(s) FAILED` : "stutter checks pass");
-process.exit(fails ? 1 : 0);
+process.exit(gateExit(fails));   // (75: only timing verdicts failed, rule timing-rows-alone)
