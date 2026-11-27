@@ -2,7 +2,7 @@
 // A small test town: ground at 50 m TAW sloping 5 % along +x, a 20 m block (x 0..20, z -60..-40), a 60 m tower
 // (x 100..110, z -60..-50). Mouse events are fed to the controller's handlers; each line prints PASS / FAIL + numbers.
 import { InspectControls } from "../viewer/orbitCam.js";
-import { measure } from "./gate/timing.mjs";
+import { measure, timed, gateExit } from "./gate/timing.mjs";
 
 const W = 1000, H = 600;
 const ground = (x, z) => 50 + 0.05 * Math.max(0, x - 200);
@@ -48,7 +48,7 @@ const ev = (o) => ({ pointerId: 1, pointerType: "mouse", button: 0, preventDefau
   // (between two calibrations, the budget * k: tools/gate/timing.mjs)
   const MT = await measure(() => { const t0 = performance.now(); let n = 0; for (let i = 0; i < 100; i++) if (c3.pick(W / 2, H / 2 + 2)) n++; return { ms: (performance.now() - t0) / 100, n }; }, { tries: 3 });
   const { ms, n } = MT.value;
-  check("pick: grazing ray cost", ms < 2 * MT.k, `${f(ms, 3)} ms a pick, ${n}/100 hits (${MT.note})`);
+  check("pick: grazing ray cost", timed(ms < 2 * MT.k), `${f(ms, 3)} ms a pick, ${n}/100 hits (${MT.note})`);
 }
 // 2. orbit round the point under the cursor: it stays under the cursor; never past the pitch limits
 {
@@ -156,4 +156,4 @@ const ev = (o) => ({ pointerId: 1, pointerType: "mouse", button: 0, preventDefau
   check("keys: a 10 fps frame rate, no NaN", !jitter.nan && jitter.minAgl >= 1.19, `z ${f(jitter.c.pos.z, 1)}`);
 }
 console.log(fails ? `${fails} FAILED` : "all passed");
-process.exitCode = fails ? 1 : 0;
+process.exitCode = gateExit(fails);   // (75: only timing verdicts failed, rule timing-rows-alone)

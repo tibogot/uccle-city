@@ -32,6 +32,8 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    the cached tile (tile cache), so one slow build (809 ms) failed it on every run until TILE_CACHE=0; the timing must
    come from the row's own build (or be skipped for cache hits), rule tile-cache; (b) trafmix's sim-cost twins fail TOO
    NOISY whenever anything else runs (4 merges tripped): give merge.mjs a "timing rows alone, first, retry x3" step.
+   DONE on claude/gateflakes (rule timing-rows-alone, row timingretry): timing verdicts exit 75, mergeGate re-runs them
+   alone x3; W6 timed in the row (never the cached time), S4 / props calibrated, props' noise margin explicit.
 4b2. ACTIVITIES, one at a time, each self-contained (loaded only where it happens, own perf budget + checks; owner
    2026-11-26 agreed the order: core city perf + the three games first): (1) SNOOKER in the villa (mouse play: aim,
    pull back, shoot; real ball physics: collisions, cushions, spin, pockets; no character; loads with the interior);

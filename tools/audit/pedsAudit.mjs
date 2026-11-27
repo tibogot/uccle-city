@@ -12,7 +12,10 @@
 //     W4 signalled crossings   every crossing within 25 m of a signal node of the phase table has a phase
 //     W5 coverage              >= COVER of the drawn sidewalk cells (class sidewalk, off solids) lie within 2.5 m of a
 //                              walking line (every drawn sidewalk has people's line)
-//     W6 worker time           the walk graph step <= WG_MS ms a tile (the worker, node timing x 1)
+//     W6 walk graph time       buildWalkGraph on the tile's own inputs <= WG_MS ms x k, timed HERE, the best of 3
+//                              between two calibrations (tools/gate/timing.mjs measure): never the build time stored
+//                              with a cached tile (claude/gateflakes, rules tile-cache, timing-rows-alone); the re-timed
+//                              graph must equal the tile's (the same work)
 //   sim (--sim)
 //     S1 density               the CitySim on those tiles round Place de Saint-Job: alive people at 08:30 weekday in
 //                              [MIN_AM, MAX_AM] within 230 m; at 03:00 <= MAX_NIGHT; the park (Wolvendael) busier at 15:00
@@ -21,20 +24,28 @@
 //                              just stepping off one: 1.2 m), none in a solid
 //     S3 no allocation         the sim step's heap growth over 600 steps (gc before / after) <= ALLOC_KB_STEP KB a step
 //     S4 step budget           the sim step's mean CPU <= STEP_MS ms for the Saint-Job population (node; the page's
-//                              budget is 0.6 ms for the whole crowd incl. the draw prep: measured in the city)
+//                              budget is 0.6 ms for the whole crowd incl. the draw prep: measured in the city), x k
+//                              (calibrations before / after the run)
 //   node --import ./tools/road_audit/register.mjs tools/audit/pedsAudit.mjs [--graph] [--sim] [--quiet] [--json out]
-// Exit 1 on a FAIL.
+// Exit 1 on a FAIL; 75 when the only FAILs are the timings W6 / S4 (mergeGate re-runs it alone, rule timing-rows-alone).
 import "../road_audit/register.mjs";
 import { writeFileSync } from "node:fs";
 import { buildTile } from "../roadfix/tile.mjs";
 import { blockedRaster, EK } from "../../viewer/pedestrians/walkGraph.js";
 import { signalPhases } from "../../viewer/traffic/signals.js";
+import { buildWalkGraph } from "../../viewer/pedestrians/walkGraph.js";
+import { measure, bestOf, calibrate, slowdown, timed, gateExit, slow } from "../gate/timing.mjs";
+import { readFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 const argv = process.argv.slice(2), QUIET = argv.includes("--quiet");
 const DO_G = argv.includes("--graph") || !argv.includes("--sim"), DO_S = argv.includes("--sim") || !argv.includes("--graph");
 const jsonOut = argv.includes("--json") ? argv[argv.indexOf("--json") + 1] : null;
 const TILES = ["H5", "I5", "H6", "I6", "F4"];
-const MAX_CARRIAGE = 0.01, LINKED = 0.85, COVER = 0.9, WG_MS = 800;
+// (WG_MS: claude/gateflakes timed the pure build in the row, best of 3: 29-73 ms x k 1.3-1.5 on the five tiles; the old
+// 800 ms was the worker step incl. its streetlife fetch, read from the cache (~430 ms fresh). 250 ms: ~3 x the dearest)
+const MAX_CARRIAGE = 0.01, LINKED = 0.85, COVER = 0.9, WG_MS = 250;
 const MIN_AM = 60, MAX_AM = 260, MAX_NIGHT = 30, ALLOC_KB_STEP = 0.5, STEP_MS = 0.5;
 const CARRIAGE = new Set([1, 2, 3, 4, 7]);            // class + 1: roadway, tram road, tram site, parking, median
 const fails = [], fail = (c, m) => fails.push(`${c}: ${m}`), log = (...a) => { if (!QUIET) console.log(...a); };
@@ -48,6 +59,19 @@ for (const T of TILES) {
   // maybe under another agent's load (H5 908 ms stored, 417-438 ms fresh): over the limit, it is timed again fresh
   if (DO_G && TB.lastInfo?.hit && d.times?.["walk graph"] > WG_MS) { const was = process.env.TILE_CACHE; process.env.TILE_CACHE = "0"; try { d = await buildTile(T, {}); } finally { if (was == null) delete process.env.TILE_CACHE; else process.env.TILE_CACHE = was; } }
   built.set(T, d);
+}
+
+// W6: buildWalkGraph on the inputs tileData.js gives it (viewer/tileData.js "walk graph" step), the best of 3 between
+// two calibrations; same = the graph equals the tile's (deterministic build: the same work was timed)
+const SL = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../data/streetlife");
+async function walkGraphMs(T, d) {
+  let pois = [];
+  try { const f = path.join(SL, `${T}.json`); if (existsSync(f)) pois = (JSON.parse(readFileSync(f, "utf8")).pois || []).map((p) => ({ x: p.face?.x ?? p.x, z: p.face?.z ?? p.z, kind: p.kind })).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.z)); } catch {}
+  const o = { bounds: d.bounds, model: d.net?.streetModel, grid: d.road.surfaceData.grid, roofs: d.roofs, col: d.drive.col, crossings: d.road.inventory?.crossings, roads: d.roads, feats: d.feats, bollards: d.road.surfaceData.bollards, pois };
+  let g = null;
+  const MT = await measure(() => bestOf(3, () => { const t0 = performance.now(); g = buildWalkGraph(o); slow("pedsgraph", t0); return performance.now() - t0; }));
+  const same = !g ? null : g.ea.length === d.peds.ea.length && g.x.length === d.peds.x.length && JSON.stringify(g.stats) === JSON.stringify(d.peds.stats);
+  return { ms: MT.value, k: MT.k, note: MT.note, same };
 }
 
 if (DO_G) for (const [T, d] of built) {
@@ -96,9 +120,13 @@ if (DO_G) for (const [T, d] of built) {
   for (let k = 0; k < R.nx * R.nz; k++) if (G.data[k] === 6 && R.data[k] !== 1) { sw++; if (cov[k]) swCov++; }
   const cover = sw ? swCov / sw : 1;
   if (cover < COVER) fail("W5", `${T}: ${(cover * 100).toFixed(1)} % of the drawn sidewalk within 2.5 m of a walking line (min ${COVER * 100} %)`);
-  if (d.times["walk graph"] > WG_MS) fail("W6", `${T}: walk graph ${d.times["walk graph"]} ms (max ${WG_MS})`);
+  // W6 (claude/gateflakes, rule timing-rows-alone): timed here on the tile's own inputs, never d.times (a cached tile
+  // carries the time of the build that stored it, maybe under another agent's load: H5 809 / 908 ms stored, ~430 fresh)
+  const W = await walkGraphMs(T, d);
+  if (!W.same) fail("W6", `${T}: the re-timed walk graph differs from the tile's (${W.same === null ? "no graph" : "not the same work"})`);
+  else if (!timed(W.ms <= WG_MS * W.k)) fail("W6", `${T}: walk graph ${W.ms.toFixed(0)} ms (max ${WG_MS} ms x k, ${W.note})`);
   out.tiles[T] = { nodes: st.nodes, edges: st.edges, lineM: st.lineM, pathM: st.pathM, crossings: `${st.crossingsLinked}/${st.crossings}`, signalled: st.crossingsSignal, platforms: st.platforms, square: st.squareNodes,
-    roadPct: +(roadShare * 100).toFixed(3), solidSamples: solidN, coverPct: +(cover * 100).toFixed(1), workerMs: d.times["walk graph"] };
+    roadPct: +(roadShare * 100).toFixed(3), solidSamples: solidN, coverPct: +(cover * 100).toFixed(1), walkGraphMs: Math.round(W.ms), k: +W.k.toFixed(2) };
   log(T, JSON.stringify(out.tiles[T]));
 }
 
@@ -138,6 +166,7 @@ if (DO_S) {
   globalThis.gc?.();
   const h0 = process.memoryUsage().heapUsed;
   let ms = 0;
+  const c0 = calibrate();   // (S4 x k: calibrations around the run, rule timing-rows-alone)
   for (let i = 0; i < 3600; i++) {
     const t0 = performance.now(); sim.step(1 / 60); ms += performance.now() - t0;
     if (i === 599) { globalThis.gc?.(); out.alloc = (process.memoryUsage().heapUsed - h0) / 1024 / 600; }
@@ -149,14 +178,15 @@ if (DO_S) {
       if (solidAt(p.x, p.z)) inSolid++;
     }
   }
+  const k4 = slowdown(c0, calibrate());
   const stepMs = ms / 3600, alive = sim.people.filter((p) => p.alive).length;
   if (onRoad / Math.max(1, samples) > 0.002) fail("S2", `${onRoad} of ${samples} person samples on the carriageway off a crossing, e.g. ${JSON.stringify(roadAt)}`);
   if (inSolid / Math.max(1, samples) > 0.001) fail("S2", `${inSolid} of ${samples} person samples inside a solid`);
   if (globalThis.gc && out.alloc > ALLOC_KB_STEP) fail("S3", `the sim step keeps ${out.alloc.toFixed(2)} KB a step (max ${ALLOC_KB_STEP}; run with --expose-gc)`);
-  if (stepMs > STEP_MS) fail("S4", `the sim step ${stepMs.toFixed(3)} ms for ${alive} people (max ${STEP_MS})`);
+  if (!timed(stepMs <= STEP_MS * k4)) fail("S4", `the sim step ${stepMs.toFixed(3)} ms for ${alive} people (max ${STEP_MS} ms x k ${k4.toFixed(2)})`);
   out.sim = { stjobAm: nAm, stjobNight: nNight, wolvendaelAm: pkAm, wolvendaelPm: pkPm, alive, stepMs: +stepMs.toFixed(3), allocKBStep: out.alloc == null ? null : +out.alloc.toFixed(3), samples, onRoad, inSolid, counters: sim.counters, graph: graph.stats };
   log("sim", JSON.stringify(out.sim));
 }
 if (jsonOut) writeFileSync(jsonOut, JSON.stringify(out, null, 1));
-if (fails.length) { console.log(`pedsAudit: FAIL (${fails.length})`); for (const f of fails) console.log("  " + f); process.exit(1); }
+if (fails.length) { console.log(`pedsAudit: FAIL (${fails.length})`); for (const f of fails) console.log("  " + f); process.exit(gateExit(fails.length)); }
 console.log(`pedsAudit: PASS (${DO_G ? "graph W1-W6 on " + TILES.join(" ") : ""}${DO_G && DO_S ? "; " : ""}${DO_S ? "sim S1-S4" : ""})`);
