@@ -1296,6 +1296,7 @@ function mergeEv(a, b) {
   const o = { ...a };
   if (b.inst && !o.inst) o.inst = b.inst;
   if (b.wall && !o.wall) o.wall = b.wall;
+  if (b.shop) o.shop = true;
   if (b.era && (!o.era || ERA_RANK[b.era] < ERA_RANK[o.era])) {
     o.era = b.era;
     o.year = b.year;
@@ -1478,6 +1479,7 @@ function classify(doc, P, I2, legacyStyle) {
       if (flat > 0.6) type2 = p === 1 || r2 < 0.3 ? TYPE.DECO : TYPE.VILLA;
       else type2 = p === 0 && g.area > 140 && r2 < 0.5 ? TYPE.MAITRE : TYPE.VILLA;
     }
+    if (BC && type2 === TYPE.BLOCK && g.ev?.shop && g.ev.era !== "post" && g.ev.near !== "new" && partyShare > 0.15 && g.h <= 24) type2 = TYPE.MAITRE;
     const rs = h01(key + "s");
     const style2 = type2 === TYPE.GENERIC ? null : pick(rs, {
       [TYPE.MAITRE]: [[0, 0.4], [1, 0.1], [3, 0.35], [4, 0.15]],
@@ -1489,8 +1491,8 @@ function classify(doc, P, I2, legacyStyle) {
       [TYPE.VILLA]: [[3, 0.45], [4, 0.15], [0, 0.35], [2, 0.05]]
     }[type2]);
     const styleI = BC && g.ev?.inst && type2 === TYPE.MAITRE && !g.ev.wall ? pick(rs, [[0, 0.65], [2, 0.2], [1, 0.15]]) : null;
-    const wl = BC && (type2 === TYPE.MAITRE || type2 === TYPE.DECO) ? g.ev?.wall : null;
-    const styleW = wl === "brick" ? h01(key + "|klinker") < 0.15 ? 1 : 0 : wl === "stone" ? 4 : BC && type2 === TYPE.MAITRE && (g.ev?.era === "pre" || g.ev?.era === "inter" || g.ev?.near === "old") && !g.ev?.inst ? pick(rs, [[0, 0.6], [1, 0.15], [4, 0.15], [3, 0.1]]) : null;
+    const wl = BC && (type2 === TYPE.MAITRE || type2 === TYPE.DECO || type2 === TYPE.BLOCK && g.ev?.wall === "buff") ? g.ev?.wall : null;
+    const styleW = wl === "brick" ? h01(key + "|klinker") < 0.15 ? 1 : 0 : wl === "stone" ? 4 : wl === "buff" ? 2 : BC && type2 === TYPE.MAITRE && (g.ev?.era === "pre" || g.ev?.era === "inter" || g.ev?.near === "old") && !g.ev?.inst ? pick(rs, [[0, 0.6], [1, 0.15], [4, 0.15], [3, 0.1]]) : null;
     const garage2 = g.ev?.inst && BC ? 0 : type2 === TYPE.BELETAGE || type2 === TYPE.VILLA && h01(key + "|gar") < 0.45 ? 1 : 0;
     T3.set(key, { type: type2, style: styleW ?? styleI ?? style2, garage: garage2, form: form2, flat, steep, row: steepRow(g, partyShare), ev: BC ? g.ev : null });
   }
@@ -24988,4 +24990,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "78125a09abac04ae";
+self.__TILE_CODE_HASH = "d00dee12beca0abd";
