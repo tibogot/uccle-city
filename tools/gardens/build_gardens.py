@@ -749,10 +749,23 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                         for o in over:
                             mid = (o[0] + o[1]) / 2; half = max((o[1] - o[0]) / 2, abs(sgar + gw / 2 - mid), abs(mid - (sgar - gw / 2)))
                             if (o[1] - o[0]) <= 4.6 and half * 2 > 4.6: half = max((o[1] - o[0]) / 2, 2.3)
+                            # (never over the house door's opening the driveway stood beside: its gate would be pushed
+                            # 3-4 m away, the door path ungated: C4 Rue du Roetaert, 142 terraced + 22 villa paths)
+                            hit = lambda a_, b_: any(q[2] == "ped" and q[0] < b_ and a_ < q[1] for q in ops)
+                            if hit(mid - half, mid + half) and not hit(o[0], o[1]): continue
                             o[0] = mid - half; o[1] = mid + half
                         stats["drive_garage_widened"] += 1
                     else:
-                        ops.append([sgar - gw / 2, sgar + gw / 2, "car"]); stats["drive_garage"] += 1
+                        # (the house door's own gate keeps its place: the garage opening stops at the door's opening, so the
+                        # door gets its pedestrian gate beside the drive, sharing a pier: gates census pathUngated 1,531 ->
+                        # 1,576 when the opening ran over the door, 142 terraced + 22 villa paths walked out through the drive)
+                        a0, b0 = sgar - gw / 2, sgar + gw / 2
+                        for pd in [o for o in ops if o[2] == "ped" and o[0] < b0 + 0.3 and a0 - 0.3 < o[1]]:
+                            if (pd[0] + pd[1]) / 2 >= sgar: b0 = min(b0, pd[0] - 0.05)
+                            else: a0 = max(a0, pd[1] + 0.05)
+                        if b0 - a0 >= ga["w"] + 0.2:
+                            ops.append([a0, b0, "car"]); stats["drive_garage"] += 1
+                        else: stats["drive_garage_door_tight"] += 1
                     ta = (f["b"][0] - f["a"][0], f["b"][1] - f["a"][1]); tl = math.hypot(*ta) or 1; tx, tz = ta[0] / tl, ta[1] / tl
                     hw = ga["w"] / 2 + 0.3                     # the door's width + 0.3 m each side
                     d = math.hypot(q.x - ga["x"], q.y - ga["z"])
