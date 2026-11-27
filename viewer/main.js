@@ -1107,7 +1107,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // shows no jump there, the drawn street does) is not drawn: no car gets in, no pavers draped down the steps)
   const driveFlat = (d) => { const r = d.ring, m0x = (r[0][0] + r[1][0]) / 2, m0z = (r[0][1] + r[1][1]) / 2, m1x = (r[2][0] + r[3][0]) / 2, m1z = (r[2][1] + r[3][1]) / 2, L = Math.hypot(m1x - m0x, m1z - m0z) || 1, nx = (m1x - m0x) / L, nz = (m1z - m0z) / L;
     return Math.abs(hm.surface(m1x + nx * 0.4, m1z + nz * 0.4) - hm.surface(m1x - nx * 0.8, m1z - nz * 0.8)) <= 0.3; };
-  const garageDrives = params.get("garagedrive") === "old" ? [] : ((await waitFor(gardensP))?.drives || []).filter(driveFlat).map((d, i) => ({ id: `drive-${entry.name}-${i}`, surface: "pavers", courseDeg: 0, ring: d.ring, edge: 0.3, lift: 0.06 }));
+  const garageDrives = params.get("garagedrive") === "old" ? [] : ((await waitFor(gardensP))?.drives || []).filter(driveFlat).map((d, i) => ({ id: `drive-${entry.name}-${i}`, surface: "pavers", courseDeg: 0, ring: d.ring, edge: 0.6, lift: 0.06 }));
   const grounds = buildGrounds([...((await loadOverrides(DATA)).grounds || []).filter(groundOn), ...garageDrives], bounds, (x, z) => hm.surface(x, z));
   if (grounds.mesh) { own.roads.add(grounds.mesh); say(`grounds: ${grounds.tris} triangles (data/overrides.json grounds)`); }
   R.textures.push(...terr.userData.textures);
