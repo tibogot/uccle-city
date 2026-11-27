@@ -1,0 +1,1486 @@
+{
+ "_doc": "claude/reality2 round 4 (rule garage-has-drive): the house paths the gates census reads as ungated and the villa driveways it reads as open on this branch that were gated on claude/foundation 82d295b3 (tools/audit/census/gates.mjs --list, both data sets). nearestGateM: the nearest gate leaf of the house now (its gate moved beside the new garage drive).",
+ "paths": [
+  {
+   "tile": "B6",
+   "x": -2139.1,
+   "z": 849,
+   "street": "Rue des Trois Rois - Drie Koningenstraat",
+   "type": "terraced",
+   "nearestGateM": 5.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "B7",
+   "x": -2071.8,
+   "z": 1117.3,
+   "street": "Chemin de la Truite - Forelweg",
+   "type": "terraced",
+   "nearestGateM": 3.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C4",
+   "x": -1737.6,
+   "z": -112,
+   "street": "Rue du Roetaert - Roetaertstraat",
+   "type": "terraced",
+   "nearestGateM": 3.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C4",
+   "x": -1815.3,
+   "z": -442.1,
+   "street": "Rue Victor Allard - Victor Allardstraat",
+   "type": "terraced",
+   "nearestGateM": 3.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C4",
+   "x": -1732.6,
+   "z": -93.6,
+   "street": "Rue du Roetaert - Roetaertstraat",
+   "type": "terraced",
+   "nearestGateM": 3.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C4",
+   "x": -1527.2,
+   "z": -150.3,
+   "street": "Rue Victor Allard - Victor Allardstraat",
+   "type": "terraced",
+   "nearestGateM": 3.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C4",
+   "x": -1543.1,
+   "z": -44.2,
+   "street": "Rue Gatti de Gamond - Gatti de Gamondstraat",
+   "type": "terraced",
+   "nearestGateM": 4.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C4",
+   "x": -1559,
+   "z": -208.6,
+   "street": "Rue Gatti de Gamond - Gatti de Gamondstraat",
+   "type": "terraced",
+   "nearestGateM": 3.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C5",
+   "x": -1785.1,
+   "z": 476.6,
+   "street": "Rue des Myosotis - Vergeet-mij-nietjesstraat",
+   "type": "terraced",
+   "nearestGateM": 2.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C5",
+   "x": -1867,
+   "z": 463,
+   "street": "Rue Edouard Michiels - Edouard Michielsstraat",
+   "type": "terraced",
+   "nearestGateM": 5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C5",
+   "x": -1679.4,
+   "z": 324,
+   "street": "Rue de Stalle - Stallestraat",
+   "type": "terraced",
+   "nearestGateM": 5.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C5",
+   "x": -1884.2,
+   "z": 33.6,
+   "street": "Rue du Merlo - Merlostraat",
+   "type": "terraced",
+   "nearestGateM": 5.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C6",
+   "x": -1904.1,
+   "z": 510,
+   "street": "Rue des Myosotis - Vergeet-mij-nietjesstraat",
+   "type": "terraced",
+   "nearestGateM": 4.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C6",
+   "x": -1643.4,
+   "z": 503.9,
+   "street": "Rue Égide Van Ophem - Égide Van Ophemstraat",
+   "type": "terraced",
+   "nearestGateM": 6.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C6",
+   "x": -1858,
+   "z": 556.7,
+   "street": "Rue Edouard Michiels - Edouard Michielsstraat",
+   "type": "terraced",
+   "nearestGateM": 6.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C6",
+   "x": -1773.5,
+   "z": 685,
+   "street": "Avenue Achille Reisdorff - Achille Reisdorfflaan",
+   "type": "terraced",
+   "nearestGateM": 2.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C6",
+   "x": -1539.1,
+   "z": 552.6,
+   "street": "Rue Égide Van Ophem - Égide Van Ophemstraat",
+   "type": "terraced",
+   "nearestGateM": 6.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C7",
+   "x": -1642.7,
+   "z": 1479.9,
+   "street": "Avenue de Beersel - Beersellaan",
+   "type": "terraced",
+   "nearestGateM": 4.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C7",
+   "x": -1605.5,
+   "z": 1375.7,
+   "street": "Avenue de Beersel - Beersellaan",
+   "type": "terraced",
+   "nearestGateM": 3.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C8",
+   "x": -1765.3,
+   "z": 1585.4,
+   "street": "Avenue de Beersel - Beersellaan",
+   "type": "terraced",
+   "nearestGateM": 2.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C8",
+   "x": -1742.5,
+   "z": 1566.7,
+   "street": "Avenue de Beersel - Beersellaan",
+   "type": "terraced",
+   "nearestGateM": 5.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C8",
+   "x": -1784.2,
+   "z": 1688.1,
+   "street": "Rue Steenvelt - Steenveltstraat",
+   "type": "terraced",
+   "nearestGateM": 5.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C8",
+   "x": -1808.5,
+   "z": 1620.8,
+   "street": "Avenue de Beersel - Beersellaan",
+   "type": "terraced",
+   "nearestGateM": 3.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C8",
+   "x": -1811.1,
+   "z": 1623.2,
+   "street": "Avenue de Beersel - Beersellaan",
+   "type": "terraced",
+   "nearestGateM": 4.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C8",
+   "x": -1821,
+   "z": 1630.1,
+   "street": "Avenue de Beersel - Beersellaan",
+   "type": "terraced",
+   "nearestGateM": 5.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "C8",
+   "x": -1654.4,
+   "z": 1508.7,
+   "street": "Avenue de Beersel - Beersellaan",
+   "type": "terraced",
+   "nearestGateM": 3.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D3",
+   "x": -1305.1,
+   "z": -746.1,
+   "street": "Avenue de l'Aulne - Elzeboomlaan",
+   "type": "terraced",
+   "nearestGateM": 3.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D3",
+   "x": -1335.6,
+   "z": -914.8,
+   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
+   "type": "terraced",
+   "nearestGateM": 3.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D3",
+   "x": -1328.4,
+   "z": -638,
+   "street": "Avenue de l'Aulne - Elzeboomlaan",
+   "type": "terraced",
+   "nearestGateM": 2.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D4",
+   "x": -1340,
+   "z": -484.7,
+   "street": "Avenue de l'Aulne - Elzeboomlaan",
+   "type": "terraced",
+   "nearestGateM": 3.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D4",
+   "x": -1279.6,
+   "z": -46.6,
+   "street": "Avenue Joseph Jongen - Joseph Jongenlaan",
+   "type": "villa",
+   "nearestGateM": 3.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D4",
+   "x": -1188.4,
+   "z": -502.4,
+   "street": "Avenue Docteur Decroly - Dokter Decrolylaan",
+   "type": "terraced",
+   "nearestGateM": 2.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D4",
+   "x": -1465.5,
+   "z": -58.6,
+   "street": "Avenue Joseph Jongen - Joseph Jongenlaan",
+   "type": "villa",
+   "nearestGateM": 5.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D4",
+   "x": -1257.5,
+   "z": -165.9,
+   "street": "Avenue de la Princesse Paola - Prinses Paolalaan",
+   "type": "villa",
+   "nearestGateM": 6.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D4",
+   "x": -1489.1,
+   "z": -180.7,
+   "street": "Rue Victor Allard - Victor Allardstraat",
+   "type": "terraced",
+   "nearestGateM": 4.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D5",
+   "x": -1444.4,
+   "z": 52.4,
+   "street": "Avenue Joseph Jongen - Joseph Jongenlaan",
+   "type": "terraced",
+   "nearestGateM": 3.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D5",
+   "x": -1230.4,
+   "z": 337.6,
+   "street": "Rue de Huldenberg - de Huldenbergstraat",
+   "type": "terraced",
+   "nearestGateM": 2.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D5",
+   "x": -1068.4,
+   "z": 180.3,
+   "street": "Rue Camille Van Exter - Camille Van Exterstraat",
+   "type": "terraced",
+   "nearestGateM": 3.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D8",
+   "x": -1011.4,
+   "z": 1881,
+   "street": "Square des Mirabelles - Mirabellensquare",
+   "type": "terraced",
+   "nearestGateM": 9.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D8",
+   "x": -1008.1,
+   "z": 1883.9,
+   "street": "Square des Mirabelles - Mirabellensquare",
+   "type": "terraced",
+   "nearestGateM": 4.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D8",
+   "x": -1158.5,
+   "z": 1770.4,
+   "street": "Rue du Bourdon - Horzelstraat",
+   "type": "terraced",
+   "nearestGateM": 2.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D8",
+   "x": -1172.5,
+   "z": 1835.6,
+   "street": "Rue du Bourdon - Horzelstraat",
+   "type": "terraced",
+   "nearestGateM": 5.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "D9",
+   "x": -1227.9,
+   "z": 2409.6,
+   "street": "Moensberg",
+   "type": "terraced",
+   "nearestGateM": 2.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E1",
+   "x": -561.5,
+   "z": -1574.8,
+   "street": "Rue de la Seconde Reine - Tweede Koninginstraat",
+   "type": "terraced",
+   "nearestGateM": 3.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E1",
+   "x": -562.1,
+   "z": -1592,
+   "street": "Rue de la Seconde Reine - Tweede Koninginstraat",
+   "type": "terraced",
+   "nearestGateM": 3.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E1",
+   "x": -569.4,
+   "z": -1532.3,
+   "street": "Rue de la Seconde Reine - Tweede Koninginstraat",
+   "type": "terraced",
+   "nearestGateM": 4.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E10",
+   "x": -660.3,
+   "z": 2672,
+   "street": "Avenue des Hospices - Godshuizenlaan",
+   "type": "villa",
+   "nearestGateM": 5.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E2",
+   "x": -737.5,
+   "z": -1037.1,
+   "street": "Avenue de Floréal - Floréallaan",
+   "type": "terraced",
+   "nearestGateM": 4.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E2",
+   "x": -672.5,
+   "z": -1191.2,
+   "street": "Avenue Coghen - Coghenlaan",
+   "type": "terraced",
+   "nearestGateM": 2.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E2",
+   "x": -672.5,
+   "z": -1287.9,
+   "street": "Avenue Coghen - Coghenlaan",
+   "type": "terraced",
+   "nearestGateM": 6.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E2",
+   "x": -668.1,
+   "z": -1307.6,
+   "street": "Avenue Coghen - Coghenlaan",
+   "type": "terraced",
+   "nearestGateM": 3.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E2",
+   "x": -668,
+   "z": -1028.3,
+   "street": "Avenue Coghen - Coghenlaan",
+   "type": "terraced",
+   "nearestGateM": 7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E2",
+   "x": -670.9,
+   "z": -1294.5,
+   "street": "Avenue Coghen - Coghenlaan",
+   "type": "terraced",
+   "nearestGateM": 5.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E2",
+   "x": -709.5,
+   "z": -1230.6,
+   "street": "Avenue de Messidor - Messidorlaan",
+   "type": "terraced",
+   "nearestGateM": 5.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E2",
+   "x": -540,
+   "z": -1098.4,
+   "street": "Avenue de Floréal - Floréallaan",
+   "type": "terraced",
+   "nearestGateM": 3.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E3",
+   "x": -721.9,
+   "z": -851.6,
+   "street": "Square Coghen - Coghensquare",
+   "type": "terraced",
+   "nearestGateM": 3.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E3",
+   "x": -750.9,
+   "z": -886.2,
+   "street": "Square Coghen - Coghensquare",
+   "type": "terraced",
+   "nearestGateM": 6.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E3",
+   "x": -675.4,
+   "z": -979.7,
+   "street": "Avenue Coghen - Coghenlaan",
+   "type": "terraced",
+   "nearestGateM": 6.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E3",
+   "x": -631,
+   "z": -903.2,
+   "street": "Avenue Coghen - Coghenlaan",
+   "type": "terraced",
+   "nearestGateM": 7.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E4",
+   "x": -805.6,
+   "z": -102.9,
+   "street": "Rue Robert Scott - Robert Scottstraat",
+   "type": "terraced",
+   "nearestGateM": 3.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E5",
+   "x": -784.2,
+   "z": 439.5,
+   "street": "Rue du Château d'Eau - Waterkasteelstraat",
+   "type": "terraced",
+   "nearestGateM": 8.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E5",
+   "x": -655.9,
+   "z": 354.9,
+   "street": "Avenue Vanderaey - Vanderaeylaan",
+   "type": "terraced",
+   "nearestGateM": 3.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E5",
+   "x": -744.6,
+   "z": 339.5,
+   "street": "Avenue Vanderaey - Vanderaeylaan",
+   "type": "terraced",
+   "nearestGateM": 3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E5",
+   "x": -595,
+   "z": 339.5,
+   "street": "Avenue Vanderaey - Vanderaeylaan",
+   "type": "terraced",
+   "nearestGateM": 2.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E6",
+   "x": -907.8,
+   "z": 754.3,
+   "street": "Dieweg",
+   "type": "terraced",
+   "nearestGateM": 3.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E6",
+   "x": -857.8,
+   "z": 609.2,
+   "street": "Avenue d'Overhem - Overhemlaan",
+   "type": "terraced",
+   "nearestGateM": 4.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E6",
+   "x": -503.1,
+   "z": 842.2,
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "nearestGateM": 6.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E6",
+   "x": -500.6,
+   "z": 839.6,
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "nearestGateM": 2.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E7",
+   "x": -930.5,
+   "z": 1056.1,
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "nearestGateM": 6.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E7",
+   "x": -894.4,
+   "z": 1145.6,
+   "street": "Rue Engeland - Engelandstraat",
+   "type": "terraced",
+   "nearestGateM": 8.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E7",
+   "x": -602,
+   "z": 1286,
+   "street": "Rue de Verrewinkel - Verrewinkelstraat",
+   "type": "terraced",
+   "nearestGateM": 4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E8",
+   "x": -856.5,
+   "z": 1828.9,
+   "street": "Rue de la Cueillette - Plukstraat",
+   "type": "terraced",
+   "nearestGateM": 8.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E8",
+   "x": -771.8,
+   "z": 1752,
+   "street": "Rue des Bigarreaux - Vleeskersenstraat",
+   "type": "terraced",
+   "nearestGateM": 8.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E8",
+   "x": -870.9,
+   "z": 1824.1,
+   "street": "Rue de la Cueillette - Plukstraat",
+   "type": "terraced",
+   "nearestGateM": 6.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E8",
+   "x": -511.7,
+   "z": 1677.9,
+   "street": "Avenue de l'Hélianthe - Zonnebloemlaan",
+   "type": "terraced",
+   "nearestGateM": 2.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E9",
+   "x": -915.4,
+   "z": 2235.1,
+   "street": "Avenue des Tilleuls - Lindenlaan",
+   "type": "villa",
+   "nearestGateM": 5.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F10",
+   "x": -360,
+   "z": 2531,
+   "street": "Avenue des Hospices - Godshuizenlaan",
+   "type": "villa",
+   "nearestGateM": 3.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F3",
+   "x": -439.4,
+   "z": -937,
+   "street": "Avenue de Boetendael - Boetendaellaan",
+   "type": "terraced",
+   "nearestGateM": 9.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F4",
+   "x": -91,
+   "z": -270.5,
+   "street": "Avenue du Vieux Cornet - Hof ten Horenlaan",
+   "type": "villa",
+   "nearestGateM": 4.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F5",
+   "x": -466.7,
+   "z": 374.8,
+   "street": "Avenue Vanderaey - Vanderaeylaan",
+   "type": "terraced",
+   "nearestGateM": 4.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F5",
+   "x": -105,
+   "z": 16.4,
+   "street": "Avenue Paul Stroobant - Paul Stroobantlaan",
+   "type": "villa",
+   "nearestGateM": 5.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F5",
+   "x": -300.4,
+   "z": 358.4,
+   "street": "Rue du Repos - Ruststraat",
+   "type": "terraced",
+   "nearestGateM": 3.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F5",
+   "x": -325.6,
+   "z": 288.7,
+   "street": "Rue du Repos - Ruststraat",
+   "type": "terraced",
+   "nearestGateM": 4.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F5",
+   "x": -404.9,
+   "z": 155,
+   "street": "Avenue Wolvendael - Wolvendaellaan",
+   "type": "terraced",
+   "nearestGateM": 10.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F5",
+   "x": -492.5,
+   "z": 355,
+   "street": "Avenue Vanderaey - Vanderaeylaan",
+   "type": "terraced",
+   "nearestGateM": 3.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F6",
+   "x": -468.7,
+   "z": 809.4,
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "nearestGateM": 4.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F6",
+   "x": -460.9,
+   "z": 771.4,
+   "street": "Avenue Hellevelt - Helleveltlaan",
+   "type": "terraced",
+   "nearestGateM": 2.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F6",
+   "x": -2,
+   "z": 944.6,
+   "street": "Avenue de la Chênaie - Eikenboslaan",
+   "type": "terraced",
+   "nearestGateM": 3.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F6",
+   "x": -90.6,
+   "z": 863.9,
+   "street": "Avenue de la Chênaie - Eikenboslaan",
+   "type": "terraced",
+   "nearestGateM": 6.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F6",
+   "x": -128.6,
+   "z": 705.4,
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "nearestGateM": 3.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "F9",
+   "x": -127.9,
+   "z": 2498,
+   "street": "Chemin de la Forêt - Woudweg",
+   "type": "villa",
+   "nearestGateM": 4.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G2",
+   "x": 340.9,
+   "z": -1187.2,
+   "street": "Avenue Léo Errera - Léo Erreralaan",
+   "type": "apartment",
+   "nearestGateM": 4.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G3",
+   "x": 239.9,
+   "z": -852.5,
+   "street": "Rue Roberts Jones - Roberts Jonesstraat",
+   "type": "terraced",
+   "nearestGateM": 7.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G4",
+   "x": 259,
+   "z": -105.6,
+   "street": "Avenue des Statuaires - Beeldhouwerslaan",
+   "type": "terraced",
+   "nearestGateM": 2.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G5",
+   "x": 40.6,
+   "z": 496,
+   "street": "Rue Basse - Diepestraat",
+   "type": "terraced",
+   "nearestGateM": 2.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G5",
+   "x": 93.4,
+   "z": 431.1,
+   "street": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "type": "terraced",
+   "nearestGateM": 3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G5",
+   "x": 99.5,
+   "z": 191.5,
+   "street": "Avenue Paul Stroobant - Paul Stroobantlaan",
+   "type": "terraced",
+   "nearestGateM": 11.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G5",
+   "x": 14.2,
+   "z": 246,
+   "street": "Dieweg",
+   "type": "terraced",
+   "nearestGateM": 3.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G5",
+   "x": 297,
+   "z": 160.5,
+   "street": "Dieweg",
+   "type": "villa",
+   "nearestGateM": 0.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G5",
+   "x": 391.9,
+   "z": 48.5,
+   "street": "Avenue des Statuaires - Beeldhouwerslaan",
+   "type": "terraced",
+   "nearestGateM": 9.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G6",
+   "x": 89.5,
+   "z": 781.1,
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "nearestGateM": 4.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G6",
+   "x": 102.9,
+   "z": 620.6,
+   "street": "Rue Basse - Diepestraat",
+   "type": "terraced",
+   "nearestGateM": 2.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G6",
+   "x": 342.7,
+   "z": 575.1,
+   "street": "Clos du Drossart - Drossaardgaarde",
+   "type": "terraced",
+   "nearestGateM": 3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G6",
+   "x": 476.3,
+   "z": 502.4,
+   "street": "Avenue Den Doorn - Den Doornlaan",
+   "type": "terraced",
+   "nearestGateM": 3.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G6",
+   "x": 478.6,
+   "z": 502.5,
+   "street": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "type": "terraced",
+   "nearestGateM": 3.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G6",
+   "x": 475.1,
+   "z": 596.9,
+   "street": "Avenue Den Doorn - Den Doornlaan",
+   "type": "terraced",
+   "nearestGateM": 6.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "G8",
+   "x": 418.4,
+   "z": 1855.3,
+   "street": "Avenue des Pâturins - Beemdgraslaan",
+   "type": "villa",
+   "nearestGateM": 3.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H3",
+   "x": 683.2,
+   "z": -716.9,
+   "street": "Avenue du Hoef - Hoeflaan",
+   "type": "terraced",
+   "nearestGateM": 3.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H3",
+   "x": 768.4,
+   "z": -731,
+   "street": "Avenue de Sumatra - Sumatralaan",
+   "type": "villa",
+   "nearestGateM": 2.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H4",
+   "x": 948.1,
+   "z": -302.9,
+   "street": "Avenue Juliette - Juliettelaan",
+   "type": "terraced",
+   "nearestGateM": 4.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H5",
+   "x": 946.4,
+   "z": 432.5,
+   "street": "Rue de l'Équateur - Evenaarsstraat",
+   "type": "terraced",
+   "nearestGateM": 8.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H5",
+   "x": 733.2,
+   "z": 430,
+   "street": "Avenue Albert Lancaster - Albert Lancasterlaan",
+   "type": "terraced",
+   "nearestGateM": 3.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H5",
+   "x": 909,
+   "z": 399.4,
+   "street": "Rue de l'Équateur - Evenaarsstraat",
+   "type": "terraced",
+   "nearestGateM": 4.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H5",
+   "x": 833.6,
+   "z": 341.7,
+   "street": "Rue de l'Équateur - Evenaarsstraat",
+   "type": "terraced",
+   "nearestGateM": 2.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H5",
+   "x": 964.7,
+   "z": 319.1,
+   "street": "Avenue Albert Lancaster - Albert Lancasterlaan",
+   "type": "terraced",
+   "nearestGateM": 10.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H5",
+   "x": 760.6,
+   "z": 309.7,
+   "street": "Avenue Circulaire - Ringlaan",
+   "type": "terraced",
+   "nearestGateM": 8.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H5",
+   "x": 826.5,
+   "z": 334.7,
+   "street": "Rue de l'Équateur - Evenaarsstraat",
+   "type": "terraced",
+   "nearestGateM": 3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H5",
+   "x": 815.5,
+   "z": 393,
+   "street": "Avenue Albert Lancaster - Albert Lancasterlaan",
+   "type": "terraced",
+   "nearestGateM": 4.7,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H6",
+   "x": 592.6,
+   "z": 795.2,
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "type": "terraced",
+   "nearestGateM": 3.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H7",
+   "x": 757.9,
+   "z": 1136.6,
+   "street": "Avenue du Directoire - Directoirelaan",
+   "type": "terraced",
+   "nearestGateM": 3.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H7",
+   "x": 889.9,
+   "z": 1244.1,
+   "street": "Avenue Hoche - Hochelaan",
+   "type": "terraced",
+   "nearestGateM": 9.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H7",
+   "x": 829.2,
+   "z": 1111.5,
+   "street": "Vieille rue du Moulin - Oude Molenstraat",
+   "type": "terraced",
+   "nearestGateM": 5.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H8",
+   "x": 961.1,
+   "z": 1504.8,
+   "street": "Avenue Bonaparte - Bonapartelaan",
+   "type": "terraced",
+   "nearestGateM": 3.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H8",
+   "x": 606.7,
+   "z": 1912.6,
+   "street": "Avenue du Gui - Maretaklaan",
+   "type": "villa",
+   "nearestGateM": 4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H8",
+   "x": 956.4,
+   "z": 1785.5,
+   "street": "Avenue de Foestraets - de Foestraetslaan",
+   "type": "villa",
+   "nearestGateM": 5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H8",
+   "x": 514.1,
+   "z": 1858,
+   "street": "Avenue Dolez - Dolezlaan",
+   "type": "terraced",
+   "nearestGateM": 4.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H9",
+   "x": 934.5,
+   "z": 2462.3,
+   "street": "Avenue du Gui - Maretaklaan",
+   "type": "villa",
+   "nearestGateM": 4.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I2",
+   "x": 1122.4,
+   "z": -1163.2,
+   "street": "Avenue de la Floride - Floridalaan",
+   "type": "terraced",
+   "nearestGateM": 3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I2",
+   "x": 1117.9,
+   "z": -1183.9,
+   "street": "Avenue de la Floride - Floridalaan",
+   "type": "terraced",
+   "nearestGateM": 4.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I2",
+   "x": 1162,
+   "z": -1052.4,
+   "street": "Avenue Beau-Séjour - Schoon Verblijflaan",
+   "type": "terraced",
+   "nearestGateM": 3.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I3",
+   "x": 1154.9,
+   "z": -738.9,
+   "street": "Avenue de la Floride - Floridalaan",
+   "type": "terraced",
+   "nearestGateM": 2.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I6",
+   "x": 1311.9,
+   "z": 581.4,
+   "street": "Avenue Victor-Emmanuel III - Victor-Emmanuel III laan",
+   "type": "terraced",
+   "nearestGateM": 7.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I6",
+   "x": 1136.9,
+   "z": 695.1,
+   "street": "Montagne de Saint-Job - Berg van Sint-Job",
+   "type": "terraced",
+   "nearestGateM": 0.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I6",
+   "x": 1278,
+   "z": 589,
+   "street": "Avenue Victor-Emmanuel III - Victor-Emmanuel III laan",
+   "type": "terraced",
+   "nearestGateM": 9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I6",
+   "x": 1033,
+   "z": 624.8,
+   "street": "Rue Jean Benaets - Jean Benaetsstraat",
+   "type": "terraced",
+   "nearestGateM": 11.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I6",
+   "x": 1265.5,
+   "z": 592,
+   "street": "Avenue Victor-Emmanuel III - Victor-Emmanuel III laan",
+   "type": "terraced",
+   "nearestGateM": 3.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I6",
+   "x": 1221,
+   "z": 765.8,
+   "street": "Rue du Ham - Hamstraat",
+   "type": "terraced",
+   "nearestGateM": 5.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I6",
+   "x": 1225,
+   "z": 957.5,
+   "street": "Vieille rue du Moulin - Oude Molenstraat",
+   "type": "terraced",
+   "nearestGateM": 6.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I6",
+   "x": 1213.5,
+   "z": 659.7,
+   "street": "Rue du Ham - Hamstraat",
+   "type": "terraced",
+   "nearestGateM": 5.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I6",
+   "x": 1400.2,
+   "z": 809,
+   "street": "Avenue Hippolyte Boulenger - Hippolyte Boulengerlaan",
+   "type": "terraced",
+   "nearestGateM": 4.9,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I7",
+   "x": 1163.2,
+   "z": 1040.5,
+   "street": "Avenue d'Andrimont - Andrimontlaan",
+   "type": "terraced",
+   "nearestGateM": 3.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I8",
+   "x": 1030,
+   "z": 1760,
+   "street": "Avenue de Foestraets - de Foestraetslaan",
+   "type": "terraced",
+   "nearestGateM": 6.3,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I8",
+   "x": 1496.1,
+   "z": 1623.2,
+   "street": "Avenue Napoléon - Napoléonlaan",
+   "type": "villa",
+   "nearestGateM": 3.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I9",
+   "x": 1256.7,
+   "z": 2232.1,
+   "street": "Avenue du Prince d'Orange - Prins van Oranjelaan",
+   "type": "villa",
+   "nearestGateM": 5.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I9",
+   "x": 1453.2,
+   "z": 2107.4,
+   "street": "Avenue Maréchal Ney - Maarschalk Neylaan",
+   "type": "villa",
+   "nearestGateM": 3.5,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J11",
+   "x": 1791.9,
+   "z": 3144.5,
+   "street": "Schilderachtige Dreef / Drève Pittoresque - Schilderachtige Dreef",
+   "type": "terraced",
+   "nearestGateM": 12.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J5",
+   "x": 1830.1,
+   "z": 71.6,
+   "street": "Chaussée de Waterloo - Waterloosesteenweg",
+   "type": "terraced",
+   "nearestGateM": 3.8,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J6",
+   "x": 1874.1,
+   "z": 556.4,
+   "street": "Avenue André Ryckmans - André Ryckmanslaan",
+   "type": "terraced",
+   "nearestGateM": 6.2,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J6",
+   "x": 1599.2,
+   "z": 678.1,
+   "street": "Avenue Alphonse XIII - Alphonse XIII laan",
+   "type": "villa",
+   "nearestGateM": 7.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J6",
+   "x": 1649.8,
+   "z": 684.5,
+   "street": "Avenue Alphonse XIII - Alphonse XIII laan",
+   "type": "terraced",
+   "nearestGateM": 3.1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K10",
+   "x": 2221.5,
+   "z": 2897.1,
+   "street": "Avenue d'Hougoumont - Hougoumontlaan",
+   "type": "villa",
+   "nearestGateM": 4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K11",
+   "x": 2124.9,
+   "z": 3021.7,
+   "street": "Avenue des Paysages - Landschappenlaan",
+   "type": "villa",
+   "nearestGateM": 1,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K6",
+   "x": 2028.5,
+   "z": 674.1,
+   "street": "Avenue du Maréchal - Maarschalklaan",
+   "type": "terraced",
+   "nearestGateM": 12.4,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K7",
+   "x": 2038.4,
+   "z": 1286.3,
+   "street": "Avenue du Feuillage - Gebladertelaan",
+   "type": "terraced",
+   "nearestGateM": 2.6,
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K9",
+   "x": 2144.8,
+   "z": 2414.6,
+   "street": "Avenue des Aubépines - Hagedoornlaan",
+   "type": "terraced",
+   "nearestGateM": 10.1,
+   "garageDrive6m": true
+  }
+ ],
+ "villaDrives": [
+  {
+   "tile": "E4",
+   "x": -714.3,
+   "z": -67.9,
+   "street": "Avenue Arnold Delvaux - Arnold Delvauxlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "E8",
+   "x": -535.2,
+   "z": 1725,
+   "street": "Avenue de l'Hélianthe - Zonnebloemlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H8",
+   "x": 956.4,
+   "z": 1785.5,
+   "street": "Avenue de Foestraets - de Foestraetslaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "H9",
+   "x": 934.5,
+   "z": 2462.3,
+   "street": "Avenue du Gui - Maretaklaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I3",
+   "x": 1059.5,
+   "z": -871,
+   "street": "Bosveldweg",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I5",
+   "x": 1277.8,
+   "z": 163.6,
+   "street": "Avenue Hamoir - Hamoirlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I8",
+   "x": 1221,
+   "z": 1902.5,
+   "street": "Avenue Blücher - Blücherlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I9",
+   "x": 1188.5,
+   "z": 2234.4,
+   "street": "Avenue Blücher - Blücherlaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "I9",
+   "x": 1453.2,
+   "z": 2107.4,
+   "street": "Avenue Maréchal Ney - Maarschalk Neylaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "J6",
+   "x": 1599.2,
+   "z": 678.1,
+   "street": "Avenue Alphonse XIII - Alphonse XIII laan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K7",
+   "x": 2360.9,
+   "z": 1412.6,
+   "street": "Avenue des Châlets - Kasteeltjeslaan",
+   "garageDrive6m": true
+  },
+  {
+   "tile": "K8",
+   "x": 2088.8,
+   "z": 1555.5,
+   "street": "Avenue des Châlets - Kasteeltjeslaan",
+   "garageDrive6m": true
+  }
+ ]
+}

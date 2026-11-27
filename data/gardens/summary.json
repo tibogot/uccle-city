@@ -1,6 +1,6 @@
 {
  "contract": "gardens-0.1",
- "built": "2026-11-27T17:34:24Z",
+ "built": "2026-11-27T18:13:57Z",
  "tiles": {
   "D1": {
    "faces": 2,
@@ -20,13 +20,13 @@
    "faces": 2,
    "gardenFaces": 214,
    "runs": 156,
-   "segs": 350,
-   "pillars": 512,
+   "segs": 354,
+   "pillars": 516,
    "gates": 91,
    "hedges": 55,
    "metres": {
-    "wall": 393.9,
-    "railing": 296.5,
+    "wall": 393.7,
+    "railing": 296.3,
     "hedge": 236.7
    }
   },
@@ -34,41 +34,41 @@
    "faces": 2,
    "gardenFaces": 113,
    "runs": 77,
-   "segs": 222,
-   "pillars": 220,
+   "segs": 225,
+   "pillars": 223,
    "gates": 39,
    "hedges": 35,
    "metres": {
-    "wall": 258.2,
-    "railing": 189.2,
-    "hedge": 114.0
+    "wall": 258.5,
+    "railing": 189.6,
+    "hedge": 113.9
    }
   },
   "G1": {
    "faces": 2,
    "gardenFaces": 214,
    "runs": 140,
-   "segs": 418,
-   "pillars": 408,
+   "segs": 419,
+   "pillars": 410,
    "gates": 64,
    "hedges": 81,
    "metres": {
-    "wall": 490.3,
-    "railing": 375.4,
-    "hedge": 381.1
+    "wall": 490.7,
+    "railing": 375.8,
+    "hedge": 380.6
    }
   },
   "H1": {
    "faces": 2,
    "gardenFaces": 411,
    "runs": 295,
-   "segs": 870,
-   "pillars": 935,
+   "segs": 877,
+   "pillars": 942,
    "gates": 159,
    "hedges": 167,
    "metres": {
-    "wall": 986.0,
-    "railing": 679.5,
+    "wall": 986.7,
+    "railing": 680.3,
     "hedge": 570.8
    }
   },
@@ -76,14 +76,14 @@
    "faces": 2,
    "gardenFaces": 169,
    "runs": 92,
-   "segs": 265,
-   "pillars": 277,
+   "segs": 267,
+   "pillars": 281,
    "gates": 34,
-   "hedges": 56,
+   "hedges": 57,
    "metres": {
-    "wall": 299.0,
+    "wall": 299.1,
     "railing": 188.9,
-    "hedge": 196.2
+    "hedge": 196.8
    }
   },
   "D2": {
@@ -100,14 +100,14 @@
    "faces": 2,
    "gardenFaces": 452,
    "runs": 342,
-   "segs": 649,
-   "pillars": 1095,
-   "gates": 246,
+   "segs": 659,
+   "pillars": 1106,
+   "gates": 249,
    "hedges": 203,
    "metres": {
-    "wall": 666.8,
-    "hedge": 603.0,
-    "railing": 324.2
+    "wall": 667.9,
+    "hedge": 602.2,
+    "railing": 325.7
    }
   },
   "F2": {
@@ -128,42 +128,42 @@
    "faces": 2,
    "gardenFaces": 441,
    "runs": 246,
-   "segs": 757,
-   "pillars": 869,
-   "gates": 173,
-   "hedges": 182,
+   "segs": 758,
+   "pillars": 870,
+   "gates": 174,
+   "hedges": 179,
    "metres": {
-    "wall": 869.2,
-    "railing": 710.8,
-    "hedge": 658.0
+    "wall": 868.6,
+    "railing": 710.2,
+    "hedge": 652.9
    }
   },
   "H2": {
    "faces": 2,
    "gardenFaces": 464,
    "runs": 287,
-   "segs": 1057,
-   "pillars": 1027,
-   "gates": 185,
-   "hedges": 207,
+   "segs": 1060,
+   "pillars": 1031,
+   "gates": 184,
+   "hedges": 208,
    "metres": {
-    "wall": 1226.5,
-    "railing": 928.6,
-    "hedge": 756.0
+    "wall": 1226.8,
+    "railing": 928.9,
+    "hedge": 758.2
    }
   },
   "I2": {
    "faces": 2,
    "gardenFaces": 393,
    "runs": 248,
-   "segs": 702,
-   "pillars": 854,
+   "segs": 704,
+   "pillars": 856,
    "gates": 160,
    "hedges": 104,
    "metres": {
-    "wall": 836.9,
-    "railing": 590.3,
-    "hedge": 371.5
+    "wall": 837.2,
+    "railing": 590.6,
+    "hedge": 373.0
    }
   },
   "J2": {
@@ -182,98 +182,98 @@
    "faces": 2,
    "gardenFaces": 174,
    "runs": 141,
-   "segs": 655,
-   "pillars": 516,
+   "segs": 675,
+   "pillars": 533,
    "gates": 129,
-   "hedges": 159,
+   "hedges": 152,
    "metres": {
-    "wall": 744.6,
-    "hedge": 480.2,
-    "railing": 368.5
+    "wall": 747.6,
+    "hedge": 470.0,
+    "railing": 368.6
    }
   },
   "D3": {
    "faces": 2,
    "gardenFaces": 451,
    "runs": 326,
-   "segs": 878,
-   "pillars": 1110,
-   "gates": 238,
-   "hedges": 176,
+   "segs": 884,
+   "pillars": 1117,
+   "gates": 237,
+   "hedges": 174,
    "metres": {
-    "wall": 965.0,
-    "railing": 526.2,
-    "hedge": 510.2
+    "wall": 965.4,
+    "railing": 526.5,
+    "hedge": 507.8
    }
   },
   "E3": {
    "faces": 2,
    "gardenFaces": 506,
    "runs": 340,
-   "segs": 928,
-   "pillars": 1089,
-   "gates": 201,
-   "hedges": 210,
+   "segs": 932,
+   "pillars": 1098,
+   "gates": 203,
+   "hedges": 208,
    "metres": {
-    "hedge": 654.0,
-    "wall": 1023.6,
-    "railing": 713.8
+    "hedge": 651.7,
+    "wall": 1022.8,
+    "railing": 713.9
    }
   },
   "F3": {
    "faces": 2,
    "gardenFaces": 496,
    "runs": 322,
-   "segs": 1226,
-   "pillars": 1013,
-   "gates": 270,
-   "hedges": 260,
+   "segs": 1229,
+   "pillars": 1020,
+   "gates": 271,
+   "hedges": 259,
    "metres": {
-    "wall": 1430.3,
-    "railing": 671.3,
-    "hedge": 1125.3
+    "wall": 1428.3,
+    "railing": 669.3,
+    "hedge": 1123.7
    }
   },
   "G3": {
    "faces": 2,
    "gardenFaces": 213,
    "runs": 145,
-   "segs": 422,
-   "pillars": 516,
+   "segs": 426,
+   "pillars": 523,
    "gates": 99,
    "hedges": 68,
    "metres": {
     "wall": 460.7,
-    "railing": 365.4,
-    "hedge": 260.3
+    "railing": 365.2,
+    "hedge": 260.2
    }
   },
   "H3": {
    "faces": 2,
    "gardenFaces": 583,
    "runs": 366,
-   "segs": 1131,
-   "pillars": 1146,
-   "gates": 250,
-   "hedges": 290,
+   "segs": 1137,
+   "pillars": 1152,
+   "gates": 249,
+   "hedges": 291,
    "metres": {
-    "wall": 1263.1,
-    "railing": 741.3,
-    "hedge": 990.5
+    "wall": 1265.9,
+    "railing": 743.6,
+    "hedge": 993.1
    }
   },
   "I3": {
    "faces": 2,
    "gardenFaces": 468,
    "runs": 329,
-   "segs": 721,
-   "pillars": 1102,
-   "gates": 243,
+   "segs": 731,
+   "pillars": 1116,
+   "gates": 242,
    "hedges": 164,
    "metres": {
-    "wall": 771.2,
-    "hedge": 537.9,
-    "railing": 576.7
+    "wall": 775.6,
+    "hedge": 537.5,
+    "railing": 579.7
    }
   },
   "J3": {
@@ -308,84 +308,84 @@
    "faces": 2,
    "gardenFaces": 446,
    "runs": 297,
-   "segs": 679,
-   "pillars": 1042,
-   "gates": 217,
-   "hedges": 200,
+   "segs": 686,
+   "pillars": 1047,
+   "gates": 215,
+   "hedges": 197,
    "metres": {
-    "wall": 743.5,
-    "railing": 439.9,
-    "hedge": 712.0
+    "wall": 745.1,
+    "railing": 440.7,
+    "hedge": 707.7
    }
   },
   "D4": {
    "faces": 2,
    "gardenFaces": 481,
    "runs": 323,
-   "segs": 995,
-   "pillars": 1052,
-   "gates": 252,
+   "segs": 1004,
+   "pillars": 1065,
+   "gates": 253,
    "hedges": 241,
    "metres": {
-    "wall": 1135.4,
-    "railing": 505.1,
-    "hedge": 1194.1
+    "wall": 1137.9,
+    "railing": 506.7,
+    "hedge": 1193.4
    }
   },
   "E4": {
    "faces": 2,
    "gardenFaces": 429,
    "runs": 296,
-   "segs": 741,
-   "pillars": 913,
-   "gates": 160,
-   "hedges": 195,
+   "segs": 742,
+   "pillars": 917,
+   "gates": 161,
+   "hedges": 194,
    "metres": {
-    "wall": 818.5,
-    "railing": 512.9,
-    "hedge": 651.5
+    "wall": 819.0,
+    "railing": 513.9,
+    "hedge": 649.9
    }
   },
   "F4": {
    "faces": 2,
    "gardenFaces": 343,
    "runs": 244,
-   "segs": 594,
-   "pillars": 667,
-   "gates": 151,
-   "hedges": 178,
+   "segs": 599,
+   "pillars": 674,
+   "gates": 150,
+   "hedges": 176,
    "metres": {
-    "wall": 662.1,
-    "railing": 386.3,
-    "hedge": 771.8
+    "wall": 663.5,
+    "railing": 388.2,
+    "hedge": 771.6
    }
   },
   "G4": {
    "faces": 2,
    "gardenFaces": 307,
    "runs": 225,
-   "segs": 458,
-   "pillars": 663,
+   "segs": 460,
+   "pillars": 672,
    "gates": 157,
    "hedges": 225,
    "metres": {
-    "hedge": 911.7,
-    "wall": 502.9,
-    "railing": 404.2
+    "hedge": 910.8,
+    "wall": 502.3,
+    "railing": 403.7
    }
   },
   "H4": {
    "faces": 2,
    "gardenFaces": 449,
    "runs": 301,
-   "segs": 747,
-   "pillars": 992,
-   "gates": 228,
-   "hedges": 265,
+   "segs": 752,
+   "pillars": 1001,
+   "gates": 227,
+   "hedges": 264,
    "metres": {
-    "hedge": 1001.2,
-    "wall": 825.4,
-    "railing": 723.7
+    "hedge": 1000.7,
+    "wall": 826.2,
+    "railing": 724.6
    }
   },
   "I4": {
@@ -393,27 +393,27 @@
    "gardenFaces": 230,
    "runs": 147,
    "segs": 492,
-   "pillars": 435,
+   "pillars": 437,
    "gates": 105,
    "hedges": 170,
    "metres": {
-    "wall": 578.9,
+    "wall": 579.0,
     "railing": 281.0,
-    "hedge": 752.7
+    "hedge": 752.2
    }
   },
   "J4": {
    "faces": 2,
    "gardenFaces": 217,
    "runs": 145,
-   "segs": 356,
-   "pillars": 463,
+   "segs": 360,
+   "pillars": 466,
    "gates": 90,
    "hedges": 143,
    "metres": {
-    "wall": 413.8,
-    "railing": 228.5,
-    "hedge": 549.0
+    "wall": 417.3,
+    "railing": 231.9,
+    "hedge": 548.3
    }
   },
   "K4": {
@@ -421,13 +421,13 @@
    "gardenFaces": 14,
    "runs": 12,
    "segs": 13,
-   "pillars": 30,
+   "pillars": 31,
    "gates": 9,
    "hedges": 9,
    "metres": {
     "wall": 12.5,
     "railing": 12.5,
-    "hedge": 36.0
+    "hedge": 35.6
    }
   },
   "A5": {
@@ -458,56 +458,56 @@
    "faces": 2,
    "gardenFaces": 438,
    "runs": 329,
-   "segs": 740,
-   "pillars": 1059,
-   "gates": 209,
-   "hedges": 159,
+   "segs": 743,
+   "pillars": 1060,
+   "gates": 210,
+   "hedges": 156,
    "metres": {
-    "wall": 794.3,
-    "railing": 576.6,
-    "hedge": 470.4
+    "wall": 799.7,
+    "railing": 579.2,
+    "hedge": 465.9
    }
   },
   "D5": {
    "faces": 2,
    "gardenFaces": 467,
    "runs": 344,
-   "segs": 587,
-   "pillars": 1089,
+   "segs": 590,
+   "pillars": 1092,
    "gates": 250,
-   "hedges": 161,
+   "hedges": 159,
    "metres": {
-    "wall": 587.2,
-    "railing": 358.5,
-    "hedge": 549.7
+    "wall": 586.6,
+    "railing": 360.7,
+    "hedge": 548.7
    }
   },
   "E5": {
    "faces": 2,
    "gardenFaces": 470,
    "runs": 341,
-   "segs": 799,
-   "pillars": 991,
+   "segs": 811,
+   "pillars": 1005,
    "gates": 247,
-   "hedges": 207,
+   "hedges": 203,
    "metres": {
-    "wall": 893.9,
-    "hedge": 706.5,
-    "railing": 468.3
+    "wall": 894.6,
+    "hedge": 701.8,
+    "railing": 468.0
    }
   },
   "F5": {
    "faces": 2,
    "gardenFaces": 387,
    "runs": 303,
-   "segs": 647,
-   "pillars": 929,
-   "gates": 208,
-   "hedges": 172,
+   "segs": 646,
+   "pillars": 938,
+   "gates": 211,
+   "hedges": 171,
    "metres": {
-    "hedge": 519.3,
-    "wall": 697.3,
-    "railing": 431.9
+    "hedge": 516.4,
+    "wall": 694.4,
+    "railing": 430.0
    }
   },
   "G5": {
@@ -515,26 +515,26 @@
    "gardenFaces": 420,
    "runs": 306,
    "segs": 585,
-   "pillars": 888,
-   "gates": 215,
-   "hedges": 273,
+   "pillars": 899,
+   "gates": 218,
+   "hedges": 272,
    "metres": {
-    "wall": 647.3,
-    "railing": 465.5,
-    "hedge": 1035.4
+    "wall": 646.8,
+    "railing": 466.2,
+    "hedge": 1032.8
    }
   },
   "H5": {
    "faces": 2,
    "gardenFaces": 376,
    "runs": 269,
-   "segs": 692,
-   "pillars": 819,
-   "gates": 196,
-   "hedges": 202,
+   "segs": 697,
+   "pillars": 825,
+   "gates": 195,
+   "hedges": 201,
    "metres": {
-    "hedge": 844.0,
-    "wall": 771.8,
+    "hedge": 841.8,
+    "wall": 773.9,
     "railing": 387.8
    }
   },
@@ -542,13 +542,13 @@
    "faces": 2,
    "gardenFaces": 385,
    "runs": 271,
-   "segs": 489,
-   "pillars": 818,
-   "gates": 197,
+   "segs": 496,
+   "pillars": 827,
+   "gates": 196,
    "hedges": 222,
    "metres": {
-    "hedge": 922.7,
-    "wall": 539.7,
+    "hedge": 922.4,
+    "wall": 540.8,
     "railing": 387.1
    }
   },
@@ -556,28 +556,28 @@
    "faces": 2,
    "gardenFaces": 497,
    "runs": 327,
-   "segs": 821,
-   "pillars": 1016,
+   "segs": 824,
+   "pillars": 1022,
    "gates": 222,
    "hedges": 245,
    "metres": {
-    "wall": 910.3,
-    "railing": 577.4,
-    "hedge": 884.2
+    "wall": 908.5,
+    "railing": 574.3,
+    "hedge": 883.1
    }
   },
   "K5": {
    "faces": 2,
    "gardenFaces": 95,
    "runs": 67,
-   "segs": 208,
-   "pillars": 269,
-   "gates": 48,
-   "hedges": 66,
+   "segs": 212,
+   "pillars": 271,
+   "gates": 47,
+   "hedges": 67,
    "metres": {
-    "wall": 216.0,
-    "railing": 177.2,
-    "hedge": 182.2
+    "wall": 218.8,
+    "railing": 179.7,
+    "hedge": 184.5
    }
   },
   "L5": {
@@ -591,16 +591,16 @@
    "metres": {}
   },
   "M5": {
-   "faces": 2,
+   "faces": 25,
    "gardenFaces": 17,
    "runs": 12,
-   "segs": 81,
-   "pillars": 52,
+   "segs": 82,
+   "pillars": 53,
    "gates": 10,
    "hedges": 5,
    "metres": {
     "hedge": 19.4,
-    "wall": 101.9,
+    "wall": 102.0,
     "railing": 24.2
    }
   },
@@ -620,97 +620,97 @@
    "faces": 2,
    "gardenFaces": 256,
    "runs": 178,
-   "segs": 413,
-   "pillars": 537,
-   "gates": 88,
-   "hedges": 140,
+   "segs": 414,
+   "pillars": 541,
+   "gates": 89,
+   "hedges": 139,
    "metres": {
-    "wall": 434.4,
-    "railing": 393.0,
-    "hedge": 321.6
+    "wall": 433.8,
+    "railing": 392.4,
+    "hedge": 320.3
    }
   },
   "C6": {
    "faces": 2,
    "gardenFaces": 425,
    "runs": 364,
-   "segs": 841,
-   "pillars": 1190,
-   "gates": 263,
-   "hedges": 206,
+   "segs": 854,
+   "pillars": 1208,
+   "gates": 265,
+   "hedges": 203,
    "metres": {
-    "wall": 871.9,
-    "hedge": 604.1,
-    "railing": 584.8
+    "wall": 874.1,
+    "hedge": 599.6,
+    "railing": 585.7
    }
   },
   "D6": {
    "faces": 2,
    "gardenFaces": 301,
    "runs": 203,
-   "segs": 795,
-   "pillars": 690,
+   "segs": 802,
+   "pillars": 697,
    "gates": 118,
    "hedges": 93,
    "metres": {
-    "wall": 906.4,
+    "wall": 906.6,
     "railing": 522.9,
-    "hedge": 329.6
+    "hedge": 329.4
    }
   },
   "E6": {
    "faces": 2,
    "gardenFaces": 572,
    "runs": 416,
-   "segs": 1160,
-   "pillars": 1286,
-   "gates": 272,
-   "hedges": 290,
+   "segs": 1169,
+   "pillars": 1298,
+   "gates": 273,
+   "hedges": 289,
    "metres": {
-    "wall": 1283.4,
-    "railing": 650.3,
-    "hedge": 1117.2
+    "wall": 1284.0,
+    "railing": 650.6,
+    "hedge": 1114.7
    }
   },
   "F6": {
    "faces": 2,
    "gardenFaces": 490,
    "runs": 343,
-   "segs": 952,
-   "pillars": 1077,
-   "gates": 263,
-   "hedges": 266,
+   "segs": 963,
+   "pillars": 1093,
+   "gates": 265,
+   "hedges": 265,
    "metres": {
-    "wall": 1035.6,
-    "railing": 556.7,
-    "hedge": 804.1
+    "wall": 1035.0,
+    "railing": 556.8,
+    "hedge": 801.4
    }
   },
   "G6": {
    "faces": 2,
    "gardenFaces": 379,
    "runs": 301,
-   "segs": 561,
-   "pillars": 991,
-   "gates": 242,
-   "hedges": 193,
+   "segs": 565,
+   "pillars": 1000,
+   "gates": 241,
+   "hedges": 190,
    "metres": {
-    "wall": 583.5,
-    "railing": 463.2,
-    "hedge": 654.8
+    "wall": 579.8,
+    "railing": 461.9,
+    "hedge": 646.1
    }
   },
   "H6": {
    "faces": 2,
    "gardenFaces": 251,
    "runs": 190,
-   "segs": 522,
-   "pillars": 609,
+   "segs": 523,
+   "pillars": 611,
    "gates": 102,
    "hedges": 130,
    "metres": {
-    "hedge": 390.0,
-    "wall": 567.8,
+    "hedge": 386.8,
+    "wall": 568.0,
     "railing": 465.1
    }
   },
@@ -718,14 +718,14 @@
    "faces": 2,
    "gardenFaces": 532,
    "runs": 385,
-   "segs": 686,
-   "pillars": 1137,
-   "gates": 240,
+   "segs": 687,
+   "pillars": 1140,
+   "gates": 242,
    "hedges": 238,
    "metres": {
-    "wall": 729.2,
-    "railing": 474.5,
-    "hedge": 739.5
+    "wall": 728.4,
+    "railing": 474.2,
+    "hedge": 740.1
    }
   },
   "J6": {
@@ -733,26 +733,26 @@
    "gardenFaces": 270,
    "runs": 203,
    "segs": 537,
-   "pillars": 706,
-   "gates": 145,
-   "hedges": 188,
+   "pillars": 709,
+   "gates": 147,
+   "hedges": 187,
    "metres": {
-    "wall": 593.4,
-    "railing": 365.7,
-    "hedge": 547.6
+    "wall": 593.3,
+    "railing": 364.5,
+    "hedge": 545.1
    }
   },
   "K6": {
    "faces": 2,
    "gardenFaces": 142,
    "runs": 95,
-   "segs": 324,
-   "pillars": 364,
-   "gates": 71,
+   "segs": 328,
+   "pillars": 370,
+   "gates": 72,
    "hedges": 136,
    "metres": {
-    "hedge": 397.2,
-    "wall": 361.6,
+    "hedge": 397.0,
+    "wall": 361.9,
     "railing": 220.9
    }
   },
@@ -794,41 +794,41 @@
    "faces": 2,
    "gardenFaces": 140,
    "runs": 120,
-   "segs": 273,
-   "pillars": 389,
+   "segs": 280,
+   "pillars": 396,
    "gates": 75,
    "hedges": 79,
    "metres": {
-    "hedge": 231.6,
+    "hedge": 230.7,
     "wall": 301.6,
-    "railing": 268.8
+    "railing": 268.9
    }
   },
   "C7": {
    "faces": 2,
    "gardenFaces": 426,
    "runs": 344,
-   "segs": 1146,
-   "pillars": 1172,
+   "segs": 1159,
+   "pillars": 1196,
    "gates": 249,
-   "hedges": 246,
+   "hedges": 243,
    "metres": {
-    "wall": 1260.2,
-    "railing": 1041.0,
-    "hedge": 757.5
+    "wall": 1264.0,
+    "railing": 1044.3,
+    "hedge": 751.9
    }
   },
   "D7": {
    "faces": 2,
    "gardenFaces": 197,
    "runs": 141,
-   "segs": 405,
-   "pillars": 413,
+   "segs": 408,
+   "pillars": 415,
    "gates": 80,
    "hedges": 119,
    "metres": {
-    "wall": 465.1,
-    "railing": 315.7,
+    "wall": 465.6,
+    "railing": 316.2,
     "hedge": 522.9
    }
   },
@@ -837,26 +837,26 @@
    "gardenFaces": 272,
    "runs": 190,
    "segs": 409,
-   "pillars": 565,
-   "gates": 140,
-   "hedges": 110,
+   "pillars": 564,
+   "gates": 142,
+   "hedges": 109,
    "metres": {
-    "wall": 443.0,
-    "hedge": 398.1,
-    "railing": 282.0
+    "wall": 441.6,
+    "hedge": 396.4,
+    "railing": 282.2
    }
   },
   "F7": {
    "faces": 2,
    "gardenFaces": 103,
    "runs": 79,
-   "segs": 453,
-   "pillars": 291,
+   "segs": 459,
+   "pillars": 297,
    "gates": 60,
-   "hedges": 97,
+   "hedges": 95,
    "metres": {
-    "wall": 533.5,
-    "hedge": 422.4,
+    "wall": 533.7,
+    "hedge": 419.2,
     "railing": 145.3
    }
   },
@@ -864,70 +864,70 @@
    "faces": 2,
    "gardenFaces": 49,
    "runs": 31,
-   "segs": 138,
-   "pillars": 138,
-   "gates": 28,
-   "hedges": 40,
+   "segs": 140,
+   "pillars": 139,
+   "gates": 27,
+   "hedges": 41,
    "metres": {
-    "wall": 144.4,
+    "wall": 144.9,
     "railing": 101.3,
-    "hedge": 102.4
+    "hedge": 103.3
    }
   },
   "H7": {
    "faces": 2,
    "gardenFaces": 319,
    "runs": 255,
-   "segs": 623,
-   "pillars": 873,
+   "segs": 637,
+   "pillars": 886,
    "gates": 187,
-   "hedges": 167,
+   "hedges": 168,
    "metres": {
-    "wall": 645.9,
-    "hedge": 523.4,
-    "railing": 472.1
+    "wall": 652.9,
+    "hedge": 527.4,
+    "railing": 477.8
    }
   },
   "I7": {
    "faces": 2,
    "gardenFaces": 302,
    "runs": 216,
-   "segs": 604,
-   "pillars": 751,
-   "gates": 161,
+   "segs": 614,
+   "pillars": 761,
+   "gates": 160,
    "hedges": 173,
    "metres": {
-    "wall": 662.6,
-    "hedge": 490.8,
-    "railing": 443.8
+    "wall": 664.3,
+    "hedge": 489.9,
+    "railing": 443.2
    }
   },
   "J7": {
    "faces": 2,
    "gardenFaces": 659,
    "runs": 445,
-   "segs": 1163,
-   "pillars": 1428,
-   "gates": 320,
-   "hedges": 380,
+   "segs": 1170,
+   "pillars": 1440,
+   "gates": 319,
+   "hedges": 381,
    "metres": {
-    "hedge": 1303.1,
-    "wall": 1273.4,
-    "railing": 874.9
+    "hedge": 1300.5,
+    "wall": 1275.0,
+    "railing": 877.3
    }
   },
   "K7": {
    "faces": 2,
    "gardenFaces": 205,
    "runs": 133,
-   "segs": 234,
-   "pillars": 346,
-   "gates": 92,
-   "hedges": 140,
+   "segs": 240,
+   "pillars": 354,
+   "gates": 91,
+   "hedges": 139,
    "metres": {
-    "hedge": 586.3,
-    "wall": 264.2,
-    "railing": 185.0
+    "hedge": 583.5,
+    "wall": 266.8,
+    "railing": 187.7
    }
   },
   "L7": {
@@ -976,126 +976,126 @@
    "faces": 2,
    "gardenFaces": 316,
    "runs": 254,
-   "segs": 519,
-   "pillars": 807,
+   "segs": 527,
+   "pillars": 817,
    "gates": 207,
-   "hedges": 113,
+   "hedges": 111,
    "metres": {
-    "wall": 576.4,
-    "railing": 344.5,
-    "hedge": 453.2
+    "wall": 577.7,
+    "railing": 346.9,
+    "hedge": 448.0
    }
   },
   "D8": {
    "faces": 2,
    "gardenFaces": 315,
    "runs": 220,
-   "segs": 643,
-   "pillars": 682,
-   "gates": 125,
-   "hedges": 206,
+   "segs": 644,
+   "pillars": 687,
+   "gates": 126,
+   "hedges": 205,
    "metres": {
-    "hedge": 669.5,
-    "wall": 702.9,
-    "railing": 582.8
+    "hedge": 667.6,
+    "wall": 702.0,
+    "railing": 582.7
    }
   },
   "E8": {
    "faces": 2,
    "gardenFaces": 309,
    "runs": 251,
-   "segs": 873,
-   "pillars": 889,
-   "gates": 196,
-   "hedges": 241,
+   "segs": 884,
+   "pillars": 911,
+   "gates": 198,
+   "hedges": 234,
    "metres": {
-    "wall": 953.6,
+    "wall": 953.3,
     "railing": 678.9,
-    "hedge": 758.7
+    "hedge": 748.2
    }
   },
   "F8": {
    "faces": 2,
    "gardenFaces": 254,
    "runs": 154,
-   "segs": 630,
-   "pillars": 517,
+   "segs": 635,
+   "pillars": 522,
    "gates": 106,
-   "hedges": 93,
+   "hedges": 92,
    "metres": {
-    "wall": 711.8,
-    "hedge": 415.2,
-    "railing": 396.8
+    "wall": 712.2,
+    "hedge": 413.8,
+    "railing": 396.9
    }
   },
   "G8": {
    "faces": 2,
    "gardenFaces": 99,
    "runs": 66,
-   "segs": 228,
-   "pillars": 249,
+   "segs": 232,
+   "pillars": 255,
    "gates": 55,
-   "hedges": 50,
+   "hedges": 49,
    "metres": {
-    "wall": 263.9,
-    "railing": 234.9,
-    "hedge": 146.6
+    "wall": 263.0,
+    "railing": 234.1,
+    "hedge": 144.9
    }
   },
   "H8": {
    "faces": 2,
    "gardenFaces": 289,
    "runs": 219,
-   "segs": 891,
-   "pillars": 732,
+   "segs": 900,
+   "pillars": 741,
    "gates": 180,
    "hedges": 299,
    "metres": {
-    "wall": 1007.1,
-    "railing": 276.8,
-    "hedge": 1051.6
+    "wall": 1011.9,
+    "railing": 278.4,
+    "hedge": 1050.1
    }
   },
   "I8": {
    "faces": 2,
    "gardenFaces": 312,
    "runs": 223,
-   "segs": 800,
-   "pillars": 735,
-   "gates": 144,
-   "hedges": 259,
+   "segs": 806,
+   "pillars": 742,
+   "gates": 142,
+   "hedges": 258,
    "metres": {
-    "wall": 923.2,
-    "railing": 298.3,
-    "hedge": 1104.3
+    "wall": 925.0,
+    "railing": 298.8,
+    "hedge": 1104.2
    }
   },
   "J8": {
    "faces": 2,
    "gardenFaces": 312,
    "runs": 214,
-   "segs": 830,
-   "pillars": 771,
-   "gates": 156,
+   "segs": 836,
+   "pillars": 777,
+   "gates": 157,
    "hedges": 283,
    "metres": {
-    "wall": 937.4,
-    "railing": 520.8,
-    "hedge": 1053.0
+    "wall": 940.0,
+    "railing": 522.9,
+    "hedge": 1052.6
    }
   },
   "K8": {
    "faces": 2,
    "gardenFaces": 333,
    "runs": 243,
-   "segs": 601,
-   "pillars": 790,
-   "gates": 172,
-   "hedges": 141,
+   "segs": 614,
+   "pillars": 808,
+   "gates": 171,
+   "hedges": 139,
    "metres": {
-    "wall": 681.7,
-    "railing": 446.6,
-    "hedge": 502.8
+    "wall": 681.3,
+    "railing": 446.1,
+    "hedge": 497.8
    }
   },
   "L8": {
@@ -1136,83 +1136,83 @@
    "faces": 2,
    "gardenFaces": 49,
    "runs": 30,
-   "segs": 32,
-   "pillars": 84,
+   "segs": 35,
+   "pillars": 86,
    "gates": 20,
    "hedges": 10,
    "metres": {
     "hedge": 44.1,
-    "wall": 34.1,
-    "railing": 33.4
+    "wall": 34.4,
+    "railing": 33.8
    }
   },
   "D9": {
    "faces": 2,
    "gardenFaces": 125,
    "runs": 93,
-   "segs": 295,
-   "pillars": 297,
+   "segs": 298,
+   "pillars": 301,
    "gates": 78,
    "hedges": 61,
    "metres": {
     "wall": 324.7,
-    "hedge": 237.4,
-    "railing": 142.2
+    "hedge": 236.8,
+    "railing": 142.0
    }
   },
   "E9": {
    "faces": 2,
    "gardenFaces": 549,
    "runs": 396,
-   "segs": 1286,
-   "pillars": 1203,
+   "segs": 1298,
+   "pillars": 1213,
    "gates": 278,
-   "hedges": 269,
+   "hedges": 267,
    "metres": {
-    "hedge": 884.9,
-    "wall": 1441.4,
-    "railing": 818.1
+    "hedge": 886.7,
+    "wall": 1446.0,
+    "railing": 818.2
    }
   },
   "F9": {
    "faces": 2,
    "gardenFaces": 650,
    "runs": 517,
-   "segs": 1905,
-   "pillars": 1636,
-   "gates": 394,
-   "hedges": 399,
+   "segs": 1950,
+   "pillars": 1677,
+   "gates": 390,
+   "hedges": 397,
    "metres": {
-    "wall": 2133.7,
-    "hedge": 1540.4,
-    "railing": 1225.5
+    "wall": 2140.4,
+    "hedge": 1540.8,
+    "railing": 1227.4
    }
   },
   "G9": {
    "faces": 2,
    "gardenFaces": 135,
    "runs": 94,
-   "segs": 360,
-   "pillars": 306,
+   "segs": 362,
+   "pillars": 310,
    "gates": 56,
-   "hedges": 75,
+   "hedges": 74,
    "metres": {
-    "wall": 411.1,
-    "railing": 242.0,
-    "hedge": 300.5
+    "wall": 412.9,
+    "railing": 243.7,
+    "hedge": 299.4
    }
   },
   "H9": {
    "faces": 2,
    "gardenFaces": 198,
    "runs": 138,
-   "segs": 574,
-   "pillars": 362,
+   "segs": 576,
+   "pillars": 366,
    "gates": 84,
-   "hedges": 177,
+   "hedges": 178,
    "metres": {
-    "wall": 661.9,
-    "hedge": 793.3,
+    "wall": 662.7,
+    "hedge": 793.7,
     "railing": 256.0
    }
   },
@@ -1220,42 +1220,42 @@
    "faces": 2,
    "gardenFaces": 291,
    "runs": 199,
-   "segs": 795,
-   "pillars": 616,
+   "segs": 799,
+   "pillars": 626,
    "gates": 141,
-   "hedges": 258,
+   "hedges": 256,
    "metres": {
-    "wall": 923.0,
-    "railing": 332.7,
-    "hedge": 991.6
+    "wall": 924.7,
+    "railing": 333.4,
+    "hedge": 987.6
    }
   },
   "J9": {
    "faces": 2,
    "gardenFaces": 258,
    "runs": 184,
-   "segs": 517,
-   "pillars": 482,
-   "gates": 131,
-   "hedges": 235,
+   "segs": 519,
+   "pillars": 489,
+   "gates": 129,
+   "hedges": 234,
    "metres": {
-    "hedge": 1031.7,
-    "wall": 613.4,
-    "railing": 239.5
+    "hedge": 1027.8,
+    "wall": 614.3,
+    "railing": 240.5
    }
   },
   "K9": {
    "faces": 2,
    "gardenFaces": 304,
    "runs": 211,
-   "segs": 504,
-   "pillars": 631,
-   "gates": 146,
-   "hedges": 272,
+   "segs": 511,
+   "pillars": 638,
+   "gates": 145,
+   "hedges": 270,
    "metres": {
-    "wall": 553.5,
-    "railing": 456.2,
-    "hedge": 880.9
+    "wall": 554.1,
+    "railing": 456.3,
+    "hedge": 878.9
    }
   },
   "L9": {
@@ -1302,13 +1302,13 @@
    "faces": 2,
    "gardenFaces": 161,
    "runs": 108,
-   "segs": 174,
-   "pillars": 278,
+   "segs": 175,
+   "pillars": 279,
    "gates": 74,
    "hedges": 75,
    "metres": {
     "hedge": 228.4,
-    "wall": 191.1,
+    "wall": 191.2,
     "railing": 108.3
    }
   },
@@ -1316,14 +1316,14 @@
    "faces": 2,
    "gardenFaces": 170,
    "runs": 132,
-   "segs": 454,
-   "pillars": 474,
-   "gates": 103,
-   "hedges": 118,
+   "segs": 463,
+   "pillars": 488,
+   "gates": 102,
+   "hedges": 116,
    "metres": {
-    "wall": 470.9,
-    "railing": 369.8,
-    "hedge": 458.6
+    "wall": 471.9,
+    "railing": 370.3,
+    "hedge": 456.3
    }
   },
   "F10": {
@@ -1331,11 +1331,11 @@
    "gardenFaces": 45,
    "runs": 35,
    "segs": 92,
-   "pillars": 100,
+   "pillars": 101,
    "gates": 33,
    "hedges": 30,
    "metres": {
-    "hedge": 113.9,
+    "hedge": 115.2,
     "wall": 102.2,
     "railing": 74.5
    }
@@ -1344,14 +1344,14 @@
    "faces": 2,
    "gardenFaces": 207,
    "runs": 151,
-   "segs": 324,
-   "pillars": 368,
+   "segs": 325,
+   "pillars": 369,
    "gates": 83,
-   "hedges": 140,
+   "hedges": 139,
    "metres": {
-    "hedge": 563.7,
-    "wall": 357.2,
-    "railing": 231.5
+    "hedge": 563.5,
+    "wall": 357.3,
+    "railing": 231.6
    }
   },
   "H10": {
@@ -1372,42 +1372,42 @@
    "faces": 2,
    "gardenFaces": 389,
    "runs": 266,
-   "segs": 911,
-   "pillars": 846,
+   "segs": 917,
+   "pillars": 857,
    "gates": 189,
    "hedges": 294,
    "metres": {
-    "wall": 1016.9,
-    "railing": 384.5,
-    "hedge": 1239.0
+    "wall": 1017.1,
+    "railing": 384.3,
+    "hedge": 1238.6
    }
   },
   "J10": {
    "faces": 2,
    "gardenFaces": 283,
    "runs": 209,
-   "segs": 645,
-   "pillars": 686,
+   "segs": 649,
+   "pillars": 690,
    "gates": 141,
    "hedges": 235,
    "metres": {
     "wall": 721.5,
-    "railing": 584.5,
-    "hedge": 750.3
+    "railing": 584.6,
+    "hedge": 749.1
    }
   },
   "K10": {
    "faces": 2,
    "gardenFaces": 198,
    "runs": 120,
-   "segs": 446,
-   "pillars": 386,
+   "segs": 447,
+   "pillars": 388,
    "gates": 66,
    "hedges": 105,
    "metres": {
-    "wall": 513.9,
-    "railing": 408.4,
-    "hedge": 574.1
+    "wall": 514.0,
+    "railing": 408.6,
+    "hedge": 575.2
    }
   },
   "L10": {
@@ -1480,22 +1480,22 @@
    "hedges": 17,
    "metres": {
     "hedge": 105.5,
-    "wall": 118.3,
-    "railing": 108.9
+    "wall": 118.8,
+    "railing": 109.4
    }
   },
   "K11": {
    "faces": 2,
    "gardenFaces": 119,
    "runs": 79,
-   "segs": 278,
-   "pillars": 271,
+   "segs": 279,
+   "pillars": 273,
    "gates": 47,
-   "hedges": 64,
+   "hedges": 63,
    "metres": {
-    "wall": 306.6,
+    "wall": 306.8,
     "railing": 236.8,
-    "hedge": 227.2
+    "hedge": 225.9
    }
   },
   "L11": {
@@ -1573,16 +1573,16 @@
  },
  "stats": {
   "access_gates": 3013,
-  "car_gates": 1882,
+  "car_gates": 1861,
   "car_gates_open": 26,
-  "car_open": 11219,
+  "car_open": 11223,
   "door_gate_blocked": 1199,
   "door_gates": 11653,
-  "door_in_driveway": 5652,
+  "door_in_driveway": 4976,
   "door_off_run": 537,
-  "door_through_drive": 871,
-  "drive_garage": 1616,
-  "drive_garage_door_tight": 65,
+  "door_through_drive": 843,
+  "drive_garage": 1601,
+  "drive_garage_door_tight": 80,
   "drive_garage_steep": 48,
   "drive_garage_widened": 1408,
   "drive_osm": 26,
@@ -1593,9 +1593,9 @@
   "forecourt_samples": 10225,
   "gardens": 18335,
   "inst_fences": 163,
-  "m_hedge": 51187.1,
-  "m_railing": 35927.4,
-  "m_wall": 57967.3,
+  "m_hedge": 51066.1,
+  "m_railing": 35970.1,
+  "m_wall": 58036.0,
   "mitred_corners": 269,
   "open_fronts": 69,
   "osm_fence": 23,
@@ -1603,10 +1603,10 @@
   "osm_hedge": 61,
   "osm_runs": 108,
   "osm_wall": 24,
-  "ped_beside_drive": 4781,
-  "ped_carved": 870,
-  "ped_gates": 10772,
-  "retaining": 1203,
+  "ped_beside_drive": 4133,
+  "ped_carved": 875,
+  "ped_gates": 10799,
+  "retaining": 1211,
   "skip_shop": 1475,
   "skip_shopfront": 457,
   "tiles": 120

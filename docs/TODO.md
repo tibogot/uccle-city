@@ -59,6 +59,8 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    driveway input next to UrbIS CR42L, then the full gate (a patch of surfaces.json in place, 2026-11-27, stopped K8 / H8
    building and sent the ground tilt 610 -> 4,755: withdrawn). Same job: the 4,685 flat asphalt needles on the sidewalks'
    back edges (row streetslivers, the light line at the garden join).
+   Reality rounds: facade-kit garage door without a real garage makes a drive (Delvaux 36: Street View shows a low plinth,
+   railing and a garden gate, no garage; the facade kit paints one, so the gardens draw a drive there).
 
 ## OWNER PLAYTEST 2026-11-18 (car, live site) — TOP PRIORITY
 Owner's point: don't fix these one by one; find the CLASS of each defect, fix it at the generator, and add a city-wide detector so it can't come back unseen.
