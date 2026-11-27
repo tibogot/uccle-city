@@ -25,6 +25,10 @@ The browser check found three more:
 - **Hunting.** The flyer still handed it the nearest pigeons, and it caught one on the avenue. A course now sets an empty prey source.
 - **The start.** The city's wind drifts a hands-off start ~9 m in 55 m, so the start is now 40 m before the first ring. The stoop's line was below the level chase camera's view, so its start is now 60 m back and 10 m up, where the line is in view.
 
+The merge of foundation 8821cafd found one more:
+
+- **The motion list.** `ringsView.js` writes instance matrices, so the motion row (`tools/audit/motionAudit.mjs`, rule 1) must know it as a MOVER or STATIC. It is STATIC: the matrices are written once per course, and the ghost is a plain `Mesh` (ObjectMotionMatrix). The branch's own gate missed it: before foundation's 5ded7024 the motion row did not list `viewer/` as a dep (rule gate-dir-deps), so a new viewer file never re-ran it.
+
 **What it is** (`viewer/falconGame/ringCourses.js`, `ringsView.js`, `ringsGame.js`, falcon game menu: Rings):
 
 - **The spires.** 17 rings, 7-9 m, 42-60 m over the roofs, a slalom from Saint-Job's tower to Saint-Pierre's.

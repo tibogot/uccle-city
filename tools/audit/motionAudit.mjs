@@ -52,6 +52,7 @@ const STATIC = {
   "weather/cityWeather.js": "rain / snow particles: screen effect, no motion wanted", "weather/snowCaps.js": "snow caps: on change",
   "flags/flagField.js": "flags' cloth (KNOWN GAP: wave in the shader, no motion delta; small, slow)",
   "tramModel.js": "tram V1 (?tram=v1, not default)", "tramline.js": "box trams (?tram=box, not default)",
+  "falconGame/ringsView.js": "falcon ring courses (rule falcon-rings): the rings' matrices written once per course, the cue is a colour uniform; the ghost is a plain Mesh (ObjectMotionMatrix)",
   "falconFlight/hints.js": "thermal hints (KNOWN GAP: gulls + dust, hidden in the city: group.visible = false)",
   "pedestrians/personMaterial.js": "pedestrians (KNOWN GAP: GPU pose buffer, no previous pose; walking 1.4 m/s = 2 cm / frame)",
   "pedestrians/props.js": "pedestrians' props (KNOWN GAP, as the pedestrians)",
