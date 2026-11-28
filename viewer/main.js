@@ -2590,11 +2590,11 @@ async function main() {
       // and no long frame for 1.5 s: their GLB parse / build / compile would otherwise land in the first minute of play
       // (perfgame round 2, ?settlejobs=loads: the far landmarks' COMPILE jobs are not waited for: 25-37 s
       // of serial compile queue after the cover; once loaded they compile in slices and show when done, the pipelines async)
-      const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000 && !(NIGHT_HOLD && cityNight?.warmPending?.()));   // (perf8 ?nighthold=old: the lamp-shadow warm-up of what the area brought done too)
+      const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000 && !(NIGHT_HOLD && cityNight?.warmPending?.({ x, z, r: near })));   // (perf8 ?nighthold=old: the lamp-shadow warm-up of what the area brought done too; claude/nightload: at night the spawn ring's stand-in keys, cityNight.js nightStep)
       const gpuOk = st.jobs === 0 && st.pipes === 0 && fadeShadowLeft === 0 && settled;
       q = tilesOk && gpuOk ? q + 1 : 0;
       // (perf8 debug: when each condition first held, ms after the start of the hold: window.__areaTrace)
-      { const tr = ((window.__areaTrace ||= {})[label || "?"] ||= {}), now = Math.round(performance.now() - t0); if (tilesOk) tr.tiles ??= now; if (st.jobs === 0) tr.nearJobs ??= now; if (st.pipes === 0) tr.pipes ??= now; if (gatesPending() === 0) tr.gates ??= now; if (settled) tr.settled ??= now; if (fadeShadowLeft === 0) tr.fadeShadow ??= now; if (tilesOk && gpuOk) tr.all ??= now;
+      { const tr = ((window.__areaTrace ||= {})[label || "?"] ||= {}), now = Math.round(performance.now() - t0); if (tilesOk) tr.tiles ??= now; if (st.jobs === 0) tr.nearJobs ??= now; if (st.pipes === 0) tr.pipes ??= now; if (gatesPending() === 0) tr.gates ??= now; if (settled) tr.settled ??= now; if (fadeShadowLeft === 0) tr.fadeShadow ??= now; if (tilesOk && gpuOk) tr.all ??= now; tr.night = cityNight?.warmPending?.({ x, z, r: near }) ?? null;
         if (fadeShadowLeft) delete tr.fadeShadow; if (!(tilesOk && gpuOk)) delete tr.all;
         if (!tilesOk) delete tr.tiles; if (st.jobs) delete tr.nearJobs; if (st.pipes) delete tr.pipes; if (!settled) delete tr.settled; tr.st = { ...st }; }
       holdThrottle = HOLD_THROTTLE && !(tilesOk && gpuOk);
@@ -2632,7 +2632,9 @@ async function main() {
     const label = o.label ?? o.name;
     playLoader.open(playLoader.active ? {} : { title: label || "On the way", kicker: "Travelling" });
     try {
+      const tq = performance.now();
       const r = await teleportNow(o);
+      (globalThis.__gameTimes ||= []).push(["teleportNow", Math.round(performance.now() - tq), r.tileMs]);   // (claude/nightload debug)
       await o.after?.(r);                                  // (the dev panel's Go to: its camera, set before the area check)
       const P = getPlayer();
       // (an orbit / aerial view sees past the street: the ring's full tiles within 550 m, not 300)
@@ -2671,7 +2673,9 @@ async function main() {
       third.last = [x, world.walkY(x, z) + 0.6, z, Math.PI - b];
       third.resume();
       // its colliders for the new tile are built a moment later (cityHook sync): hold it in place until the ground is there
+      const ts = performance.now();
       await settleThird(x, z, Math.PI - b);
+      (globalThis.__gameTimes ||= []).push(["settleThird", Math.round(performance.now() - ts)]);   // (claude/nightload debug)
     } else { const y = world.surface(x, z); controls.target.set(x, y, z); camera.position.set(x - Math.sin(b) * 110, y + 70, z + Math.cos(b) * 110); controls.update(); }
     lighting.snapNext = true;
     return { ms: performance.now() - t0, tileMs: +tTile.toFixed(0), tile: entry.name, loaded: !loaded, mode: m };
