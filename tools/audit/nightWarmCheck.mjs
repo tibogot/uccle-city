@@ -43,6 +43,11 @@ ok(/warmPending: \(near = null\) =>[\s\S]{0,300}NIGHT_WARM && lastScale > 0[\s\S
 ok(M.includes("cityNight?.warmPending?.({ x, z, r: near })"), "main.js areaReady passes the spawn point (the loader waits for the ring's keys only)");
 ok(/old\("nightwarm"/.test(F), "viewer/features.js has the ?nightwarm=old row");
 ok(fs.existsSync(path.join(ROOT, "docs/rules/night-warm-at-night.md")), "docs/rules/night-warm-at-night.md exists");
+// (rule spawn-hold-parallel) the police yard spawn: the character's boot beside the area hold, then a short second hold
+const K = read("viewer/game/kit.js");
+ok(/const SPAWN_PAR = params\.get\("spawnpar"\) !== "old"/.test(M) && /if \(SPAWN_PAR && o\.mode === "third" && !third && !o\.after\) \{[\s\S]{0,200}await Promise\.all\(\[teleportNow\(o\), areaReady\(\{ x: o\.x, z: o\.z, label, near \}\)\]\)[\s\S]{0,120}r\.ready = await areaReady\(\{[\s\S]{0,90}settle: false \}\)/.test(M), "main.js teleport: a first teleport into third person boots the character BESIDE the area hold, then a short second hold (its first frames under the cover)");
+ok(/mode === "third" && !this\.host\.getThird\(\) && \/\[\?&\]spawnpar=old/.test(K), "game/kit.js spawnPlayer: no character boot BEFORE the teleport (only under ?spawnpar=old)");
+ok(/old\("spawnpar"/.test(F) && fs.existsSync(path.join(ROOT, "docs/rules/spawn-hold-parallel.md")), "features row ?spawnpar=old + docs/rules/spawn-hold-parallel.md");
 
 console.log(fails ? `nightwarm: ${fails} FAIL` : "nightwarm: all ok");
 process.exit(fails ? 1 : 0);
