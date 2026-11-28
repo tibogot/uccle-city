@@ -72,6 +72,7 @@ the check dates are in `pipeline/sources.json`.
 | mrdoob/slop-newyork pedestrians (`vendor/slop-ped/pedestrians.js`: bodies, clothes shader, GPU skinning, `PersonRig` gait), commit `536a907c`; the crowd's baked clips (`models/pedestrians/clips.*`) are generated from that gait code by `tools/peds/bakeGait.mjs` | MIT, © 2026 Mr.doob | `vendor/slop-ped/LICENSE` and `ORIGIN.md`. Used by `viewer/pedestrians/` and `labs/pedestrian-lab.html`. No third-party animation clips (no Mixamo, no UAL yet) |
 | Brussels bench (`models/furniture/brussels_furniture.glb`, piece `bench`) | ours (scripted: `claude/furniture` `tools/blender/furniture.py`) | Copied from the furniture branch for the Pedestrian Lab's benches; keep one copy when the branches merge |
 | Quaternius **Universal Animation Library** (Standard, free tier; https://quaternius.com/packs/universalanimationlibrary.html, downloaded from https://quaternius.itch.io/universal-animation-library on 2026-11-11, raw in `data/raw/characters/ual1/`, git-ignored) | **CC0 1.0** (License.txt in the pack) | Clips Sitting_Idle_Loop, Sitting_Talking_Loop, Idle_Talking_Loop retargeted onto the crowd skeleton by `tools/peds/bakeGait.mjs` into `models/pedestrians/clips.bin` (sit, sitTalk, talk) |
+| **MakeHuman / MPFB 2.0.18** (Blender add-on, github.com/makehumancommunity/mpfb2) + asset packs makehuman_system_assets, hair01 (`sonntag78_junglebook_hair` by sonntag78), shirts01 (`elvs_crude_t-shirt_male` by elvs, `namuhekam_male_polo_shirt` by namuhekam), pants01 (`cortu_cargo_pants` by Cortu) from static.makehumancommunity.org, 2026-11-25 | MPFB code GPL v3 (not shipped, only run in Blender); its assets **CC0 1.0**; output: no claim by the MakeHuman team (LICENSE.md section D); every pack asset used is **CC0** (no CC-BY pack used) | The kid candidates `models/kid/candidates/kid_a|b|c.glb` (tools/blender/kidMakeHuman.py, docs/KIDCHAR.md); credit voluntary |
 | mrdoob/slop-newyork tree system (`vendor/slop-trees/`: `trees.js`, `building-collision.js`, tree material), commit `737b7691` | MIT, © Mr.doob | `vendor/slop-trees/LICENSE` and `ORIGIN.md`. Used by `viewer/treesSlop.js` |
 
 ## Material scans (CC0, Material Lab and viewer/materials/)
@@ -221,6 +222,14 @@ spell, emotes; UAL2: farming, combat, parkour climb / slide, zombie, idles) on t
 turn / strafe / stairs clips (those are in the paid tiers): the turn on the spot is stepped with the walk, the stairs
 are synthesised offline (`ualBuild.mjs`). UAL2's female mannequin (`Mannequin_F`) shares the rig; not used yet.
 
+**The kid** (`models/characters/kid.glb`, claude/kid, docs/KID.md): made by our script `tools/characters/kid.py` FROM the UAL1
+mannequin above (CC0): its rig and skin weights, re-proportioned into an 11-12 year old, the mesh fused + re-made
+(voxel remesh, a sculpted kid head of ellipsoids), clothes / hair / cap / face built by the script; the clips are the
+same CC0 UAL1 + UAL2 clips on its joints (`ualBuild.mjs --kid`), plus Sitting_Idle_Loop, Sitting_Enter, Sitting_Exit,
+Push_Loop, PickUp_Table and Death01 (UAL1). No other source. Checked and NOT used (2026-11-18): Quaternius' **Universal
+Base Characters** (quaternius.com/packs/universalbasecharacters.html, itch.io; CC0 per both pages): its free Standard tier
+has 2 base bodies + 5 hairstyles, the TEEN bodies are in the paid Source tier only; none is a 10-13 kid.
+
 Not used: Quaternius' newer packs under the "Quaternius Asset Licence" (only the CC0 pack above is used), and
 three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL in a test, never copied).
 
@@ -303,6 +312,17 @@ CC BY-SA photo is shared under the same licence.
 | Fagus sylvatica (bark)1.JPG | Fraxinus Croat | CC BY-SA 3.0 |
 | Fagus sylvatica trunk TK 2022-04-30 2.jpg | T. Kebert | CC BY-SA 4.0 |
 | Fagus sylvatica TK 2021-05-22 1.jpg | T. Kebert | CC BY-SA 4.0 |
+
+## Falcon models and animations (the Falcon Gym, `labs/falcon-gym.html`, docs/FALCON_GYM.md)
+
+Licences read on 2026-11-25: the Sketchfab rows from the public API (`https://api.sketchfab.com/v3/models/<id>`), the Mesh2Motion row from the repository's own licence files. The downloads are untrusted data: only Blender's glTF importer reads them (`tools/blender/falconV2b.py`).
+
+| Asset | Author | Licence | Used for | Verified |
+|---|---|---|---|---|
+| **Falcon_ Merged Animations** (7,268 faces), https://sketchfab.com/3d-models/falcon--merged-animations-c9b736ae21644ac8ba8d8a042a0f8be4 (id `c9b736ae21644ac8ba8d8a042a0f8be4`) | Hector Bonada (sketchfab.com/HectorBonada) | **CC BY 4.0** (http://creativecommons.org/licenses/by/4.0/): "Author must be credited. Commercial use is allowed." | the falcon v2, near and far (`models/bird/v2/falcon_v2.glb`, `falcon_v2_far.glb`, `falcon_v2_juvenile*.ktx2`: re-rigged by script onto our bird rig's bone names, its own weights and motion kept; tools/blender/falconV2b.py) | 2026-11-25, Sketchfab API |
+| **Mesh2Motion** bird rig + clips (`static/assets/bird/`: model, skeleton, flap, glide, idle, walk, hop, take-off, land), https://github.com/Mesh2Motion/mesh2motion-app commit `2609e034` | Scott Petrovic and contributors (mesh2motion.org) | art assets **CC0 1.0** (`LICENSE-CC0.MD`: "All 3d models, blend files, rigs, animations"); code **MIT** (`LICENSE-MIT.MD`) | the bird rig's bone names the v2 is named after; `models/bird/v2/m2m/*.glb` (decoded copies of the clips, played on the current falcon in the gym). `models/bird/peregrine.glb` has the same 55-bone bird rig (the fly-mode bird's source, see models/bird/README.md) | 2026-11-25, both licence files and the README |
+
+Credit to show (CC BY): "Falcon_ Merged Animations by Hector Bonada (Sketchfab), CC BY 4.0", in the game's credits wherever v2 ships (the Falcon Gym's title line shows it). Changes made: re-rigged onto our bone names, its idle / take-off / glide / landing re-timed into clips, new clips (walk, hop, stoop, talons, flare), the eyes darkened, a juvenile plumage painted, textures resized, a simplified far version. The earlier v2 base, "Peregrine Falcon" by Joacooficial (Sketchfab, CC BY 4.0), is no longer shipped (2026-11-25: its separate feather cards opened gaps when folded); its build script tools/blender/falconV2.py is kept.
 
 ## National flags (the embassy flags, viewer/flags/atlas/embassy_flags.png)
 

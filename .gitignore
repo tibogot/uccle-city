@@ -94,9 +94,15 @@ models/christmas/*.raw.glb
 
 # visual regression tour runs (tools/tour/serve.mjs writes them; docs/TOUR.md): images stay out of git
 .tour/
+.bake_cache/
+models/bike/*.raw.glb
+models/bike/audit/*.json
+docs/bike/tex/_work/
 
 # the gate cache (tools/audit/mergeGate.mjs: traced deps, memo, logs; docs/WORKFLOW.md)
 .cache/
+models/kid/candidates/*.raw.glb
+models/characters/kidA_atlas.png
 models/villa/*.raw.glb
 models/villa/audit/*.json
 !models/villa/audit/*.allow.json

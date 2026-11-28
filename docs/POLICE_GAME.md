@@ -1,4 +1,4 @@
-# Police game, round 1 (branch claude/police1, 2026-11-15)
+# Police game, round 1 (branch claude/police1, 2026-11-15; the car choice: claude/policeyard, 2026-11-28)
 
 The owner's first game on the game kit (docs/GAMEKIT.md): a civilian (unmarked) police car based at the real Uccle
 police station, Rue Rouge 17. You patrol; the radio sends you to real places with tasks. Code: `viewer/police/` (the
@@ -21,6 +21,36 @@ The shift starts in the station's yard (the site frame of models/police_rouge/si
 through the vehicle gate to the left). HQ = a blue pin on the minimap / full map at the gate. Back at HQ with no job
 running (once the car has been > 120 m away), the objective card says "Back at the station" and **E ends the shift**:
 a summary (jobs done / failed, km, minutes, score / € / reputation earned), then "New shift" or "Quit to free roam".
+
+## Choosing the car (claude/policeyard, owner 2026-11-28)
+
+Both patrol cars stand in the yard at the shift's start: the **unmarked** dark estate (you sit in it, at the old start)
+and the **marked** Belgian police estate (cars2 `police`: white, blue + fluorescent yellow Battenburg, POLICE) in the
+free painted bay of the north row (site frame u 22.75, w 0.85, nose to the street). Stopped in the yard (within 34 m of
+the start, < 0.8 m/s) the prompt says **E Get out**: you stand beside the driver's door (else the first free side) in
+third person, the car stays where it stopped. Next to either car (1.3 m of its box) **E Get in · marked / unmarked
+patrol car**: that one is your patrol car (L / J, wig-wag, the beacon's pool light, the dent, its colliders). A job's own
+E prompt always wins; at HQ the "End the shift" prompt only shows in a car. B / K / V stay held back on foot too.
+`?policecar=marked` (dev shortcut): the shift starts in the marked one, the unmarked stands in the bay.
+`?policeyard=old`: one car, no swap, as before. Code: `viewer/police/yardCars.js` (pure: the places, the swap rules, the
+boxes), `policeGame.js` (getOut / getIn, the prompt, the rail-mover source), `policeCar.js` (one rig per kind,
+`park()`, `warmSet()`). `window.__policeYard()`: the cars, what E does now, the cars taken. Gate row `policeyard`, rule
+`police-car-choice`.
+
+- **No light added**: the beacon's one pool slot is the driven car's. The standing car shares every material: its lamps
+  and kit emission go through a per-object uniform (`beaconU.live`, mesh `userData.parked`), so its beacon and lamps are
+  dark while the other car's flash, with no material per car and no new pipeline.
+- **Colliders**: the standing cars are rail-mover boxes (viewer/drive/movers.js source): solid for the car, the
+  two-wheelers and the character.
+- **Cost of the standing car** (measured in the yard, day, 2026-11-28, owner's laptop): its body + 4 wheels merged into
+  one mesh per level (the pack's LOD bands by distance), the beacon's bulb + mirror hidden: **5 meshes, 3 shadow
+  casters, +6.6 draws a frame** (scene + shadow; 11 meshes / 7 casters / +18.7 draws as a plain rig), ~40k triangles
+  near; GPU p50 5.18 / 5.44 ms with it vs 5.31 ms without (inside the noise).
+- **No first-switch hitch**: the shift's spawn runs in third person (the kit's spawn boots the character under the play
+  loader; it then seats you in the car, no second hold) and the warm-up beside it draws both cars' parked and driven
+  looks. Measured: first get-out / get-in 0.3 ms of CPU, no frame over 50 ms beyond the page's own noise (before: the
+  character's boot at the first E, 2.5 s frames; the other car's pipelines at the first get-in, 300 ms frames).
+- Known: a car left on its bay is not seen by the traffic (the yard is off the lanes; you can only get out in the yard).
 
 ## Keys
 

@@ -23984,6 +23984,26 @@ function roofSurface(bDoc, bBuf, b) {
   }
   return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: S3, q: ROOF_SURF_Q };
 }
+function roofSurfaceDrawn(pos, b0, S3 = 0.5, q = 200, M2 = 20) {
+  const b = { x0: b0.x0 - M2, x1: b0.x1 + M2, z0: b0.z0 - M2, z1: b0.z1 + M2 };
+  const nx = Math.ceil((b.x1 - b.x0) / S3), nz = Math.ceil((b.z1 - b.z0) / S3);
+  const g = new Uint16Array(nx * nz);
+  for (let t = 0; t + 8 < pos.length; t += 9) {
+    const ax = pos[t], ay = pos[t + 1], az = pos[t + 2], bx = pos[t + 3], by = pos[t + 4], bz = pos[t + 5], cx = pos[t + 6], cy = pos[t + 7], cz = pos[t + 8];
+    const den = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+    if (Math.abs(den) < 1e-9) continue;
+    const i0 = Math.max(0, Math.ceil((Math.min(ax, bx, cx) - b.x0) / S3 - 0.5)), i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx, cx) - b.x0) / S3 - 0.5));
+    const j0 = Math.max(0, Math.ceil((Math.min(az, bz, cz) - b.z0) / S3 - 0.5)), j1 = Math.min(nz - 1, Math.floor((Math.max(az, bz, cz) - b.z0) / S3 - 0.5));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const x = b.x0 + (i + 0.5) * S3, z = b.z0 + (j + 0.5) * S3;
+      const w1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / den, w2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / den, w3 = 1 - w1 - w2;
+      if (w1 < -1e-6 || w2 < -1e-6 || w3 < -1e-6) continue;
+      const y = w1 * ay + w2 * by + w3 * cy, v = Math.min(65535, Math.max(1, Math.round(y * q)));
+      if (v > g[j * nx + i]) g[j * nx + i] = v;
+    }
+  }
+  return { data: g, nx, nz, x0: b.x0, z0: b.z0, step: S3, q, drawn: true };
+}
 var onRoof = (g, x, z) => {
   const i = Math.floor((x - g.x0) / g.step), j = Math.floor((z - g.z0) / g.step);
   return i >= 0 && j >= 0 && i < g.nx && j < g.nz && g.data[j * g.nx + i] > 0;
@@ -24381,6 +24401,7 @@ async function buildTileData(entry, base) {
   const feet = entry.colFeet === false ? await feetLate() : feetEarly;
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, wallEmpty: entry.wallEmpty !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   if (feet) buildings.stats.feet = feet;
+  if (entry.surfDrawn !== false && buildings.roofs?.position?.length && roofs.surf) roofs.surf = await step("roof surface (drawn)", () => roofSurfaceDrawn(buildings.roofs.position, bounds));
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(upass ? underpassLines(feats) : feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));
   const streetTop = (x, z) => {
@@ -24990,4 +25011,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "d00dee12beca0abd";
+self.__TILE_CODE_HASH = "5044ece54db60468";

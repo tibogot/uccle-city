@@ -1,0 +1,1216 @@
+{
+ "model": "kidA.glb",
+ "fps": 30,
+ "rest": {
+  "hipY": 0.7506,
+  "ankleY": 0.0509,
+  "ballY": -0.0066,
+  "leg": 0.705
+ },
+ "kid": {
+  "height": 1.4746,
+  "pelvisScale": 0.81877,
+  "slots": [
+   "skin",
+   "shorts",
+   "tee",
+   "brows",
+   "lashes",
+   "eyes",
+   "shoes",
+   "hair",
+   "brim_b",
+   "brim_f",
+   "cap",
+   "jacket",
+   "socks"
+  ],
+  "tris": [
+   21518,
+   7999,
+   1998
+  ],
+  "sole": 0,
+  "atlas": "kidA_atlas.ktx2",
+  "source": "kidA"
+ },
+ "clips": {
+  "Idle": {
+   "file": "kidA.glb",
+   "role": "idle",
+   "loop": true,
+   "duration": 2.5,
+   "source": "UAL1_Standard.glb:Idle_Loop",
+   "contact": [
+    "1111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "1111111111111111111111111111111111111111111111111111111111111111111111111111"
+   ],
+   "steps": [
+    [],
+    []
+   ],
+   "stepPos": [
+    [],
+    []
+   ]
+  },
+  "Walk": {
+   "file": "kidA.glb",
+   "role": "walk",
+   "loop": true,
+   "duration": 1.3333,
+   "source": "UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "11111111111111111111111100000000000000001",
+    "11110000000000000000111111111111111111111"
+   ],
+   "steps": [
+    [
+     0
+    ],
+    [
+     0.5
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0,
+      0.102,
+      0.276,
+      0.003
+     ]
+    ],
+    [
+     [
+      0.5,
+      -0.072,
+      0.277,
+      0.003
+     ]
+    ]
+   ],
+   "speed": 0.798
+  },
+  "Jog": {
+   "file": "kidA.glb",
+   "role": "run",
+   "loop": true,
+   "duration": 0.9333,
+   "source": "UAL1_Standard.glb:Jog_Fwd_Loop",
+   "contact": [
+    "01111000000000000000000000000",
+    "00000000000000011110000000000"
+   ],
+   "steps": [
+    [
+     0.036
+    ],
+    [
+     0.536
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.036,
+      0.068,
+      0.297,
+      0.046
+     ]
+    ],
+    [
+     [
+      0.536,
+      -0.107,
+      0.297,
+      0.039
+     ]
+    ]
+   ],
+   "speed": 4.386
+  },
+  "Sprint": {
+   "file": "kidA.glb",
+   "role": "sprint",
+   "loop": true,
+   "duration": 0.6667,
+   "source": "UAL1_Standard.glb:Sprint_Loop",
+   "contact": [
+    "001110000000000000000",
+    "000000000000011000000"
+   ],
+   "steps": [
+    [
+     0.1
+    ],
+    [
+     0.65
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.1,
+      0.073,
+      0.086,
+      0.066
+     ]
+    ],
+    [
+     [
+      0.65,
+      -0.104,
+      0.104,
+      0.085
+     ]
+    ]
+   ],
+   "speed": 6.755
+  },
+  "CrouchIdle": {
+   "file": "kidA.glb",
+   "role": "crouchIdle",
+   "loop": true,
+   "duration": 2.9333,
+   "source": "UAL1_Standard.glb:Crouch_Idle_Loop",
+   "contact": [
+    "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+   ],
+   "steps": [
+    [],
+    []
+   ],
+   "stepPos": [
+    [],
+    []
+   ]
+  },
+  "CrouchWalk": {
+   "file": "kidA.glb",
+   "role": "crouchWalk",
+   "loop": true,
+   "duration": 2,
+   "source": "UAL1_Standard.glb:Crouch_Fwd_Loop",
+   "contact": [
+    "0111111111111111111111111111111111111110000000000000000000000",
+    "1111111100000000000000000000001111111111111111111111111111111"
+   ],
+   "steps": [
+    [
+     0.017
+    ],
+    [
+     0.5
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.017,
+      0.163,
+      0.431,
+      0.044
+     ]
+    ],
+    [
+     [
+      0.5,
+      -0.171,
+      0.45,
+      0.042
+     ]
+    ]
+   ],
+   "speed": 0.614
+  },
+  "JumpStart": {
+   "file": "kidA.glb",
+   "role": "jump",
+   "loop": false,
+   "duration": 1.3333,
+   "source": "UAL1_Standard.glb:Jump_Start",
+   "contact": [
+    "11110000000000000000000000000000000000000",
+    "11111110000000000000000000000000000000000"
+   ],
+   "steps": [
+    [],
+    []
+   ],
+   "stepPos": [
+    [],
+    []
+   ],
+   "takeoff": 0.233,
+   "touchdown": null
+  },
+  "Fall": {
+   "file": "kidA.glb",
+   "role": "fall",
+   "loop": true,
+   "duration": 2.5,
+   "source": "UAL1_Standard.glb:Jump_Loop",
+   "contact": [
+    "0000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "0000000000000000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "steps": [
+    [],
+    []
+   ],
+   "stepPos": [
+    [],
+    []
+   ],
+   "takeoff": null,
+   "touchdown": null
+  },
+  "Land": {
+   "file": "kidA.glb",
+   "role": "land",
+   "loop": false,
+   "duration": 1.2667,
+   "source": "UAL1_Standard.glb:Jump_Land",
+   "contact": [
+    "000000000000000000000011111111111111111",
+    "000000000000000000000011111111111111111"
+   ],
+   "steps": [
+    [
+     0.395
+    ],
+    []
+   ],
+   "stepPos": [
+    [
+     [
+      0.395,
+      0.211,
+      0.203,
+      0.029
+     ]
+    ],
+    []
+   ],
+   "takeoff": null,
+   "touchdown": 0.733
+  },
+  "Roll": {
+   "file": "kidA.glb",
+   "role": "roll",
+   "loop": false,
+   "duration": 1.4667,
+   "source": "UAL1_Standard.glb:Roll",
+   "contact": [
+    "000000000000000000000000000011111111111111111",
+    "110000000000000000000000011111111111111111111"
+   ],
+   "steps": [
+    [
+     0.636
+    ],
+    [
+     0.568
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.636,
+      0.226,
+      0.273,
+      0.03
+     ]
+    ],
+    [
+     [
+      0.568,
+      -0.191,
+      0.165,
+      0.029
+     ]
+    ]
+   ],
+   "takeoff": 0.067,
+   "touchdown": 0.833
+  },
+  "IdleFoldArms": {
+   "file": "kidA.glb",
+   "role": "idleAlt1",
+   "loop": true,
+   "duration": 2.5,
+   "source": "UAL2_Standard.glb:Idle_FoldArms_Loop",
+   "contact": [
+    "1111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "1111111111111111111111111111111111111111111111111111111111111111111111111111"
+   ],
+   "steps": [
+    [],
+    []
+   ],
+   "stepPos": [
+    [],
+    []
+   ]
+  },
+  "IdlePhone": {
+   "file": "kidA.glb",
+   "role": "idleAlt2",
+   "loop": true,
+   "duration": 2.9333,
+   "source": "UAL2_Standard.glb:Idle_TalkingPhone_Loop",
+   "contact": [
+    "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+   ],
+   "steps": [
+    [],
+    []
+   ],
+   "stepPos": [
+    [],
+    []
+   ]
+  },
+  "IdleTalk": {
+   "file": "kidA.glb",
+   "role": "idleAlt3",
+   "loop": true,
+   "duration": 2.9333,
+   "source": "UAL1_Standard.glb:Idle_Talking_Loop",
+   "contact": [
+    "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+   ],
+   "steps": [
+    [],
+    []
+   ],
+   "stepPos": [
+    [],
+    []
+   ]
+  },
+  "Sit": {
+   "file": "kidA.glb",
+   "role": "sit",
+   "loop": true,
+   "duration": 1.6667,
+   "source": "UAL1_Standard.glb:Sitting_Idle_Loop",
+   "contact": [
+    "111111111111111111111111111111111111111111111111111",
+    "111111111111111111111111111111111111111111111111111"
+   ],
+   "steps": [
+    [],
+    []
+   ],
+   "stepPos": [
+    [],
+    []
+   ]
+  },
+  "SitDown": {
+   "file": "kidA.glb",
+   "role": "sitDown",
+   "loop": false,
+   "duration": 1.3,
+   "source": "UAL1_Standard.glb:Sitting_Enter",
+   "contact": [
+    "1111111111111110000000000000000000000000",
+    "1111000000000011111110000011111111111111"
+   ],
+   "steps": [
+    [],
+    [
+     0.359,
+     0.667
+    ]
+   ],
+   "stepPos": [
+    [],
+    [
+     [
+      0.359,
+      -0.186,
+      0.19,
+      0.02
+     ],
+     [
+      0.667,
+      -0.184,
+      0.198,
+      0.028
+     ]
+    ]
+   ]
+  },
+  "StandUp": {
+   "file": "kidA.glb",
+   "role": "standUp",
+   "loop": false,
+   "duration": 1.0333,
+   "source": "UAL1_Standard.glb:Sitting_Exit",
+   "contact": [
+    "11000000000000000111111111111111",
+    "11110000000000111111100000000111"
+   ],
+   "steps": [
+    [
+     0.548
+    ],
+    [
+     0.452,
+     0.935
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.548,
+      0.174,
+      0.393,
+      0.024
+     ]
+    ],
+    [
+     [
+      0.452,
+      -0.183,
+      0.397,
+      0.029
+     ],
+     [
+      0.935,
+      -0.18,
+      0.042,
+      0.015
+     ]
+    ]
+   ]
+  },
+  "Push": {
+   "file": "kidA.glb",
+   "role": "push",
+   "loop": true,
+   "duration": 2.6667,
+   "source": "UAL1_Standard.glb:Push_Loop",
+   "contact": [
+    "111111111111111111111111111111111111111111111111111111111110000000000000011111111",
+    "111111111111111111111111111110000000000000011111111111111111111111111111111111111"
+   ],
+   "steps": [
+    [
+     0.912
+    ],
+    [
+     0.538
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.912,
+      0.102,
+      0.093,
+      0.052
+     ]
+    ],
+    [
+     [
+      0.538,
+      -0.12,
+      0.087,
+      0.057
+     ]
+    ]
+   ]
+  },
+  "PickUp": {
+   "file": "kidA.glb",
+   "role": "pickUp",
+   "loop": false,
+   "duration": 0.8333,
+   "source": "UAL1_Standard.glb:PickUp_Table",
+   "contact": [
+    "11111111111111111111111111",
+    "11111111111111111111111111"
+   ],
+   "steps": [
+    [],
+    []
+   ],
+   "stepPos": [
+    [],
+    []
+   ]
+  },
+  "FallDown": {
+   "file": "kidA.glb",
+   "role": "fallDown",
+   "loop": false,
+   "duration": 2.4,
+   "source": "UAL1_Standard.glb:Death01",
+   "contact": [
+    "1111111111111111111111110000000000000000001111111111111111111111111111111",
+    "1111111111111111111111110000000000000000000001111111111111111111111111111"
+   ],
+   "steps": [
+    [
+     0.583
+    ],
+    [
+     0.625
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.583,
+      0.23,
+      0.342,
+      -0.025
+     ]
+    ],
+    [
+     [
+      0.625,
+      -0.182,
+      0.329,
+      -0.028
+     ]
+    ]
+   ]
+  },
+  "StairsUp": {
+   "file": "kidA.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.158,
+      0.065
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.158,
+      0.065
+     ]
+    ]
+   ],
+   "speed": 0.544,
+   "stairs": {
+    "riser": 0.17,
+    "tread": 0.29,
+    "dir": 1,
+    "steps": 2
+   }
+  },
+  "StairsUp_12_26": {
+   "file": "kidA.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.148,
+      0.047
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.148,
+      0.047
+     ]
+    ]
+   ],
+   "speed": 0.488,
+   "stairs": {
+    "riser": 0.12,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_12_32": {
+   "file": "kidA.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.169,
+      0.047
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.169,
+      0.047
+     ]
+    ]
+   ],
+   "speed": 0.6,
+   "stairs": {
+    "riser": 0.12,
+    "tread": 0.32,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_16_26": {
+   "file": "kidA.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.148,
+      0.061
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.148,
+      0.061
+     ]
+    ]
+   ],
+   "speed": 0.488,
+   "stairs": {
+    "riser": 0.16,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_16_32": {
+   "file": "kidA.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.169,
+      0.061
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.169,
+      0.061
+     ]
+    ]
+   ],
+   "speed": 0.6,
+   "stairs": {
+    "riser": 0.16,
+    "tread": 0.32,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_20_26": {
+   "file": "kidA.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.148,
+      0.075
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.148,
+      0.076
+     ]
+    ]
+   ],
+   "speed": 0.488,
+   "stairs": {
+    "riser": 0.2,
+    "tread": 0.26,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsUp_20_32": {
+   "file": "kidA.glb",
+   "role": "stairsUp",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.169,
+      0.075
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.169,
+      0.076
+     ]
+    ]
+   ],
+   "speed": 0.6,
+   "stairs": {
+    "riser": 0.2,
+    "tread": 0.32,
+    "dir": 1,
+    "steps": 2,
+    "variantOf": "StairsUp"
+   }
+  },
+  "StairsDown": {
+   "file": "kidA.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.158,
+      -0.115
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.158,
+      -0.115
+     ]
+    ]
+   ],
+   "speed": 0.544,
+   "stairs": {
+    "riser": 0.17,
+    "tread": 0.29,
+    "dir": -1,
+    "steps": 2
+   }
+  },
+  "StairsDown_12_26": {
+   "file": "kidA.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.148,
+      -0.08
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.148,
+      -0.08
+     ]
+    ]
+   ],
+   "speed": 0.488,
+   "stairs": {
+    "riser": 0.12,
+    "tread": 0.26,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_12_32": {
+   "file": "kidA.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.169,
+      -0.08
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.169,
+      -0.08
+     ]
+    ]
+   ],
+   "speed": 0.6,
+   "stairs": {
+    "riser": 0.12,
+    "tread": 0.32,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_16_26": {
+   "file": "kidA.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.148,
+      -0.108
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.148,
+      -0.108
+     ]
+    ]
+   ],
+   "speed": 0.488,
+   "stairs": {
+    "riser": 0.16,
+    "tread": 0.26,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_16_32": {
+   "file": "kidA.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.169,
+      -0.108
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.169,
+      -0.108
+     ]
+    ]
+   ],
+   "speed": 0.6,
+   "stairs": {
+    "riser": 0.16,
+    "tread": 0.32,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_20_26": {
+   "file": "kidA.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.148,
+      -0.136
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.148,
+      -0.136
+     ]
+    ]
+   ],
+   "speed": 0.488,
+   "stairs": {
+    "riser": 0.2,
+    "tread": 0.26,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  },
+  "StairsDown_20_32": {
+   "file": "kidA.glb",
+   "role": "stairsDown",
+   "loop": true,
+   "duration": 1.0667,
+   "source": "synthesised from UAL1_Standard.glb:Walk_Loop",
+   "contact": [
+    "011111111111111111100000000000000",
+    "111000000000000001111111111111111"
+   ],
+   "steps": [
+    [
+     0.031
+    ],
+    [
+     0.531
+    ]
+   ],
+   "stepPos": [
+    [
+     [
+      0.031,
+      0.102,
+      0.169,
+      -0.136
+     ]
+    ],
+    [
+     [
+      0.531,
+      -0.072,
+      0.169,
+      -0.136
+     ]
+    ]
+   ],
+   "speed": 0.6,
+   "stairs": {
+    "riser": 0.2,
+    "tread": 0.32,
+    "dir": -1,
+    "steps": 2,
+    "variantOf": "StairsDown"
+   }
+  }
+ }
+}

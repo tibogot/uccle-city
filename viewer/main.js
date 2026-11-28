@@ -1424,6 +1424,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // static meshes go once uploaded: the terrain (held for the Square des Heros' lawn until it is built: herosCity.js),
   // the façades, roofs and details; the roads / decks / plazas / grounds keep position + index (the third person's
   // collision world gathers them whenever a tile streams in: character/cityHook.js), the rest of theirs goes
+  const roofCols = d.buildings?.roofKit?.cols ?? null;    // (kept: the falcon's chimneys / stamped boxes, cityGymWorld.js)
   if (TILE_DROP) {
     d = null;
     dropAfterUpload(own.terrain, { tag: `terrain:${entry.name}`, filter: (o) => o.name === "terrain" });
@@ -1431,7 +1432,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     dropAfterUpload(own.roads, { tag: `roads:${entry.name}`, keep: ["position", "index"] });
     for (const t of R.textures) dropTextureData(t);          // (the land-cover mask, the marking atlas: DataTextures; the orthophoto is an image)
   }
-  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, roofs: rf, drive, drawn, lift: fit?.lift, groups: Object.values(own) };
+  // (kit: the façade kit's placements, read-only: the falcon's perches on the sills / railings, viewer/falconFlight/cityGymWorld.js;
+  // roofCols: the roof kit's stacks / housings as boxes [x0, z0, x1, z1, top]: its chimneys, and where the drawn roof grid's
+  // stamps are a box's, not the roof's)
+  return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, roofs: rf, drive, drawn, lift: fit?.lift, groups: Object.values(own), kit: B.kit ?? null, roofCols };
 }
 
 // ------------------------------------------------------------------ main
@@ -1945,6 +1949,9 @@ async function main() {
     // (at boot, ?view=fly: wait up to 15 s for the family and the bird to load)
     for (let i = 0; i < 150 && (!falconsReady || (OLD_FLIGHT && !flyerGltf)) && params.get("falcons") !== "0" && params.get("flystart") !== "spire"; i++) await new Promise((r) => setTimeout(r, 100));
     if (!OLD_FLIGHT) await flyer.ready.catch(() => {});
+    // (rule falcon-gym "the v2 in the city") the default v2 falcon, swapped in at the first flight of a page that booted
+    // the current bird (not a falcon page: no v2 load in the plain city / the police game until someone flies)
+    if (!OLD_FLIGHT) await flyer.ensureModel?.().catch(() => {});
     // the intro plays in view: not under the boot cover
     for (let i = 0; i < 600 && !document.getElementById("cover")?.classList.contains("gone"); i++) await new Promise((r) => setTimeout(r, 100));
     const fam = falconsReady;

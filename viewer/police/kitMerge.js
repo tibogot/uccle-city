@@ -9,7 +9,7 @@
 import * as THREE from "three/webgpu";
 import { attribute, color, float, uv, abs, fract, smoothstep, select } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { beaconMaterials, beaconU, BLUE } from "../policeCar/beaconModel.js";
+import { beaconMaterials, beaconU, BLUE, kitGain } from "../policeCar/beaconModel.js";
 
 export const CAR_MERGE = new URLSearchParams(location.search).get("carmerge") !== "old";
 
@@ -26,7 +26,7 @@ function materials() {
   const which = select(id.lessThan(0.5), beaconU.gL, select(id.lessThan(1.5), beaconU.gR, beaconU.visor));
   const n = select(id.lessThan(1.5), float(3), float(12));
   const seg = smoothstep(0.42, 0.25, abs(fract(uv().x.mul(n)).sub(0.5)));
-  lensMat.emissiveNode = color(BLUE).mul(seg.mul(0.75).add(0.25).mul(which).mul(beaconU.gain).mul(16));
+  lensMat.emissiveNode = color(BLUE).mul(seg.mul(0.75).add(0.25).mul(which).mul(kitGain).mul(16));
   lensMat.name = "police kit (lenses, merged)";
 }
 
