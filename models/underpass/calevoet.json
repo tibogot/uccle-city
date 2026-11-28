@@ -1,0 +1,694 @@
+{
+ "about": "tools/blender/underpass.py (claude/underpass1): the Calevoet pedestrian underpass U1 (OSM 30235696 / 640826544 / 640826545), kiosks + the streamed inside",
+ "placement": {
+  "city_local_position": [
+   -1194.82,
+   40,
+   860.05
+  ],
+  "rotation_y_rad": -2.667985,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/525169",
+   "https://databrussels.be/id/buildingsolid/519275"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1589144",
+   "https://databrussels.be/id/building/1589123"
+  ]
+ },
+ "frame": {
+  "origin_city": [
+   -1194.82,
+   860.05
+  ],
+  "u": [
+   -0.889929,
+   0.4561
+  ],
+  "w": [
+   -0.4561,
+   -0.889929
+  ],
+  "rotation_y_rad": -2.667985,
+  "oy": 40,
+  "corridor_length": 22.451,
+  "note": "three local (x, y, z) = (u, TAW - oy, w); city = origin + u * U + w * W; Blender (X, Y, Z) = (u, -w, TAW - oy)"
+ },
+ "levels": {
+  "floor": 48.4,
+  "soffit": 50.85,
+  "slab_top": 51.15,
+  "corridor_uw": [
+   [
+    -3.383,
+    23.786
+   ],
+   [
+    -1.5610000000000002,
+    1.039
+   ]
+  ],
+  "corridor_clear_w": 2.6
+ },
+ "kiosks": {
+  "east": {
+   "rect_uw": [
+    -3.633,
+    -0.2945,
+    0.7889999999999999,
+    10.34
+   ],
+   "ring": [
+    [
+     -1191.947,
+     857.691
+    ],
+    [
+     -1194.918,
+     859.214
+    ],
+    [
+     -1199.274,
+     850.714
+    ],
+    [
+     -1196.303,
+     849.191
+    ]
+   ],
+   "eaves": 55.42,
+   "base": 52.55,
+   "top": 52.939,
+   "skirt": 52.212,
+   "solid": "https://databrussels.be/id/buildingsolid/525169",
+   "bu": "https://databrussels.be/id/building/1589144",
+   "bollards": [
+    [
+     -1197.549,
+     849.324
+    ],
+    [
+     -1198.438,
+     849.78
+    ]
+   ]
+  },
+  "west": {
+   "rect_uw": [
+    20.937,
+    24.036,
+    -8.052,
+    -2.1935000000000002
+   ],
+   "ring": [
+    [
+     -1209.78,
+     876.765
+    ],
+    [
+     -1212.538,
+     878.179
+    ],
+    [
+     -1215.21,
+     872.965
+    ],
+    [
+     -1212.452,
+     871.551
+    ]
+   ],
+   "eaves": 53.94,
+   "base": 51.01,
+   "top": 51.265,
+   "skirt": 50.707,
+   "solid": "https://databrussels.be/id/buildingsolid/519275",
+   "bu": "https://databrussels.be/id/building/1589123",
+   "bollards": [
+    [
+     -1210.546,
+     877.664
+    ],
+    [
+     -1211.361,
+     878.081
+    ]
+   ]
+  }
+ },
+ "wells": [
+  {
+   "name": "east",
+   "ring_uw": [
+    [
+     -3.383,
+     1.039
+    ],
+    [
+     -0.5445,
+     1.039
+    ],
+    [
+     -0.5445,
+     10.34
+    ],
+    [
+     -3.383,
+     10.34
+    ]
+   ],
+   "ring": [
+    [
+     -1192.283,
+     857.582
+    ],
+    [
+     -1194.809,
+     858.877
+    ],
+    [
+     -1199.052,
+     850.6
+    ],
+    [
+     -1196.525,
+     849.305
+    ]
+   ],
+   "rim": 52.939,
+   "mouth_w": 10.34,
+   "why": "the kiosk's inner wall faces (one wall with the well's) and, at the mouth, the landing slab's skirt face"
+  },
+  {
+   "name": "west",
+   "ring_uw": [
+    [
+     21.187,
+     -8.052
+    ],
+    [
+     23.786,
+     -8.052
+    ],
+    [
+     23.786,
+     -2.4435000000000002
+    ],
+    [
+     21.187,
+     -2.4435000000000002
+    ]
+   ],
+   "ring": [
+    [
+     -1210.002,
+     876.879
+    ],
+    [
+     -1212.315,
+     878.065
+    ],
+    [
+     -1214.873,
+     873.073
+    ],
+    [
+     -1212.56,
+     871.888
+    ]
+   ],
+   "rim": 51.265,
+   "mouth_w": -8.052,
+   "why": "the kiosk's inner wall faces (one wall with the well's) and, at the mouth, the landing slab's skirt face"
+  }
+ ],
+ "voids": [
+  {
+   "name": "well_east",
+   "ring": [
+    [
+     -1192.283,
+     857.582
+    ],
+    [
+     -1194.809,
+     858.877
+    ],
+    [
+     -1199.052,
+     850.6
+    ],
+    [
+     -1196.525,
+     849.305
+    ]
+   ],
+   "yTop": null
+  },
+  {
+   "name": "well_west",
+   "ring": [
+    [
+     -1210.002,
+     876.879
+    ],
+    [
+     -1212.315,
+     878.065
+    ],
+    [
+     -1214.873,
+     873.073
+    ],
+    [
+     -1212.56,
+     871.888
+    ]
+   ],
+   "yTop": null
+  },
+  {
+   "name": "corridor",
+   "ring": [
+    [
+     -1191.097,
+     859.896
+    ],
+    [
+     -1215.276,
+     872.288
+    ],
+    [
+     -1216.462,
+     869.974
+    ],
+    [
+     -1192.283,
+     857.582
+    ]
+   ],
+   "yTop": 51.07
+  },
+  {
+   "name": "west_covered",
+   "ring": [
+    [
+     -1212.958,
+     871.111
+    ],
+    [
+     -1215.271,
+     872.297
+    ],
+    [
+     -1214.878,
+     873.064
+    ],
+    [
+     -1212.565,
+     871.879
+    ]
+   ],
+   "yTop": 51.07
+  }
+ ],
+ "stairs": {
+  "east": {
+   "top_uw": [
+    -1.96375,
+    10.34
+   ],
+   "top_line_uw": [
+    [
+     -3.383,
+     10.34
+    ],
+    [
+     -0.5445,
+     10.34
+    ]
+   ],
+   "top_h": 52.939,
+   "risers": 27,
+   "riser_m": 0.1681,
+   "going_m": 0.3,
+   "width_m": 2.838,
+   "foot_uw": [
+    -1.96375,
+    -0.2610000000000001
+   ],
+   "top": [
+    -1197.788,
+    849.952
+   ],
+   "top_line": [
+    [
+     -1196.525,
+     849.305
+    ],
+    [
+     -1199.052,
+     850.6
+    ]
+   ],
+   "osm": 30235696
+  },
+  "west": {
+   "top_uw": [
+    22.4865,
+    -8.052
+   ],
+   "top_line_uw": [
+    [
+     21.187,
+     -8.052
+    ],
+    [
+     23.786,
+     -8.052
+    ]
+   ],
+   "top_h": 51.265,
+   "risers": 17,
+   "riser_m": 0.1685,
+   "going_m": 0.3,
+   "width_m": 2.599,
+   "foot_uw": [
+    22.4865,
+    -0.2610000000000001
+   ],
+   "top": [
+    -1211.159,
+    877.472
+   ],
+   "top_line": [
+    [
+     -1210.002,
+     876.879
+    ],
+    [
+     -1212.315,
+     878.065
+    ]
+   ],
+   "osm": 640826545
+  }
+ },
+ "bike_gutters": {
+  "note": "KID GAME (docs/KIDGAME.md): the bike rides these steel gutters down / up the stairs (owner 2026-11-24); a clean inclined plane each, 12 cm wide, against the walls; no bike code yet",
+  "gutters": [
+   {
+    "stair": "east",
+    "a": [
+     -1192.2,
+     857.877,
+     48.4
+    ],
+    "b": [
+     -1194.115,
+     854.139,
+     50.754
+    ],
+    "width": 0.12
+   },
+   {
+    "stair": "east",
+    "a": [
+     -1194.619,
+     859.117,
+     48.4
+    ],
+    "b": [
+     -1196.535,
+     855.379,
+     50.754
+    ],
+    "width": 0.12
+   },
+   {
+    "stair": "east",
+    "a": [
+     -1194.663,
+     853.071,
+     50.754
+    ],
+    "b": [
+     -1196.442,
+     849.6,
+     52.939
+    ],
+    "width": 0.12
+   },
+   {
+    "stair": "east",
+    "a": [
+     -1197.082,
+     854.311,
+     50.754
+    ],
+    "b": [
+     -1198.861,
+     850.84,
+     52.939
+    ],
+    "width": 0.12
+   },
+   {
+    "stair": "west",
+    "a": [
+     -1213.153,
+     870.863,
+     48.4
+    ],
+    "b": [
+     -1210.827,
+     875.402,
+     51.265
+    ],
+    "width": 0.12
+   },
+   {
+    "stair": "west",
+    "a": [
+     -1215.359,
+     871.994,
+     48.4
+    ],
+    "b": [
+     -1213.033,
+     876.532,
+     51.265
+    ],
+    "width": 0.12
+   }
+  ]
+ },
+ "lights": [
+  {
+   "at": [
+    -1192.358,
+    859.081,
+    50.76
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1195.213,
+    860.545,
+    50.76
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1198.069,
+    862.008,
+    50.76
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1200.924,
+    863.472,
+    50.76
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1203.78,
+    864.935,
+    50.76
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1206.635,
+    866.399,
+    50.76
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1209.49,
+    867.862,
+    50.76
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1212.346,
+    869.326,
+    50.76
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1215.201,
+    870.789,
+    50.76
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1194.607,
+    856.16,
+    55.08
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1196.728,
+    852.022,
+    55.08
+   ],
+   "len": 1.25
+  },
+  {
+   "at": [
+    -1212.438,
+    874.976,
+    53.6
+   ],
+   "len": 1.25
+  }
+ ],
+ "stream": {
+  "fetch_m": 80,
+  "show_m": 50,
+  "hide_m": 70,
+  "unload_s": 20
+ },
+ "slots": {
+  "surface": [
+   "brick_painted_white",
+   "paint_fascia",
+   "painted_metal_grey",
+   "glass_frosted",
+   "concrete"
+  ],
+  "inside": [
+   "concrete_step",
+   "floor_tile_grey",
+   "wall_mural",
+   "ceiling_paint",
+   "painted_metal_grey",
+   "lamp_glow",
+   "glass_frosted"
+  ]
+ },
+ "codes": {
+  "brick_painted_white": {
+   "upper": 0,
+   "lower": 1,
+   "plinth": 2,
+   "inner": 3,
+   "end": 4
+  },
+  "paint_fascia": {
+   "fascia": 0,
+   "roof": 1,
+   "soffit": 2
+  },
+  "painted_metal_grey": {
+   "frame": 0,
+   "bollard": 1,
+   "rail": 2,
+   "gutter": 3,
+   "housing": 4,
+   "conduit": 5,
+   "sign": 6,
+   "grate": 7,
+   "pipe": 8,
+   "sign_blue": 9,
+   "band": 10
+  },
+  "glass_frosted": {
+   "panel": 0,
+   "inside": 1
+  },
+  "concrete": {
+   "slab": 0,
+   "nosing": 1,
+   "throat": 2,
+   "tread": 3,
+   "riser": 4
+  },
+  "concrete_step": {
+   "tread": 0,
+   "nosing": 1,
+   "riser": 2,
+   "landing": 3,
+   "string": 4
+  },
+  "floor_tile_grey": {
+   "tile": 0,
+   "drain": 1
+  },
+  "wall_mural": {
+   "mural": 0,
+   "letters": 1,
+   "paint": 2
+  },
+  "ceiling_paint": {
+   "ceiling": 0,
+   "beam": 1
+  },
+  "lamp_glow": {
+   "lens": 0
+  }
+ },
+ "tris": {
+  "lod0": 8152,
+  "lod1": 288,
+  "lod2": 88,
+  "throat": 260,
+  "inside": 21161,
+  "collision": 46
+ },
+ "times": {
+  "build_s": 0.8,
+  "mural_s": 17.6,
+  "ao_bake_s": 6.9,
+  "inside_bake_sky_s": 2.8,
+  "inside_bake_night_s": 2.2,
+  "inside_bake_s": 5.5
+ },
+ "samples": 256,
+ "device": "GPU",
+ "mural": {
+  "file": "mural.png",
+  "atlas": "rows 0-2: 10 m x 2.5 m mural strips (UV0.x 0..30 m), row 3: x 30..37 the lettering band, 37..40 the signs; texture v (bottom-up) = (row * 2.5 + v) / 10",
+  "about": "OUR OWN invented underwater scene (sea, kelp, corals, fish, a turtle, a diver's helmet, a wreck, jellyfish, bubbles) + invented tags; never a copy of the real murals"
+ },
+ "measured": "OSM ways (site.json), the UrbIS kiosk solids 525169 / 519275 (footprint, base, eaves), the DTM (heightmap.js surface), rail.json",
+ "estimated": "floor 48.40 m, clear height 2.45 m, corridor 2.6 m clear, risers / goings, the kiosk's finish (plan \u00a71-2 + the Street View look)"
+}

@@ -144,6 +144,31 @@ if (CHECK || LANES) {
       if (!best || n < h.points.length / 2) return h;
       inc("hedgesShifted"); return { ...h, points: h.points.map(([x, z]) => [r2(x + best[0]), r2(z + best[1])]) };
     });
+    // (claude/reality2, rule garage-has-drive) the garage drives last: a run moved back (or a jamb pier / hedge end the
+    // builder left at the opening) never stands in a drive ring: walls cut to their part outside, piers dropped, hedges
+    // split round it (the car drives in, the colliders made from the same pieces agree)
+    const rings = (doc.drives || []).map((dr) => { const r = dr.ring, cx = r.reduce((q, p) => q + p[0], 0) / r.length, cz = r.reduce((q, p) => q + p[1], 0) / r.length; return r.map(([x, z]) => { const L = Math.hypot(x - cx, z - cz) || 1; return [x - ((x - cx) / L) * 0.05, z - ((z - cz) / L) * 0.05]; }); });
+    const inDrive = (x, z) => rings.some((r) => inR(r, x, z));
+    if (rings.length) {
+      for (let i = segs.length - 1; i >= 0; i--) {
+        const g = segs[i], n = Math.max(4, Math.ceil(Math.hypot(g[3] - g[0], g[5] - g[2]) / 0.1)), at = (t) => [g[0] + (g[3] - g[0]) * t, g[1] + (g[4] - g[1]) * t, g[2] + (g[5] - g[2]) * t];
+        const out = []; for (let k = 0; k <= n; k++) { const [x, , z] = at(k / n); out.push(!inDrive(x, z)); }
+        if (out.every(Boolean)) continue;
+        let best = null, cur = null;
+        out.forEach((ok, k) => { if (!ok) { cur = null; return; } if (!cur) cur = [k, k]; else cur[1] = k; if (!best || cur[1] - cur[0] > best[1] - best[0]) best = cur.slice(); });
+        const L = Math.hypot(g[3] - g[0], g[5] - g[2]);
+        if (best && (best[1] - best[0]) / n * L >= 0.3) { const [ax, ay, az] = at(best[0] / n), [bx, by, bz] = at(best[1] / n); segs[i] = [r2(ax), r2(ay), r2(az), r2(bx), r2(by), r2(bz), g[6], g[7]]; inc("driveSegsCut"); }
+        else { segs.splice(i, 1); inc("driveSegsDropped"); }
+      }
+      for (let i = pillars.length - 1; i >= 0; i--) if (inDrive(pillars[i][0], pillars[i][2])) { pillars.splice(i, 1); inc("drivePiersDropped"); }
+      for (let i = hedges.length - 1; i >= 0; i--) {
+        const h = hedges[i]; if (!h.points.some(([x, z]) => inDrive(x, z))) continue;
+        const parts = []; let cur = [];
+        for (const q of h.points) { if (inDrive(q[0], q[1])) { if (cur.length > 1) parts.push(cur); cur = []; } else cur.push(q); }
+        if (cur.length > 1) parts.push(cur);
+        hedges.splice(i, 1, ...parts.map((points) => ({ ...h, points }))); inc("driveHedgesCut");
+      }
+    }
     doc.segs = segs; doc.pillars = pillars; doc.gates = gates; doc.hedges = hedges; doc.fit = { ...(doc.fit || {}), lanes: counts };
     writeFileSync(path, JSON.stringify(doc));
   }

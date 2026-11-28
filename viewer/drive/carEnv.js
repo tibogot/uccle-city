@@ -47,8 +47,12 @@ export function stepContact(c, body, ground, contact, run = STEP_RUN, riseMax = 
   contact.nx = sx / L; contact.nz = sz / L; contact.depth = 0.04; contact.kind = KIND.wall; contact.rise = top;
   return true;
 }
-/** hedges: the car goes through, slowed: speed x exp(-HEDGE_DRAG dt) while its box overlaps one (a tall one: more) */
+/** hedges (KIND.hedge: drawn <= HEDGE_WALL_H; a taller one is KIND.hedgeWall, a wall, rule hedge-wall): the car goes
+ *  through, slowed: speed x exp(-HEDGE_DRAG dt) while its box overlaps one (a tall one: more; ?hedgewall=old only) */
 const HEDGE_DRAG = 1.2;   // (browser check 2: 1.6 held a car on full throttle to ~14 km/h inside a hedge; 1.2: ~19)
+/** HEDGES SOLID (rule hedge-wall): a tall hedge (KIND.hedgeWall) is a wall (the push + onHit below; hitSlide gives it a
+ *  softer bounce); each hit is handed to HEDGE_HITS.sink(x, z, nx, nz, vn) (viewer/gardens/hedgeShake.js: the shake) */
+export const HEDGE_HITS = { sink: null };
 /** thin posts (signs, stop poles, bollards: radius <= POST_R, or a polygon <= POST_BOX both ways): a hit off the car's centre line slides the car round
  *  the post (the push turned sideways) instead of stopping it dead; dead centre it still stops */
 const POST_R = 0.12, POST_SIDE = 0.3, POST_BOX = 0.6;   // (POST_BOX: a polygon this small both ways counts too: the landmarks' bollard slices)
@@ -153,6 +157,12 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
           }
           c.x += contact.nx * contact.depth; c.z += contact.nz * contact.depth;
           const vn = onHit(c, contact.nx, contact.nz, contact.kind, handling);
+          if (contact.kind === KIND.hedgeWall && vn > 0.3 && HEDGE_HITS.sink) {
+            // (rule hedge-wall) the hedge shakes where the car's side touched it: the car's extent along the push
+            const fn = body.sin * contact.nx + body.cos * contact.nz, ln = body.cos * contact.nx - body.sin * contact.nz;
+            const ext = body.hz * Math.abs(fn) + body.hx * Math.abs(ln);
+            HEDGE_HITS.sink(c.x - contact.nx * ext, c.z - contact.nz * ext, contact.nx, contact.nz, vn);
+          }
           if (feel && nudge && !carHit?.S && contact.kind === KIND.car && vn > 0.02 && col.pref?.[id]) {
             // a parked car takes part of the hit: shoved along the push, turned by where it was hit
             const ref = col.pref[id], d = Math.min(0.25, vn * 0.03);

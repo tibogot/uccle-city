@@ -1,0 +1,12 @@
+{
+ "Villa_lod1": {
+  "scripted": true
+ },
+ "Villa_lod2": {
+  "from": "Villa_far",
+  "sourceTris": 140,
+  "tris": 140
+ },
+ "glbBytes": 1973348,
+ "rawBytes": 6537816
+}

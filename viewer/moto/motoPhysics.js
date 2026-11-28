@@ -496,7 +496,7 @@ function crash(c, dir, H = MOTO, why = "hit") {
 }
 
 /** the crash trigger by collider kind (colliders.js KIND) */
-const HIT_WHY = ["wall", "island", "tree", "lamp", "post", "wall", "car", "furniture", "hedge"];
+const HIT_WHY = ["wall", "island", "tree", "lamp", "post", "wall", "car", "furniture", "hedge", "hedge"];   // (9: a tall hedge, a wall: rule hedge-wall)
 
 /** after a crash: upright at the last safe pose (half a second or more before), stopped */
 export function respawn(c) {

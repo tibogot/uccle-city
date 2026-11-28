@@ -13,12 +13,13 @@ import * as THREE from "three/webgpu";
 import { loadPolice, PO_LODS, setLodFades, poLodState } from "./policeModel.js";
 import { buildPoliceYard } from "./policeYard.js";
 import { buildPoliceCars } from "./policeCars.js";
-import { SMOOTH, fadeProxies } from "./lodFade.js";
+import { SMOOTH, fadeProxies, fadeShadowProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { Heightmap } from "./heightmap.js";
 import { liteShown } from "./liteShown.js";
 import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 import { FAR_MERGE_LM, mergeFarLevel } from "./farMerge.js";
+import { flyHeroFlags } from "./flagsCity.js";
 
 /** The SHADOW pass is not in compileAsync: warm its pipelines (every mesh of every level and every fading copy drawn a
  *  frame far under the city, pipelines created async) before the model shows (the villa's / Wolvendael's) */
@@ -91,6 +92,10 @@ export async function addPolice({ scene, updaters, hide, world, manifest, log, c
     const meshes = [yard.mesh];
     for (const lv of levels) lv.traverse((o) => { if (o.isMesh) meshes.push(o); });
     if (fp) fp.traverse((o) => { if (o.isMesh) meshes.push(o); });
+    // (claude/perf7, rule fade-shadow-warm) every (fading copy, geometry layout) in the shadow pass: fp has one stand-in per
+    // NEW copy, on its first mesh's geometry, so a level with another layout built its copy's shadow on screen at its first
+    // LOD fade (the police station's levels: 9 builds, 90 ms in one frame, ~9 s into a police drive)
+    for (const r of [root, cars?.group].filter(Boolean)) fadeShadowProxies(r)?.traverse((o) => { if (o.isMesh) meshes.push(o); });
     if (cars) cars.group.traverse((o) => { if (o.isMesh) meshes.push(o); });
     if (fpc) fpc.traverse((o) => { if (o.isMesh) meshes.push(o); });
     const warm = await warmShadowPass(renderer, scene, meshes);
@@ -120,5 +125,12 @@ export async function addPolice({ scene, updaters, hide, world, manifest, log, c
     });
     log(`Police station (Rue Rouge 17): scripted, LODs ${m.tris.join(" / ")} triangles, ${m.drawCalls.join("/")} draws; yard ${yard.tris} tris; ${cars ? `${cars.places.length} patrol cars (${cars.tris.join(" / ")} tris)` : "no cars"}; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms + shadow pass ${tWarm.toFixed(0)} ms (in the background)`);
     window.police = { model: m, root, levels, yard, cars, tLoad, tComp, tWarm, warm, state };
+    // the yard's three poles fly CLOTH flags (police.json flag_poles; the GLB's still flags are left out by make();
+    // rule flags-are-cloth), shown while the station is; ?flags=0: none (?policeflag=old: the old still ones instead)
+    const params = new URLSearchParams(location.search);
+    if (params.get("flags") !== "0" && m.rigidFlagSlots.length) {
+      flyHeroFlags({ site: "police", notes: m.notes, scene, updaters, renderer, compiler, params, log, shown: () => root.visible })
+        .then((r) => { window.police.flags = r; }).catch((e) => log(`police flags failed: ${e.message}`));
+    }
   }).catch((e) => log(`Police model failed (${e.message}): its UrbIS solids are hidden, reload without ?police=1`));
 }

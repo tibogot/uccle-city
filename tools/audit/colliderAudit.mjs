@@ -117,7 +117,7 @@ globalThis.fetch = async (u, o) => {
 if (!globalThis.OffscreenCanvas) globalThis.OffscreenCanvas = class { constructor(w, h) { this.width = w; this.height = h; }
   getContext() { return new Proxy({}, { get: (t, k) => (k === "getImageData" ? (x, y, w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }) : () => {}), set: () => true }); } };
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
-const { buildTileData } = await imp("viewer/tileData.js");
+const { tileData: buildTileData } = await imp("tools/gate/tileBuild.mjs");     // (the worker build through the gate tile cache, rule tile-cache)
 const { Heightmap } = await imp("viewer/heightmap.js");
 const C = await imp("viewer/drive/colliders.js");
 const { KIND, buildingBlocks, driveHeight, gather, itemContact, heightClear, addCircles, extendColliders, raisedShare, CAR_CLEAR } = C;
@@ -302,7 +302,7 @@ for (let p = 0; p < col.P; p++) if (col.pkind[p] === KIND.island) {
 
 // ---- paths: driven lanes, tram tracks, gate mouths. A body (hw across, STEP long) at every STEP along the line.
 const lanesAt = carriageway(d.roads, { classAt: fit?.classAt, onDeck: null, lanesOnly: true });
-const HARD = new Set([KIND.building, KIND.wall, KIND.tree, KIND.lamp, KIND.post, KIND.furniture]);
+const HARD = new Set([KIND.building, KIND.wall, KIND.tree, KIND.lamp, KIND.post, KIND.furniture, KIND.hedgeWall]);   // (hedgeWall: rule hedge-wall)
 const kindName = (id) => { const k = id < col.P ? col.pkind[id] : col.ckind[id - col.P]; const g = id < col.P && col.pgarden?.[id]; return g || KN[k]; };
 const contact = {}, out = [];
 /** line = [[x, z], ...]; returns Map(id -> { n, x, z }) of colliders the body meets */

@@ -79,11 +79,12 @@ export async function readGlb(file) {
           }
         }
         const mat = p.material != null ? json.materials[p.material]?.name ?? `material${p.material}` : "";
+        const U0 = p.attributes.TEXCOORD_0 != null ? Float32Array.from(readAccessor(p.attributes.TEXCOORD_0)) : null;   // (claude/underpass1 round 2: the sign / lettering UV check)
         const U1 = p.attributes.TEXCOORD_1 != null ? Float32Array.from(readAccessor(p.attributes.TEXCOORD_1)) : null;   // (the lightmap: LOD tools weld on it)
         // (motorbike round 2: the baked vertex AO, COLOR_0.r, for the two-wheeler pack; null when none)
         let AO = null;
         if (p.attributes.COLOR_0 != null) { const C = readAccessor(p.attributes.COLOR_0), w = C.length / n; AO = new Float32Array(n); for (let i = 0; i < n; i++) AO[i] = C[i * w]; }
-        parts.push({ name, node: nd.name, slot: mat, positions: Pw, normals: Nw, index: I, prim: pi, uv1: U1, ao: AO, nodeT: M.slice(12, 15) });
+        parts.push({ name, node: nd.name, slot: mat, positions: Pw, normals: Nw, index: I, prim: pi, uv0: U0, uv1: U1, ao: AO, nodeT: M.slice(12, 15) });
       });
     }
     for (const c of nd.children || []) visit(c, M, rootName ?? nd.name);

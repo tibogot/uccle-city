@@ -1,0 +1,852 @@
+{
+ "asset": "Park kit: natural timber log play equipment (tools/blender/timberPlayKit.py)",
+ "pieces": {
+  "tl_tower": {
+   "slots": [
+    "wood_robinia",
+    "bark",
+    "end_grain",
+    "wood_board"
+   ],
+   "triangles_raw": 7480,
+   "size_m": [
+    2.56,
+    2.47,
+    3.37
+   ],
+   "atlas": [
+    0,
+    0,
+    0.4705
+   ],
+   "footprint_m": [
+    -0.88,
+    1.68,
+    -1.49,
+    0.97
+   ]
+  },
+  "tl_climb": {
+   "slots": [
+    "wood_robinia",
+    "bark",
+    "end_grain"
+   ],
+   "triangles_raw": 3540,
+   "size_m": [
+    3.43,
+    2.27,
+    2.85
+   ],
+   "atlas": [
+    0.4745,
+    0,
+    0.3094
+   ],
+   "footprint_m": [
+    -1.71,
+    1.71,
+    -1.14,
+    1.12
+   ]
+  },
+  "tl_beam": {
+   "slots": [
+    "wood_robinia",
+    "bark",
+    "end_grain"
+   ],
+   "triangles_raw": 2148,
+   "size_m": [
+    3.78,
+    1.75,
+    0.9
+   ],
+   "atlas": [
+    0.5557,
+    0.4745,
+    0.2483
+   ],
+   "footprint_m": [
+    -1.89,
+    1.89,
+    -0.54,
+    1.21
+   ]
+  },
+  "tl_tower__detail": {
+   "slots": [
+    "rope_hemp",
+    "steel_galvanised"
+   ],
+   "triangles_raw": 2928,
+   "size_m": [
+    0.99,
+    1.13,
+    1.06
+   ],
+   "atlas": [
+    0.8569,
+    0.7566,
+    0.0681
+   ]
+  },
+  "tl_climb__detail": {
+   "slots": [
+    "rope_hemp",
+    "steel_galvanised"
+   ],
+   "triangles_raw": 10208,
+   "size_m": [
+    2.59,
+    1.99,
+    2.21
+   ],
+   "atlas": [
+    0.406,
+    0.7566,
+    0.1517
+   ]
+  },
+  "tl_tower__lod1": {
+   "slots": [
+    "wood_robinia",
+    "bark",
+    "end_grain",
+    "wood_board",
+    "rope_hemp"
+   ],
+   "triangles_raw": 2920,
+   "size_m": [
+    2.56,
+    2.47,
+    3.35
+   ],
+   "atlas": [
+    0,
+    0.4745,
+    0.278
+   ]
+  },
+  "tl_climb__lod1": {
+   "slots": [
+    "wood_robinia",
+    "bark",
+    "end_grain",
+    "rope_hemp"
+   ],
+   "triangles_raw": 5172,
+   "size_m": [
+    3.4,
+    2.27,
+    2.84
+   ],
+   "atlas": [
+    0,
+    0.7566,
+    0.2207
+   ]
+  },
+  "tl_beam__lod1": {
+   "slots": [
+    "wood_robinia",
+    "bark",
+    "end_grain"
+   ],
+   "triangles_raw": 584,
+   "size_m": [
+    3.77,
+    1.75,
+    0.88
+   ],
+   "atlas": [
+    0.5617,
+    0.7566,
+    0.1451
+   ]
+  },
+  "tl_tower__lod2": {
+   "slots": [
+    "wood_robinia",
+    "bark",
+    "end_grain",
+    "wood_board"
+   ],
+   "triangles_raw": 836,
+   "size_m": [
+    2.54,
+    2.47,
+    3.35
+   ],
+   "atlas": [
+    0.282,
+    0.4745,
+    0.2696
+   ]
+  },
+  "tl_climb__lod2": {
+   "slots": [
+    "wood_robinia",
+    "bark",
+    "end_grain"
+   ],
+   "triangles_raw": 354,
+   "size_m": [
+    3.4,
+    2.25,
+    2.84
+   ],
+   "atlas": [
+    0.2247,
+    0.7566,
+    0.1773
+   ]
+  },
+  "tl_beam__lod2": {
+   "slots": [
+    "wood_robinia",
+    "bark",
+    "end_grain"
+   ],
+   "triangles_raw": 328,
+   "size_m": [
+    3.77,
+    1.71,
+    0.88
+   ],
+   "atlas": [
+    0.7108,
+    0.7566,
+    0.1421
+   ]
+  }
+ },
+ "extra_objects": {
+  "tl_tower__detail": "LOD0 only detail",
+  "tl_climb__detail": "LOD0 only detail",
+  "tl_tower__lod1": "the scripted LOD1",
+  "tl_climb__lod1": "the scripted LOD1",
+  "tl_beam__lod1": "the scripted LOD1",
+  "tl_tower__lod2": "the scripted LOD2",
+  "tl_climb__lod2": "the scripted LOD2",
+  "tl_beam__lod2": "the scripted LOD2"
+ },
+ "slots": {
+  "bark": "",
+  "end_grain": "",
+  "rope_hemp": "",
+  "steel_galvanised": "",
+  "wood_board": "",
+  "wood_robinia": ""
+ },
+ "colliders": {
+  "tl_tower": [
+   [
+    -0.6,
+    -0.6,
+    1.1,
+    0,
+    0,
+    1.2,
+    0.085,
+    0,
+    0,
+    0,
+    0.085,
+    0
+   ],
+   [
+    0.6,
+    -0.6,
+    1.1,
+    0,
+    0,
+    1.2,
+    0.085,
+    0,
+    0,
+    0,
+    0.085,
+    0
+   ],
+   [
+    0.6,
+    0.6,
+    1.1,
+    0,
+    0,
+    1.2,
+    0.085,
+    0,
+    0,
+    0,
+    0.085,
+    0
+   ],
+   [
+    -0.6,
+    0.6,
+    1.1,
+    0,
+    0,
+    1.2,
+    0.085,
+    0,
+    0,
+    0,
+    0.085,
+    0
+   ],
+   [
+    0,
+    0,
+    1.04,
+    0.7,
+    0,
+    0,
+    0,
+    0.7,
+    0,
+    0,
+    0,
+    0.06
+   ],
+   [
+    0,
+    0.6,
+    1.55,
+    0.6,
+    0,
+    0,
+    0,
+    0.04,
+    0,
+    0,
+    0,
+    0.45
+   ],
+   [
+    -0.6,
+    0,
+    1.55,
+    0,
+    0.6,
+    0,
+    0.04,
+    0,
+    0,
+    0,
+    0,
+    0.45
+   ],
+   [
+    0.6,
+    0,
+    1.55,
+    0,
+    0.6,
+    0,
+    0.04,
+    0,
+    0,
+    0,
+    0,
+    0.45
+   ],
+   [
+    0,
+    -1.035,
+    0.475,
+    0,
+    0.415,
+    0.625,
+    -0.3,
+    0,
+    0,
+    0,
+    -0.2499,
+    0.1659
+   ],
+   [
+    1.1,
+    0,
+    0.6,
+    0,
+    0.6,
+    0,
+    0.5,
+    0,
+    -0.5,
+    0.05,
+    0,
+    0.05
+   ]
+  ],
+  "tl_climb": [
+   [
+    -1.4,
+    -0.525,
+    1.1,
+    0,
+    0.475,
+    1.2,
+    -0.08,
+    0,
+    0,
+    0,
+    -0.0744,
+    0.0294
+   ],
+   [
+    -1.4,
+    0.525,
+    1.1,
+    0,
+    -0.475,
+    1.2,
+    0.08,
+    0,
+    0,
+    0,
+    0.0744,
+    0.0294
+   ],
+   [
+    1.4,
+    -0.525,
+    1.1,
+    0,
+    0.475,
+    1.2,
+    -0.08,
+    0,
+    0,
+    0,
+    -0.0744,
+    0.0294
+   ],
+   [
+    1.4,
+    0.525,
+    1.1,
+    0,
+    -0.475,
+    1.2,
+    0.08,
+    0,
+    0,
+    0,
+    0.0744,
+    0.0294
+   ],
+   [
+    0,
+    0,
+    2.36,
+    1.7,
+    0,
+    0,
+    0,
+    0.085,
+    0,
+    0,
+    0,
+    0.085
+   ],
+   [
+    0,
+    -0.55,
+    1.2,
+    1.3,
+    0,
+    0,
+    0,
+    0.45,
+    1.1,
+    0,
+    -0.0278,
+    0.0114
+   ],
+   [
+    0,
+    0.55,
+    1.2,
+    1.3,
+    0,
+    0,
+    0,
+    -0.45,
+    1.1,
+    0,
+    -0.0278,
+    -0.0114
+   ]
+  ],
+  "tl_beam": [
+   [
+    -0.95,
+    -0.075,
+    0.34,
+    0.9,
+    0.375,
+    0,
+    -0.0385,
+    0.0923,
+    0,
+    0,
+    0,
+    0.1
+   ],
+   [
+    -1.634,
+    -0.36,
+    0.0775,
+    0.11,
+    0,
+    0,
+    0,
+    0.11,
+    0,
+    0,
+    0,
+    0.1775
+   ],
+   [
+    -0.266,
+    0.21,
+    0.0775,
+    0.11,
+    0,
+    0,
+    0,
+    0.11,
+    0,
+    0,
+    0,
+    0.1775
+   ],
+   [
+    0.975,
+    0.065,
+    0.44,
+    0.875,
+    -0.315,
+    0,
+    0.0322,
+    0.0894,
+    0,
+    0,
+    0,
+    0.095
+   ],
+   [
+    0.31,
+    0.3044,
+    0.1296,
+    0.11,
+    0,
+    0,
+    0,
+    0.11,
+    0,
+    0,
+    0,
+    0.2296
+   ],
+   [
+    1.64,
+    -0.1744,
+    0.1296,
+    0.11,
+    0,
+    0,
+    0,
+    0.11,
+    0,
+    0,
+    0,
+    0.2296
+   ],
+   [
+    -1.5,
+    0.75,
+    0.06,
+    0.14,
+    0,
+    0,
+    0,
+    0.14,
+    0,
+    0,
+    0,
+    0.16
+   ],
+   [
+    -0.95,
+    0.95,
+    0.11,
+    0.13,
+    0,
+    0,
+    0,
+    0.13,
+    0,
+    0,
+    0,
+    0.21
+   ],
+   [
+    -0.35,
+    1.05,
+    0.16,
+    0.15,
+    0,
+    0,
+    0,
+    0.15,
+    0,
+    0,
+    0,
+    0.26
+   ],
+   [
+    0.55,
+    0.95,
+    0.1,
+    0.13,
+    0,
+    0,
+    0,
+    0.13,
+    0,
+    0,
+    0,
+    0.2
+   ]
+  ]
+ },
+ "colliders_note": "oriented boxes [cx, cy, cz, ax, ay, az, bx, by, bz, ux, uy, uz]: centre + three half-axes in the Blender frame (z up; glTF / three: x, z, -y)",
+ "attributes": {
+  "TEXCOORD_0": "metres, u along the part's grain (log axis, board length)",
+  "TEXCOORD_1": "AO atlas timberkit_ao.png"
+ },
+ "frame": "glTF Y up, origin = footprint centre on the ground, front = -Y (Blender) = +Z (glTF)",
+ "lods": {
+  "tl_tower": {
+   "lods": [
+    {
+     "node": "tl_tower_lod0",
+     "triangles": 10408,
+     "draws": 1,
+     "slots": [
+      "playground"
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "tl_tower_lod1",
+     "triangles": 2920,
+     "draws": 1,
+     "slots": [
+      "playground"
+     ],
+     "error_m": 0.01,
+     "vertex_ao": true
+    },
+    {
+     "node": "tl_tower_lod2",
+     "triangles": 836,
+     "draws": 1,
+     "slots": [
+      "playground"
+     ],
+     "error_m": 0.035,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    20,
+    55,
+    160
+   ]
+  },
+  "tl_climb": {
+   "lods": [
+    {
+     "node": "tl_climb_lod0",
+     "triangles": 13748,
+     "draws": 1,
+     "slots": [
+      "playground"
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "tl_climb_lod1",
+     "triangles": 5172,
+     "draws": 1,
+     "slots": [
+      "playground"
+     ],
+     "error_m": 0.01,
+     "vertex_ao": true
+    },
+    {
+     "node": "tl_climb_lod2",
+     "triangles": 354,
+     "draws": 1,
+     "slots": [
+      "playground"
+     ],
+     "error_m": 0.035,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    20,
+    55,
+    160
+   ]
+  },
+  "tl_beam": {
+   "lods": [
+    {
+     "node": "tl_beam_lod0",
+     "triangles": 2148,
+     "draws": 1,
+     "slots": [
+      "playground"
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "tl_beam_lod1",
+     "triangles": 584,
+     "draws": 1,
+     "slots": [
+      "playground"
+     ],
+     "error_m": 0.01,
+     "vertex_ao": true
+    },
+    {
+     "node": "tl_beam_lod2",
+     "triangles": 328,
+     "draws": 1,
+     "slots": [
+      "playground"
+     ],
+     "error_m": 0.035,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    20,
+    55,
+    160
+   ]
+  }
+ },
+ "glb_bytes": 1057624,
+ "slot_order": [
+  "wood_stained",
+  "wood_log",
+  "wood_bench",
+  "steel_galvanised",
+  "steel_painted_red",
+  "steel_painted_green",
+  "hpl_panel",
+  "hdpe_green",
+  "hdpe_red",
+  "rope_grey",
+  "rubber_black",
+  "stainless_steel",
+  "surface_rubber",
+  "sand",
+  "wood_robinia",
+  "bark",
+  "end_grain",
+  "rope_hemp",
+  "wood_board"
+ ],
+ "lod_ranges_m": {
+  "note": "each LOD's band END (camera distance); dithered cross-fades over the last 15 % of a band",
+  "bands": [
+   20,
+   55,
+   160
+  ]
+ },
+ "audit": {
+  "tl_tower_lod0": {
+   "blocking": 0,
+   "warnings": 396,
+   "counts": {
+    "sliver": 396,
+    "backtoback": 10,
+    "seam": 189
+   }
+  },
+  "tl_tower_lod1": {
+   "blocking": 0,
+   "warnings": 28,
+   "counts": {
+    "sliver": 28,
+    "seam": 94
+   }
+  },
+  "tl_tower_lod2": {
+   "blocking": 0,
+   "warnings": 28,
+   "counts": {
+    "sliver": 28,
+    "seam": 41
+   }
+  },
+  "tl_climb_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {
+    "seam": 410
+   }
+  },
+  "tl_climb_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {
+    "seam": 161
+   }
+  },
+  "tl_climb_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {
+    "seam": 10
+   }
+  },
+  "tl_beam_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {
+    "seam": 4
+   }
+  },
+  "tl_beam_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {
+    "seam": 4
+   }
+  },
+  "tl_beam_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {
+    "seam": 4
+   }
+  }
+ }
+}

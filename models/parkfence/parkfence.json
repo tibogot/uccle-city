@@ -1,0 +1,190 @@
+{
+ "asset": "Park fence kit: railings, bar fence, welded mesh, posts, stone piers and plinths, park gate leaves (tools/blender/parkFenceKit.py)",
+ "pieces": {
+  "pf_rail_lod0": {
+   "slots": [
+    "iron_paint",
+    "iron_tip"
+   ],
+   "triangles": 3672,
+   "size_m": [
+    2.5,
+    0.027,
+    1.922
+   ]
+  },
+  "pf_bars_lod0": {
+   "slots": [
+    "iron_paint",
+    "iron_tip"
+   ],
+   "triangles": 1128,
+   "size_m": [
+    2.507,
+    0.075,
+    2.05
+   ]
+  },
+  "pf_mesh_lod0": {
+   "slots": [
+    "iron_paint",
+    "iron_tip",
+    "steel_dark"
+   ],
+   "triangles": 1560,
+   "size_m": [
+    2.492,
+    0.064,
+    2.29
+   ]
+  },
+  "pf_post_lod0": {
+   "slots": [
+    "iron_paint",
+    "iron_tip"
+   ],
+   "triangles": 248,
+   "size_m": [
+    0.064,
+    0.064,
+    2.29
+   ]
+  },
+  "pf_gate2_lod0": {
+   "slots": [
+    "iron_paint",
+    "iron_tip",
+    "steel_dark"
+   ],
+   "triangles": 7820,
+   "size_m": [
+    2.028,
+    0.072,
+    2.667
+   ]
+  },
+  "pf_gate1_lod0": {
+   "slots": [
+    "iron_paint",
+    "iron_tip",
+    "steel_dark"
+   ],
+   "triangles": 2218,
+   "size_m": [
+    1.128,
+    0.072,
+    1.892
+   ]
+  },
+  "pf_pier_lod0": {
+   "slots": [
+    "stone",
+    "stone_cap"
+   ],
+   "triangles": 1644,
+   "size_m": [
+    0.86,
+    0.86,
+    3.54
+   ]
+  },
+  "pf_plinth_lod0": {
+   "slots": [
+    "stone",
+    "stone_cap"
+   ],
+   "triangles": 992,
+   "size_m": [
+    2.5,
+    0.48,
+    1.4
+   ]
+  },
+  "pf_brick_lod0": {
+   "slots": [
+    "mortar",
+    "brick",
+    "coping"
+   ],
+   "triangles": 6236,
+   "size_m": [
+    2.516,
+    0.41,
+    3.298
+   ]
+  },
+  "pf_pier_lod1": {
+   "slots": [
+    "stone",
+    "stone_cap"
+   ],
+   "triangles": 58,
+   "size_m": [
+    0.82,
+    0.82,
+    3.54
+   ]
+  },
+  "pf_plinth_lod1": {
+   "slots": [
+    "stone",
+    "stone_cap"
+   ],
+   "triangles": 34,
+   "size_m": [
+    2.5,
+    0.48,
+    1.4
+   ]
+  },
+  "pf_brick_lod1": {
+   "slots": [
+    "brick",
+    "coping"
+   ],
+   "triangles": 40,
+   "size_m": [
+    2.5,
+    0.41,
+    3.3
+   ]
+  },
+  "pf_pier_lod2": {
+   "slots": [
+    "stone",
+    "stone_cap"
+   ],
+   "triangles": 24,
+   "size_m": [
+    0.82,
+    0.82,
+    3.48
+   ]
+  },
+  "pf_plinth_lod2": {
+   "slots": [
+    "stone"
+   ],
+   "triangles": 12,
+   "size_m": [
+    2.5,
+    0.44,
+    1.4
+   ]
+  },
+  "pf_brick_lod2": {
+   "slots": [
+    "brick",
+    "coping"
+   ],
+   "triangles": 26,
+   "size_m": [
+    2.5,
+    0.37,
+    3.3
+   ]
+  }
+ },
+ "frame": "glTF Y up; panels: x 0..2.5 along the run, y 0 = the ground line (pf_rail: the plinth's coping top), +Z (three.js) = outside the park; leaves: x 0 = the hinge; piers: centred",
+ "ao": "COLOR_0 (Cycles AO per vertex, on the ground / the plinth)"
+}

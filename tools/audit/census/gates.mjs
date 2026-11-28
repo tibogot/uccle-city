@@ -35,7 +35,7 @@
 //   node --import ./tools/road_audit/register.mjs tools/audit/census/gates.mjs [--all | T ...] [--out FILE] [--jobs N]
 //        [--old] [--max k=v,...] [--quiet] [--worst N]
 //   --old: the city as ?gates=old draws it (data/gardens/old/<T>.json, the garden data before claude/gates)
-import { writeFileSync, existsSync } from "node:fs";
+import { writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { streetTile, runTiles, cli, json, at, ROOT, imp, SC } from "./lib_street.mjs";
 import { footprintIndex } from "./lib_mesh.mjs";
@@ -69,6 +69,10 @@ if (!CHILD) {
   sum.villaDriveGatedPm = pm(byType.villa?.driveGated || 0, byType.villa?.drive || 0);
   sum.rowDriveGatedPm = pm(byType.terraced?.driveGated || 0, byType.terraced?.drive || 0);
   sum.pathUngated = (sum.pathFronts || 0) - (sum.pathGated || 0);
+  // the garage drives' lost gates outside the named open drives (rule garage-has-drive): 0
+  { let allow = new Set(); try { allow = new Set(JSON.parse(readFileSync(join(ROOT, "tools/audit/gates_open_drives.json"), "utf8")).places.map((p) => p.key)); } catch {}
+    sum.gateLostToGarage = (items.gateLostToGarage || []).filter((it) => !allow.has(`${it.tile} ${it.at}`)).length;
+    if (!QUIET) for (const it of (items.gateLostToGarage || []).filter((it) => !allow.has(`${it.tile} ${it.at}`)).slice(0, 20)) console.log(`  gate lost to a garage drive: ${it.tile} ${it.at} ${it.street} (nearest gate ${it.nearM} m)`); }
   // the per-tile budget: the most gate leaves / piers a tile draws (instances in the kit's pools: no draw call each)
   sum.gatesTileMax = Math.max(0, ...res.filter((r) => !r.error).map((r) => 2 * r.counts.gates - r.counts.pedGates));   // (leaves: a driveway gate is two)
   sum.piersTileMax = Math.max(0, ...res.filter((r) => !r.error).map((r) => r.counts.piers || 0));
@@ -128,6 +132,8 @@ let doc = json(join(ROOT, OLD ? "data/gardens/old" : "data/gardens", `${T}.json`
 const placed = { segs: doc.segs.length, pillars: doc.pillars.length, gates: doc.gates.length };
 const rs = restyleHedges(doc, overrides.gardenRestyle, blocked); if (rs) doc = rs.doc;
 const cl = clearRoads(doc, blocked, {}); const droppedDoc = doc; if (cl) doc = cl.doc;
+const garageRings = (doc.drives || []).map((d) => { const r = d.ring, cx = r.reduce((q, p) => q + p[0], 0) / r.length, cz = r.reduce((q, p) => q + p[1], 0) / r.length; return r.map(([x, z]) => { const L = Math.hypot(x - cx, z - cz) || 1; return [x + ((x - cx) / L) * 0.5, z + ((z - cz) / L) * 0.5]; }); });   // (grown 0.5 m: the ring stops 0.25 m short of the line)
+const inRingG = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
 const records = new Map(); for (const g of doc.gardens || []) { if (!records.has(g.bu)) records.set(g.bu, []); records.get(g.bu).push(g); }
 /** the build's record of this face: the one of its building with the nearest gap (a building has one per garden face) */
 const recordOf = (bu, gap) => (records.get(bu) || []).reduce((a, g) => (!a || Math.abs(g.gap - gap) < Math.abs(a.gap - gap) ? g : a), null);
@@ -183,6 +189,10 @@ const forecourts = [];
   const fj = json(join(ROOT, "data/raw/osm/forecourts.json"));
   if (fj) for (const e of fj.elements) { if (e.type !== "way" || (e.geometry || []).length < 4) continue; forecourts.push({ ring: e.geometry.map((g) => toLocal(g.lon, g.lat)), tags: e.tags || {} }); }
 }
+// (claude/places1, rule curated-place-placed) + the hard grounds the city draws (data/overrides.json grounds: Brico
+// Sint-Job's car park, White Night's lot, the school yards): an open front onto a drawn car park is the real thing, as
+// an OSM forecourt is (the garden kit's walls there were cleared on purpose)
+for (const g of overrides.grounds || []) if (g?.ring?.length >= 3) forecourts.push({ ring: g.ring, tags: { ground: g.id } });
 const inForecourt = (x, z) => forecourts.some((f) => pip(x, z, f.ring));
 const shops = (feats.points || []).filter((p) => p.kind === "shop");
 
@@ -230,7 +240,9 @@ for (const [bi, fl] of byB) {
   const linePts = hits.map((r) => [r.ox + nx * r.d, r.oz + nz * r.d]);
   const nearLine = (x, z, tol) => linePts.some(([px, pz]) => Math.hypot(px - x, pz - z) < tol);
   const myDrives = drives.filter((l) => l.some(([x, z]) => nearLine(x, z, 1.5)));
-  const onDrive = (x, z) => myDrives.some((l) => l.some((p, k) => k && segD(x, z, l[k - 1][0], l[k - 1][1], p[0], p[1]) < 0.8));
+  // (claude/reality2, rule garage-has-drive) a garage door's paved drive (data/gardens drives) is access by data too:
+  // the boundary opens in front of the door on purpose (?garagedrive / --garage old: none)
+  const onDrive = (x, z) => myDrives.some((l) => l.some((p, k) => k && segD(x, z, l[k - 1][0], l[k - 1][1], p[0], p[1]) < 0.8)) || garageRings.some((r) => inRingG(r, x, z));
   // what the line carries, ray by ray: a piece, else a driveway the data draws there (access by design), else open
   const meet = Object.fromEntries([...KINDS, "drive"].map((k) => [k, 0]));
   let closedN = 0, openN = 0;
@@ -264,6 +276,14 @@ for (const [bi, fl] of byB) {
       const why = kind === "open" ? "frontOpen" : onDrive(path[0], path[1]) ? "inDrive" : piers >= 2 ? "leafMissing" : rayMeets(path[0] - nx * 1.0, path[1] - nz * 1.0, path[0] + nx * 0.4, path[1] + nz * 0.4) ? "noOpening" : "gap";
       pathCauses[why] = (pathCauses[why] || 0) + 1;
       items.pathUngated.push({ w: 1, at: at(path[0], path[1]), street: nameAt(path[0], path[1]), type, kind, why });
+      // (claude/reality2, rule garage-has-drive) a door path next to a garage drive whose nearest gate leaf is over 8 m
+      // away: the house's own gate went (an opening within 0.5 m of its door made it "against the driveway" on a front
+      // with no room beside it: 18 houses, C4 Rue du Roetaert ...). Counted per place; the row allows only the named open
+      // drives (tools/audit/gates_open_drives.json: Street View shows an open paved front there)
+      if (garageRings.some((r) => r.some(([x, z]) => Math.hypot(x - path[0], z - path[1]) < 6))) {
+        const near = gates.reduce((m, g) => Math.min(m, segD(path[0], path[1], g.x, g.z, g.bx, g.bz)), Infinity);
+        if (near > 8) { counts.gateLostToGarage = (counts.gateLostToGarage || 0) + 1; (items.gateLostToGarage ||= []).push({ w: 1, at: at(path[0], path[1]), street: nameAt(path[0], path[1]), type, nearM: +near.toFixed(1) }); }
+      }
     }
   }
   if (driveSpans.length) {

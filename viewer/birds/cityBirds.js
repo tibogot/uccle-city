@@ -475,8 +475,10 @@ export const cityBirds = {
       const gb = glass.boundingBox, gx = (gb.min.x + gb.max.x) / 2, gz = (gb.min.z + gb.max.z) / 2;
       const P = iron.attributes.position;
       let top = gb.max.y;
-      for (let i = 0; i < P.count; i++) if (Math.hypot(P.getX(i) - gx, P.getZ(i) - gz) < 0.12) top = Math.max(top, P.getY(i));
-      h.flyer.w.lampTop = { x: gx, y: top + 0.005, z: gz, n: 1 };
+      let cap = gb.max.y;
+      for (let i = 0; i < P.count; i++) { const r = Math.hypot(P.getX(i) - gx, P.getZ(i) - gz); if (r < 0.12) top = Math.max(top, P.getY(i)); if (r < 0.03) cap = Math.max(cap, P.getY(i)); }
+      // (cap: the top ON the lantern's axis, where the falcon's feet stand: cityGymWorld.js; the 12 cm one takes the crown)
+      h.flyer.w.lampTop = { x: gx, y: top + 0.005, z: gz, n: 1, cap };
       this.log(`birds: lamp perches at the lantern cap (${gx.toFixed(2)}, ${top.toFixed(2)}, ${gz.toFixed(2)}) m in the lamp's frame`);
     }).catch(() => {});
   },

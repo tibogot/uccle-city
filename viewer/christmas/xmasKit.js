@@ -22,7 +22,7 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, vec2, vec3, vec4, float, mix, smoothstep, clamp, max, fract, sin, abs, pow, time, select, positionWorld, uniform, Fn, normalWorld,
-  texture, frontFacing, normalViewGeometry, normalView, positionView, context,
+  texture, frontFacing, normalViewGeometry, normalView, positionView, context, normalLocal,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
@@ -30,6 +30,7 @@ import { keepBand, rampTo, lodEye, ditherNoise } from "../lodFade.js";
 import { wxMat } from "../weather/cityWeatherize.js";
 import { env } from "../lighting.js";
 import { ktxLoader } from "../materials/scans.js";
+import { foliageLights } from "../foliage/vertexLight.js";
 
 // FIR ROUND 3 (docs/CHRISTMAS.md, rule 19): the needle cards' cost at 8 m (+0.26 ms against a 0.1 ms budget) was the lit,
 // alpha-tested shader running on ~7.5 layers of cards per visible pixel (tools/christmas/firCost.mjs) and the cards'
@@ -42,6 +43,30 @@ import { ktxLoader } from "../materials/scans.js";
 //                   no alpha-tested cards in the sun's map (noisy, ~3 x the lanes), no shadow change at either switch
 const QS = new URLSearchParams(typeof location !== "undefined" ? location.search : "");
 export const FIR = { prepass: QS.get("firprepass") !== "0", shadow: QS.get("firshadow") === "cards" ? "cards" : "far" };
+// FIR ROUND 4 (claude/xmas3, docs/CHRISTMAS.md 7.3): the fir's cost at 8 m at night was the CARDS' LIGHTING: the lit
+// pass ran the night's whole light set over every visible card pixel (the cluster loop of the pooled lamp lights + the
+// two shadowed lamp spots with their shadow maps). Measured live (debug/xmasPerf.js, the cards' material swapped): the
+// sun + sky only -0.14 ms at 8 m; the cluster loop alone or the spots alone ~-0.03 (only both gone frees the shader);
+// the lamps' light on the crown is not seen (Place Saint-Job at night, 6 m from the fir: mean brightness 17.77 vs 17.78
+// of 255). Switch (URL, read once; live for the A/B: window.xmas.setLight):
+//   ?firlight=old   the needle cards lit by every scene light (before). Default: the sun / moon + the sky only
+//                   (foliage/vertexLight.js foliageLights, as the city's grass, plants and ivy): the moon's shadow, the
+//                   canopy normals, the sky light and the snow are unchanged; by day the lamps are off (no change)
+export const XMAS_LIGHT = { cards: QS.get("firlight") !== "old" };
+// (claude/xmasreview) THE LEDS' GLOW ON THE FIR AT NIGHT: the review found the fir at night as LED dots in a black
+// void (the crown, the baubles, the star's tree gone): the 654 bulbs are emissive only (no light: the fixed light
+// count), so nothing they light shows. Real LED strings light the needles round them and glint in every bauble. Here:
+// an emissive term on the foliage = its own albedo x the warm LED colour x xmasLook.glow x the night (env.uNight); the
+// baubles x xmasLook.glint. The string covers the crown evenly (a 17-turn spiral), so the term is uniform but for the
+// canopy AO already in the albedo (the outer needles brighter, the inside dark). Proportional to the albedo on every
+// level (the cards, the middle shell, the far fronds): the 45 m and 150 m switches keep their match. By day: x 0.
+//   ?firglow=0   the shader of before (no emissive term on the foliage and baubles)
+export const FIR_GLOW = QS.get("firglow") !== "0";
+/** the light path above on a slot's material (returns it) */
+function applyLight(m, slot, light) {
+  if (light.cards && slot === "fir_cards") { const L = foliageLights(); if (L) m.lightsNode = L; m.userData.foliageLights = true; }
+  return m;
+}
 /** the sun's shadow camera draws this layer too (viewer/christmas/xmasCity.js): the tree's shadow-only casters */
 export const XMAS_SHADOW_LAYER = 25;
 
@@ -53,6 +78,9 @@ export const xmasLook = {
   flash: uniform(1.0),          // the flash bulbs' sparkle
   rope: uniform(0.75),          // LED rope (motifs) vs bulbs
   star: uniform(0.7),
+  glow: uniform(0.8),           // (claude/xmasreview) the LEDs' warm light on the fir's needles at night (x albedo)
+  glint: uniform(0.08),         // ... in the baubles (x their colour; more reads as coloured bulbs)
+  stall: uniform(0.5),          // ... on a market chalet's FRONT (its 16 eave LEDs + the lit hatch: boards, counter, sign)
   cards: uniform(0.78),         // the needle cards' albedo gain: 0.78 matches the far fronds' green at the 45 m switch (browser, 2026-11-17)
   under: uniform(0.55),         // the cards' back faces (the silvery undersides seen from below; 0.55: the switch)
 };
@@ -62,7 +90,9 @@ const NEEDLES = { tex: new THREE.DataTexture(new Uint8Array([40, 70, 45, 255]), 
 NEEDLES.tex.colorSpace = THREE.SRGBColorSpace; NEEDLES.tex.needsUpdate = true;
 async function loadNeedles(renderer, info) {
   if (!renderer || !info.needles) return;
-  const t = await ktxLoader(renderer).loadAsync(BASE + info.needles.file);
+  // (fetched here at LOW priority, then parsed: the shared KTX2 loader keeps its own priority for the ground's textures)
+  const buf = await fetch(BASE + info.needles.file, XMAS_FETCH).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); });
+  const t = await new Promise((res, rej) => ktxLoader(renderer).parse(buf, res, rej));
   t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
   t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.anisotropy = 4; t.generateMipmaps = false;
   t.name = "xmas fir needles";
@@ -70,13 +100,18 @@ async function loadNeedles(renderer, info) {
 }
 
 const BASE = new URL("../../models/christmas/", import.meta.url).href;
+/** BOOT PRIORITY (plan job 3, docs/CHRISTMAS.md "Boot with the layer on"): from 1 December every visitor downloads the
+ *  layer (6 MB GLB + 0.8 MB atlas + JSON). Every Christmas fetch is a LOW-priority request (fetch priority hint, r187
+ *  Loader.setPriority) so it never competes with the start tile and the boot's own files on a cold visit
+ *  (PERF_RESEARCH idea 8). Rule xmas-low-priority: gate row `xmas` checks every fetch / loader under viewer/christmas/. */
+export const XMAS_FETCH = { priority: "low" };
 let promise = null;
 export function loadXmasKit(renderer = null) {
   return (promise ??= (async () => {
     const t0 = performance.now();
     if (typeof Worker !== "undefined") MeshoptDecoder.useWorkers?.(2);
-    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-    const [gltf, info] = await Promise.all([loader.loadAsync(BASE + "christmas.glb"), fetch(BASE + "christmas.json").then((r) => r.json())]);
+    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setPriority(XMAS_FETCH.priority);
+    const [gltf, info] = await Promise.all([loader.loadAsync(BASE + "christmas.glb"), fetch(BASE + "christmas.json", XMAS_FETCH).then((r) => r.json())]);
     // (the needle atlas before any material is made: the cards' texture node takes it as built)
     await loadNeedles(renderer, info).catch((e) => console.warn(`[christmas] needle atlas failed (${e.message}): the fir's near cards show flat`));
     const pieces = {};
@@ -98,7 +133,8 @@ export function loadXmasKit(renderer = null) {
     const mats = {};
     // mask: the dithered band (instances near a level switch); without: solid (no discard, early depth kept)
     // pass (the needle cards only): "depth" = the pre-pass twin, "colour" = the lit EQUAL-depth pass, null = one pass
-    const slotMaterial = (slot, { uvs = false, instanced = true, mask = true, pass = null } = {}) => (mats[`${slot}|${uvs ? "u" : "-"}|${instanced ? "i" : "s"}|${instanced && mask ? "m" : "-"}|${slot === "fir_cards" && pass ? pass : ""}`] ??= make(slot, uvs, instanced, instanced && mask, slot === "fir_cards" ? pass : null));
+    // light: XMAS_LIGHT (the URL's) or another { cards } (the live A/B: both variants side by side, own cache keys)
+    const slotMaterial = (slot, { uvs = false, instanced = true, mask = true, pass = null, light = XMAS_LIGHT } = {}) => (mats[`${slot}|${uvs ? "u" : "-"}|${instanced ? "i" : "s"}|${instanced && mask ? "m" : "-"}|${slot === "fir_cards" && pass ? pass : ""}${light === XMAS_LIGHT ? "" : `|L${+!!light.cards}`}`] ??= applyLight(make(slot, uvs, instanced, instanced && mask, slot === "fir_cards" ? pass : null), slot, slot === "fir_cards" && pass === "depth" ? {} : light));
     return { pieces, info, slotMaterial, mats, needles: NEEDLES, loadMs: performance.now() - t0, bytes: (info.glb_bytes ?? 0) + (NEEDLES.loaded ? info.needles?.ktx2_bytes ?? 0 : 0) };
   })());
 }
@@ -118,6 +154,13 @@ function bandMask(xlod) {
 }
 /** the light level: faint by day, strong at night */
 const level = () => mix(xmasLook.day, xmasLook.night, env.uNight);
+/** (claude/xmasreview) the LEDs' warm glow on the fir at night (FIR_GLOW): albedo x LED warm white x gain x night */
+const LED_WARM = 0xffc27e;
+const ledGlow = (albedo, gain) => albedo.mul(lin(LED_WARM)).mul(gain).mul(env.uNight);
+/** a chalet's front faces (glTF +Z: the hatch side): the boards, posts and sign that face the front, where its eave LEDs
+ *  shine (by the normal: the packed GLB's positions are quantized, its normals keep their direction) */
+const stallFront = () => smoothstep(0.35, 0.9, normalLocal.z);
+const stallGlow = (m) => { if (FIR_GLOW) { m.emissiveNode = ledGlow(m.colorNode, xmasLook.stall.mul(stallFront())); m.userData.ledGlow = true; } };
 /** a per-element phase in [0, 1): the element's own random (COLOR_0.r) + the instance's id hash */
 const phaseOf = (instanced) => (instanced ? fract(COL().x.add(attribute("xlod", "vec4").z)) : COL().x);
 
@@ -143,6 +186,7 @@ function make(slot, uvs, instanced, mask = instanced, pass = null) {
       // the Nordmann's two-tone needles: dark glossy green above, silvery blue-green below (the faces turned down)
       col = mix(col, lin(0x6d8a80).mul(mix(float(0.55), float(0.9), c.y)), smoothstep(0.1, -0.5, normalWorld.y).mul(0.6));
       m.colorNode = col.mul(ao);
+      if (FIR_GLOW) { m.emissiveNode = ledGlow(m.colorNode, xmasLook.glow); m.userData.ledGlow = true; }
       wxMat(m, { porosity: 0.35 });
       break;
     }
@@ -165,6 +209,7 @@ function make(slot, uvs, instanced, mask = instanced, pass = null) {
       m = new THREE.MeshStandardNodeMaterial({ roughness: 0.5, metalness: 0, side: THREE.DoubleSide });
       const tint = mix(float(0.86), float(1.12), c.x).mul(select(frontFacing, float(1), xmasLook.under));
       m.colorNode = tx.rgb.mul(tint).mul(xmasLook.cards).mul(mix(float(0.3), float(1), c.z));
+      if (FIR_GLOW) { m.emissiveNode = ledGlow(m.colorNode, xmasLook.glow); m.userData.ledGlow = true; }
       m.roughnessNode = select(frontFacing, float(0.46), float(0.72));
       m.normalNode = normalViewGeometry;          // (the canopy normal on BOTH faces: DoubleSide would flip the back's)
       m.maskNode = keep; m.maskShadowNode = keep;
@@ -193,6 +238,7 @@ function make(slot, uvs, instanced, mask = instanced, pass = null) {
       const red = lin(0x9c0f14), gold = lin(0xd6a24a), champ = lin(0xe6d6b8);
       m.colorNode = mix(mix(red, gold, smoothstep(0.25, 0.3, c.y)), champ, smoothstep(0.75, 0.8, c.y)).mul(ao);
       m.metalnessNode = mix(float(0.55), float(0.9), smoothstep(0.25, 0.3, c.y));
+      if (FIR_GLOW) { m.emissiveNode = ledGlow(m.colorNode, xmasLook.glint); m.userData.ledGlow = true; }
       wxMat(m, { porosity: 0.0 });
       break;
     }
@@ -224,6 +270,9 @@ function make(slot, uvs, instanced, mask = instanced, pass = null) {
       break;
     }
     case "wire_dark": std({ roughness: 0.5 }); m.colorNode = lin(0x14181a); break;
+    // (claude/xmas4) the Christmas poles of the pole garlands (xmasCity.js buildPoleGeometry): the tram poles' painted
+    // steel (viewer/tram.js: 0x3b4044, roughness 0.5, metalness 0.7), wet / snow by the weather
+    case "pole_steel": std({ roughness: 0.5, metalness: 0.7 }); m.colorNode = lin(0x3b4044).mul(ao); wxMat(m, { porosity: 0 }); break;
     // ---- the market chalets: stained boards (the instance's tone in xlod.w: dark walnut .. natural pine; each board its
     // own shade, COLOR_0.r), dark trim, green felt roof, fake snow, the warm-lit inside, the cream sign board
     case "chalet_wood": {
@@ -231,13 +280,14 @@ function make(slot, uvs, instanced, mask = instanced, pass = null) {
       const tone = instanced ? attribute("xlod", "vec4").w : float(0.5);
       const stain = mix(lin(0x3b2416), lin(0x8a6440), tone);
       m.colorNode = stain.mul(mix(float(0.78), float(1.08), c.x)).mul(ao);
+      stallGlow(m);
       wxMat(m, { porosity: 0.5 });
       break;
     }
-    case "chalet_trim": std({ roughness: 0.7 }); m.colorNode = lin(0x231610).mul(ao); wxMat(m, { porosity: 0.4 }); break;
+    case "chalet_trim": std({ roughness: 0.7 }); m.colorNode = lin(0x231610).mul(ao); stallGlow(m); wxMat(m, { porosity: 0.4 }); break;
     case "roof_felt": std({ roughness: 0.92 }); m.colorNode = lin(0x1f2a20).mul(ao); wxMat(m, { porosity: 0.3 }); break;
     case "snow_fake": std({ roughness: 0.85 }); m.colorNode = lin(0xe8ecf0).mul(ao); break;
-    case "sign_board": std({ roughness: 0.65 }); m.colorNode = lin(0xd9cdb0).mul(ao); wxMat(m, { porosity: 0.2 }); break;
+    case "sign_board": std({ roughness: 0.65 }); m.colorNode = lin(0xd9cdb0).mul(ao); stallGlow(m); wxMat(m, { porosity: 0.2 }); break;
     case "chalet_interior": {
       // the inside (seen through the hatch): goods in many colours (r: hue pick, g: brightness), lit warm at night
       std({ roughness: 0.75 });
@@ -255,8 +305,8 @@ function make(slot, uvs, instanced, mask = instanced, pass = null) {
 }
 
 /** the span material for the procedural garlands (wire + bulbs drawn as one merged mesh each): faded out with distance */
-export function spanMaterial(slot, kit, fadeEnd = 650) {
-  const m = kit.slotMaterial(slot, { uvs: false, instanced: false });
+export function spanMaterial(slot, kit, fadeEnd = 650, light = XMAS_LIGHT) {
+  const m = kit.slotMaterial(slot, { uvs: false, instanced: false, light });
   if (!m.userData.spanFade) {
     const d = positionWorld.sub(lodEye).length();
     m.maskNode = ditherNoise().greaterThanEqual(rampTo(d, float(fadeEnd), float(fadeEnd * 0.15)));

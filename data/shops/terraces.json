@@ -1,6 +1,307 @@
 {
  "about": "Curated shopfronts and terraces of the shopfront kit (viewer/shops/shopLayout.js), each checked on Google Street View (look only, never traced or stored; docs/assets/SHOPS.md). terraces.<OSM id>: depth (m out from the wall), from / to (m along the front, left to right seen from the street), hedge (planters along the outer edge), parasols, parasol (canvas palette index), none (no terrace); front: family classic | modern, paint / canvas (palette index of shopLayout.js), awning, stripes, lightbox.",
  "terraces": {
+  "osm:n4388790239": {
+   "_name": "Le Pigeon Noir (restaurant, one Michelin star), Rue Geleytsbeek 2 at the corner of Avenue de la Chênaie (claude/places2; Street View Apr 2024, looked at, not kept). A two-storey corner house with an attic, its render painted a warm ochre-mustard yellow over a dark grey painted plinth, small-paned windows in dark frames, a small iron balcony upstairs. Its entrance is on the NORTH face, on Rue Geleytsbeek (its address): a navy-blue awning over the door and the two ground-floor windows, LE PIGEON NOIR in white capitals on the valance, a dark glazed door. The east gable on Avenue de la Chênaie is blind but for a pigeon emblem on a plaque (not drawn: no logo artwork). No table terrace: three rust-brown planters with clipped box on the paved corner",
+   "none": true,
+   "front": {
+    "family": "classic",
+    "paint": 3,
+    "frame": 3,
+    "lightbox": false,
+    "awning": true,
+    "canvas": 2,
+    "stripes": false,
+    "fascia": false,
+    "valance": "LE PIGEON NOIR",
+    "valanceFont": "shopCaps",
+    "valanceFill": 1.2,
+    "awningInk": [
+     0.9,
+     0.89,
+     0.86
+    ]
+   }
+  },
+  "osm:n13192287981": {
+   "_name": "Carrefour Market Rue Gatti de Gamond 60, at the corner of Avenue Docteur Decroly (claude/carrefour2; Street View Apr 2024 + the UrbIS orthophoto 2024, looked at, not kept). The store: a single-storey box in pale silver-grey horizontal panels with a thin grey coping, the same design as the Carrefour Market Marlow. Its front faces south across the car park to Avenue Docteur Decroly: a long run of shop glazing in dark frames (red-and-white promo posters behind the glass, a digital poster screen by the door) under a deep flat canopy with a plain light-grey fascia that runs the whole main hall; the entrance near the front's middle-left is a glazed vestibule with a curved glass barrel roof standing out under the canopy (not drawn: the canopy covers its place), automatic doors, trolleys parked inside the vestibule. Signage: a thin red line along the top of the face (it turns the Gatti corner), the name in big red letters 'Carrefour' with 'market' smaller under its right end, on the upper wall left of the vestibule; the brand's red-and-blue mark beside the name at the Gatti corner (not drawn: no logo artwork, text only); red round trolley signs on poles in the lot. The car park: data/overrides.json grounds carrefour_gatti_lot (its 12 bay rows; two red-and-white trolley shelters, not drawn). Next to it: the low west wing on Rue Gatti de Gamond (the Louise bakery, a red awning), a tall 1960s white-balconied block of flats across Avenue Docteur Decroly to the south-west, woods behind the store to the north and east",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "frame": 2,
+    "tall": true,
+    "lightbox": false,
+    "awning": false,
+    "blade": false,
+    "w": 19.0,
+    "du": 0.6,
+    "fascia": false,
+    "interior": 4,
+    "canopy": {
+     "out": 3.8,
+     "y": 2.7,
+     "t": 0.3,
+     "edge": 0.7,
+     "extra": 15.8,
+     "board": [
+      0.6,
+      0.61,
+      0.6
+     ],
+     "under": [
+      0.3,
+      0.3,
+      0.29
+     ],
+     "du": 7.93
+    },
+    "plaques": [
+     {
+      "u": 12.3,
+      "w": 25.0,
+      "h": 0.09,
+      "dy": 1.225,
+      "text": "",
+      "board": [
+       0.71,
+       0.012,
+       0.016
+      ],
+      "dz": 0.45
+     },
+     {
+      "u": -5.0,
+      "w": 9.0,
+      "h": 0.8,
+      "dy": 1.075,
+      "text": "Carrefour",
+      "board": [
+       0.36,
+       0.36,
+       0.35
+      ],
+      "ink": [
+       0.5,
+       0.005,
+       0.01
+      ],
+      "font": "shopSans",
+      "fill": 0.98,
+      "glow": 0.5
+     },
+     {
+      "u": -2.7,
+      "w": 3.4,
+      "h": 0.36,
+      "dy": 0.495,
+      "text": "market",
+      "board": [
+       0.36,
+       0.36,
+       0.35
+      ],
+      "ink": [
+       0.5,
+       0.005,
+       0.01
+      ],
+      "font": "shopSans",
+      "fill": 0.98,
+      "glow": 0.5
+     }
+    ]
+   }
+  },
+  "osm:n255033292": {
+   "_name": "Carrefour Market Marlow, Av. Wolvendael 2 / Square Georges Marlow 10, ~100 m north-west of the police station (claude/carrefour; Street View Apr 2024 + the UrbIS orthophoto 2024, looked at, not kept). The store: a single-storey box in plain greige-taupe horizontal panels, a thin dark coping. Its front faces the car park: a long run of full-height glazing in black aluminium frames with the automatic doors near its middle, under a deep flat cantilevered canopy (~3 m, greige like the walls, a darker soffit) that runs nearly the whole face; red promo screens behind the glass. Signage: the upper wall over the canopy carries a thin red line along the whole face and the name in big red letters, 'Carrefour' over 'market', with the brand's red-and-blue mark beside it (not drawn: no logo artwork, text only); a small red name panel over the entrance; a tall red pylon sign at the street corner (not drawn). The car park (data/overrides.json grounds carrefour_lot): asphalt, white bay lines, painted arrows, a red-and-white barrier at the entrance off the square, old dark-green lantern lamp posts, pollarded plane trees and a planted bank with a low brick wall along the street; trolleys returned under the canopy (no separate shelter seen). Next to it: a 1970s office block north of the lot, the Ma Poule takeaway kiosk and a white gabled house at its south-west corner on Av. Wolvendael",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "frame": 2,
+    "tall": true,
+    "lightbox": false,
+    "awning": false,
+    "blade": false,
+    "w": 18.0,
+    "du": 11.8,
+    "fascia": false,
+    "interior": 4,
+    "canopy": {
+     "out": 3.0,
+     "y": 3.1,
+     "t": 0.32,
+     "edge": 0.6,
+     "extra": 12.0,
+     "board": [
+      0.45,
+      0.39,
+      0.28
+     ],
+     "under": [
+      0.13,
+      0.12,
+      0.1
+     ],
+     "stripe": [
+      [
+       0.71,
+       0.012,
+       0.016
+      ],
+      0.06
+     ]
+    },
+    "plaques": [
+     {
+      "u": 0,
+      "w": 30.0,
+      "h": 0.07,
+      "dy": 2.95,
+      "text": "",
+      "board": [
+       0.71,
+       0.012,
+       0.016
+      ]
+     },
+     {
+      "u": 5.0,
+      "w": 8.0,
+      "h": 1.5,
+      "dy": 2.1,
+      "text": "Carrefour",
+      "board": [
+       0.45,
+       0.39,
+       0.28
+      ],
+      "ink": [
+       0.5,
+       0.005,
+       0.01
+      ],
+      "font": "shopSans",
+      "fill": 0.98,
+      "glow": 0.5
+     },
+     {
+      "u": 7.4,
+      "w": 4.0,
+      "h": 0.8,
+      "dy": 0.95,
+      "text": "market",
+      "board": [
+       0.45,
+       0.39,
+       0.28
+      ],
+      "ink": [
+       0.5,
+       0.005,
+       0.01
+      ],
+      "font": "shopSans",
+      "fill": 0.98,
+      "glow": 0.5
+     }
+    ]
+   }
+  },
+  "extra:agam-nightshop": {
+   "_name": "Agam nightshop (the white night shop), Ch. de Saint-Job 701, opposite Brico (claude/places1; Street View Apr 2024 + its Google listing, looked at, not kept): white-painted two-storey corner house; a signal-red board across the ground floor, NIGHT SHOP in big white bold capitals, a thin white line of goods under it (ALIMENTATION GENERALE - TABAC - BOISSONS - SNACKS ...); black frames, barred windows, a black plinth",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "frame": 2,
+    "tall": true,
+    "lightbox": false,
+    "awning": false,
+    "blade": false,
+    "board": [
+     0.48,
+     0.02,
+     0.02
+    ],
+    "sign": "",
+    "plaques": [
+     {
+      "u": 0,
+      "w": 4.6,
+      "h": 0.44,
+      "dy": 0.07,
+      "text": "NIGHT SHOP",
+      "board": [
+       0.48,
+       0.02,
+       0.02
+      ],
+      "ink": [
+       0.95,
+       0.95,
+       0.93
+      ],
+      "font": "shopSans",
+      "fill": 0.95,
+      "glow": 0.6
+     },
+     {
+      "u": 0,
+      "w": 4.6,
+      "h": 0.1,
+      "dy": -0.235,
+      "text": "ALIMENTATION GÉNÉRALE · TABAC · BOISSONS · ALCOOL · SNACKS",
+      "board": [
+       0.48,
+       0.02,
+       0.02
+      ],
+      "ink": [
+       0.95,
+       0.95,
+       0.93
+      ],
+      "font": "shopSans",
+      "fill": 0.9
+     }
+    ]
+   }
+  },
+  "extra:brico-sint-job": {
+   "_name": "Brico Sint-Job, Ch. de Saint-Job 594 (claude/places1; Street View Apr 2024, looked at, not kept): a low anthracite metal-clad shed behind its car park; the yellow Brico letters over the glazed entrance on a grey fascia, no awning, garden goods outside",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 0,
+    "frame": 0,
+    "lightbox": false,
+    "awning": false,
+    "blade": false,
+    "board": [
+     0.16,
+     0.17,
+     0.18
+    ],
+    "sign": "Brico",
+    "ink": [
+     0.95,
+     0.6,
+     0.0
+    ],
+    "font": "shopSans",
+    "signFill": 0.9
+   }
+  },
+  "osm:n2349997604": {"_name": "Kruidvat (drugstore CHAIN, Rue Xavier De Bue; claude/reality1 round 3, Street View Apr 2024, looked at, not kept): an anthracite front with two big round-headed openings, red inner door frames, a red oval lit sign with white letters over the door, red flag banners hanging out from the facade. CHAIN: name + colours in our own lettering, no logo; owner's call (keep / invent a name)", "front": {"family": "modern", "paint": 0, "frame": 6, "lightbox": true, "awning": false, "board": [0.62, 0.004, 0.008], "ink": [0.97, 0.97, 0.95], "sign": "Kruidvat", "blade": {"text": "Kruidvat", "board": [0.62, 0.004, 0.008], "ink": [0.97, 0.97, 0.95], "w": 0.5, "h": 1.1, "vertical": true}}},
+  "osm:n13251478865": {"_name": "Kruidvat (drugstore CHAIN, Chaussee d'Alsemberg): the chain's red lit sign with white letters (the Xavier De Bue shop seen on Street View Apr 2024, look only; this one not checked: same chain dress). CHAIN: owner's call", "front": {"family": "modern", "paint": 0, "frame": 6, "lightbox": true, "awning": false, "board": [0.62, 0.004, 0.008], "ink": [0.97, 0.97, 0.95], "sign": "Kruidvat"}},
+  "osm:n12460901867": {"_name": "TUI (travel agency CHAIN, Chaussee d'Alsemberg; Street View Apr 2024, looked at, not kept): a light sky-blue sign panel with the name, a projecting flag sign, white shop-window frames. Our generator drew a red frame. CHAIN: name + colours in our own lettering, no logo (the smile mark not drawn); owner's call", "front": {"family": "modern", "paint": 3, "frame": 3, "lightbox": false, "awning": false, "board": [0.12, 0.5, 0.82], "ink": [0.97, 0.97, 0.95], "sign": "TUI", "blade": {"text": "TUI", "board": [0.12, 0.5, 0.82], "ink": [0.97, 0.97, 0.95]}}},
+  "osm:n12520069811": {"_name": "Pearle (optician CHAIN, Ch. de Waterloo at Fort-Jaco; Street View Jul 2024, looked at, not kept): a tall green totem sign with the name and a projecting sign. CHAIN: name + colours in our own lettering, no logo; owner's call. The totem is drawn as a tall vertical blade", "front": {"family": "modern", "paint": 0, "frame": 0, "lightbox": false, "awning": false, "board": [0.0, 0.2, 0.07], "ink": [0.97, 0.97, 0.95], "sign": "Pearle", "blade": {"text": "Pearle", "board": [0.0, 0.2, 0.07], "ink": [0.97, 0.97, 0.95], "w": 0.55, "h": 1.4, "vertical": true}}},
+  "osm:n12523281840": {"_name": "Vapshop (e-cigarettes, Ch. de Waterloo 1366 area, Fort-Jaco; Street View Jul 2024, looked at, not kept): a black fascia with VAPSHOP in white capitals and a black awning over the window", "front": {"family": "modern", "paint": 2, "frame": 2, "lightbox": false, "awning": true, "canvas": 3, "stripes": false, "board": [0.012, 0.012, 0.013], "ink": [0.95, 0.95, 0.93], "sign": "VAPSHOP"}},
+  "extra:immo-dugo": {"_name": "IMMO DUGO (estate agency, Ch. de Waterloo 1167, Vivier d'Oie; claude/reality1 round 3, Street View Jul 2024, looked at, not kept): big white serif capitals mounted on an anthracite fascia across the front (letters on the facade), a glazed front in dark frames", "front": {"family": "modern", "paint": 0, "frame": 0, "lightbox": false, "awning": false, "board": [0.045, 0.045, 0.05], "ink": [0.97, 0.97, 0.95], "sign": "IMMO DUGO", "font": "shopSerif", "blade": false}},
+  "extra:traks-vivier": {"_name": "traKKs (running shop, Ch. de Waterloo, Vivier d'Oie; Street View Jul 2024, looked at, not kept): a navy front and fascia, the name in orange, a vertical navy blade sign with the name", "front": {"family": "modern", "paint": 1, "frame": 1, "lightbox": false, "awning": false, "board": [0.01, 0.02, 0.09], "ink": [0.9, 0.32, 0.03], "sign": "traKKs", "blade": {"text": "traKKs", "board": [0.01, 0.02, 0.09], "ink": [0.95, 0.95, 0.93], "w": 0.45, "h": 1.2, "vertical": true}}},
+  "osm:n3930461153": {"_name": "Bleus d'Encre (bookshop, Parvis Saint-Pierre; claude/reality1, Street View Apr 2024, looked at, not kept): OSM names it 'Bleu d'encre', the sign and its website say BLEUS D'ENCRE (librairie). The whole ground floor painted a mid blue, pilasters and door included; a wide blue fascia across it with the name in big white capitals; a dark blue band over the window with the name again in small white letters. Real name and colours, plain lettering in our own font, no logo", "front": {"family": "classic", "paint": 2, "lightbox": false, "awning": false, "board": [0.03, 0.16, 0.42], "ink": [0.95, 0.95, 0.93], "sign": "BLEUS D'ENCRE"}},
   "osm:n11685293316": {
    "_name": "Le refuge, Ch. de Saint-Job (ex Au Petit Job): a front-yard terrace behind a clipped hedge, square parasols, dark bistro chairs; blue awning with lettering on the valance",
    "depth": 4.2,

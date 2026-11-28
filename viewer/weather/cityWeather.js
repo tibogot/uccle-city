@@ -24,6 +24,7 @@ import { fetchLive, mapLive } from "./liveWeather.js";
 import { env } from "../lighting.js";
 import { season as foliageSeason } from "../foliage/seasons.js";   // hedges, garden plants, grass read its uSnow / uWet
 import { polishOld } from "../polish.js";
+import { snowSchedule } from "../seasons/snowSchedule.js";     // snowseason: the Christmas season's snow (15-26 Dec)
 
 const qp = new URLSearchParams(location.search);
 
@@ -88,9 +89,16 @@ export const cityWeather = {
     group.traverse((o) => { o.userData.wxSkip = true; });
     scene.add(group);
     Object.assign(this, { scene, renderer, camera, lighting, world, pipe, rain, snow, leaves, layer, group, log, trails, snowMovers: movers, caps });
-    // the start weather: ?wx=, else clear (the city as before)
+    // the start weather: ?wx=, else the snow schedule (snowseason, rule snow-schedule: 15-26 Dec snow cover, light
+    // snowfall 18:00-08:00 Brussels; seeded by the day), else clear (the city as before). ?snowsched=old: no schedule
     const want = (qp.get("wx") || "clear").replace(/_/g, " ");
-    if (want === "live") this.goLive(); else this.setPreset(CITY_PRESETS.includes(want) || WEATHER_PRESETS[want] ? want : "clear", 0);
+    const sched = this.schedule = snowSchedule(qp);
+    if (want === "live") this.goLive();
+    else if (sched.on) {
+      this.setPreset(sched.preset, 0);                     // the existing preset (its look, its cost-reduced path) ...
+      Object.assign(weather.input, sched.input);           // ... with the day's seeded numbers over it (start state only)
+      Object.assign(weather.state, sched.state);
+    } else this.setPreset(CITY_PRESETS.includes(want) || WEATHER_PRESETS[want] ? want : "clear", 0);
     this.last = performance.now();
     updaters.push((camPos, cam) => this.update(camPos, cam));
     // compile now (boot), not on the first rain: the compute passes and the draws, shown once in a hidden-count state
@@ -104,7 +112,7 @@ export const cityWeather = {
     } catch (e) { log(`weather: compile ${e.message}`); }
     // one bake now, whatever the weather: its override-material pipelines compile at boot, not on the first rain
     if (!map.ready && !this.baking) await this.bake(camera.position, camera);
-    log(`weather: ready in ${(performance.now() - t0).toFixed(0)} ms (?wx=rain|snowfall|..., ?weather=old: none), start ${this.preset}`);
+    log(`weather: ready in ${(performance.now() - t0).toFixed(0)} ms (?wx=rain|snowfall|..., ?weather=old: none), start ${this.preset}${sched.on ? ` (snow schedule: ${sched.why})` : ""}`);
   },
 
   setPreset(name, seconds = 3) {

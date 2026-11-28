@@ -69,6 +69,9 @@ models/heros/*.raw.glb
 models/heros/audit/*/*.json
 models/heros/statue_work/
 asset_hashes.json
+# the Vercel build's brotli siblings (tools/asset_hashes.mjs --br)
+*.br
+.vercel/
 models/moto/.aocache/
 models/scooter/.aocache/
 models/villo/.aocache/
@@ -100,3 +103,8 @@ docs/bike/tex/_work/
 .cache/
 models/kid/candidates/*.raw.glb
 models/characters/kidA_atlas.png
+models/villa/*.raw.glb
+models/villa/audit/*.json
+!models/villa/audit/*.allow.json
+# the Calevoet underpass (tools/blender/underpass.py): the raw exports
+models/underpass/*.raw.glb

@@ -66,7 +66,62 @@ export function courses(a, b, la, lb, jw, seed, fw = null) {
  * @param atlas  buildLaneRoadMesh(...).atlas (or null)
  * @returns MeshStandardNodeMaterial for the asphalt part (needs attributes uv, aLateral, aPiece, aEdges, aMark, aSurf)
  */
+// (claude/perf5, rule docs/rules/shared-node-graph.md; ?asphaltshare=old: a new graph per tile, as before) ONE ASPHALT
+// GRAPH FOR EVERY TILE. Each full tile built its own asphalt material from fresh nodes (its marking atlas texture and
+// two uniforms inside the graph), so three r187 (node builds keyed by node ids) built the same ~40 KB shader again on
+// the main thread the first time each tile drew: 26-31 ms in the frame a tile landed (52-66 ms frames while driving,
+// docs/perf/QUIET_2026-11-26.md). Now the graph is built once per atlas kind (none / R8 / RG) and each tile's material
+// is a clone of it (the same node objects: one build); the tile's atlas texture, scale and range are read per object
+// from its material's userData (markTex / markScale / markRange) by object-update nodes, like lodFade's objectFade.
+const ASPHALT_SHARE = typeof location === "undefined" || new URLSearchParams(location.search).get("asphaltshare") !== "old";
+const asphaltTemplates = new Map();
+// (claude/xmascheck, rule wx-road-edge) ?wxedge=old: the weather's road edge from each lane's aLateral, as before
+const WX_EDGE_OLD = typeof location !== "undefined" && new URLSearchParams(location.search).get("wxedge") === "old";
+/** the per-tile marking atlas as a texture (the viewer disposes atlas.texture when the tile unloads) */
+function atlasTexture(atlas) {
+  const r8 = atlas.format === "R8";                // compacted by the tile worker (R only, half resolution)
+  const tex = new THREE.DataTexture(atlas.data, atlas.width, atlas.height, r8 ? THREE.RedFormat : THREE.RGFormat, THREE.UnsignedByteType);
+  tex.unpackAlignment = 1;
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearFilter;
+  tex.generateMipmaps = false;
+  tex.needsUpdate = true;
+  return tex;
+}
 export function asphaltMaterial(atlas) {
+  if (!ASPHALT_SHARE) return buildAsphalt(atlas, null);
+  const kind = !atlas ? "none" : atlas.format === "R8" ? "R8" : "RG";
+  let tpl = asphaltTemplates.get(kind);
+  if (!tpl) {
+    // the template's own atlas: a 1-texel stand-in of the same format and sampler (it is never drawn)
+    const stand = atlas ? { format: atlas.format, data: new Uint8Array(atlas.format === "R8" ? 1 : 2).fill(128), width: 1, height: 1 } : null;
+    tpl = buildAsphalt(stand, atlas ? { tex: stand && atlasTexture(stand) } : null);
+    tpl.name = `asphalt template (${kind})`;
+    asphaltTemplates.set(kind, tpl);
+  }
+  const m = cloneMaterial(tpl);
+  m.name = "";
+  m.userData.sharedGraph = true;                  // (viewer/pinBuilds.js keeps its build + pipelines)
+  m.userData.atlas = atlas;
+  if (atlas) {
+    const tex = atlasTexture(atlas);
+    atlas.texture = tex;                     // so the viewer can dispose it when the tile unloads
+    m.userData.markTex = tex;
+    m.userData.markScale = new THREE.Vector2(atlas.scale[0], atlas.scale[1]);
+    m.userData.markRange = 2 * atlas.range;
+  }
+  return m;
+}
+/** three's clone with a shallow userData copy (lodFade.js cloneMaterial: no JSON deep copy of the template's userData) */
+function cloneMaterial(t) {
+  const ud = t.userData;
+  t.userData = {};
+  let c;
+  try { c = t.clone(); } finally { t.userData = ud; }
+  c.userData = { ...ud };
+  return c;
+}
+function buildAsphalt(atlas, shared) {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   m.userData.atlas = atlas;                       // (the A/B in debug/pavingShots.js rebuilds it)
   const P = positionWorld, x = P.x, z = P.z;
@@ -152,20 +207,23 @@ export function asphaltMaterial(atlas) {
 
   // --- junction markings from the signed-distance atlas
   if (atlas) {
-    const r8 = atlas.format === "R8";                // compacted by the tile worker (R only, half resolution)
-    const tex = new THREE.DataTexture(atlas.data, atlas.width, atlas.height, r8 ? THREE.RedFormat : THREE.RGFormat, THREE.UnsignedByteType);
-    tex.unpackAlignment = 1;
-    tex.magFilter = THREE.LinearFilter;
-    tex.minFilter = THREE.LinearFilter;
-    tex.generateMipmaps = false;
-    tex.needsUpdate = true;
-    atlas.texture = tex;                     // so the viewer can dispose it when the tile unloads
     // per-tile numbers as uniforms, never JS constants: a constant is written into the WGSL, so every
-    // tile would get different shader text and Windows (DXC) recompiles this ~40 KB shader (~450 ms freeze)
-    const uScale = uniform(new THREE.Vector2(atlas.scale[0], atlas.scale[1]));
-    const uRange = uniform(2 * atlas.range);
+    // tile would get different shader text and Windows (DXC) recompiles this ~40 KB shader (~450 ms freeze).
+    // (ASPHALT_SHARE: the template's nodes read the drawn tile's values from its material, per object)
+    let tex, uScale, uRange;
+    if (shared) {
+      uScale = uniform(new THREE.Vector2(1, 1)).onObjectUpdate(({ material }) => material.userData.markScale);
+      uRange = uniform(1).onObjectUpdate(({ material }) => material.userData.markRange);
+    } else {
+      tex = atlasTexture(atlas);
+      atlas.texture = tex;                     // so the viewer can dispose it when the tile unloads
+      uScale = uniform(new THREE.Vector2(atlas.scale[0], atlas.scale[1]));
+      uRange = uniform(2 * atlas.range);
+    }
     const auv = vec2(x, z).mul(uScale).add(mark.xy);
-    const sd = texture(tex, auv).r.sub(0.5).mul(uRange);
+    const tn = shared ? texture(shared.tex, auv).onObjectUpdate(({ material }) => material.userData.markTex) : texture(tex, auv);
+    const sd = tn.r.sub(0.5).mul(uRange);
+    if (shared) m.userData.markNodes = { tex: tn, scale: uScale, range: uRange };   // (tools/audit/sharedGraphCheck.mjs)
     const aaA = fwidth(sd).add(0.002);
     paint = max(paint, smoothstep(aaA.negate(), aaA, sd).mul(step(float(0.5), mark.z)));
   }
@@ -185,7 +243,12 @@ export function asphaltMaterial(atlas) {
   m.roughnessNode = mix(rough, float(0.62), paint);
   if (T) { m.normalNode = pavingNormal(T.n, t, s, T.nK.mul(float(1).sub(paint.mul(0.7)))); m.aoNode = mix(T.ao, float(1), paint); }
   // weather: wet asphalt + puddles in the gutters (lane edges), salted in winter: black wet road, slush at the edges
-  { const edge = smoothstep(float(0.7), float(1.0), abs(lat)); const sr = floor(surf.add(0.5)), saltMask = select(sr.equal(1).or(sr.equal(3)).or(sr.equal(4)), float(0.15), float(1));   // sett lanes, gravel: hardly salted
+  // (claude/xmascheck, rule wx-road-edge; ?wxedge=old = before) the weather's "edge" is the GUTTER: the drain coordinate
+  // aPiece.y (-1..1 across the CARRIAGEWAY, 0 at the crown). It was aLateral (-1..1 across EACH LANE): every lane line
+  // in the middle of the road kept a snow / slush band (85 % of the cover on a salted road) that stopped dead where the
+  // lane strips meet a junction pad (aLateral 0), and fanned into white wedges where the lanes diverge (Place Saint-Job
+  // on a snow day, 2026-11-27). Puddles collect in the gutters for the same reason.
+  { const edge = smoothstep(float(0.7), float(1.0), abs(WX_EDGE_OLD ? lat : piece.y)); const sr = floor(surf.add(0.5)), saltMask = select(sr.equal(1).or(sr.equal(3)).or(sr.equal(4)), float(0.15), float(1));   // sett lanes, gravel: hardly salted
     wxMat(m, { porosity: 0.75, puddles: true, puddleBias: edge.mul(0.22), slush: true, road: true, edge, saltMask, map: true }); }
   return addLampLight(m);
 }

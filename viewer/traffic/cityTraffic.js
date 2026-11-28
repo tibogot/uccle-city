@@ -62,6 +62,7 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
   };
 
   // ---- obstacles each step
+  const extraSources = [];
   T.setObstacleSource((s) => {
     if (driver?.on && driver.state) {
       const c = driver.state, fx = Math.sin(c.heading), fz = Math.cos(c.heading), vx = fx * c.speed + (c.vx || 0), vz = fz * c.speed + (c.vz || 0);
@@ -83,6 +84,7 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
     if (th?.on && th.tp) { const p = th.tp.ctl.pos, v = th.tp.ctl.vel; s.addObstacle(p[0], p[2], 0.9, v[0], v[2]); }
     for (let i = 0; i < TR.n; i++) s.addObstacle(TR.x[i], TR.z[i], 1.5, TR.vx[i], TR.vz[i], TR.cross[i]);
     driver?.carHit?.addObstacles(s);                              // (carhit: the knocked cars, standing or sliding)
+    for (let k = 0; k < extraSources.length; k++) extraSources[k](s);   // (claude/peds2: the people on / waiting at crossings)
     cityProps.obstacles(s);                                         // (props: the knocked-over bins, signs, motorbikes... docs/PROPS.md)
   });
   driver?.carHit?.attachTraffic(T);
@@ -154,7 +156,7 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
       siren.update(sim, lisP, lisV, dt);
     }
   };
-  return { ...T, T, update, addTile: T.addTile, removeTile: T.removeTile };
+  return { ...T, T, update, addTile: T.addTile, removeTile: T.removeTile, addObstacleSource: (fn) => extraSources.push(fn) };
 }
 
 /** Separating axes for two oriented boxes in xz (heading: forward = (sin h, cos h); hx across, hz along). On overlap,

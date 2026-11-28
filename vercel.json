@@ -3,6 +3,7 @@
   "framework": null,
   "buildCommand": "node tools/asset_hashes.mjs",
   "outputDirectory": ".",
+  "ignoreCommand": "node -e \"const b=process.env.VERCEL_GIT_COMMIT_REF||'';process.exit(!b||['claude/foundation','claude/kid','claude/character2'].includes(b)?1:0)\"",
   "redirects": [
     {
       "source": "/",
@@ -35,6 +36,19 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.br",
+      "headers": [
+        {
+          "key": "Content-Encoding",
+          "value": "br"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.uccle.br-sibling"
         }
       ]
     },

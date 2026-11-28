@@ -141,6 +141,74 @@
    "tags": {},
    "_moves": "n1769486879",
    "_source": "Street View Oct 2020 (newest there; looked at, not kept): the vet's CABINET VÉTÉRINAIRE panel is on the red-brick house LEFT of Le Relais' corner, facing the Place (as Le Relais); OSM's point put it on the building's side facing the lawn. Moved 1 m out from that front (local 1102.2, 553.6)"
+  },
+  {
+   "type": "node",
+   "id": "agam-nightshop",
+   "lon": 4.3617643,
+   "lat": 50.7929538,
+   "tags": {
+    "shop": "convenience",
+    "name": "Agam nightshop",
+    "addr:street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+    "addr:housenumber": "701"
+   },
+   "_source": "claude/places1 (owner: 'Chaussée de Saint-Job night shop and Brico Job opposite it'): Google Maps listing 'Agam nightshop', Sint-Jobsesteenweg 701 (looked at 2026-11-23, not kept); Street View Apr 2024: the white-painted two-storey corner house on the path beside n. 699, a red fascia board 'NIGHT SHOP' in white capitals over the ground floor with a white line of goods under it, black barred windows and door, a black plinth. Position: the UrbIS address point of n. 701 (CC0), local (864.36, 673.14)",
+   "_status": "open (listing, opening hours)"
+  },
+  {
+   "type": "node",
+   "id": "brico-sint-job",
+   "lon": 4.3619388,
+   "lat": 50.7932206,
+   "tags": {
+    "shop": "doityourself",
+    "name": "Brico",
+    "brand": "Brico",
+    "addr:street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+    "addr:housenumber": "594"
+   },
+   "_source": "claude/places1: Google Maps listing 'Brico Sint-Job', Sint-Jobsesteenweg 594 (looked at 2026-11-23, not kept); Street View Apr 2024: a low anthracite metal-clad shed set back behind its own car park, the yellow Brico logo letters over the glazed entrance on a grey fascia, garden goods outside. Position: the UrbIS address point of n. 594 (CC0), local (876.67, 643.47)",
+   "_status": "open (listing)"
+  },
+  {
+   "type": "node",
+   "id": "pigeon-noir-move",
+   "lon": 4.3482204,
+   "lat": 50.7920285,
+   "tags": {
+    "addr:street": "Rue Geleytsbeek - Geleytsbeekstraat",
+    "addr:housenumber": "2"
+   },
+   "_moves": "n4388790239",
+   "_source": "claude/places2 (owner playtest: 'Le Pigeon Noir: entrance on the wrong side'): Street View Apr 2024 (looked at, not kept): the restaurant's door, its navy awning with LE PIGEON NOIR in white and its windows are on the house's NORTH face, on Rue Geleytsbeek (its address, Rue Geleytsbeek 2: the UrbIS address point of building 1713722 faces that street); the east gable on Avenue de la Chênaie only carries a pigeon emblem plaque. OSM's point has no addr:street, so the façade attach took the nearest wall (the Chênaie gable). Moved 1 m out from the north face, 5 m along it from its west end (local -90.6, 775.9), with the address"
+  },
+  {
+   "type": "node",
+   "id": "immo-dugo",
+   "lon": 4.3741745,
+   "lat": 50.7965601,
+   "tags": {
+    "office": "estate_agent",
+    "shop": "estate_agent",
+    "name": "IMMO DUGO",
+    "addr:street": "Chaussée de Waterloo - Waterloosesteenweg",
+    "addr:housenumber": "1167"
+   },
+   "_source": "claude/reality1 round 3 (reality round 2026-11-26, Street View Jul 2024, look only): the estate agency at Ch. de Waterloo 1167 (Vivier d'Oie), its 1167 plate beside the door; position = the UrbIS address point (CC0). Not in OSM yet."
+  },
+  {
+   "type": "node",
+   "id": "traks-vivier",
+   "lon": 4.3743652,
+   "lat": 50.7967543,
+   "tags": {
+    "shop": "sports",
+    "name": "traKKs",
+    "addr:street": "Chaussée de Waterloo - Waterloosesteenweg",
+    "addr:housenumber": "1165"
+   },
+   "_source": "claude/reality1 round 3 (Street View Jul 2024, look only): the running shop next to IMMO DUGO (navy fascia, orange lettering, a vertical blade); Google Maps names it TraKKs at this spot; the house number 1165 is the next address point north (to confirm); position = the UrbIS address point (CC0). Not in OSM yet."
   }
  ]
 }

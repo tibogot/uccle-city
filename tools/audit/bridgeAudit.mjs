@@ -32,6 +32,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { bridgeDescriptors, deckHeight, inRing, ringPlans, deckSoffitCap, deckFootprint } = await imp("viewer/streets/bridgeDecks.js");
 const { heroFrame, heroBridgeNames, prepRail } = await imp("viewer/rail/railData.js");
+const { applyRoadOverrides } = await imp("viewer/roadBuild.js");
+const { resolveFootbridge, footFootprint } = await imp("viewer/rail/footbridge.js");   // (claude/footbridge) the station footbridges   // (claude/chenaie) the roads as the worker has them: bridgeWidths
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
@@ -70,7 +72,8 @@ const plansOf = (roads, T) => (OLD ? ov.bridgePlans : ringPlans(ov.bridgePlans, 
 const decks = new Map();
 for (const t of tiles) {
   const roads = json(`data/tiles/${t.name}/roads.json`);
-  for (const d of bridgeDescriptors(roads, ground, plansOf(roads, t.name))) {
+  applyRoadOverrides(roads, ov);
+  for (const d of bridgeDescriptors(roads, ground, plansOf(roads, t.name), OLD ? null : ov.bridgeProfiles)) {
     if (decks.has(d.id)) continue;
     // the tile holding the deck's middle draws it (tileData.js ownDeck: a road clipped by another tile's buffer, Avenue
     // des Tilleuls in D8 / E8, is a shorter copy under the same id)
@@ -98,6 +101,9 @@ const railTopAt = (x, z) => {
   return best < 30 ? y : NaN;
 };
 
+// (claude/footbridge, rule footbridge-built) the station footbridges (data/rail/footbridges.json, viewer/rail/footbridge.js;
+// ?footbridge=old: none): a PB they carry is built; how much of its polygon is left open over the drop is footbridgeAudit F1
+const foots = OLD ? [] : (json("data/rail/footbridges.json").bridges || []).map((b) => ({ urbis: b.urbis, foot: footFootprint(resolveFootbridge(b, ground)) }));
 const fails = [], R = { mode: OLD ? "old" : "default", urbis: [], crossings: [], wires: [] };
 // known open items (tools/audit/bridgeAudit.allow.json: { "<check> <what>": "why, and what fixes it" }): reported, not failed
 const allow = existsSync(join(ROOT, "tools/audit/bridgeAudit.allow.json")) ? json("tools/audit/bridgeAudit.allow.json") : {};
@@ -107,20 +113,23 @@ const warn = (check, what, msg) => { if (!warns.some((w) => w.check === check &&
 
 // ---- U: the UrbIS ROB / PB polygons over the line
 // railData.js (vivier): no UrbIS slab where an OSM deck is drawn over its centroid, nor one in the cutting
+const FOOT_MIN = 0.4;        // (a footbridge: its deck and stairs cover the polygon's span; the rest is its at-grade ramps, footbridgeAudit F1)
 const slabSkipped = (b) => !OLD && (deckList.some((d) => d.foot(b.centre[0], b.centre[1])) || (b.railTop != null && b.ground - 0.92 - b.railTop < 4.8));
 for (const b of rail.decks) {
   const ring = b.ring;
   let n = 0, cov = 0;
   let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
   for (const [x, z] of ring) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
-  for (let x = Math.floor(x0) + 0.5; x < x1; x++) for (let z = Math.floor(z0) + 0.5; z < z1; z++) if (inRing(ring, x, z)) { n++; if (covered(x, z)) cov++; }
-  const frac = n ? cov / n : 0, hero = inHero(b.centre[0], b.centre[1]);
+  const fb = foots.find((f) => f.urbis === b.id);
+  let fcov = 0;
+  for (let x = Math.floor(x0) + 0.5; x < x1; x++) for (let z = Math.floor(z0) + 0.5; z < z1; z++) if (inRing(ring, x, z)) { n++; if (covered(x, z)) cov++; if (fb?.foot(x, z)) fcov++; }
+  const frac = n ? cov / n : 0, hero = inHero(b.centre[0], b.centre[1]), ffrac = n ? fcov / n : 0;
   const slab = !hero && !slabSkipped(b), slabClear = slab ? b.ground - 0.02 - 0.9 - (b.railTop ?? -Infinity) : null;
-  const rec = { id: b.id, type: b.type, roads: b.roads, lines: b.lines, centre: b.centre, tile: tileOf(...b.centre), covered: +frac.toFixed(2), hero, slab, slabClear: slabClear == null ? null : +slabClear.toFixed(2) };
+  const rec = { footbridge: fb ? +ffrac.toFixed(2) : null, id: b.id, type: b.type, roads: b.roads, lines: b.lines, centre: b.centre, tile: tileOf(...b.centre), covered: +frac.toFixed(2), hero, slab, slabClear: slabClear == null ? null : +slabClear.toFixed(2) };
   R.urbis.push(rec);
   const named = b.roads.some((r) => r && !["footway", "service", "platform", "path", "steps", "cycleway"].includes(r));
   if (b.type === "ROB" && named && frac < 0.85) fail("U1", `UrbIS ${b.type} ${b.id} (${b.roads.join(" / ")})`, `only ${(frac * 100).toFixed(0)} % of the bridge under a drawn deck: the rest hangs over the cutting`);
-  if (b.type === "PB" && !hero && frac < 0.85) fail("U3", `UrbIS ${b.type} ${b.id} (${b.roads.join(" / ")})`, `foot bridge over ${b.lines.join(" / ")} not built (${(frac * 100).toFixed(0)} % under a drawn deck)`);
+  if (b.type === "PB" && !hero && frac < 0.85 && ffrac < FOOT_MIN) fail("U3", `UrbIS ${b.type} ${b.id} (${b.roads.join(" / ")})`, `foot bridge over ${b.lines.join(" / ")} not built (${(frac * 100).toFixed(0)} % under a drawn deck)`);
   if (slab && slabClear < 4.8) fail("U2", `UrbIS ${b.type} ${b.id} (${b.roads.join(" / ")})`, `slab drawn ${slabClear.toFixed(1)} m over the rail top (in the cutting; needs >= 4.8)`);
 }
 

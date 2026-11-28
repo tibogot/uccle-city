@@ -181,9 +181,20 @@ export function setCompileFlush(o) { flushWith = o; }
 // measured on the chunks before (first chunk 30 drawables, at most 80). The jobs resolve once every chunk's pipelines are ready.
 // (coordinator 2026-11-17: OPT-IN, ?flushsplit=1: on a noisy machine it added 1.3-3 s of redraw to the flush and the falcon
 // start showed more > 50 ms frames with it; re-measure on GREEN before making it the default)
-const FLUSH_SPLIT = typeof location !== "undefined" && /[?&]flushsplit=1(&|$)/.test(location.search);
-const FLUSH_TASK_MS = Math.max(100, +(typeof location !== "undefined" ? new URLSearchParams(location.search).get("flushtask") ?? 1500 : 1500));
-const FLUSH_MAX = 80;
+// (claude/perf5 round 2: ON by default, ?flushsplit=old = one forced frame; ?flushalone=old = each chunk redraws the
+// whole city pass, as perf9's opt-in did) THE CHUNKS DRAW ONLY THEMSELVES: the police spawn's first flush was 44 jobs in
+// ONE 6.4 s task (inside an 8.4-9.8 s long task, the loader frozen: docs/perf/QUIET_2026-11-26.md). perf9's split cost
+// +1.3-3 s because every chunk drew the whole city pass again; now the rest of the scene is hidden while a chunk draws
+// (lights, fog and environment stay: the same node-build keys as the real draws), so a chunk costs its own node builds
+// and ~1-2 ms of passes, and the chunks aim at FLUSH_TASK_MS = 40 ms of main thread (a drawable whose own build is
+// longer is a chunk by itself), with a plain task break between them (the loader's frame runs when one is due). The
+// sun's shadow cache is redrawn for each chunk (its casters' shadow builds done here too) and once more for the city
+// after the flush.
+const QS_F = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams("");
+const FLUSH_SPLIT = QS_F.get("flushsplit") !== "old";
+const FLUSH_ALONE = FLUSH_SPLIT && QS_F.get("flushalone") !== "old";
+const FLUSH_TASK_MS = Math.max(10, +(QS_F.get("flushtask") ?? (FLUSH_ALONE ? 40 : 1500)));
+const FLUSH_MAX = 80, FLUSH_FIRST = FLUSH_ALONE ? 4 : 30, FLUSH_MIN = FLUSH_ALONE ? 1 : 8;
 const drawablesOf = (roots) => { let n = 0; for (const r of [].concat(roots)) r?.traverse((o) => { if (o.isMesh || o.isPoints || o.isLine || o.isSprite) n++; }); return n; };
 async function flushJobs(take) {
   const t0 = performance.now();
@@ -191,27 +202,40 @@ async function flushJobs(take) {
   const wins = [];
   if (!FLUSH_SPLIT) { const r = flushDraw(take); rec.drawables = r.n; if (r.win) wins.push(r.win); }
   else {
-    let i = 0, perDrawable = 0, budget = 30;
-    while (i < take.length) {
-      const chunk = [];
-      let n = 0;
-      while (i < take.length) {
-        const j = take[i];
-        j.__n ??= drawablesOf(j.roots);
-        if (chunk.length && n + j.__n > budget) break;
-        n += j.__n; chunk.push(j); i++;
+    // (FLUSH_ALONE) the units are DRAWABLES, not whole jobs: a big job (a landmark: 50-150 meshes) is drawn over several
+    // chunks, the rest of its meshes hidden for each (a 1.3-1.5 s chunk before this); before: whole jobs per chunk
+    const units = [];
+    for (const j of take) {
+      if (!FLUSH_ALONE) { j.__n ??= drawablesOf(j.roots); units.push({ jobs: [j], meshes: null, n: j.__n }); continue; }
+      const ms = [];
+      for (const r of [].concat(j.roots)) r?.traverse((o) => { if (o.isMesh || o.isPoints || o.isLine || o.isSprite) ms.push(o); });
+      if (!ms.length) units.push({ jobs: [j], meshes: [], n: 0 });
+      for (const o of ms) units.push({ jobs: [j], meshes: [o], n: 1 });
+    }
+    let i = 0, perDrawable = 0, budget = FLUSH_FIRST;
+    while (i < units.length) {
+      const jobs = new Set(), only = FLUSH_ALONE ? new Set() : null;
+      let n = 0, k = 0;
+      while (i < units.length) {
+        const u = units[i];
+        if (k && n + u.n > budget) break;
+        n += u.n; k++; i++;
+        for (const j of u.jobs) jobs.add(j);
+        if (only) for (const o of u.meshes) only.add(o);
       }
       const c0 = performance.now();
-      const r = flushDraw(chunk);
+      const r = flushDraw([...jobs], only);
       const ms = performance.now() - c0;
       if (r.win) wins.push(r.win);
-      rec.drawables += r.n; rec.chunks.push([chunk.length, r.n, Math.round(ms)]);
+      rec.drawables += r.n; rec.chunks.push([jobs.size, r.n, Math.round(ms)]);
       // (the cost per drawable swings 1-50 ms: a chunk of already-built materials is cheap, new ones are not: the estimate
       // follows a dearer chunk at once and a cheaper one slowly, and a chunk never takes more than FLUSH_MAX drawables)
-      if (r.n > 0) { const c = ms / r.n; perDrawable = perDrawable ? Math.max(c, 0.8 * perDrawable + 0.2 * c) : c; budget = Math.max(8, Math.min(FLUSH_MAX, Math.round(FLUSH_TASK_MS / Math.max(0.5, perDrawable)))); }
-      // a rendered frame, then a new task (the loader's frame is painted before the next chunk's node builds)
-      if (i < take.length) { await new Promise((res) => requestAnimationFrame(() => res())); await new Promise((res) => setTimeout(res, 0)); }
+      // (FLUSH_ALONE: a plain moving average: one 400 ms material must not hold every later chunk at one drawable)
+      if (r.n > 0) { const c = ms / r.n; perDrawable = !perDrawable ? c : FLUSH_ALONE ? 0.5 * perDrawable + 0.5 * c : Math.max(c, 0.8 * perDrawable + 0.2 * c); budget = Math.max(FLUSH_MIN, Math.min(FLUSH_MAX, Math.round(FLUSH_TASK_MS / Math.max(0.5, perDrawable)))); }
+      // a new task (FLUSH_ALONE: the loader's frame runs in between when one is due); before: a rendered frame, then a task
+      if (i < units.length) { if (!FLUSH_ALONE) await new Promise((res) => requestAnimationFrame(() => res())); await new Promise((res) => setTimeout(res, 0)); }
     }
+    if (FLUSH_ALONE) flushWith.shadowDirty?.([...flushWith.scene.children]);   // (the city's casters back in the sun's cache)
   }
   for (const w of wins) { try { await w; } catch (e) { console.warn("[compile flush]", e); } }
   for (const j of take) j.resolve();                 // (on an error: their pipelines then build async at first draw)
@@ -220,8 +244,8 @@ async function flushJobs(take) {
 }
 // one forced draw of `take`'s roots in the city's pass, with a parallel-pipeline window open for it (closed right after:
 // returns its end() promise, resolved when the pipelines started in it are ready)
-function flushDraw(take) {
-  const { renderer, scene, render } = flushWith;
+function flushDraw(take, only = null) {   // (only: the drawables to draw, the job's others hidden: FLUSH_ALONE)
+  const { renderer, scene } = flushWith, render = (FLUSH_ALONE && flushWith.renderScene) || flushWith.render;   // (FLUSH_ALONE: the scene pass only)
   const holder = new THREE.Group(); holder.name = "perf8-flush";
   const saved = [], tops = [];
   const set = (o, k, v) => { if (o[k] !== v) { saved.push([o, k, o[k]]); o[k] = v; } };
@@ -244,6 +268,7 @@ function flushDraw(take) {
         if (disposedGeo.has(o.geometry)) { set(o, "visible", false); skipStats.flush++; return; }   // (disposed since it was queued: heapfix)
         set(o, "visible", true);
         if (o.isMesh || o.isPoints || o.isLine || o.isSprite) {
+          if (only && !only.has(o)) { set(o, "visible", false); return; }
           n++;
           set(o, "frustumCulled", false);
           if (o.isInstancedMesh && o.count === 0) set(o, "count", 1);
@@ -252,6 +277,14 @@ function flushDraw(take) {
       });
     }
     scene.add(holder);
+    // (FLUSH_ALONE) the rest of the scene hidden for this draw (the lights kept: they are in every build's key)
+    if (FLUSH_ALONE) {
+      // (a root already in the scene keeps its own top-level ancestor drawn)
+      const keep = new Set([holder]);
+      for (const j of take) for (const r of [].concat(j.roots)) { let t = r; while (t?.parent && t.parent !== scene) t = t.parent; if (t?.parent === scene) keep.add(t); }
+      for (const c of scene.children) if (!keep.has(c) && !c.isLight) set(c, "visible", false);
+      flushWith.shadowDirty?.([holder]);                // (redrawn when the chunk casts into the sun's box: its shadow builds)
+    }
     const w = openParallelPipelines(renderer, scene);
     try { render(); } finally { restore(); win = w.end(); }
   } catch (e) {
@@ -461,6 +494,20 @@ export async function warmLater(renderer, scene, roots, compile, { perFrame = 2,
   await warmShadows(renderer, scene, roots, { perFrame });
 }
 /** the shadow-pass half of warmLater: `perFrame` shadow-casting meshes of `roots` a frame, far under the city */
+// (claude/perf7, rule fade-shadow-warm; ?shadowdrawn=old: two rAFs a batch, as before) A STAND-IN BATCH STAYS UNTIL THE SUN'S
+// PASS HAS DRAWN IT. Under the play loader the main loop renders one rAF in three (main.js holdThrottle), so a batch held
+// for two rAFs was often taken away before any shadow pass ran: the play loader's tiles' "walls:fade" stand-in was marked
+// warmed but never built, and the first tile fade while driving built it on screen (34 ms, police drive 2026-11-27).
+// Now: two rAFs, then more until the sun's shadow node has rendered at least twice since the batch went in
+// (lighting.js sunCache.stats.frames, main.js globalThis.__sunCache), at most 40 rAFs (no sun cache: as before).
+const SHADOW_DRAWN = !(typeof location !== "undefined" && /[?&]shadowdrawn=old/.test(location.search));
+const raf = () => new Promise((r) => requestAnimationFrame(r));
+export async function shadowDrawn(min = 2, maxRafs = 40) {
+  const st = globalThis.__sunCache?.stats, f0 = st?.frames;
+  await raf(); await raf();
+  if (f0 == null) return;
+  for (let k = 0; k < maxRafs && st.frames - f0 < min; k++) await raf();
+}
 export async function warmShadows(renderer, scene, roots, { perFrame = 2 } = {}) {
   const meshes = [];
   for (const r of roots) r.traverse((o) => { if (o.isMesh && o.castShadow && !Array.isArray(o.material)) meshes.push(o); });
@@ -468,7 +515,7 @@ export async function warmShadows(renderer, scene, roots, { perFrame = 2 } = {})
   const g = new THREE.Group(); g.name = "boot3-late-warm"; g.position.set(0, -4000, 0);
   scene.add(g);
   const win = openParallelPipelines(renderer, scene);
-  const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const frame = SHADOW_DRAWN ? () => shadowDrawn() : () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   try {
     for (let i = 0; i < meshes.length; i += perFrame) {
       g.clear();

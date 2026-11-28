@@ -13,18 +13,86 @@
 //   const B = bridgeDecks(roadsDoc, hm.ground)   ->  { decks: [descriptor...], wrap(ground) -> ground' }
 //   deckHeight(descriptor, ground)               ->  (x, z) -> m TAW on the deck, or null off it
 
+import { ROAD_TYPES } from "../../vendor/roads/roadCrossSection.js";   // (claude/places2) a lane-less road's drawn width
+
 const EXT = 6;        // m beyond each end where the deck's height is taken (past the abutment)
 const HALF = 6;       // m either side of the centre line when the road has no lane widths
 const SLAB = { depth: 0.9, parapetW: 0.3, parapetH: 1.0, sink: 0.03, step: 2 };
-const COL = { asphalt: [0.115, 0.118, 0.125], sidewalk: [0.36, 0.35, 0.33], concrete: [0.42, 0.41, 0.38], soffit: [0.25, 0.245, 0.23] };
+const COL = { asphalt: [0.115, 0.118, 0.125], sidewalk: [0.36, 0.35, 0.33], concrete: [0.42, 0.41, 0.38], soffit: [0.25, 0.245, 0.23], brick: [0.36, 0.14, 0.09], stone: [0.27, 0.28, 0.29] };
 
+// (claude/places2, rule deck-width-drawn) a road with no lane widths: its deck as wide as the street the road engine draws
+// for its type (vendor/roads/roadCrossSection.js ROAD_TYPES: an alley 2 x (2.6 + 1.2) m), never wider than HALF. Before,
+// every lane-less deck took HALF (6 m: 12 m between the parapets' outsides): Avenue de la Chênaie's bridge over L26 (a
+// living street drawn 7.6 m wide, the real bridge ~5 m between brick parapets) stood 2.2 m wider than its street on
+// each side, parapets out in the air. ?deckwidth=old (tileData.js setDeckWidthOld): HALF as before
+let DECK_WIDTH_OLD = false;
+export const setDeckWidthOld = (v) => { DECK_WIDTH_OLD = !!v; };
 /** the road's half width on its wider side, and its carriageway's (driving / parking / tram lanes; sidewalks outside) */
-function widths(r) {
+export function widths(r) {
   const side = (a) => (a || []).reduce((s, l) => s + (+l.width || 0), 0);
   const road = (a) => (a || []).filter((l) => l.type !== "sidewalk").reduce((s, l) => s + (+l.width || 0), 0);
   const half = Math.max(side(r.lanes?.left), side(r.lanes?.right));
   const carr = Math.max(road(r.lanes?.left), road(r.lanes?.right));
-  return half > 1 ? { half: Math.min(14, half + SLAB.parapetW), carr: Math.min(half, carr || half) } : { half: HALF, carr: HALF - 2 };
+  if (half > 1) return { half: Math.min(14, half + SLAB.parapetW), carr: Math.min(half, carr || half) };
+  const t = !DECK_WIDTH_OLD && ROAD_TYPES[r.type];
+  if (t) {
+    const th = Math.max(side(t.left), side(t.right)), tc = Math.max(road(t.left), road(t.right));
+    if (th > 1 && th + SLAB.parapetW < HALF) return { half: th + SLAB.parapetW, carr: Math.min(th, tc || th) };
+  }
+  return { half: HALF, carr: HALF - 2 };
+}
+
+// (claude/chenaie, rule deck-width-drawn, measured widths) the drawn width above is the road TYPE's when OSM gives no
+// lanes, and a bridge stretch has no UrbIS street surface of its own (the surfaces stop at the abutments): the Chênaie
+// bridge over L26 (UrbIS road bridge 899, 5.0 m outside its parapets; its approaches measured 3.3-3.5 m kerb to kerb)
+// was drawn as an alley, a 7.6 m street on an 8.2 m deck. data/overrides.json bridgeWidths (tools/bridges/deckWidths.mjs:
+// deck = the UrbIS bridge outline's width, carr = the street model's measured kerbs on the bridge road or its
+// approaches) gives such a road a lane stack of the measured widths (roadBuild.js applyRoadOverrides, street/model.js
+// stackOf): the engine draws the street on the deck at that width and widths() above follows it. Either measurement may
+// be missing (no deck: the stack's own roadside lanes round the measured carriageway; no carr: the stack's carriage
+// lanes, fitted inside the measured deck); the roadside of the new stack is one sidewalk out to the deck's inside. A
+// measurement only narrows: never wider than the deck drawn without one. A stack without a driving lane on each side (a
+// one-way street) is left as drawn.
+const CARR_TYPES = new Set(["driving", "turn", "bus", "parking", "bike", "shoulder"]);
+/** the lane stack of bridge road r from its measured widths (a bridgeWidths entry { deck?, carr? }), or null */
+export function measuredBridgeLanes(r, m) {
+  // (a road with its own lane stack keeps it: only the TYPE's guessed stack is replaced. The gate's lane rows, streetlanes
+  // and roads, saw the Tilleuls deck's tagged stack, narrowed to 11 m, pull its lanes off the measured carriageway: that
+  // bridge is a follow-up with its own lane fit)
+  if (!m || !(m.deck > 0 || m.carr > 0) || r.lanes) return null;
+  const t = ROAD_TYPES[r.type] || ROAD_TYPES.local, src = r.lanes || t;
+  const cw = +src.center?.width || 0, isC = (l) => CARR_TYPES.has(l.type), sum = (a) => a.reduce((s, l) => s + (+l.width || 0), 0);
+  const C = { left: (src.left || []).filter(isC), right: (src.right || []).filter(isC) }, R = { left: (src.left || []).filter((l) => !isC(l)), right: (src.right || []).filter((l) => !isC(l)) };
+  const cL = sum(C.left), cR = sum(C.right);
+  const drives = (a) => a.some((l) => l.type === "driving" || l.type === "turn" || l.type === "bus");
+  if (!(cL > 0) || !(cR > 0) || !drives(C.left) || !drives(C.right)) return null;      // (a one-way stack: as drawn)
+  let carr = m.carr > 0 ? Math.max(0.5, m.carr - cw) : cL + cR;              // kerb to kerb, less the centre strip
+  // the half inside the parapets: the measured outline's, else the measured carriageway with the stack's roadside
+  // lanes; never wider than the deck drawn without measurements (a measurement narrows a deck, it never widens one)
+  const drawn = widths(r).half - SLAB.parapetW, wide = Math.max(carr * cL / (cL + cR) + sum(R.left), carr * cR / (cL + cR) + sum(R.right));
+  const inner = Math.min(drawn, m.deck > 0 ? m.deck / 2 - SLAB.parapetW : cw / 2 + wide);
+  carr = Math.min(carr, 2 * (inner - cw / 2));
+  const side = (s) => {
+    const c = carr * (s === "left" ? cL : cR) / (cL + cR), k = c / (s === "left" ? cL : cR);
+    const lanes = C[s].map((l) => ({ ...l, width: Math.round(l.width * k * 100) / 100 }));
+    const rest = Math.round((inner - cw / 2 - sum(lanes)) * 100) / 100;
+    return rest >= 0.05 ? [...lanes, { type: "sidewalk", width: rest }] : lanes;
+  };
+  return { center: { ...(src.center || { width: 0, kind: "none" }) }, left: side("left"), right: side("right") };
+}
+
+// (claude/footbridge, rule deck-covers-street) a hand plan's sidewalks over the bank: the Carsoel deck's hand ring
+// (citydefects A) stopped at the abutment line, while UrbIS draws the Rue de la Pecherie / Carsoel sidewalks on past it
+// over the cutting's bank (the street stage gave them the bare DTM there: a paving strip sagging 1-5 m down the slope,
+// "a paving slab with a tree pit hanging over the slope"). plan.bank = { ring, free, why }: the ring widened to every
+// UrbIS street surface that continues off the deck at its level (a wing slab with its wall into the bank and a railing
+// over the drop). ?footbridge=old (setBankOld): the hand ring as before.
+let BANK_OLD = false;
+export const setBankOld = (v) => { BANK_OLD = !!v; };
+/** a bridgePlans entry with its bank widening applied (plan.bank: ring / free / walls replace the hand ones) */
+export function planOf(plan) {
+  if (!plan || BANK_OLD || !plan.bank?.ring?.length) return plan;
+  return { ...plan, ring: plan.bank.ring, free: plan.bank.free ?? plan.free, walls: plan.bank.walls ?? plan.walls };
 }
 
 /** the road's centre line as [[x, z], ...] from roads.json (node a, control points, node b) */
@@ -35,8 +103,31 @@ function centreLine(r, nodes) {
   return pts.length >= 2 ? pts : null;
 }
 
+// (claude/places1, rule deck-profile-measured) a band deck's top through its MEASURED profile (data/overrides.json
+// bridgeProfiles: the UrbIS DSM along the centre line, tools/bridges/deckProfiles.py) instead of the straight line
+// between the ends' ground: a long bridge rises in a curve. Avenue des Tilleuls (D9 / E9, 164 m over L26 and the L26/5
+// chord) was drawn up to 0.95 m under its real top, its soffit 4 m over the chord's rails and the contact wire pulled
+// down to 3.6 m over them (owner playtest: "wire clearance too low under Av. des Tilleuls"). Within PROF_BLEND m of each
+// end the measured top blends into the old profile (the street the deck meets there: no step at the joint), never
+// under the ground on the centre line. ?bridgeprof=old (profiles = null): the straight line, as before.
+const PROF_BLEND = 8, PROF_NEAR = 3;
+/** (x, z) -> the measured top there (the nearest segment of the profile's line within PROF_NEAR m), or null */
+export function measuredTop(line) {
+  const n = Math.floor((line?.length || 0) / 3);
+  if (n < 2) return null;
+  return (x, z) => {
+    let best = PROF_NEAR, y = null;
+    for (let i = 1; i < n; i++) {
+      const ax = line[i * 3 - 3], az = line[i * 3 - 2], bx = line[i * 3], bz = line[i * 3 + 1], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), dist = Math.hypot(ax + dx * t - x, az + dz * t - z);
+      if (dist < best) { best = dist; y = line[i * 3 - 1] + (line[i * 3 + 2] - line[i * 3 - 1]) * t; }
+    }
+    return y;
+  };
+}
+
 /** descriptors of the bridge decks in a roads.json document (plain data: goes from the worker to the page) */
-export function bridgeDescriptors(roadsDoc, ground, plans = null) {
+export function bridgeDescriptors(roadsDoc, ground, plans = null, profiles = null) {
   const nodes = new Map((roadsDoc.nodes || []).map((n) => [n.id, n]));
   const out = [];
   for (const r of roadsDoc.roads || []) {
@@ -53,12 +144,12 @@ export function bridgeDescriptors(roadsDoc, ground, plans = null) {
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
     for (const [x, z] of pts) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
     const { half, carr } = widths(r);
-    const d = { id: r.id, name: r.meta?.name || "", tram: !!r.meta?.tram, pts, cum, h0, h1, half, carr, span: [EXT, cum[cum.length - 1] - EXT],
+    const d = { id: r.id, osm: r.meta?.osm ?? null, name: r.meta?.name || "", tram: !!r.meta?.tram, pts, cum, h0, h1, half, carr, span: [EXT, cum[cum.length - 1] - EXT],
       box: [x0 - half, z0 - half, x1 + half, z1 + half] };
     // a measured PLAN (data/overrides.json bridgePlans, keyed by the OSM way): the deck's real outline instead of the
     // road's band (citydefects 2026-11-16: the new Carsoel deck over Saint-Job station is ~45 x 35 m with the tram stop,
     // sidewalks and squares on it; the road band left the platforms and shelters hanging over the cutting)
-    const plan = plans?.[String(r.meta?.osm)];
+    const plan = planOf(plans?.[String(r.meta?.osm)]);
     if (plan?.ring?.length >= 3) {
       d.plan = { ring: plan.ring, free: plan.free || [], walls: plan.walls || [], under: plan.under || null, ...(plan.urbis ? { urbis: plan.urbis } : {}) };
       for (const [x, z] of plan.ring) { d.box[0] = Math.min(d.box[0], x); d.box[1] = Math.min(d.box[1], z); d.box[2] = Math.max(d.box[2], x); d.box[3] = Math.max(d.box[3], z); }
@@ -71,13 +162,17 @@ export function bridgeDescriptors(roadsDoc, ground, plans = null) {
     // on the bridge's centre line (a hump the DTM keeps, e.g. Avenue des Hospices, E10: the straight deck ran up to
     // 0.6 m UNDER the drawn road there, its parapets 0.35 m proud of the street, still 1 m walls for the car)
     const L = cum[cum.length - 1] || 1, n = Math.max(1, Math.ceil(L / PROF));
+    const meas = !d.plan ? measuredTop(profiles?.[String(r.meta?.osm)]?.line) : null;
     d.prof = [];
     for (let k = 0; k <= n; k++) {
       const sk = (L * k) / n, line = h0 + (h1 - h0) * (sk / L);
       if (d.plan?.plane) { const q = at(d, sk); d.prof.push(planeY(d.plan.plane, q.x, q.z)); continue; }
       if (sk < d.span[0] || sk > d.span[1]) { d.prof.push(line); continue; }
-      const q = at(d, sk);
-      d.prof.push(Math.max(line, ground(q.x, q.z)));
+      const q = at(d, sk), g = ground(q.x, q.z), y0 = Math.max(line, g), m = meas ? meas(q.x, q.z) : null;
+      if (m == null) { d.prof.push(y0); continue; }
+      const u = Math.min(1, Math.min(sk - d.span[0], d.span[1] - sk) / PROF_BLEND), w = u * u * (3 - 2 * u);
+      d.prof.push(Math.max(g, y0 + (m - y0) * w));
+      d.measured = true;
     }
     out.push(d);
   }
@@ -321,13 +416,28 @@ export function markRailCuts(decks, cont) {
   return cut;
 }
 
+// (claude/chenaie) a band deck's parapet STYLE (data/overrides.json bridgeLooks: { "<osm way>": { parapet } }; the
+// default concrete): "brick", red brick walls under a blue-stone coping (Avenue de la Chênaie over L26: ~1 m red-brick
+// parapets with a stone coping, Street View, look only). Same outline as the concrete parapet (same colliders), its
+// faces split into the brick and a COPING-high stone band on top. With a look (tileData.js d.look; ?bridgelook=old:
+// none) the band deck is drawn in named material slots (PLAN_SLOTS: the street's asphalt / paving under the drawn
+// street, the library's concrete, brick and stone) instead of vertex colours, as the plan decks are.
+export const PARAPETS = ["concrete", "brick"];
+const COPING = 0.08;
+/** a bridge way's parapet style from data/overrides.json bridgeLooks (an unknown style or no entry: concrete) */
+export function parapetStyle(looks, osm) {
+  const p = looks?.[String(osm)]?.parapet;
+  return PARAPETS.includes(p) ? p : "concrete";
+}
+
 /** The deck as a drawable: a slab between the bridge's own ends (not the extensions), carriageway and sidewalk bands on
  *  top (SLAB.sink under the deck height, so the street's own surface wins where both are drawn), parapets on both
- *  edges, closed ends and soffit. Plain arrays: { position, normal, color } (non-indexed triangles). */
+ *  edges, closed ends and soffit. Plain arrays: { position, normal, color } (non-indexed triangles); with d.look also
+ *  uv and slot groups (PLAN_SLOTS). */
 export function deckMesh(d, ground = null, covered = null, streetY = null) {
   if (d.plan) return planDeckMesh(d, ground ?? (() => -Infinity), covered ?? (() => false), streetY);
-  const P = [], N = [], C = [];
-  const push = (n, c, ...pts) => { for (const p of pts) { P.push(p[0], p[1], p[2]); N.push(n[0], n[1], n[2]); C.push(c[0], c[1], c[2]); } };
+  const P = [], N = [], C = [], T = [];        // T: the material slot per triangle (with d.look)
+  const push = (n, c, ...pts) => { for (const p of pts) { P.push(p[0], p[1], p[2]); N.push(n[0], n[1], n[2]); C.push(c[0], c[1], c[2]); } const sl = BAND_SLOT.get(c) ?? 3; T.push(sl, sl); };
   // each quad wound so its geometric normal agrees with n (until 2026-11-13 the deck top faced DOWN and the soffit UP:
   // drawn double-sided it looked right, but anything reading the winding, the collision test's drawn-surface raster,
   // took the soffit 0.93 m under the deck for the road: docs/collisions/DRIVE_FIX.md)
@@ -342,6 +452,13 @@ export function deckMesh(d, ground = null, covered = null, streetY = null) {
   for (let k = 0; k <= steps; k++) S.push(at(d, s0 + (s1 - s0) * k / steps));
   const off = (q, o, y) => [q.x + q.tz * o, y, q.z - q.tx * o];          // o > 0: the side of n = (tz, -tx)
   const H = d.half, Wp = SLAB.parapetW, Cw = d.carr, D = SLAB.depth, Ph = SLAB.parapetH;
+  const brick = d.look?.parapet === "brick", capC = brick ? COL.stone : COL.concrete;
+  // a vertical parapet face between offsets oa (at q = a) and ob (at b), from y0 up to the coping: brick + its stone band
+  const face = (n, a, b, oa, ob, ya, yb) => {
+    if (!brick) { quad(n, COL.concrete, off(a, oa, ya), off(b, ob, yb), off(b, ob, yb + Ph), off(a, oa, ya + Ph)); return; }
+    quad(n, COL.brick, off(a, oa, ya), off(b, ob, yb), off(b, ob, yb + Ph - COPING), off(a, oa, ya + Ph - COPING));
+    quad(n, COL.stone, off(a, oa, ya + Ph - COPING), off(b, ob, yb + Ph - COPING), off(b, ob, yb + Ph), off(a, oa, ya + Ph));
+  };
   const bands = [[-H, -Cw, COL.sidewalk], [-Cw, Cw, COL.asphalt], [Cw, H, COL.sidewalk]];
   for (let k = 0; k < steps; k++) {
     const a = S[k], b = S[k + 1], ya = a.y - SLAB.sink, yb = b.y - SLAB.sink;
@@ -352,10 +469,11 @@ export function deckMesh(d, ground = null, covered = null, streetY = null) {
       // (deckrail) a joined piece: the slab's edge face only, no parapet; where a parapet run starts / stops, its end cap
       const cutOf = (j) => !!d.railCut?.band[sg > 0 ? 0 : 1][j];
       if (cutOf(k)) { quad(n, COL.concrete, off(a, sg * H, ya - D), off(b, sg * H, yb - D), off(b, sg * H, yb), off(a, sg * H, ya)); continue; }
-      for (const [q, y, dir, j] of [[a, ya, -1, k - 1], [b, yb, 1, k + 1]]) if (j >= 0 && j < steps && cutOf(j)) quad([q.tx * dir, 0, q.tz * dir], COL.concrete, off(q, sg * (H - Wp), y), off(q, sg * H, y), off(q, sg * H, y + Ph), off(q, sg * (H - Wp), y + Ph));
-      quad(n, COL.concrete, off(a, sg * H, ya - D), off(b, sg * H, yb - D), off(b, sg * H, yb + Ph), off(a, sg * H, ya + Ph));          // outer face
-      quad(ni, COL.concrete, off(a, sg * (H - Wp), ya), off(b, sg * (H - Wp), yb), off(b, sg * (H - Wp), yb + Ph), off(a, sg * (H - Wp), ya + Ph));   // inner face
-      quad([0, 1, 0], COL.concrete, off(a, sg * (H - Wp), ya + Ph), off(b, sg * (H - Wp), yb + Ph), off(b, sg * H, yb + Ph), off(a, sg * H, ya + Ph));  // coping
+      for (const [q, y, dir, j] of [[a, ya, -1, k - 1], [b, yb, 1, k + 1]]) if (j >= 0 && j < steps && cutOf(j)) face([q.tx * dir, 0, q.tz * dir], q, q, sg * (H - Wp), sg * H, y, y);
+      if (brick) { quad(n, COL.concrete, off(a, sg * H, ya - D), off(b, sg * H, yb - D), off(b, sg * H, yb), off(a, sg * H, ya)); face(n, a, b, sg * H, sg * H, ya, yb); }      // outer face: the slab edge, then the wall
+      else quad(n, COL.concrete, off(a, sg * H, ya - D), off(b, sg * H, yb - D), off(b, sg * H, yb + Ph), off(a, sg * H, ya + Ph));          // outer face
+      face(ni, a, b, sg * (H - Wp), sg * (H - Wp), ya, yb);                  // inner face
+      quad([0, 1, 0], capC, off(a, sg * (H - Wp), ya + Ph), off(b, sg * (H - Wp), yb + Ph), off(b, sg * H, yb + Ph), off(a, sg * H, ya + Ph));  // coping
     }
   }
   for (const [q, dir] of [[S[0], -1], [S[S.length - 1], 1]]) {             // the ends: slab + parapet caps
@@ -363,9 +481,10 @@ export function deckMesh(d, ground = null, covered = null, streetY = null) {
     quad(n, COL.concrete, off(q, -H, y - D), off(q, H, y - D), off(q, H, y), off(q, -H, y));
     for (const sg of [-1, 1]) {
       if (d.railCut?.band[sg > 0 ? 0 : 1][dir < 0 ? 0 : steps - 1]) continue;      // (deckrail: no parapet at that end)
-      quad(n, COL.concrete, off(q, sg * (H - Wp), y), off(q, sg * H, y), off(q, sg * H, y + Ph), off(q, sg * (H - Wp), y + Ph));
+      face(n, q, q, sg * (H - Wp), sg * H, y, y);
     }
   }
+  if (d.look) return slotted(P, N, C, T, bandOf(d), d.pts[0]);
   return { position: new Float32Array(P), normal: new Float32Array(N), color: new Float32Array(C) };
 }
 
@@ -607,8 +726,9 @@ function planDeckMesh(d, ground, covered, streetY = null) {
 // the look pass (citydefects 2026-11-16): the plan deck drawn with the STREET's own materials (viewer/roadPaint.js: the
 // asphalt of the measured streets, the sidewalk slabs and kerb stones) and the material library's cast concrete for the
 // fascia, walls, upstands and soffit (main.js bridgeDeckMesh); the vertex colours stay for ?decklook=old
-export const PLAN_SLOTS = ["asphalt", "paving", "kerb", "concrete", "steel"];
+export const PLAN_SLOTS = ["asphalt", "paving", "kerb", "concrete", "steel", "brick", "stone"];   // (claude/chenaie: + a band deck's brick parapet and stone coping)
 const SLOT_OF = new Map([[COLP.asphalt, 0], [COLP.top, 1], [COLP.kerb, 2], [COLP.fascia, 3], [COLP.wall, 3], [COLP.soffit, 3], [COLP.steel, 4]]);
+const BAND_SLOT = new Map([[COL.asphalt, 0], [COL.sidewalk, 1], [COL.concrete, 3], [COL.soffit, 3], [COL.brick, 5], [COL.stone, 6]]);   // (claude/chenaie) a band deck's slots
 /** the triangles sorted by slot, with groups [{ start, count, slot }] (vertex indices) and a road-frame uv (s along the
  *  road line, t across it: the asphalt shader's coordinates) */
 function slotted(P, N, C, S, B, p0) {
@@ -784,8 +904,8 @@ export function deckAbutments(decks, grids, hdr) {
 }
 
 /** the bridge decks of a roads.json document, and the road stage's ground with them */
-export function bridgeDecks(roadsDoc, ground, keep = () => true, plans = null) {
-  const decks = bridgeDescriptors(roadsDoc, ground, plans).filter(keep);
+export function bridgeDecks(roadsDoc, ground, keep = () => true, plans = null, profiles = null) {
+  const decks = bridgeDescriptors(roadsDoc, ground, plans, profiles).filter(keep);
   const fns = decks.map((d) => deckHeight(d, ground));
   const wrap = (g) => (fns.length ? (x, z) => { for (const f of fns) { const y = f(x, z); if (y != null) return y; } return g(x, z); } : g);
   return { decks, wrap };

@@ -128,6 +128,17 @@ export function parkingClear(sites, { graph = null, inside = null, nearest = nul
 // under the car: its slot slides up to 1.4 m first), 10 m of a signal, 15 m of a bus stop, RAIL_CLEAR m of a tram track (a car body and a tram passing); a side the OSM stack leaves without
 // parking (tagged, not guessed) gets none. Occupancy OCC (deterministic hash). Each car against the measured kerb
 // (fit.placeCar). Returns { sites, stats }.
+// SERVICE CLEARANCE (claude/parking1, rule service-vehicle-passage): after the width rule, every parked car must leave
+// SERVICE_CLEAR m of open carriageway across from its inner flank: to the far edge of ITS carriageway (a kerb, a median,
+// a tram reservation: a class the traffic does not drive on) or to the nearest parked car across, whichever comes first
+// (Brussels practice: about 3 m clear for the fire brigade; the widest service vehicle, a bus 2.55 m, + 2 x 0.2 m). The
+// kerb-to-kerb width alone missed a street split in two by a tram reservation (Rue Engeland D7: 21 m kerb to kerb, a
+// 3.5 m carriageway each way, parked on: 1.5 m left, a bus trapped). Where both kerbs cannot keep it, the way's one-kerb
+// side (the OSM parking tags, else the side with fewer driveways / stops) keeps its cars and the other side's go; where
+// even one side cannot, none. ?parkservice=old: no clearance pass (the census of what it changed: stats.service).
+export const SERVICE_CLEAR = 3.0, SERVICE_W = 2.55, SERVICE_MARGIN = 0.2;
+const PARK_HALF_W = 0.925;              // the parked box's half width (trafficGraph.js TP_BOX_HW)
+const SERVICE_OLD = typeof location !== "undefined" && /[?&]parkservice=old(&|$)/.test(location.search);
 const SLOT = 5.6, BOTH = 8.0, ONE = 5.6, CLEAR_END = 12, OCC = 0.8, RAIL_CLEAR = 2.6;
 const PARK_CLASSES = new Set([0, 1, 3]);
 const TYPE_PARKS = { local: ["left", "right"], avenue: ["left", "right"], oneWay: ["left"] };   // the type defaults' parking sides
@@ -199,9 +210,9 @@ export function widthParking(roads, feats, bounds, fit, opts = {}) {
     }
   }
   // 2. per way: the one-kerb side, then the slots
-  const sites = [];
+  const sites = [], cand = [];
   let k = 0;
-  for (const [, W] of ways) {
+  for (const [wayId, W] of ways) {
     for (const p of avoid) for (const q of W.samples) { const dl = (p[0] - q.x) * q.lx + (p[1] - q.z) * q.lz; if (Math.hypot(p[0] - q.x, p[1] - q.z) < p[2] + 4) W.obst[dl > 0 ? 0 : 1] += 0.5; }
     let oneSide;
     if (W.tagged[0] === true && W.tagged[1] !== true) oneSide = 0;
@@ -229,9 +240,58 @@ export function widthParking(roads, feats, bounds, fit, opts = {}) {
         const pl = fit.placeCar(x0, z0, yaw0);
         if (!pl || pl.x < bounds.x0 || pl.x > bounds.x1 || pl.z < bounds.z0 || pl.z > bounds.z1) continue;
         if (sites.some((o) => (o.x - pl.x) ** 2 + (o.z - pl.z) ** 2 < 20)) continue;
-        sites.push({ x: pl.x, z: pl.z, yaw: pl.yaw + (hv - 0.3) * 0.02, c: Math.floor(hash(pl.z, pl.x) * (opts.nColours ?? 8)), w: q.w, side, road: q.r.id });
+        const site = { x: pl.x, z: pl.z, yaw: pl.yaw + (hv - 0.3) * 0.02, c: Math.floor(hash(pl.z, pl.x) * (opts.nColours ?? 8)), w: q.w, side, road: q.r.id };
+        sites.push(site);
+        // (the clearance pass: first = the way's one-kerb side)
+        cand.push({ site, first: side === oneSide, way: wayId });
       }
     }
   }
-  return { sites, stats };
+  if (SERVICE_OLD || opts.service === false) return { sites, stats };
+  const kept = serviceClear(cand, fit, stats);
+  return { sites: kept, stats };
+}
+
+/** the clearance pass (rule service-vehicle-passage): the candidates of the way's one-kerb side first, then the others;
+ *  a car is kept when the ray from its inner flank across the street runs SERVICE_CLEAR m over the carriageway without
+ *  meeting a non-carriageway class or a car already kept. Unknown cells (no survey) count as clear: no data, no drop. */
+function serviceClear(cand, fit, stats) {
+  const S = (stats.service = { cars: cand.length, dropped: 0, edge: 0, car: 0, ways: 0, waysBoth: 0 });
+  const G = new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096), CELL = 8;
+  const inBox = (c, x, z) => {
+    const fx = Math.cos(c.yaw), fz = -Math.sin(c.yaw), dx = x - c.x, dz = z - c.z;      // (local +x = the bonnet)
+    return Math.abs(dx * fx + dz * fz) <= 2.365 && Math.abs(dx * fz - dz * fx) <= PARK_HALF_W;
+  };
+  const nearCar = (x, z, self = null) => {
+    const i0 = Math.floor(x / CELL), j0 = Math.floor(z / CELL);
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const c of G.get(key(i0 + di, j0 + dj)) || []) if (c !== self && inBox(c, x, z)) return true;
+    return false;
+  };
+  const order = [...cand.filter((c) => c.first), ...cand.filter((c) => !c.first)];
+  const keep = new Set(), changed = new Set(), both = new Set();
+  // (across = the car's own left, as it stands against the measured kerb: parked cars face their side's traffic, so
+  // the street is on their left; the road's normal at the slot differs on a bend)
+  const short = (site) => {
+    const ax = -Math.sin(site.yaw), az = -Math.cos(site.yaw), x0 = site.x + ax * PARK_HALF_W, z0 = site.z + az * PARK_HALF_W;
+    for (let t = 0.25; t <= SERVICE_CLEAR + 1e-6; t += 0.25) {
+      const x = x0 + ax * t, z = z0 + az * t, k = fit.classAt(x, z);
+      if (k >= 0 && !PARK_CLASSES.has(k)) return "edge";
+      if (nearCar(x, z, site)) return "car";
+    }
+    return null;
+  };
+  const add = (site) => { const kk = key(Math.floor(site.x / CELL), Math.floor(site.z / CELL)); if (!G.has(kk)) G.set(kk, []); G.get(kk).push(site); };
+  for (const c of order) {
+    const why = short(c.site);
+    if (why) { S.dropped++; S[why]++; changed.add(c.way); if (why === "car") both.add(c.way); continue; }
+    keep.add(c.site); add(c.site);
+  }
+  // (one sweep over the kept: a car kept early never saw a car kept after it across the street; the later one goes)
+  for (const c of [...order].reverse()) {
+    if (!keep.has(c.site) || !short(c.site)) continue;
+    keep.delete(c.site); S.dropped++; S.car++; changed.add(c.way); both.add(c.way);
+    const l = G.get(key(Math.floor(c.site.x / CELL), Math.floor(c.site.z / CELL))); l.splice(l.indexOf(c.site), 1);
+  }
+  S.ways = changed.size; S.waysBoth = both.size;
+  return cand.length ? cand.map((c) => c.site).filter((s) => keep.has(s)) : [];
 }

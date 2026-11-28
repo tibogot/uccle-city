@@ -117,8 +117,12 @@ function addLod(srcName, dstName, totalTarget, err, prune, lock = false, noFight
   lodReport[dstName] = { from: srcName, sourceTris: tris, tris: outTris };
   console.log(`${dstName}: ${tris} -> ${outTris} triangles`);
 }
+// villa2 (2026-11-23): a raw GLB that already carries a SCRIPTED <Name>_lod1 (tools/blender/villa.py) keeps it: meshopt
+// of LOD0 collapsed the villa's reveals and recess (heroshell L1 back faces, a packed audit of 7.8k blocking items)
+const SCRIPTED_LOD1 = json.nodes.some((n) => n.name === `${NAME}_lod1`);
 if (!NOLOD) {
-  addLod(NAME, `${NAME}_lod1`, LOD1_TRIS, LOD1_ERR, false, false, true);
+  if (SCRIPTED_LOD1) { lodReport[`${NAME}_lod1`] = { scripted: true }; console.log(`${NAME}_lod1: scripted (kept as built)`); }
+  else addLod(NAME, `${NAME}_lod1`, LOD1_TRIS, LOD1_ERR, false, false, true);
   addLod(`${NAME}_far`, `${NAME}_lod2`, LOD2_TRIS, LOD2_ERR, true, LOCK);   // (LOD2 without noFight: it opened probe holes on the Russian church and the observatory far levels, heroshell)
 }
 

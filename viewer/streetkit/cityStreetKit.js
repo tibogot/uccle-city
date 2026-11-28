@@ -16,10 +16,12 @@ import * as THREE from "three/webgpu";
 import { loadStreetKit, StreetKitPool, PIECES, PLATE_SIZE, AXIS, streetKitSource, streetKitFades } from "./streetKit.js";
 import { Streamer, MARGIN } from "../instanceStream.js";
 import { cityProps } from "../props/cityProps.js";
+import { lampKeepClear } from "./villoFootprint.js";
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/streetkit/", import.meta.url);
 const PROPS_OLD = qs.get("streetprops") === "old";
+const VILLOROW_OLD = qs.get("villorow") === "old";       // (claude/fixes4, rule villo-row-clear) the lamps 1.2 m off each dock point as before
 
 /** (streetprops, rule 30) ?streetprops=old: the doc as before the class D fixes: the signs of the old rules (signsOld,
  *  kept where they differ), the plate posts and Villo stations at their `was` (tools/streetkit/snapProps.mjs) */
@@ -136,25 +138,11 @@ export const cityStreetKit = {
       return p;
     };
   },
-  /** a lamps.js `place` that keeps the lamps 0.6 m off the sign poles and off the Villo stations (slid 2 / 4 m, else dropped) */
+  /** a lamps.js `place` that keeps the lamps 0.6 m off the sign poles and out of the Villo rows (docks + bikes: claude/fixes4,
+   *  rule villo-row-clear, ?villorow=old: 1.2 m off each dock's point as before; viewer/streetkit/villoFootprint.js) */
   keepLampsClear(place, doc) {
     if (!this.on || !doc) return place;
-    const pts = [...(doc.signs || []).map((s) => [s.x, s.z, 0.6]), ...(doc.posts || []).map((s) => [s.x, s.z, 0.6]),
-      ...(doc.villo || []).flatMap((v) => [...v.docks.map((d) => [d.x, d.z, 1.2]), ...(v.totem ? [[v.totem.x, v.totem.z, 0.9]] : [])])];
-    if (!pts.length) return place;
-    const P = place || ((s) => s);
-    const hit = (x, z) => pts.some(([a, b, r]) => (x - a) ** 2 + (z - b) ** 2 < r * r);
-    return (s) => {
-      const p = P(s);
-      if (!p || !hit(p.x, p.z)) return p;
-      const ax = Math.cos(p.yaw), az = -Math.sin(p.yaw);
-      for (const d of [2, -2, 4, -4]) {
-        const q = P({ ...s, x: s.x + ax * d, z: s.z + az * d });
-        if (q && !hit(q.x, q.z)) { this.stats.lampsMoved++; return q; }
-      }
-      this.stats.lampsDropped++;
-      return null;
-    };
+    return lampKeepClear(place, doc, { old: VILLOROW_OLD, stats: this.stats });
   },
   addTile(name, doc, parent) {
     if (!this.on || !this.kit || !doc) return null;

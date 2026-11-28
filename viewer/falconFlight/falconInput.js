@@ -9,11 +9,15 @@
 //   gamepad   left stick fly (forward = nose down; ?invert=1 flips), RT flap (analog), LT fold (analog: half way =
 //             the diamond, full = the tuck), A land / take off, X talons, B flare, Y camera, right stick look.
 //   touch     left half: a thumb stick (bank / pitch); right: FLAP (hold), DIVE (hold = tuck), TALONS, LAND, CAM.
+// FALCON FUN (falconFun.js, ?falconfun=old = without): F / gamepad X / touch STRIKE HELD = the lock-on auto-dive; a quick
+// TAP of Space (< 0.22 s; gamepad RB; a tap on FLAP) = the flap sprint (the "sprint" action).
 import { FlightControls } from "./flightModel.js";
+import { FUN_OLD } from "./falconFun.js";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
-/** ?falconctl=old: the raw stick controls of round 1 (W / S pitch, A / D bank, no assist); else the flight assist
+/** ?falconctl=old: the current controller (not the default gym one, gymCity.js) with the raw stick controls of round 1
+ *  (W / S pitch, A / D bank, no assist); else the flight assist
  *  (flightAssist.js) flies from the INTENT this input also fills (falconfix, 2026-11-16) */
 export const CTL_OLD = typeof location !== "undefined" && /[?&]falconctl=old(&|$)/.test(location.search);
 
@@ -39,9 +43,14 @@ export class FalconInput {
       const once = { KeyE: "land", KeyF: "strike", KeyV: "camera", KeyR: "reset", KeyH: "help", KeyM: "aim" }[e.code];
       if (once && !e.repeat) this.actions.add(once);
       if (e.code === "KeyM" && !e.repeat) this.mouseAim = !this.mouseAim;
+      if (e.code === "Space" && !e.repeat) this._spaceT = performance.now();
       if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
     });
-    addEventListener("keyup", (e) => this.keys.delete(e.code));
+    addEventListener("keyup", (e) => {
+      this.keys.delete(e.code);
+      // (falcon fun) a quick tap of Space: the sprint
+      if (e.code === "Space" && !FUN_OLD && this.enabled && this._spaceT && performance.now() - this._spaceT < 220) this.actions.add("sprint");
+    });
     addEventListener("blur", () => this.keys.clear());
     dom.addEventListener("click", () => { if (this.enabled && this.mouseAim && !this.touch?.on && dom.requestPointerLock) dom.requestPointerLock(); });
     document.addEventListener("pointerlockchange", () => { this.mouse.locked = document.pointerLockElement === dom; });
@@ -106,6 +115,7 @@ export class FalconInput {
       const prev = this.pad || [];
       const edge = (i, a) => { if (pressed(i) && !prev[i]) this.actions.add(a); };
       edge(0, "land"); edge(2, "strike"); edge(3, "camera");
+      if (!FUN_OLD) edge(5, "sprint");
       this.pad = gp.buttons.map((b) => b.pressed);
     } else if (!this.touch?.on && this.device !== "gamepad") { this.look.yaw *= 0.9; this.look.pitch *= 0.9; }
     // touch
@@ -145,7 +155,7 @@ export class FalconInput {
 .ftouch button.on{background:rgba(111,168,255,.75)}`;
     const st = document.createElement("style"); st.textContent = css; document.head.append(st);
     const el = document.createElement("div"); el.className = "ftouch";
-    el.innerHTML = `<div class="stick"><div class="knob"><i></i></div></div><div class="btns"><button data-k="talons">TALONS</button><button data-k="land">LAND</button><button data-k="dive">DIVE</button><button data-k="flap">FLAP</button><button data-k="cam">CAM</button></div>`;
+    el.innerHTML = `<div class="stick"><div class="knob"><i></i></div></div><div class="btns"><button data-k="talons">${FUN_OLD ? "TALONS" : "STRIKE"}</button><button data-k="land">LAND</button><button data-k="dive">DIVE</button><button data-k="flap">FLAP</button><button data-k="cam">CAM</button></div>`;
     document.body.append(el);
     const T = this.touch = { on: true, el, stick: { active: false, x: 0, y: 0 }, flap: false, dive: false, talons: false };
     const zone = el.querySelector(".stick"), knob = el.querySelector(".knob"), dot = knob.firstChild;
@@ -163,10 +173,10 @@ export class FalconInput {
       const k = b.dataset.k;
       b.addEventListener("pointerdown", (e) => {
         e.preventDefault(); b.classList.add("on");
-        if (k === "flap") T.flap = true; else if (k === "dive") T.dive = true; else if (k === "talons") { T.talons = true; this.actions.add("strike"); }
+        if (k === "flap") { T.flap = true; T.flapT = performance.now(); } else if (k === "dive") T.dive = true; else if (k === "talons") { T.talons = true; this.actions.add("strike"); }
         else if (k === "land") this.actions.add("land"); else if (k === "cam") this.actions.add("camera");
       });
-      const up = () => { b.classList.remove("on"); if (k === "flap") T.flap = false; if (k === "dive") T.dive = false; if (k === "talons") T.talons = false; };
+      const up = () => { b.classList.remove("on"); if (k === "flap" && T.flap && !FUN_OLD && performance.now() - (T.flapT || 0) < 220) this.actions.add("sprint"); if (k === "flap") T.flap = false; if (k === "dive") T.dive = false; if (k === "talons") T.talons = false; };
       b.addEventListener("pointerup", up); b.addEventListener("pointercancel", up); b.addEventListener("pointerleave", up);
     }
     this.mouseAim = false;

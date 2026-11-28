@@ -17,6 +17,7 @@
 // What is dropped is decided by the CALLERS (main.js tiles, the far tiles; this file's texture hook for KTX2), after
 // listing every reader of that data (docs/HEAP.md "readers"); only geometries a caller registers are ever touched.
 import * as THREE from "three/webgpu";
+import { computeBox, computeSphere, fastBox, fastSphere } from "./fastBounds.js";
 
 const qs = new URLSearchParams(typeof location === "undefined" ? "" : location.search);
 /** one switch: ?heapdrop=old = every drop off; ?<key>=old = that one off */
@@ -72,6 +73,9 @@ export function installHeapDrop(renderer, { log = null, ktx = heapOn("ktxdrop") 
     const f = THREE.BufferGeometry.prototype[k];
     THREE.BufferGeometry.prototype[k] = function () {
       if (droppedGeo.has(this) && (k === "computeBoundingBox" ? this.boundingBox : this.boundingSphere)) { trip(`${k} on a dropped geometry: the bounds from before the drop kept`, this.name); return; }
+      // (claude/allocrate2, ?fastbounds=old: three's own walk) the same numbers by an index loop (fastBounds.js): three
+      // and our code call these for every new geometry (frustum culling, LOD distances), ~16 KB a frame flying
+      if (k === "computeBoundingBox" ? fastBox(this) : fastSphere(this)) return;
       return f.apply(this, arguments);
     };
   }
@@ -156,8 +160,9 @@ function tick(full = false) {
       if (!uploaded(a)) { left++; continue; }
       if (!droppedGeo.has(g)) {
         // the bounds from the full arrays first (frustum culling, LOD distances, contact checks read them later)
-        if (!g.boundingBox) g.computeBoundingBox();
-        if (!g.boundingSphere) g.computeBoundingSphere();
+        // (claude/allocrate2: by index over the typed array, fastBounds.js, the same numbers; ?fastbounds=old = three's)
+        if (!g.boundingBox) computeBox(g);
+        if (!g.boundingSphere) computeSphere(g);
         droppedGeo.add(g); stats.geometries++;
         g.userData.heapDropped = e.tag;
       }

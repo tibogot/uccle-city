@@ -15,34 +15,15 @@
 // No imports: plain module worker.
 const near = (x, z, P, R) => Math.hypot(x - P.x, z - P.z) < R;
 
-async function ridges({ tiles, place, R }) {
+import { ridgePoints } from "./ridgeScan.js";
+
+async function ridges({ tiles, place, R, lift = 0.02 }) {
   const out = [];
   for (const t of tiles) {
     const [doc, buf] = await Promise.all([fetch(t.json).then((r) => r.json()), fetch(t.bin).then((r) => r.arrayBuffer())]);
     const dv = new DataView(buf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
     const P = new Float32Array(buf, 8, V * 3), I = new Uint32Array(buf, 8 + V * 12, T * 3);
-    const hide = new Set(t.hide || []);
-    for (const bd of doc.buildings) {
-      if (hide.has(bd.attrs?.BU_ID) || hide.has(bd.id)) continue;     // a hero model's solid: its own roosts / perches
-      const f = bd.footprint?.[0]?.[0]; if (!f || !near(f[0], f[1], place, R + 40)) continue;
-      const top = +bd.top, seen = new Set();
-      for (let tri = bd.roof.first; tri < bd.roof.first + bd.roof.count; tri++) for (let e = 0; e < 3; e++) {
-        const a = I[tri * 3 + e], c = I[tri * 3 + (e + 1) % 3];
-        const ya = P[a * 3 + 1], yc = P[c * 3 + 1];
-        if (ya < top - 0.35 || yc < top - 0.35) continue;
-        const key = a < c ? a * 4294967296 + c : c * 4294967296 + a; if (seen.has(key)) continue; seen.add(key);
-        const ax = P[a * 3], az = P[a * 3 + 2], cx = P[c * 3], cz = P[c * 3 + 2], L = Math.hypot(cx - ax, cz - az);
-        if (L < 3.2) continue;
-        const yaw = Math.atan2(-(cz - az), (cx - ax));                 // facing across the ridge
-        // 1.5 m off the ridge's ends: the façade kit's chimney stacks stand there (viewer/facadeGeom.js: on the party
-        // walls, at the gable's highest point, 0.9 m wide), so no roost / perch faces into one
-        for (let s = 1.5; s < L - 1.5; s += 1.1) {
-          const k = s / L, x = ax + (cx - ax) * k, z = az + (cz - az) * k;
-          if (!near(x, z, place, R)) continue;
-          out.push(x, ya + (yc - ya) * k + 0.02, z, yaw + ((out.length / 4) % 2 ? Math.PI : 0));
-        }
-      }
-    }
+    ridgePoints(doc, P, I, place, R, new Set(t.hide || []), lift, out);     // (ridgeScan.js: shared with the node checks)
   }
   return new Float32Array(out);
 }
@@ -137,3 +118,6 @@ self.onmessage = async (e) => {
     else throw new Error(`unknown job ${kind}`);
   } catch (err) { self.postMessage({ id, error: err.message }); }
 };
+
+// (the node checks use the same jobs: tools/falconRingsTest.mjs)
+export { trees, raster };

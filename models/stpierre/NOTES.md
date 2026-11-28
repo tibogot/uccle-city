@@ -7,7 +7,7 @@ credits / licences: `data/raw/refs/saint-pierre/SOURCES.md` (git-ignored, with t
 ```
 python tools/stpierre_measure.py [--dump]          # UrbIS solid + DSM/DTM (two sheets mosaicked) -> site.json, site_dtm.*
 "C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/stpierre.py -- models/stpierre [--no-bake] [--previews]
-node tools/hero_pack.mjs models/stpierre/stpierre.raw.glb models/stpierre/stpierre.glb 12000 1500 --name StPierre   # LODs + meshopt (tools/worker: npm ci)
+node tools/hero_pack.mjs models/stpierre/stpierre.raw.glb models/stpierre/stpierre.glb 12000 3000 --name StPierre   # LODs + meshopt (tools/worker: npm ci)
 python tools/stpierre_photopose.py                 # the photos' camera poses -> photo_views.json (lab overlays)
 python tools/stpierre_sidebyside.py <photo> <lab screenshot> docs/saint-pierre/side_<name>.jpg "<title>" --crop x,y,w,h [--blend]
 ```

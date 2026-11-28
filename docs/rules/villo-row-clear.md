@@ -1,0 +1,8 @@
+---
+status: provisional
+added: 2026-11-27
+check: `villorows` (tools/streetkit/villoCheck.mjs --all)
+---
+**Rule.** A Villo station's whole footprint (every dock's base, the bike in it out to its rear tyre 1.9 m toward the road, the terminal: viewer/streetkit/villoFootprint.js, the ONE shape the builder, the lamp keep-out and the check share) stands on its paving (a sidewalk row on measured sidewalk / square, a lane row in the parking lane or a parking bay) and holds nothing else the city draws: no lamp, sign / plate / stop / tram pole, tree trunk, bollard, bench, bin, bike hoop or shelter. The rows are laid out clear at build time (tools/streetkit/snapProps.mjs; a row may sit 2.4 / 2.8 m back from the kerb behind a bollard line, shorten from the ends, or move up to 18 m from its WFS point); the lamps, placed at load, keep out of the rows themselves (slid along the kerb up to 12 m, else dropped: the lamp light pool is fixed, its size never changes).
+
+**Why.** The rows were tested at three points on each dock's centre line against the ground class only, and the lamps kept 1.2 m from each dock's point: lamps 0.5 m behind the kerb stood among the bikes (Saint-Job, Stalle, Maison Communale, Domaine, Rittweger), rows were laid across UrbIS bollard lines (Parc Duden 12, Saint-Job 9), trees, sign and stop poles (Vanderkindere, Floreal, Domaine, Altitude Cent, Sainte-Elisabeth), and an end dock's base / bike hung over the kerb where it bends away (Rond-Point Churchill: 6 points on the roadway) or over a tree pit and the bus road (Gare de Calevoet); the gate saw none of it (claude/fixes4, 2026-11-27: 157 findings in 27 stations -> 0).

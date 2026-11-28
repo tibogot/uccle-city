@@ -1,5 +1,139 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
+## SEASON CHECK BY DATE (claude/xmascheck, 2026-11-27, four days before 1 December)
+
+`?quick=1&day=335|350|362`, day (`time=midday`) and `time=night`, `&with=weather,traffic`: Place Saint-Job (fir, market,
+garlands, the Chaussee with traffic), the Parvis Saint-Pierre, Rue Xavier De Bue (garlands, swags, December windows), Rue
+du Ham, the police yard (the police game's start). Shots: `C:/Users/tibog/Downloads/uccle-xmas/check1127/`.
+- **Fixed: snow wedges in the middle of the road on the snow days** (rule wx-road-edge, row `wxroadedge`): the asphalt's
+  weather edge read each lane's aLateral, so every mid-road lane line kept a snow band that stopped dead at the junction
+  pads and fanned into wedges where the lanes diverge. Now the carriageway's drain (aPiece.y): slush at the kerbs only.
+- Fine: 1 Dec dry, bare trees, December sun; the fir (both squares) day and night, its foot on the paving; the LEDs, star,
+  pole and wall garlands, De Bue swags and stars, the December window strands; 15 Dec cover by day (roofs, the fir, the
+  chalets, parked cars) and the night's snowfall; 28 Dec dry; 0 console errors of ours (one 404: the favicon).
+- Open, NOT Christmas code (the weather system; the same with `?xmas=0&wx=snow_cover`): on Place Saint-Job's paving a
+  polygonal patch with only a thin material cover (cobbles showing) at 15 cm depth, and the snow layer's edge round it in
+  ~25 cm saw-teeth (the coarse outer chunks of snowLayer.js); dark rings round the police yard's tree pits; white domes
+  on young trees (garden caps); thin white zigzags on wall copings. Worth a snow job before 15 Dec.
+- Seen, kept: under the night snowfall the fir reads as a flocked white tree; its LEDs are clear within ~15 m and fainter
+  from the square's edge (the snow is lit by the city, the glow uses the needles' own albedo).
+- GPU (RED preflight: two other agents' jobs, GPU 58 % busy at rest, power cap; read as noise): whole frame p50 at the
+  stjob-street spot, native scale: 1 Dec night 12.8-15.3 ms vs `?xmas=0` night 13.0-14.9 (no difference visible in the
+  noise); 15 Dec night (cover + snowfall) 16.8-17.0. debug/xmasPerf.js run(): layer-street 0.67 +- 0.19, fir-8m 0.48 +-
+  0.12 (over budget, as the first hot-machine numbers of 7.2; re-measure on GREEN), extras within 0.05.
+
+## THE SNOW (claude/snowseason, owner 2026-11-27: chose snow, "why no snow")
+
+The season snows in its second half (rule snow-schedule, gate row `snowsched`, tools/audit/snowScheduleCheck.mjs):
+viewer/seasons/snowSchedule.js (three-free, read once at boot by cityWeather.js) picks the START weather.
+Quick mode (`?quick=1`, every tour view) keeps the weather off unless asked (`&with=weather`, `?wx=`): no tour
+baseline flips on 15 December. (quick.js imports nothing but the places table: an early version imported the
+schedule there and the merge was blocked, see the rule.)
+- 1-14 Dec: dry (the winter look only). 15-26 Dec: the existing **snow cover** (roofs, cars, ground, the chalets: the
+  layer, caps, tracks) by day; **cover + light snowfall** (0.4-0.9 cm/h, the existing snowfall path, snow2) from 18:00
+  to 08:00 Brussels clock. 27 Dec - 6 Jan: dry.
+- Seeded by the day of the year: cover depth 10-17 cm, the night's snowfall, wind, cloud; the same date = the same
+  weather. Real date: the Brussels date + clock hour (a 02:00 visit on 15 Dec snows: the first snow night). A pinned
+  `?day=` uses the scene's hour (`?time=night` = night, golden by default = day, `?hour=` solar), never the wall clock.
+- Overrides: any `?wx=` (incl. clear, live) wins; `?season=summer`, `?xmas=0`, `?weather=old`: no snow; `?xmas=1` /
+  `?season=winter` outside the real season (the forced 21 Dec look, the Christmas tour) stay dry: use `?day=350`;
+  `?snowsched=old` = no automatic snow (as before). The dev panel's weather menu still changes it live.
+- Cost: nothing new per frame (the schedule only chooses the preset at boot); outside the snow days the start is clear,
+  exactly as before (no bake shown, nothing drawn). Shots: C:\Users\tibog\Downloads\uccle-xmas\snow\ (outside git).
+
+## THE WINTER LOOK (claude/xmasreview, owner 2026-11-26: "yes do the winter look for christmas")
+
+While the Christmas season is on, the city is in December (rules season-from-date, bare-winter-trees, walker-statics;
+gate row `winter`, tools/audit/winterCheck.mjs). `?season=summer` = the city as before (the A/B), `?season=winter`
+forces it, `?baretrees=0` keeps the leaves.
+- **One season resolver**, viewer/seasons/seasonMode.js (`SEASON`, three-free): winter in the season by the Brussels date
+  (xmasDate.js) or `?xmas=1` (then 21 Dec), summer = day 200 as before. lighting.js takes its day; the time presets are
+  times of DAY on it (golden 1.3 h before sunset, twilight 0.45 h after, misty 0.8 h after sunrise, midday 12:30 solar,
+  night unchanged): 15 Dec sunrise 8:40, sunset 16:38 Brussels clock, "golden" at ~15:22 with the sun 7.6 deg up.
+  `?day=` / `?hour=` / `?time=` / the sky panel still pin. main.js sets the season's uniforms (viewer/seasons/season.js:
+  lawns, shrubs, hedges, ivy, the weather's crown shelter) on that day at boot (before: only when the weather ran).
+- **Bare trees** (viewer/treesStylized.js `BARE`): the city's trees are one broadleaf form (UrbIS CHM: no species), so
+  all are treated as deciduous. The same leaf cards draw a fine TWIG spray (branching, buds) in grey-brown (the colours
+  x `WINTER_F`): the crown keeps its silhouette as a twig haze over the bark mesh's limbs. The mask is RG (.r leaves +
+  twigs, .g twigs): the pool's depth pass and the sun's shadow keep .g for the trees and the deciduous shrubs (hydrangea,
+  rose); the evergreen shrubs (box, laurel, rhododendron, lavender) keep their leaves and green (their tint / WINTER_F).
+  The far impostors (the kit, the old bake) are baked from the twig mask. No new view, mesh or pass: the same draws and
+  triangles as summer, fewer fragments (the twigs cover less than the leaves).
+- **Winter ground**: the textured ground's lawns duller and olive (per-cover tone x TONE_WINTER), more dull patches.
+  The garden plants / hedges follow the season's day (deciduous leaves shrink, beech hedges keep brown leaves).
+- **The walker and the fir**: the planter (octagon, body + camera) and the crown (body only, 2.4 m, to 3 m up) and the
+  chalets join the walker's collision world (`window.__walkerStatics`, cityHook.js takeExtras).
+- **Browser look** (2026-11-26, `?quick=1&xmas=1` vs `&season=summer`, golden + twilight presets; shots and the compare
+  sheet `C:/Users/tibog/Downloads/uccle-xmas/winter/winter_sheet.png`): Place Saint-Job from 20 m and from 60 m (the fir
+  now stands out of the bare plane trees), Avenue De Fre, Parc de Wolvendael from 70 m; the low December sun at 15:22
+  (golden) and its long thin twig shadows on the lawns; 0 console errors of ours. Structure, the same view and page
+  kind (renderer.info): Avenue De Fre 103 draws / 814,617 triangles winter = summer exactly; Wolvendael 142 / 1,315,028
+  winter vs 190 / 1,315,538 summer (the draw count moves with the sun cache's redraws). GPU timing: later, on a quiet
+  machine. The walker: the fir's planter + crown and the 6 chalets reach the collision world (`__walkerStaticsIn`).
+- Not done (optional in the brief): fallen-leaf decals, morning frost on lawns / roofs / cars. The far tiles' orthophoto
+  (past 250-550 m) is a leaf-on summer photo: from high up the far ground keeps green crowns.
+
+## ART-DIRECTOR REVIEW IN GAME (claude/xmasreview, 2026-11-26, five days before 1 December)
+
+Looked at with `?quick=1&xmas=1` day and `&time=night`: Place Saint-Job (the fir at 8 / 20 / 46 m, the 45 m switch
+zoomed, from 60 m above, walking the market, car height on the Chaussée de Saint-Job), the Parvis Saint-Pierre (fir,
+planter) and Rue Xavier De Bue (garlands, car height). Shots and the owner's sheet: `C:/Users/tibog/Downloads/uccle-xmas/`
+(`review_sheet.png`).
+
+**Defects found and fixed** (each: why, rule, check):
+1. **A chalet's roof pierced by a street-name post** (Place de Saint-Job plate post 1117.7, 538.3, inside the west
+   chalet's footprint). Why: build_site.py placed the market clear of trees, walls, shops and the fir, never of the
+   street furniture. Fix: `street_furniture` in the build (plate posts, sign poles, postboxes, stops, Villo, bins, hoops,
+   benches, bike parkings) 0.5 m clear of each footprint; site.json rebuilt (only `chalets` changed). Rule
+   xmas-fit-current-city (extended); check: gate row `xmas` "street furniture" (siteFit.mjs; the old site.json fails).
+2. **Two serving hatches 1.3 m from the fir's lowest branches** (the north row opened into the crown: no room for a
+   customer). Why: the clearance was measured to the planter (1.4 m), not to the crown (2.95 m). Fix: the customers'
+   strip (1.5 m in front of each hatch) clear of the crown + 0.3 m; the market now has the fir standing in the south row
+   with the aisle free. Same rule / row.
+3. **The Saint-Job planter floated 1.7 cm on its downhill side** (centre 70.483, rim min 70.446, foot 70.463). Why: the
+   fir was set on the ground at its centre only (the chalets already used their lowest corner). Fix: xmasCity.js
+   `treeFootY` (lowest of the rim and centre). Rule xmas-fit-current-city (joins); check `xmastest` "fir foot".
+4. **At night each fir read as LED dots floating in a black void** (crown, baubles, planter invisible). Why: the 654 LEDs
+   are emissive only (fixed light count) and lit nothing. Fix (`?firglow=0` = before): the foliage of every level, the
+   baubles and the garlands' greenery take albedo x LED warm x `xmas.look.glow` (0.8) / `.glint` (0.08) x env.uNight
+   (tuned in the page: 0.35 / 0.6 left the tree dark and turned the baubles into coloured bulbs; 1.2 read lime at 8 m).
+   The 43 / 48 m switch at night keeps its brightness (crop mean 39.0 / 41.1 of 255). Rule xmas-night-glow; check
+   `xmastest` "LED glow".
+4b. **The market was a block of black huts at night** (same cause: its 16 eave LEDs per chalet lit nothing). Fix: the
+   chalets' FRONT faces (boards, trim, sign; chosen by the normal, glTF +Z) take the same glow (`xmas.look.stall` 0.5).
+   Same switch, rule and row.
+2b. **The first furniture fix put a chalet between the square's main approach and the fir** (places `stjob-street`, the
+   default boot and tour spot: the fir's lower half hidden). Fix: no chalet within 0.5 m of the sightline from there to
+   the fir (build_site.py `FIR_VIEWS`, siteFit.mjs `FIR_VIEWS`); same row.
+5. **The season followed the visitor's clock** (Montreal 6 h late, Tokyo a day early). Fix: xmasDate.js `brusselsDate`
+   (Intl, Europe/Brussels). Rule xmas-season-date; check `xmastest` (UTC instants round the Brussels midnights).
+6. **The layer's code was fetched on every boot all year** (main.js imported xmasCity.js statically: the kit, the
+   GLTF / meshopt loaders before the cover). Fix: a dynamic import after `whenXmasNeeded()`, only when the layer is on.
+   Rule xmas-low-priority (extended); check `xmas` "boot: no static import ...".
+
+**Date logic checked:** on from 1 December 00:00 to 6 January 23:59 Brussels time; `?xmas=1` / `?xmas=0` force it;
+`?day=` (day of the year: 335-365 or 1-6) decides when given (note: the dev panel's "day of year" slider writes `?day=`,
+so a December visitor who moved it to summer gets no Christmas: intended, it is a simulation). Outside the season the boot
+loads xmasDate.js + xmasWindows.js only (~3 KB, the date switch and the windows' uniform), no Christmas data.
+
+**For the owner to decide (not changed):**
+- **The city is in July when the layer is on.** lighting.js defaults to day 200 (mid-July sun) and the street plane trees
+  are in full leaf: on 1 December the firs and the market stand under green summer crowns in a golden July light. The
+  biggest "reads fake" of the review (`day_stjob_fir_20m.png`, `day_stjob_above60m.png`: from 60 m the fir disappears
+  under the plane trees). Options: with the layer on by date, default `?day=` to the real day (December sun) and bare
+  plane trees (a winter foliage state the stylized trees do not have yet); or leave it.
+- **The chalets' goods are coloured boxes and their eave garland a smooth ribbed tube** up close (`day_chalet_close.png`):
+  a Blender change of `build_chalet` (jars, mugs, bottles, ornaments on the shelves; a needle garland like the swags).
+  Not done here: no Blender while the owner works.
+- **The walker can walk into the fir** (the planter collides for the car only): inside, the 4 cm LED beads read as big
+  flat glowing hexagons. A walker collider on the planter (and ideally the crown at 1.5 m) would keep the camera out.
+- **The middle level (45-150 m) of the fir shows flat frond pads** when zoomed (12 deg FOV at 47 m:
+  `day_fir_43m_zoom.png` vs `day_fir_47m_zoom.png`); at the game's 55 deg it is ~5 px per pad and not seen.
+
+**Seen and fine:** the fir from 20 m day and night (needles, baubles, star), Saint-Pierre's fir at night, the pole
+garlands on the Saint-Job lamps (5.5 m, well over a car), the De Bue garlands with their stars, the December windows,
+the 43 -> 47 m switch at street FOV (no pop), no z-fight specks in the cards, 0 console errors of ours.
+
 ## FIR ROUND 3: the cards' cost and the middle level (claude/xmasfir3, 2026-11-18 offline, browser turn 2026-11-20)
 
 - **Browser turn (2026-11-20, fast lane, preflight RED: Chrome 6.2 GB, GPU 52 % busy before start, power cap):**
@@ -369,6 +503,34 @@ From the city's own data only:
 - **Lamp snowflakes:** decided in the city from the loaded tiles' own lamp sites (viewer/lamps.js now exports
   `lampSiteSets` / `lampSitesVersion`): lamps within 9 m of a decorated street line, two in three (hash).
 
+### 4.1 Rebuild after the data restore (claude/xmas1, 2026-11-23, plan jobs 0-1)
+
+`python tools/christmas/build_site.py` on the current foundation (OSM 2026-11-23 snapshot in data/raw; the committed tiles
+and street life read by the build are unchanged by the restore). site.json is NOT byte-identical; every difference is
+explained, none comes from the restore itself:
+- **Fronts 107 -> 109:** + Agam nightshop (Ch. de Saint-Job 701) and + Brico (Ch. de Saint-Job 594), street-life extras
+  added by claude/places1 after site.json was baked (stale, never rebuilt).
+- **Wreaths 120 -> 119:** - Ch. de Saint-Job 701: its address point is now the night shop's front (0 m; the 3 m shop rule).
+- **Spans 56 -> 52 (Saint-Pierre 43 -> 39):** - 4 garlands across the Parvis Saint-Pierre whose east end hooked on the
+  UrbIS church solid 1594643, which models/stpierre hides (the generator never read the hide lists). The generator now
+  drops hidden solids (and keeps wreaths off retail boxes, `shed: true`).
+- Trees, chalets, street lines, config: identical.
+- site.json now carries `select` (areas, shop kinds, tree radius) so the gate re-derives the fronts from the current street
+  life.
+
+**Swag width (job 1):** xmasCity.js sized each swag from site.json's slot width (<= 6.5 m) and never read the curated
+front.w / front.du. Now viewer/christmas/xmasSwag.js `swagRun` takes width and centre from viewer/shops/shopLayout.js
+`frontFace` / `frontWidth`, the helper streetlife/layout.js and `layoutShop` use too. A front under a curated canopy (the
+Carrefour, a `shed: true` box) gets its swag along the canopy's band over the glazed run (18 m, 11 modules); it is not on a
+decorated street today, so nothing changes in the city until the decorated area reaches it. Unchanged fronts give the
+same modules as before (`?xmas=1` / `?xmas=0` unchanged).
+
+**Checks:** gate row `xmas`, "site fit" rows (tools/christmas/siteFit.mjs, rule xmas-fit-current-city): fronts complete +
+unmoved + on drawn walls, every swag inside the front the shop kit draws (+ the Carrefour + a synthetic 18 m front),
+wreaths, spans on drawn walls at their height (not hidden, not across a park fence), firs and chalets >= 1 m from street
+lamps and park fences. `node --import ./tools/christmas/hook.mjs tools/christmas/siteFit.mjs [old site.json]` prints the
+audit (the pre-rebuild file: 2 fronts missing, 1 wreath on a shop, 4 spans on a hidden solid).
+
 ## 5. The city code
 
 `viewer/christmas/xmasCity.js` (`addChristmas`, `xmasActive`), `viewer/christmas/xmasKit.js` (loader + materials),
@@ -410,6 +572,226 @@ slot material variants build (TSL graphs), the lights are emissive only, the sit
 the lowest point of a span 4.68 m over the street, unit normals, swag scales), the span geometry (2,282 LEDs), the field's
 level buckets match the bands, empty meshes hidden.
 
+## 7.1 The Christmas tour views (claude/xmas2, 2026-11-24, plan job 2)
+
+`tools/tour/views_xmas.json` showed the layer in 3 views only, all at golden hour (stjob-shops, stjob-60m,
+stpierre-parvis). Five views are added, each for one thing a later change can break. Every camera was checked with
+`debug/quick.js` `view()`: none stands inside a building (the first Saint-Pierre spot, -745, -482, was inside the corner
+building, roof 65.9 m: moved to -740, -486). Each view costs ~35 s of tour time, so there are no more than these:
+
+| view | time | what it guards |
+|---|---|---|
+| `xmas-stjob-night` | night | Place Saint-Job from the east, 24 m from the fir: the fir's LEDs (bloom), the 6 chalets' lit counters and roofs, the snowflakes on the lamps, the swags on the shopfronts behind. Breaks when: the market (`config.chalets`), the night emission (`xmasLook.night`), the fir's level switch |
+| `xmas-stjob-dusk` | twilight | the same square from the west (the stjob-street spot): the fir with its star against the sky, a chalet, a lamp snowflake. The LEDs at the dusk level of `env.uNight` |
+| `xmas-stpierre-night` | night | the Parvis Saint-Pierre: the 9 m fir in front of the church. The parvis lost 4 garlands to the hidden-church fix (claude/xmas1): none may come back hooked on the church |
+| `xmas-debue-garlands-dusk` | twilight | Rue Xavier De Bue looking east: garlands across the street with their star motifs, the tram span at x -898 without one, the swags, the pharmacy cross |
+| `xmas-debue-swag-night` | night | a shopfront swag and a door wreath up close (Maroquinerie Karwan + the wreath of no. 36A, Les Petits Riens next door): the swag along the drawn front (the shared `frontFace` / `frontWidth`), the wreath on the door |
+
+Shots of the first branch run (no baseline yet): `C:/Users/tibog/Downloads/uccle-xmas2-ab/tour/xmas2-new/` (5 views) and
+`.../xmas2-new2/` (the two moved cameras). 7/7 ready, 0 console errors. The Christmas tour baseline ("xmas2026") is
+recorded on the foundation after the merge. The plan also lists an Alsemberg tram-span view, an eye-height lamp snowflake
+and a 45 m fir switch. They are left out to keep the tour short: the tram span is in `xmas-debue-garlands-dusk`, the
+snowflakes are in both Saint-Job views, and the 45 m switch has its own browser row (`xmasfir3`).
+
+## 7.2 Boot with the layer on (claude/xmas2, 2026-11-24, plan job 3)
+
+**What was wrong.** The layer was queued with the landmarks in `viewer/main.js` and started its downloads at once,
+whatever the spawn, at the default High fetch priority: site.json, christmas.json, christmas.glb (5.71 MB), the needle
+atlas (0.73 MB) and data/shops/terraces.json. On a G9 spawn (Rue Engeland, 1.5 km from any decoration) all of it came in
+before the cover. On the default boot (I6, Saint-Job) site.json was requested before the start tile's first file. From
+1 December every cold visit on the live site would have shared its bandwidth between the start tile and decorations
+it may not see.
+
+**Fix (rule `xmas-low-priority`, docs/rules/xmas-low-priority.md):**
+- Every Christmas fetch carries `XMAS_FETCH = { priority: "low" }` (viewer/christmas/xmasKit.js). The GLTFLoader gets
+  `setPriority("low")` (r187 Loader). The needle atlas is fetched at low priority and handed to the shared KTX2 loader's
+  `parse`, which keeps its own priority for the ground's textures.
+- The layer starts through `viewer/bootGate.js` `whenXmasNeeded()`. It starts at once when a decorated area (site.json
+  `select.areas`: centre + radius, mirrored in `XMAS_AREAS`) reaches into the boot's ring, because the layer can then be
+  in the first view. Otherwise it starts after the cover, staggered like the far landmarks.
+- Under `?quick=1` it starts at once and `quickReady` waits for it (`window.__xmasPending`), so a tour shot never
+  misses it. This guards against flaky tour shots now that the layer's downloads are low priority.
+- Check: gate row `xmas` "boot:" rows. XMAS_FETCH is low. Every fetch / loader under viewer/christmas/ uses it. No
+  shared-KTX2 `load()`. addChristmas is started only after `whenXmasNeeded()`. `XMAS_AREAS` = site.json
+  `select.areas`. A mutation test (the site.json fetch without XMAS_FETCH) fails the row.
+
+**Request lists** (local tour server, `?gamemenu=0`, resource timing, decoded body sizes; no timing claims: the laptop
+was busy with another agent's gate, so the absolute times differ between runs):
+
+| boot | Christmas files | before the cover: requests / MB |
+|---|---|---|
+| foundation, default (I6), xmas=0 | none | 638 / 139.27 |
+| foundation, default (I6), xmas=1 | 4 + terraces.json, all before the cover; site.json at 3412 ms, before the start tile's first file (I6 ortho at 3455 ms) | 645 / 144.09 |
+| xmas2, default (I6), xmas=1 | the same 4 + terraces.json, before the cover (Saint-Job is in the ring: the fir is in the first view), at low priority | 641 / 144.72 |
+| foundation, G9 (far south), xmas=1 | all before the cover (site.json 6.3 s, glb 6.4-8.2 s, atlas 12.4 s; cover 29.3 s) | 644 / 138.32 |
+| xmas2, G9, xmas=1 | **all after the cover** (cover 25.3 s; site.json 25.9 s, glb 26.1 s, atlas 27.1 s) | 634 / 130.48 |
+
+Resource timing and the DevTools request headers do not show the fetch priority, so the offline row above is what
+guards it. On the local HTTP/1.1 server the priority changes nothing measurable. It matters on the live site's HTTP/2,
+where requests share bandwidth by priority (PERF_RESEARCH idea 8).
+
+**Perf probe (timing):** `debug/xmasPerf.js` `run()` on `?quick=1&place=stjob-street&xmas=1&time=night`. It runs a GPU
+A/B with `gpuAB.alternate`, switching the layer's meshes off and on through their camera layers (mask 0, so neither the
+colour pass nor the shadow pass draws them). Budgets (plan section 3):
+- the whole layer at street level < 0.30 ms;
+- the fir alone at 8 m < 0.10 ms;
+- each extra registered in `window.xmas.extras` (poles, window lights: none yet) < 0.05 ms.
+
+**First numbers (2026-11-24, preflight GREEN before, YELLOW after (CPU 11 %), page check YELLOW: no baseline recorded; one
+tab, no other gate or Blender running).** `?quick=1&place=stjob-street&xmas=1&time=night`, two runs of `run()` in one page,
+GPU p50, mean of 6 alternated rounds (the min / max of the per-round differences in brackets):
+- the whole layer at street level: 0.53 ms [0.32, 0.79] and 0.60 ms [0.07, 1.31]. **Over the 0.30 ms budget.**
+- the fir alone at 8 m: 0.90 ms [0.78, 1.04] and 0.98 ms [0.66, 1.58]. **Far over the 0.10 ms budget.** The 0.084 ms of the
+  cost model (tools/christmas/firCost.mjs) is the needle cards' share only.
+- At 8 m, the fir split up (5 rounds each, noisy): the needle cards (lit + depth pre-pass) ~0.21 ms; the shadow-only
+  casters (far fronds, layer 25) ~0.20 ms at night; the rest of LOD0 (solid needles, bark, baubles, LEDs, star, planter)
+  ~0.25 ms. The three parts add up to ~0.66 ms, against 0.9-1.0 ms for the whole fir: the noise is about +-0.3 ms.
+- No extras are registered yet.
+- **Verdict: FAIL on both budgets** (superseded by 7.3: PASS, the first numbers were mostly the automatic render scale and noise). Next (plan section 6, in this order): the shadow casters at night (the moon's map;
+  are they needed at all?), LOD0's solid needles and bark under the cards, the cards' pre-pass. Re-measure on a GREEN page
+  check with a recorded baseline before acting on any of these.
+
+Browser row `xmasperf` (tools/audit/gate.d/browser/xmasperf.mjs) runs the probe plus the request lists above
+(`debug/xmasBoot.js` after `debug/bootTimeline.js`).
+
+## 7.3 The layer's GPU cost (claude/xmas3, 2026-11-24): both budgets met
+
+**Result** (`debug/xmasPerf.js run()`, `?quick=1&place=stjob-street&xmas=1&time=night`, render scale pinned at 0.75,
+10 rounds, preflight YELLOW before and after: system CPU / GPU OK, the page check CPU +15 % / boot -12 %, GPU -1 %;
+browser.lock held, no gate or Blender running; one page, old and new swapped live in it):
+
+| row | budget | before (`?firlight=old`) | after (default) |
+|---|---|---|---|
+| layer-street (the whole layer, 31 m from the fir) | 0.30 ms | 0.140 +- 0.015 | **0.121 +- 0.014** |
+| fir-8m (the fir alone, filling the view) | 0.10 ms | 0.179 +- 0.022 | **0.086 +- 0.014** |
+| the cut alone, `lightAB()` (14 rounds, alternated) | | | 8 m **-0.084 +- 0.017**, street -0.012 +- 0.010 |
+
+**Why the first numbers (0.53 / 0.90 ms) were so high and so spread (+-0.3 ms).** (1) The render scale was AUTOMATIC
+(upscale.js dynres): it stepped between 0.6 and 0.85 during a run, and each step moves the whole frame by more than the
+budgets. (2) One p50 per 2.5 s round, 6 rounds, always off-then-on. (3) The machine heats up under a timed session: the
+same fir read 0.65 ms at 81 C with the power cap active, 0.32 ms later the same hour, 0.18 ms on a quiet machine (costs
+scale with the GPU clock: compare only inside one alternated run). The probe now pins the scale (0.75, dynres restored
+after), flips the order every round, takes the trimmed mean of the frames (viewer `gpuStats().tmean`, the 10-90 % band:
+the shadow-cache redraw frames drop out) and reports the standard error. Rule: a timing row pins the render scale.
+
+**Each cost, its cause, its cut:**
+- **The fir's shadow casters at night: not a cost.** They are static casters of the sun's cached map (`christmas` is
+  not a mover in lighting.js `MOVER_TOP`): drawn on the cache's redraws only (counted: 6 draws in 180 frames, the
+  30-frame refresh), and of the lamps' cached maps (layer 6, never the per-frame mover layer 11). Forcing a full sun-map
+  redraw EVERY frame, the copies cost 0.03 +- 0.06 ms per redraw: ~0.001 ms a frame. The "~0.20 ms" of the first split
+  was noise. **Kept by night**: the moon casts the city's shadows (intensity 1.2), and the lamp maps take the fir's
+  shadow too. No hand-over to build, no snapping. Node check (row `xmas`): "fir shadow at night: static casters".
+- **The needle cards' lighting: the cut.** The lit EQUAL pass runs once per visible card pixel, but at night with the
+  night's whole light set: the cluster loop over the pooled lamp lights + the two shadowed lamp spots (their shadow
+  maps). Measured by swapping the cards' material live: sun / moon + sky only -0.14 ms (a hot run), the cluster loop
+  alone or the spots alone ~-0.03 (only both gone frees the shader: a register / occupancy cliff), the night loop's
+  foliage path (`nightFoliage`) -0.03, per-vertex sun on top of sun + sky -0.01 (not taken). The lamps' light on the
+  crown is not seen: at 6 m, 8 m, 24 m at night and 8 m at dusk the frames match (mean brightness 12.48 / 12.45, 10.83 /
+  10.84, dusk 10.59 / 10.61 of 255; the remaining pixel differences are the LEDs' twinkle). **Cut (`?firlight=old` =
+  before, features row `firlight`):** the cards' lit materials take `foliageLights()` (foliage/vertexLight.js: the sun /
+  moon + the hemisphere, as the city's grass, plants and ivy); the moon's shadow, the canopy normals, the sky light, the
+  snow and the depth pre-pass are unchanged; by day the lamps are off: no change. Both levels' cards (near + middle shell:
+  one material) take it: no step at the 45 m switch. The 150 m switch is to the far fronds (all lights), whose lamp
+  light is as invisible at that range. Node checks: row `xmas` "fir light", `xmastest` "fir light".
+- **The rest of the near level.** In the same page: the twin (depth pre-pass) ~0 (the lit pass carries the cost);
+  bark, cone, bulbs: sun + sky only gains -0.004 +- 0.008 (not taken); baubles and gold caps with sun + sky only: -0.09 +-
+  0.07 but their lamp glints go (the small warm crescents on the baubles: a visible loss) - **not taken**, the
+  budget is met without it. Unlit, the ornaments' many small triangles cost 0.03 +- 0.03 (micro-triangles: not the
+  cost). The FLOOR: the whole fir unlit (MeshBasic, same geometry and passes) still costs 0.17 +- 0.03 ms in a hot run
+  (vs 0.32 lit): the pixels it takes from the sky go through the scene MRT, GTAO and SSR (sky pixels skip them). Any
+  opaque object filling that much of the view pays it; below ~half of the fir's cost at 8 m cannot come from shading.
+- **Triangle and draw budgets per level** (node, row `xmas`): 150,368 / 36,572 / 12,578 triangles (160 k / 45 k / 15 k),
+  9 / 9 / 5 draws (+ the cards' depth twin on the card levels, + 2 shadow-only copies in the sun's map).
+
+**Look:** `C:/Users/tibog/Downloads/uccle-xmas3-ab/` `fir8m_night_old_vs_new.jpg`, `stjob24m_night_old_vs_new.jpg`,
+`fir8m_dusk_old_vs_new.jpg` (left old, right new; the separate frames beside them).
+
+**To re-measure:** `const X = await import('/debug/xmasPerf.js'); await X.run()` (budgets) and `await X.lightAB()`
+(the cut, live); `run({ split: true })` splits the fir at 8 m into cards / shadow copies / the rest. The baseline of
+the page check was recorded by this branch (`docs/perf/preflight_baseline.json`, 1280 x 720, GREEN system preflight).
+
+## 7.4 Garlands on poles at Saint-Job (claude/xmas4, plan job 5, owner's choice 2026-11-23)
+
+**What was wrong.** Place de Saint-Job had 13 garlands across the street. build_site.py hangs a garland only between two
+facades at 6.8 m with the roof 0.8 m higher; the square's two-storey houses rarely reach that, and the square itself and
+its north edge (Avenue du Prince de Ligne) have no facade on one side. Brussels hangs such garlands from poles.
+
+**Added (rule xmas-pole-garlands, docs/rules/xmas-pole-garlands.md):**
+- `tools/christmas/xmasPoles.mjs` places them from the city's own data (the tile's road stage in node, tools/road_audit/tile.mjs),
+  writes `models/christmas/poles.json` (`--write`) and checks it (default; gate row `xmaspoles`). A station every 16 m along
+  the decorated Saint-Job lines (site.json streets) + the square's north edge, moved onto the middle of the DRAWN
+  carriageway (the OSM line of Avenue du Prince de Ligne runs on the square's paving edge), none within 11 m of a wall
+  garland. Each side: a drawn street lamp or tram pole within 4 m along the street (the same placedLampSites /
+  tramPoleSites the city uses), else a Christmas pole 0.55 (0.95) m behind the kerb, shifted up to 4 m along it, that
+  passes every placement rule (measured sidewalk; >= 0.45 m off the carriageway and its parking; >= 1.25 m from every
+  traffic lane / junction turn: the car's body, rule 27; >= 1.5 m from a zebra crossing, 1.6 m from a trunk, 1.0 m from a
+  wall, 2.2 m from a tram track, 1.2 m from a bollard or another pole; clear of the market and the fir).
+- Heights: lamp hook 5.5 m (on the shaft, 0.3 m under the 6.6 m Brussels lamp's lantern), tram pole 6.85 m (its 7 m top),
+  Christmas pole 6.6 m (5.5 m beside a lamp; 7.2 m over a tram). The street garlands' catenary and LEDs (buildSpans), sag
+  0.3 + 0.02 x width, less where the lowest LED would come under 4.8 m over the road / 6.4 m over a track; the hanging
+  star only where its foot clears 4.6 m (it hangs 1.32 m under the wire: not on the 5.5 m lamp garlands).
+- **13 pole garlands** (Saint-Job: 13 wall + 13 pole = 26), 7 with a star: hooks 5 lamps + 21 Christmas poles (no tram pole
+  stood at a station); widths 7.4-21.4 m, sags 0.45-0.73 m, the lowest LED 5.01 m over the road, 6.86 m over the tram.
+  Stations left out: a wall garland there 16, no pole spot (traffic lane / turn: the narrow north arm of the Chaussée,
+  junctions) 10, no kerb within 16 m 3, a pole garland there 3, a lamp over the tram 1, width 1, a bollard 1.
+- City (`viewer/christmas/xmasCity.js`): poles.json at low priority (XMAS_FETCH); a garland shows once BOTH hooks are
+  drawn: a Christmas pole on `world.walkY`, a lamp / tram pole only where the city draws it (lampSiteSets / the
+  "tram-poles" instances within 0.25 m; else dropped after ~10 s, logged: never a garland in the air). Three merged static
+  meshes (wires, LEDs, poles: `buildPoleGeometry`, slot `pole_steel` = the tram poles' steel), made with stand-in geometry
+  so they compile in the layer's warm-up, rebuilt when a set of garlands comes in; the stars join the street garlands'
+  instanced `spanmotif`. The Christmas poles are drive colliders (0.1 m octagons). No shadow (small pieces cast
+  nothing), no light, no DynamicDrawUsage. `?xmaspoles=0` / site.json `config.poles = false`: without.
+- Browser (2026-11-24, `?quick=1&place=stjob-street&xmas=1&time=night`): 13 / 13 shown, 0 dropped (the 5 lamp hooks are
+  drawn where the node data says), the foot on the drawn ground (footA = walkY exactly), 0 console errors of ours.
+
+## 7.5 December windows (claude/xmas4, plan job 7)
+
+- `viewer/christmas/xmasWindows.js` + `viewer/facades.js interiorRoom`: with the layer on, a warm LED strand (two shallow
+  swags of 11 beads, a slow twinkle) across the window head in 12 % of all rooms among the DARK ones (their faint warm
+  glow on the curtains: the extra warm windows at night) and in 38 % of the lit ones; far off the beads become a soft
+  warm line (no sparkle). The lit rooms and their colours are unchanged: viewer/nightLights/litHash.js is the shader's CPU
+  copy (the night's window light sources) and a strand is a decoration, not a room light.
+- Compiled into the facade shader only when the layer is on at boot (`xmasDate.js xmasActive`, the layer's own switch,
+  now three-free and re-exported by xmasCity.js; `?xmaswin=0`: never): outside the layer the shader is exactly the one of
+  before (an early return with the same expression), so the main tour (`xmas=0`) is unchanged; turning the layer on
+  never rebuilds a shader. Inside, `If(xmasWin > 0.5)`: the uniform is set when the layer starts; the probe flips it.
+- Shots (`C:/Users/tibog/Downloads/uccle-xmas4-ab/`): `windows_stjob_north_night_on.jpg` / `_off.jpg` (the same frame),
+  `windows_and_pole_close_night.jpg`, `poles_stjob_east_night.jpg`.
+
+## 7.6 The cost of the two extras
+
+`debug/xmasPerf.js run()` (render scale 0.75 pinned, 10 alternated rounds, trimmed means; `layer-street` now switches
+the layer's group AND the extras outside it: the windows' uniform), one page at a time, the page brought to front (rAF
+60.1 fps), browser.lock held, no Blender. System preflight YELLOW before (a second city server listening);
+**another agent's merge gate (gate.lock, carrefour2) started 6 minutes before the runs and ran through them**, and the
+page check after was RED on CPU (+60 %, boot +127 %) with the GPU within -6 %: the numbers below are YELLOW-to-RED, read
+them as an upper side; the alternation inside a page keeps the extras' differences fair.
+
+| page | layer-street (budget 0.30) | extra-poles (0.05) | extra-windows (0.05) |
+|---|---|---|---|
+| default, first load (machine hot) | 0.389 +- 0.011 | 0.028 +- 0.016 | 0.005 +- 0.007 |
+| the same page, extras off in it | 0.327 +- 0.004 | | |
+| `?xmaspoles=0&xmaswin=0` (the layer as xmas3) | 0.203 +- 0.029 | | |
+| default | 0.177 +- 0.026 | 0.004 +- 0.007 | -0.009 +- 0.014 |
+| `?xmaspoles=0&xmaswin=0` | 0.212 +- 0.024 | | |
+| default | 0.203 +- 0.017 | 0.009 +- 0.004 | -0.041 +- 0.126 |
+
+The extras: poles 0.004-0.028 ms, windows within noise (<= 0.005 ms): both under 0.05 ms. The whole layer with them:
+0.18-0.20 ms in the alternated default / without pages (without: 0.20-0.21), under 0.30; the first page's 0.39 / 0.33
+(the extras switched off in it) came from the machine's state, not from the extras.
+**Re-measured on GREEN** (after the other gate; system preflight GREEN, page check GREEN: CPU -0.8 %, GPU +4.4 %, boot
+-0.7 %; rAF 60.5 fps; after the runs the system check went RED on memory only: Chrome 7 GB, the page then closed):
+
+| page | layer-street (budget 0.30) | extra-poles (0.05) | extra-windows (0.05) |
+|---|---|---|---|
+| default | **0.192 +- 0.009** | **0.008 +- 0.004** | **0.001 +- 0.011** |
+| `?xmaspoles=0&xmaswin=0` | 0.338 +- 0.031 [0.20, 0.45] | | |
+| default | **0.131 +- 0.007** | **0.023 +- 0.016** | **-0.010 +- 0.005** |
+
+PASS: each extra < 0.05 ms, the whole layer with both 0.13-0.19 ms < 0.30. The whole-layer row moves by up to 0.2 ms
+between page LOADS of the same code (the xmas3 layer alone read 0.20-0.34 in this session, 0.121 on xmas3's day):
+compare rows only inside one page; the extras' own rows are the in-page A/B.
+
 ## 8. Browser turn checklist (server 8828, one tab)
 
 1. `?xmas=1&tile=I6&view=stjob&at=1115,533` day / `&time=night` / `&wx=snow_cover`; the same at Saint-Pierre
@@ -428,7 +810,6 @@ level buckets match the bands, empty meshes hidden.
 ## 9. Not done / later
 
 - No chalet (no December market documented). The square's real plane trees could carry light strings (not done).
-- Shop-window decorations inside the glass, lights in house windows: not done (the facade shaders' lit windows could
-  take a warm string pattern in December).
+- Shop-window decorations inside the glass, lights in house windows: December strands in the facade shader (7.5, claude/xmas4).
 - The planter collides for the car only (not the third-person walker yet).
-- Saint-Job's 13 spans: the two-storey houses rarely hold a span at 6.8 m; Brussels hangs them from poles too (not done).
+- Saint-Job's 13 spans: the two-storey houses rarely hold a span at 6.8 m: 13 garlands on poles added (7.4, claude/xmas4).

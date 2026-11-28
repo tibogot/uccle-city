@@ -203,7 +203,15 @@ async function buildCityCollision({ scene, world, log }) {
     built.set(t.name, { sets, tile: t });
     log(`third person: tile ${t.name} colliders: ${r.counts.tris} road + platform + shelter triangles, ${r.counts.buildings} footprints, ${r.counts.props} parked cars, ${r.counts.posts} posts; main thread ${mainMs.toFixed(1)} ms in slices of <= 4 ms, worker BVH ${r.ms.bvh} ms + prisms ${r.ms.prisms} ms`);
   }
+  // (claude/xmasreview, rule walker-statics) colliders of layers placed after the tiles (the Christmas firs' planter +
+  // crown, the market chalets): window.__walkerStatics = [{ polys, circles, tag, ray, id }], taken at once and on
+  // every sync (a layer may place them before or after the collision world exists)
+  const takeExtras = () => {
+    const q = window.__walkerStatics;
+    while (q?.length) { const e = q.shift(); const set = new PrismSet(e.polys ?? [], e.circles ?? []); set.tag = e.tag ?? 5; set.ray = !!e.ray; set.name = e.id; cw.add(set); (window.__walkerStaticsIn ??= []).push(e.id); }
+  };
   async function sync() {
+    takeExtras();
     for (const t of tiles) if (!built.has(t.name)) await buildTile(t);
     for (const [name, s] of built) if (s !== "pending" && !tiles.includes(s.tile)) { for (const x of s.sets) cw.remove(x); built.delete(name); }
   }

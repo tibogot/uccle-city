@@ -28,6 +28,20 @@ export async function addFlags({ scene, updaters, renderer, compiler, log, param
   log(`flags: ${r.flags.length} on the town hall balcony (${r.flags.map((f) => f.design).join(" / ")}), loops recorded in a worker, ready in ${r.ms} ms (?wind=m/s,deg)`);
 }
 
+/** A HERO MODEL'S POLES (rule docs/rules/flags-are-cloth.md): notes.flag_poles [{ name, design, base_city_xyz,
+ *  tip_city_xyz, hoist_m?, fly_m? }] (the model's notes json, written by its Blender script from the pole it modelled)
+ *  each fly a cloth flag; the model's own modelled flag (notes.rigid_flag_slots) is left out by its loader. Every site
+ *  lands in window.flagSites (debug / the gate's browser check). -> flyFlags' result, or null (no poles) */
+export async function flyHeroFlags({ site, notes, scene, updaters, renderer, compiler, params, log, shown, wall = null }) {
+  const poles = notes?.flag_poles ?? [];
+  if (!poles.length) return null;
+  const r = await flyFlags({ scene, updaters, renderer, compiler, params, wall, shown,
+    poles: poles.map((p) => ({ name: p.name, base: p.base_city_xyz, tip: p.tip_city_xyz, design: p.design ?? "belgium", width: p.fly_m ?? 1.5, height: p.hoist_m ?? 1.0 })) });
+  (window.flagSites ??= []).push({ site, poles: poles.length, flags: r.flags.length, designs: r.flags.map((f) => f.design), rigidSlots: notes.rigid_flag_slots ?? [], r });
+  log?.(`${site} flags: ${r.flags.map((f) => f.design).join(" / ")} (cloth, ${notes.rigid_flag_slots?.length ? `the model's still flags hidden: ${notes.rigid_flag_slots.join(", ")}` : "bare poles"}), ${r.ms} ms`);
+  return r;
+}
+
 /** flags on free poles or on a model's poles: poles [{ name, base [x, y, z], tip [x, y, z], design (flagDesigns.js key),
  *  width?, height? }], wall = the object the cloth must stay clear of (raycast; null: none), shown() = the owner is drawn.
  *  Baked loops (a worker) far, a live Verlet cloth within LIVE_RADIUS, hidden beyond HIDE_DIST. -> { flags, wind, setWind, simMs, ms } */

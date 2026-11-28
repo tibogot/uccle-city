@@ -23,7 +23,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { OfflineAudioContext, ClockAudioContext } from "./miniWebAudio.mjs";
-import { measure, bestOf } from "../gate/timing.mjs";
+import { measure, bestOf, timed, gateExit } from "../gate/timing.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const QUIET = process.argv.includes("--quiet"), WHY = process.argv.includes("--why");
@@ -184,7 +184,7 @@ function makeCity() {
     return { mean, p99: ms[Math.floor(ms.length * 0.99)], max: ms[ms.length - 1], wall, voices: cs.engine.stats.voices };
   }, "mean"));
   const best = MT.value, { mean, p99, max, wall } = best;
-  check("cost", mean < 0.1 * MT.k, `live frames (feeds + 10 Hz control + slices, ${best.voices} voices, best of 3 x 1200): ${f2(mean, 4)} ms per frame mean, p99 ${f2(p99)} ms, max ${f2(max)} ms (budget 0.1 ms mean, ${MT.note}; whole frame with the fake city ${f2(wall, 4)} ms)`);
+  check("cost", timed(mean < 0.1 * MT.k), `live frames (feeds + 10 Hz control + slices, ${best.voices} voices, best of 3 x 1200): ${f2(mean, 4)} ms per frame mean, p99 ${f2(p99)} ms, max ${f2(max)} ms (budget 0.1 ms mean, ${MT.note}; whole frame with the fake city ${f2(wall, 4)} ms)`);
 
   const { Session } = await import("node:inspector/promises");
   const ses = new Session(); ses.connect();
@@ -272,4 +272,4 @@ function makeCity() {
 
 console.log(`\n## citySoundTest (rule 42, docs/SOUND_CITY.md)\n| check | result | measured |\n|---|---|---|\n${out.join("\n")}`);
 if (!QUIET || fails) console.log(fails ? `\n${fails} check(s) FAILED` : "\nall checks pass");
-process.exitCode = fails ? 1 : 0;
+process.exitCode = gateExit(fails);   // (75: only timing verdicts failed, rule timing-rows-alone)

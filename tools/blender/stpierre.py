@@ -247,9 +247,13 @@ def portal(fr, d):
     w2 = DOOR_W / 2
     door = rect(-w2, hz(DOOR_SILL), w2, hz(DOOR_TOP))
     if FAR():
-        fill2d(fr, [rect(-w2 - 0.62, hz(DOOR_SILL), w2 + 0.62, hz(DOOR_TOP + 0.78))] , d + 0.06, BLUE, C_SUR)
+        # defects3 (rule far-openings-closed): the far surround is a slab proud of the wall over the cut opening: its edges
+        # are closed (a 6 cm open slit let grazing rays slide behind it, through the opening and across the nave)
+        fbox(fr, -w2 - 0.62, w2 + 0.62, hz(DOOR_SILL), hz(DOOR_TOP + 0.78), d, d + 0.06, BLUE, C_SUR, skip=("back",))
+        reveal(fr, door, d, 0.35, BLUE, C_SUR)
         fill2d(fr, [door], d - 0.35, WOOD, C_DOOR)
-        fill2d(fr, [circle(0.0, hz(FAN_C), FAN_R + 0.37, 12)], d + 0.02, BLUE, C_SUR)
+        fan = circle(0.0, hz(FAN_C), FAN_R + 0.37, 12)
+        fill2d(fr, [fan], d + 0.02, BLUE, C_SUR); strip2d(fr, fan, d + 0.02, d, BLUE, C_SUR, inward=False)
         return
     # piers (proud 0.12) with a panel sunk in, capitals = triglyph blocks
     for sg in (-1, 1):
@@ -314,7 +318,9 @@ def side_door(fr, c, d):
     r = SDOOR_W / 2
     hole = arched(c - r, c + r, hz(SDOOR_SILL), hz(SDOOR_SPRING))
     if FAR():
-        fill2d(fr, [arched(c - r - 0.2, c + r + 0.2, hz(SDOOR_SILL), hz(SDOOR_SPRING)), hole], d + 0.05, BLUE, C_SUR)
+        sur = arched(c - r - 0.2, c + r + 0.2, hz(SDOOR_SILL), hz(SDOOR_SPRING))
+        fill2d(fr, [sur, hole], d + 0.05, BLUE, C_SUR); strip2d(fr, sur, d + 0.05, d, BLUE, C_SUR, inward=False); strip2d(fr, hole, d + 0.05, d, BLUE, C_SUR)
+        reveal(fr, hole, d, 0.3, BLUE, C_SUR)           # defects3: without its jambs the street saw past the leaf into the shell
         fill2d(fr, [hole], d - 0.3, WOOD, C_DOOR); return
     # surround: a band 0.2 wide, proud 0.07, following jambs + arch
     path = [(c - r, hz(SDOOR_SILL))] + arch_path(c, hz(SDOOR_SPRING), r, 14) + [(c + r, hz(SDOOR_SILL))]
@@ -908,7 +914,7 @@ def east_end():
     for sg in (-1, 1):
         fr = frame_uw(U_EAST, WC + sg * 8.0, 1, 0)
         S = lambda w: fr.s_of(U_EAST, w)
-        s0, s1 = sorted((S(WC + sg * a1[1]), S(WC + sg * (WALL_S if sg > 0 else -WALL_N))))
+        s0, s1 = sorted((S(WC + sg * a1[1]), S(WALL_S if sg > 0 else WALL_N)))      # defects3: WALL_S / WALL_N are absolute w (not off the axis WC): the south stub stopped 7 cm short of the south wall's corner pier (a slit, the far level saw through it)
         fill2d(fr, [rect(s0, hz(ANNEX_TOP - 0.5), s1, hz(CORN_B))], 0.0, BRICK, C_PLAIN)
         cornice_run(fr, s0, s1, 0.0, CORN_B, CORN_T, proj=0.35)
         parapet(fr, s0, s1)

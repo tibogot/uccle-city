@@ -1,0 +1,20 @@
+{
+  "_": "The Papenkasteel's grounds (Chateau de Stalle, Rue Papenkasteel / Rue Kinsendael; the hero model models/papenkasteel): what stands on its street frontages, from a look-only Street View check (Google car imagery Apr 2024, 2026-11-23, claude/places2; nothing stored, traced or shipped). Private grounds with no OSM polygon: the line is OURS (ring, city x / z m): the Rue Papenkasteel frontage 4.5 m in from the street's OSM centre line, the Rue Kinsendael frontage 4.5 m in from its centre line, closed back through the grounds by a 'none' stretch. tools/parkfence/build.mjs reads it; ?places2=old: not drawn.",
+  "park": "papenkasteel",
+  "set": "places2",
+  "ring": [[-608.87, 1115.3], [-586.08, 1153.59], [-611.45, 1170.22], [-636.73, 1186.42], [-657.1, 1204.74], [-681.2, 1228.9], [-700, 1175], [-660, 1112]],
+  "default": "none",
+  "stone": 2,
+  "fenceTypes": {
+    "none": "Rue Papenkasteel: a tall clipped beech / hornbeam hedge ~2.1 m right behind the narrow verge, trees over it (drawn by the garden kit: data/overrides.json gardenRestyle papenkasteel_hedge_*); Rue Kinsendael by the corner of the outbuilding range: the range's own whitewashed back wall stands on the street (the hero); the closing stretch through the grounds: nothing drawn",
+    "mesh": "Rue Kinsendael from the Rue Papenkasteel corner to the outbuilding range: a steep wooded bank (yews, chestnuts, ivy) with a dark mesh fence among the trunks",
+    "brickwall": "Rue Kinsendael west of the range: a tall old garden wall in dark red-brown brick, ~2.2-2.5 m, its top stepped down with the street and capped with a brick / tile coping, moss and ivy at its foot, the cobbled street right against it"
+  },
+  "sections": [
+    { "type": "mesh", "from": [-586.08, 1153.59], "to": [-611.0, 1170.0], "note": "the wooded bank by the corner (Street View from Kinsendaelstraat 2)" },
+    { "type": "brickwall", "from": [-639.5, 1188.7], "to": [-681.2, 1228.9], "note": "the old brick wall west of the range (Street View by Kinsendaelstraat 30)" }
+  ],
+  "entrances": [
+    { "osm": "obs/papenkasteel-gate", "at": [-595.7, 1137.5], "kind": "double", "state": "closed", "width": 3.4, "pier": [0.7, 2.6], "name": "the castle's street gate (Rue Papenkasteel)", "note": "two square piers in white render with a cap, a black iron bar double gate ~2 m, closed (a private residence), set in the clipped hedge; the drive runs from it WSW to the courtyard (Street View from Papenkasteelstraat 138, Apr 2024)" }
+  ]
+}

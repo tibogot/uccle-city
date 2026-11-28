@@ -186,6 +186,10 @@ export const HIT_OLD = typeof location !== "undefined" && /[?&]carhit=old(&|$)/.
  * no new kick: no stutter, no "sticky" wall, no launch; the body kicks (pitch / roll / heave) come once per impact.
  */
 const MU_WALL = 0.35, YAW_KICK_MAX = 2.2;
+/** HEDGES SOLID (rule hedge-wall): a tall clipped hedge (KIND.hedgeWall = 9, viewer/drive/colliders.js) stops the car as
+ *  a wall but gives: its head-on restitution is HEDGE_BOUNCE x a brick wall's (the twigs take the hit), the scrape softer */
+export const HEDGE_BOUNCE = 0.35, HEDGE_MU = 0.6;
+const HEDGE_WALL_KIND = 9;
 export function hitSlide(c, nx, nz, kind, H = HANDLING, dims = null) {
   const sinH = Math.sin(c.heading), cosH = Math.cos(c.heading);
   const hx = dims?.hx ?? c.bodyHx ?? BODY.hx, hz = dims?.hz ?? c.bodyHz ?? BODY.hz;
@@ -201,7 +205,8 @@ export function hitSlide(c, nx, nz, kind, H = HANDLING, dims = null) {
   const vn = -(pvx * nx + pvz * nz);           // the corner's approach speed into the obstacle
   if (vn <= 0.02) return 0;
   const headOn = Math.abs(fn);
-  const e = vn > 1.5 ? H.bounce * headOn * headOn : 0;
+  const hw = kind === HEDGE_WALL_KIND;
+  const e = vn > 1.5 ? H.bounce * headOn * headOn * (hw ? HEDGE_BOUNCE : 1) : 0;
   const a = nx * rz - nz * rx;
   const j = vn * (1 + e) / (1 + a * a / Im);
   let dvx = nx * j, dvz = nz * j, dw = a * j / Im;
@@ -209,7 +214,7 @@ export function hitSlide(c, nx, nz, kind, H = HANDLING, dims = null) {
   const ptx = pvx + nx * vn, ptz = pvz + nz * vn, pt = Math.hypot(ptx, ptz);
   if (pt > 1e-4) {
     // (linear only: the scrape's torque at the nose would screw a car pushed along a wall round into it)
-    const tx = ptx / pt, tz = ptz / pt, jt = Math.min(MU_WALL * j, pt);
+    const tx = ptx / pt, tz = ptz / pt, jt = Math.min(MU_WALL * (hw ? HEDGE_MU : 1) * j, pt);
     dvx -= tx * jt; dvz -= tz * jt;
   }
   dw = Math.max(-YAW_KICK_MAX, Math.min(YAW_KICK_MAX, dw));
@@ -218,9 +223,10 @@ export function hitSlide(c, nx, nz, kind, H = HANDLING, dims = null) {
   c.speed = fwd; c.vx = cosH * lat; c.vz = -sinH * lat;
   c.angularVel = w + dw;
   if (vn > 0.8) {
-    c.pitchVel += fn * Math.min(14, vn) * 0.12;
-    c.rollVel -= ln * Math.min(14, vn) * 0.16;
-    c.heaveVel += Math.min(1.0, vn * 0.08);
+    const kk = hw ? 0.6 : 1;                    // (a hedge: a softer jolt)
+    c.pitchVel += fn * Math.min(14, vn) * 0.12 * kk;
+    c.rollVel -= ln * Math.min(14, vn) * 0.16 * kk;
+    c.heaveVel += Math.min(1.0, vn * 0.08) * kk;
   }
   c.hits++;
   if (vn > 2) c.lastHit = { x: c.x, z: c.z, nx, nz, speed: vn, kind, t: performance.now() };

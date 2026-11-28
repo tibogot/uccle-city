@@ -13,7 +13,7 @@ import { TrafficFleet, TYPE_NAMES } from "./trafficFleet.js";
 import { TYPE_MIX, SIZES, PAINTS, FADE_TO } from "../carFleet.js";
 import { CARS_OLD } from "../drive/carPacks.js";
 import { TRAFFIC_TYPES } from "../moto/cityTwoWheelers.js";
-import { TRAFMIX_OLD, HEAVY, TrafMix, DATA_URL } from "./trafMix.js";   // TRAFMIX (docs/TRAFMIX.md): the mix by hour and place
+import { TRAFMIX_OLD, HEAVY, TrafMix, DATA_URL, X4_TRAFFIC } from "./trafMix.js";   // TRAFMIX (docs/TRAFMIX.md): the mix by hour and place
 
 /** motorbike round 2 (docs/MOTO.md): motorbikes and scooters in the city's traffic (createTraffic twoWheelers: the city;
  *  ?twowheelers=0: cars only). They are sim types after the cars' (drawn by viewer/moto/cityTwoWheelers.js
@@ -23,7 +23,7 @@ const TWO_TRAFFIC = typeof location === "undefined" || new URLSearchParams(locat
 // per type: wheelbase and wheel radius (the faceted GLB's Wheel_* nodes: z = +-wb/2, y = r)
 // [wheelbase, wheel radius] per type: the cars2 family (tools/blender/cars2.py), ?cars=old the faceted one
 const WHEELS = CARS_OLD ? { hatch_s: [2.5, 0.3], hatch_c: [2.64, 0.32], estate: [2.7, 0.32], saloon: [2.8, 0.33], suv: [2.64, 0.34], van_c: [2.72, 0.32], van_p: [3.26, 0.34], taxi: [2.7, 0.32] }
-  : { hatch_s: [2.56, 0.31], hatch_c: [2.66, 0.325], estate: [2.69, 0.325], saloon: [2.85, 0.33], suv: [2.64, 0.35], van_c: [2.72, 0.32], van_p: [3.0, 0.34], taxi: [2.85, 0.33] };
+  : { hatch_s: [2.56, 0.31], hatch_c: [2.66, 0.325], estate: [2.69, 0.325], saloon: [2.85, 0.33], suv: [2.64, 0.35], van_c: [2.72, 0.32], van_p: [3.0, 0.34], taxi: [2.85, 0.33], x4: [2.74, 0.375] };
 
 /** ?trafficbox=old: the traffic's collider boxes at the sim's newest step (before collisions round 2) */
 const BOX_OLD = /[?&]trafficbox=old(&|$)/.test(location.search);
@@ -33,7 +33,7 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
   // (TRAFMIX: the service vehicles after the street types: models/cars/heavy.glb; zc = the body's centre off the axles)
   const types = TYPE_NAMES.map((name) => HEAVY[name]
     ? { name, len: HEAVY[name].size[2], w: HEAVY[name].size[0], h: HEAVY[name].size[1], wb: HEAVY[name].wb, wheelR: HEAVY[name].wheelR, zc: HEAVY[name].zc, weight: 0, heavy: true }
-    : { name, len: SIZES[name][2], w: SIZES[name][0], h: SIZES[name][1], wb: WHEELS[name][0], wheelR: WHEELS[name][1], weight: mix.get(name) });
+    : { name, len: SIZES[name][2], w: SIZES[name][0], h: SIZES[name][1], wb: WHEELS[name][0], wheelR: WHEELS[name][1], weight: name === "x4" && !X4_TRAFFIC ? 0 : mix.get(name) });   // (claude/cars1: the 4x4 parked only, trafMix.js X4_TRAFFIC)
   if (TWO_TRAFFIC && twoWheelers) for (const t of TRAFFIC_TYPES) types.push({ ...t });
   const c = new THREE.Color();
   const paints = PAINTS.map((h) => { c.setHex(h); return [c.r, c.g, c.b]; });

@@ -43,6 +43,7 @@ export const ASSIST = {
   clear: 2.5,              // m: the avoid assist's clearance over a roof / crown / the ground
   minAgl: 3,               // m: the least height over the terrain the hold keeps (terrain following, up only)
   probes: [0.6, 1.2, 2.0], // s ahead
+  probesNear: [0.3, 0.6, 1.2, 2.0],   // (falcon fun, an auto-dive: one more probe close ahead: a thin tower between two)
 };
 
 export class FlightAssist {
@@ -83,7 +84,10 @@ export class FlightAssist {
     let omega = 0, gd = 0, holding = false, mode = "level";
     const ov = this.override;
     if (ov) {
-      omega = clamp(P.aimGain * wrap(ov.psi - psi), -1.3, 1.3);
+      // (falcon fun, the auto-dive: a hard turn, up to 2 rad/s at a 75 deg bank: it does not circle wide round a
+      // bird it overshot)
+      const om = f.arcade ? 2.0 : 1.3;
+      omega = clamp((f.arcade ? 3 : P.aimGain) * wrap(ov.psi - psi), -om, om);
       gd = ov.gamma; this.hT = null; mode = "strike";
     } else {
       if (I.aim && !I.turn) omega = clamp(P.aimGain * wrap(I.aim.yaw - psi), -1.3, 1.3);
@@ -127,9 +131,12 @@ export class FlightAssist {
     if (this.avoid && world) {
       const vx = f.vel.x, vy = f.vel.y, vz = f.vel.z, vh = Math.max(Math.hypot(vx, vz), 1);
       let gNeed = -Infinity, gMax = Infinity, tall = false;
-      const clr = ov ? 1 : P.clear;                                        // (a strike may go lower)
-      for (let k = 0; k < P.probes.length; k++) {
-        const T = P.probes[k], s = Math.max(T, (5 + 4 * k) / vh);          // at least 5 / 9 / 13 m ahead when slow
+      const clr = ov ? ov.clr ?? 1 : P.clear;                             // (a strike may go lower; falcon fun: only near the prey)
+      const PR = ov && f.arcade && P.probesNear ? P.probesNear : P.probes;
+      for (let k = 0; k < PR.length; k++) {
+        // (arcade, a tucked dive: the probes 0.25 / 0.5 / 0.8 s ahead; the ground guard below does the pull-out: at stoop
+        // speeds 2 s ahead is 120 m and the probes levelled every stoop off long before it got fast)
+        const T = f.arcade && C.fold > 0.75 && gam < -0.2 ? PR[k] * 0.42 : PR[k], s = Math.max(T, (PR.length > 3 ? 3 + 3 * k : 5 + 4 * k) / vh);          // at least 5 / 9 / 13 m ahead when slow
         const px = f.pos.x + vx * s, pz = f.pos.z + vz * s, py = y + vy * s;
         let fl, ce;
         if (world.column) { const c = world.column(px, pz, Math.max(py, y)); fl = c.floor; ce = c.ceil; } else { fl = world.floor(px, pz); ce = Infinity; }
@@ -147,14 +154,29 @@ export class FlightAssist {
       // + the 0.3 s it takes to start, + 8 m); the ground under the path half a radius ahead. Latched while Shift is held
       // (let go and press again to dive again): no porpoising over the ground
       if (!I.stoop) this.guard = false;
-      if (gam < -0.2 && V > 15) {
-        const r = V * V / (3 * G), px = f.pos.x + vx / vh * r * 0.5, pz = f.pos.z + vz / vh * r * 0.5;
-        const below = y - Math.max(floorAt(world, px, pz, y), floorAt(world, f.pos.x, f.pos.z, y));
-        if (below < r * (1 - Math.cos(gam)) * 1.25 + V * 0.3 * Math.sin(-gam) - vy * 0.6 + 8) this.guard = true;
+      if (gam < -0.2 && V > (f.arcade ? 8 : 15)) {
+        // (FALCON FUN, f.arcade: the arcade pull-out is a ~5 g one, as the assist really flies it (up to nMax - 1 asked
+        // from 60 m/s), with a 4 m margin; a strike dive on a prey near a roof / the ground (ov.floorY: the aim's
+        // height, never under the solid + 1.5 m) pulls out so it bottoms at the prey: a swoop through it, not into the roof)
+        // (arcade: the pull-out's g is what the wings give at this speed: the half-folded wing over 30 m/s, the spread
+        // one under, at CLmax, less 0.6 g; at most guardG)
+        const AR = f.arcade, margin = AR ? AR.guardMargin : 8;
+        const wq = 0.5 * 1.2 * V * V / ((f.mass + f.extraMass) * G), gG = AR ? clamp(wq * (V > 30 ? 0.07 * 1.15 : 0.13 * 1.45) - 1.6, 1.0, AR.guardG) : 3;
+        const r = V * V / (gG * G), px = f.pos.x + vx / vh * r * 0.5, pz = f.pos.z + vz / vh * r * 0.5;
+        let ref = Math.max(floorAt(world, px, pz, y), floorAt(world, f.pos.x, f.pos.z, y));
+        if (ov && ov.floorY != null && AR) ref = Math.max(ref + 1.5, ov.floorY);
+        const below = y - ref;
+        // (arcade: the arc at gG g + the path rate's 0.15 s lag; the old sum counted the sink twice: -vy 0.6 s on top of
+        // V 0.3 s sin(gamma), so a 150 m stoop was pulled out ~45 m up and never got fast)
+        const need = AR ? r * (1 - Math.cos(gam)) + V * AR.guardLag * Math.sin(-gam) + margin : r * (1 - Math.cos(gam)) * 1.25 + V * 0.3 * Math.sin(-gam) - vy * 0.6 + margin;
+        if (below < need) this.guard = true;
       }
+      // (arcade: the probes ahead finding the ground under a stoop = the pull-out, latched: before, the avoid lifted the
+      // path a little, the wings tucked again as soon as it was satisfied, and a fast stoop crept down onto the ground)
+      if (f.arcade && C.fold > 0.75 && gam < -0.2 && gNeed > gd) this.guard = true;
       if (this.guard) {
-        C.fold = Math.min(C.fold, 0.5); this.pull = true; gNeed = Math.max(gNeed, 0); mode = "pullout";
-        if (!I.stoop && gam > -0.05) this.guard = false;
+        C.fold = Math.min(C.fold, f.arcade && V < 30 ? 0.1 : 0.5); this.pull = true; gNeed = Math.max(gNeed, 0); mode = "pullout";
+        if ((!I.stoop || (ov && ov.floorY != null)) && gam > -0.05) this.guard = false;   // (falcon fun: an auto-dive dives again)
       }
       if (gMax < gd && gMax >= gNeed) { gd = gMax; avoid = 1; mode = "avoid"; if (holding) this.hT = null; }
       if (gNeed > -Infinity && gNeed > gd) {
@@ -177,7 +199,10 @@ export class FlightAssist {
     }
     this.avoiding += (avoid - this.avoiding) * (1 - Math.exp(-5 * dt));
     // ---------------------------------------------------------------- the bank for the turn rate (coordinated)
-    const bmax = I.stoop ? P.stoopBank : P.bankMax;
+    let bmax = I.stoop || (ov && f.arcade) ? (ov && f.arcade ? 75 * Math.PI / 180 : P.stoopBank) : P.bankMax;
+    // (arcade: a pull-out / an avoid climb first: at most 35 deg of bank, the lift goes into the pull, not the turn;
+    // node check: an auto-dive's hard turn at 75 deg left no lift to pull out over a roof)
+    if (f.arcade && (this.guard || avoid) && gam < 0) bmax = Math.min(bmax, 35 * Math.PI / 180);
     const phiD = clamp(Math.atan(V * omega / G), -bmax, bmax);
     // (heading + = turning left; the model's bank + = right wing down = a right turn)
     C.roll = clamp(-phiD / f.P.bankMax, -1, 1);

@@ -1,0 +1,5 @@
+{
+  "_why": "gate row allocbudget (tools/perf/allocBudget.mjs, rule alloc-rate): sampled JS KB a frame of a 25 s falcon flight / police drive, budget = the largest measured + 25 %. Raise only with a measured reason written in docs/rules/alloc-rate.md.",
+  "falcon": { "measuredKB": [1431.1, 1411.8, 1336.7], "budgetKB": 1790, "at": "2026-11-23 claude/allocrate2 (foundation 3b8041cd + round 2); round-2 switches old: ~3500 KB a frame" },
+  "police": { "measuredKB": [1283.9, 1202.3], "budgetKB": 1605, "at": "2026-11-23 claude/allocrate2 (foundation 3b8041cd + round 2); round-2 switches old: ~1500 KB a frame" }
+}

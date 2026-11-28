@@ -347,3 +347,50 @@ python -m http.server 8825                   # repo root; open /labs/pedestrian-
 Console: `await lab.runCheck("dolly-walk" | "dolly-drive" | "orbit" | "bands" | "spawn60")`, `await lab.bench()`,
 `lab.meters.summary()`, `lab.results`; strips: `lab.strip.ui(false); lab.strip.follow(person, (t) => 14 + 4 * t);
 await lab.strip.step(15)` then a screenshot.
+
+## City (P2, claude/peds2, 2026-11-26): people in the streets of Uccle
+
+On by default in the city; `?peds=0` = none (as before). `?pedhour=8.5` fixes the hour for checks (else the city
+clock, tram 92's), `?pedmax=` the pool (420). Console: `__peds.stats` (alive, in view, target, CPU ms of sim / crowd /
+props, bands), `__peds.graph.stats` (tiles, twins, bent / squeezed / closed edges, seats, slices), `__peds.sim.counters`,
+`__peds.hidden = true` (an A/B: nothing updated or drawn).
+
+| Piece | File | What |
+|---|---|---|
+| Walk graph (worker) | `viewer/pedestrians/walkGraph.js`, `viewer/tileData.js` step "walk graph" | The drawn sidewalks (UrbIS class raster: sidewalk / ramp / path cells, minus the drive colliders' walls / islands) thinned to their medial axis (Zhang-Suen, spurs < 3.5 m pruned, junction clusters merged, smoothed, Douglas-Peucker 0.3 m), moved off trunks / bollards; the drawn crossings (road inventory) kerb to kerb, signalled within 35 m of a phase-table node (the crossed road's phase), else zebras; refuge islands (two-stage crossings); border stubs for crossings over the tile edge; OSM footways / paths / steps off the sidewalks; tram platforms (tram=yes) with a boarding node; a 5 m lattice over squares; place per edge (shop / café from the street-life pois and OSM, school within 60 m, transit within 40 m, park, square, home). ~1-2k nodes a tile, 100-180 ms (node) |
+| City graph | `viewer/pedestrians/cityGraph.js` | Per tile: node / edge objects for the sim, sliced at 2 ms; edges cleared of the drawn furniture / lamps / poles / parked cars / hedges (the tile's main drive collider set) by a parallel detour on the drawn sidewalk, else a squeeze, else closed; benches -> two seats; twins / stubs at tile edges |
+| City sim | `viewer/pedestrians/citySim.js` (extends `sim.js`) | Density = graph length within 230 m x DENSITY[place] x hour curve x weekday x rain; spawn out of view / > 140 m faded / on a fresh tile; leave out of view only; tram stops keep a few waiting; zero allocation a frame; people > 90 m step at 20 Hz |
+| Wiring | `viewer/pedestrians/cityPeds.js`, `viewer/main.js`, `viewer/traffic/cityTraffic.js` | Crowd + props + sim; traffic obstacles for people on crossings / waiting at zebras; zebra gaps from a 10 Hz car snapshot; the player's car (step back < 20 km/h, dive above, never inside the box); the walker (pushed clear, side-stepped, a collider source); trams (board at open doors, alight) |
+
+**Checks** (gate rows `pedsgraph`, `pedssim`; `tools/audit/pedsAudit.mjs`; rules peds-walk-graph, peds-crossings-only,
+peds-density, peds-no-alloc). 2026-11-26:
+
+| Tile | nodes / edges | lines / paths (m) | crossings linked | on carriageway | drawn sidewalk covered | worker ms |
+|---|---|---|---|---|---|---|
+| H5 | 1663 / 1723 | 5596 / 741 | 15/18 | 0.003 % | 97.6 % | 140-180 |
+| I5 | 929 / 963 | 4571 / 415 | 15/15 | 0.01 % | 98.6 % | 105 |
+| H6 | 1442 / 1493 | 4504 / 2147 | 13/15 | 0.03 % | 96.9 % | 150-180 |
+| I6 (Saint-Job) | 2010 / 2223 | 6610 / 921 | 16/16 (5 signalled) | 0.12 % | 96.7 % | 110-150 |
+| F4 (Wolvendael) | 1087 / 1134 | 4434 / 810 | 9/10 | 0.1 % | 97.8 % | 115-160 |
+
+Sim (headless, Saint-Job): 08:30 ~100-130 alive within 230 m, 03:00 1-2; 3600 steps: 0.06-0.2 ms a step, heap growth
+< 0.07 KB a step; 0.003-0.15 % of person samples on a carriageway cell off a crossing (lane edges on 1.5 m sidewalks).
+
+**In the city** (1280 x 765, quick mode, Saint-Job; preflight RED: the owner's work + other agents: PROVISIONAL):
+- in view at 08:30: 33-42 from the street at the square, ~56 at 18:00 (stjob-street), 6 at 22:30, ~80 tiny ones from
+  the overview (all LOD2); Alsemberg 11:00 36; Wolvendael 15:00 8 (before the park density was doubled)
+- CPU, the whole crowd (sim + crowd + props, EMA): 0.27-0.53 ms (one 0.71 just after a third-person boot); 6-11 live rigs
+- GPU, A/B in the same page (`__peds.hidden`), 5 rounds alternating: street view +0.3 ms (6.36 vs 6.04 p50), overview
+  within the noise (+-0.5 ms). Needs the quiet re-run.
+- tile streaming: the graph work is sliced at 2 ms; the worst slice seen was 6.7-13 ms (the first slice of a tile
+  during the boot, GC / JIT), 0 errors
+
+Screenshots (looked at, outside git): `C:\Users\tibog\Downloads\uccle-peds\` (Saint-Job square 08:30, street 18:00 +
+`?peds=0` pair, zebra with a crossing, a car stopped before a waiting woman, tram at the Saint-Job stop, Alsemberg,
+Wolvendael park path, night, from the car, from the walker).
+
+**Weak / left**: the shelters at a few stops close their sidewalk edge (no room past the box: 107-132 closed edges of
+~7k on the Saint-Job tiles; people turn back there); tram stops hold 0-4 waiting, built up only out of view; the
+square lattice still reads a little grid-like from above; a person can be placed on a sidewalk line that ends in a
+short spur; the player-car reactions were checked by placing people in front of a scripted car (4 step-backs), not by a
+real drive; GPU / CPU need a GREEN re-run; the lab leftovers (turn foot slide, far kerb sinks) not touched.

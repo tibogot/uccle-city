@@ -31,7 +31,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { ditherNoise, SMOOTH, cloneMaterial } from "./lodFade.js";
 
 import { withAOKtx2 } from "./aoTexture.js";
-export const KITS = ["rockkit", "playgroundkit"];
+export const KITS = ["rockkit", "playgroundkit", "timberkit"];   // (timberkit: claude/places3, tools/blender/timberPlayKit.py)
 /** live look controls (uniforms) */
 export const kitLook = { ao: uniform(1.0), aoDirect: uniform(0.5), moss: uniform(1.0), normal: uniform(1.0), normalY: uniform(-1.0), bump: uniform(1.0), detailMode: uniform(1) };
 
@@ -303,6 +303,10 @@ const PG = {
   hpl_panel: [[0.62, 0.30, 0.12], 0.45, 0, 0], hdpe_green: [[0.10, 0.42, 0.32], 0.5, 0, 0], hdpe_red: [[0.66, 0.10, 0.08], 0.5, 0, 0],
   rope_grey: [[0.13, 0.13, 0.14], 0.9, 0, 3], rubber_black: [[0.06, 0.06, 0.06], 0.85, 0, 0], stainless_steel: [[0.75, 0.75, 0.76], 0.28, 1, 0],
   surface_rubber: [[0.36, 0.13, 0.08], 0.9, 0, 2], surface_woodchip: [[0.38, 0.25, 0.14], 0.9, 0, 2], sand: [[0.74, 0.66, 0.51], 0.95, 0, 2],
+  // (claude/places3, the timber kit) peeled robinia weathered silver-ochre, its dark furrowed bark, the sawn end grain a
+  // little warmer, hemp-look play rope, the sawn boards of the deck and roof
+  wood_robinia: [[0.56, 0.49, 0.39], 0.82, 0, 1], bark: [[0.24, 0.19, 0.15], 0.95, 0, 2], end_grain: [[0.62, 0.50, 0.36], 0.85, 0, 2],
+  rope_hemp: [[0.60, 0.50, 0.34], 0.9, 0, 3], wood_board: [[0.50, 0.42, 0.33], 0.8, 0, 1],
 };
 export const pgLook = { surface: uniform(12) };      // the slot drawn for "surface_rubber" (index in slot_order + 2 extras)
 function playgroundMat(order) {
@@ -375,7 +379,8 @@ export class KitField {
             const s = this.slotOverride[slot] ?? slot;
             let mat = this.kit.slotMaterial(s, vertexAo);
             if (fade) mat = fadeCopy(mat, attr);
-            const im = new THREE.InstancedMesh(geometry, mat, cap);
+            // (KIT_FADE_SHARE) the fade value rides on the fading mesh's own geometry (the piece's buffers shared)
+            const im = new THREE.InstancedMesh(fade && KIT_FADE_SHARE ? fadeGeometry(geometry, attr) : geometry, mat, cap);
             // static usage: uploaded on needsUpdate only (three r187 re-uploads a DynamicDrawUsage buffer WHOLE in every render pass)
             im.count = 0; im.frustumCulled = false; im.visible = false;
             im.castShadow = this.castShadow; im.receiveShadow = this.receiveShadow;
@@ -468,8 +473,50 @@ export class KitField {
   get instances() { return Object.values(this.inst).reduce((s, l) => s + l.length, 0); }
 }
 
+// (claude/perf5, rule docs/rules/shared-node-graph.md; ?kitfadeshare=old: as before) ONE FADING COPY PER SLOT MATERIAL.
+// The fading copy read its fade value with instancedBufferAttribute(attr): a node bound to THAT mesh's buffer, so every
+// fading mesh had its own node graph, and three r187 (node builds keyed by node ids) built each one on the main thread
+// the first time it drew: the Chenaie timber playground's three pieces cost 26-29 ms each in ONE frame (a 117-130 ms
+// frame ~36 s into every police drive from the station, docs/perf/QUIET_2026-11-26.md). Now the value is the geometry
+// attribute KIT_FADE_ATTR (each fading mesh gets a geometry that shares the piece's buffers and adds its own fade
+// buffer), the mask graph is built once, and the fading copy is cached per slot material: one build for all its pieces.
+const KIT_FADE_SHARE = typeof location === "undefined" || new URLSearchParams(location.search).get("kitfadeshare") !== "old";
+export const KIT_FADE_ATTR = "kitFade";
+let sharedKitMask = null;
+const kitFadeCopies = new WeakMap();
+/** the shared fade mask: the per-instance value from the geometry attribute (lodFade's objectFade convention) */
+function kitFadeMask() {
+  if (sharedKitMask) return sharedKitMask;
+  const f = attribute(KIT_FADE_ATTR, "float"), n = ditherNoise();
+  return (sharedKitMask = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f)));
+}
+/** a fading mesh's geometry: the piece's own attributes, index, groups and bounds (the same GPU buffers) + its fade value */
+export function fadeGeometry(g, attr) {
+  const w = new THREE.BufferGeometry();
+  w.name = `${g.name || "piece"} fade`;
+  w.index = g.index;
+  for (const [k, a] of Object.entries(g.attributes)) w.attributes[k] = a;
+  w.setAttribute(KIT_FADE_ATTR, attr);
+  w.groups = g.groups; w.drawRange = g.drawRange;
+  if (!g.boundingBox) g.computeBoundingBox();
+  if (!g.boundingSphere) g.computeBoundingSphere();
+  w.boundingBox = g.boundingBox; w.boundingSphere = g.boundingSphere;
+  return w;
+}
+
 /** the masked copy of a slot material for the fading instances (per-instance value: lodFade's objectFade convention) */
 function fadeCopy(mat, attr) {
+  if (KIT_FADE_SHARE) {
+    let m = kitFadeCopies.get(mat);
+    if (!m) {
+      m = cloneMaterial(mat);
+      m.maskNode = kitFadeMask();
+      m.userData.kitFadeShared = true;
+      m.name = mat.name + " (fading)";
+      kitFadeCopies.set(mat, m);
+    }
+    return m;
+  }
   // perf pass 2 (docs/perf/AUDIT.md step 12): lodFade's clone (no JSON deep copy of userData: three r187 serialised the
   // weather's dry nodes / textures here, a 920 ms long task when the public art landed while driving); ?fadeclone=old = before
   const m = cloneMaterial(mat);

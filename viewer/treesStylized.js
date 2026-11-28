@@ -9,7 +9,8 @@
 // placements from features.json (height from the LiDAR, a stable turn per tree), one shared set of
 // materials and built trees for every tile, and the sun from viewer/lighting.js.
 import * as THREE from "three/webgpu";
-import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalGeometry, max, uniform, attribute, select, uniformArray, dot, sin, Fn, If, positionLocal } from "three/tsl";
+import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalGeometry, max, uniform, attribute, select, uniformArray, dot, sin, Fn, If, positionLocal, texture } from "three/tsl";
+import { SEASON } from "./seasons/seasonMode.js";
 import { createStylizedTrees, lodMorph } from "../vendor/stylized-trees/stylizedTrees.js";
 import { branchShape } from "../vendor/stylized-trees/branchTree.js";
 import { bumpNormal } from "./tslkit.js";
@@ -87,7 +88,74 @@ const sunDir = new THREE.Vector3(), sunCol = [1, 1, 1];
 /** main.js passes its Lighting once (sun direction and colour for the leaves' translucency). */
 export function setTreeLighting(l) { lighting = l; }
 
+// ---- BARE WINTER TREES (claude/xmasreview, owner 2026-11-26 "the winter look for Christmas"; rule bare-winter-trees).
+// The city's trees are ONE broadleaf form (the LiDAR gives height and crown, no species): in the season
+// (viewer/seasons/seasonMode.js SEASON.winter) every street / park tree is a deciduous tree without its leaves. The
+// cheapest correct way, with no new geometry, draw or pass: the SAME leaf cards draw a mask of fine TWIGS (a branching
+// spray with buds, about half the leaves' coverage) in grey-brown, so the crown keeps its silhouette as a twig haze (not
+// dead sticks: the limbs and sub-branches are the bark mesh under it); the far impostors are baked from the same
+// twigs, the shadows are the twigs' (thin, light). The shrubs share the cards: the evergreen kinds (box, laurel,
+// rhododendron, lavender) keep their leaves (the mask's .r = leaves + twigs, .g = twigs only: the trees and the
+// deciduous shrubs (hydrangea, rose) keep .g), and their colour (bush tint / the winter factor).
+// ?season=summer: the leafy trees (the A/B); ?baretrees=0: winter without bare trees.
+export const BARE = SEASON.winter && !/[?&]baretrees=0(&|$)/.test(location.search);
+/** the winter twig colour = the summer leaf colour x this, per channel (sRGB #8aa64e top -> ~#6e655a grey-brown): the
+ *  vendor's leaf colour and its light through / fill are linear in the colour uniforms, so x WINTER_F turns them all
+ *  and the evergreen shrubs get their green back exactly with a tint / WINTER_F */
+export const WINTER_F = [0.61, 0.34, 1.34];
+const BARE_KINDS = new Set(["hydrangea", "rose"]);       // the deciduous shrubs: bare too
+let twigTex = null;
 let maskTex = null;
+/** the winter twig spray (0-255 coverage, N x N): a few main twigs from the centre, forking, thinning, buds at the
+ *  tips, rounded off like the leaf cluster */
+export function twigCoverage(N, canvas = null) {
+  const cv = canvas ?? document.createElement("canvas"); cv.width = cv.height = N;
+  const g = cv.getContext("2d");
+  g.fillStyle = "#000"; g.fillRect(0, 0, N, N);
+  g.strokeStyle = g.fillStyle = "#fff"; g.lineCap = "round";
+  let s = 777;
+  const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
+  const twig = (x, y, a, L, w, depth) => {
+    const ex = x + Math.cos(a) * L, ey = y + Math.sin(a) * L, bend = (rnd() - 0.5) * 0.5;
+    g.lineWidth = w; g.beginPath(); g.moveTo(x, y);
+    g.quadraticCurveTo(x + Math.cos(a + bend) * L * 0.5, y + Math.sin(a + bend) * L * 0.5, ex, ey); g.stroke();
+    if (depth >= 3) { g.beginPath(); g.arc(ex, ey, Math.max(1.1, w * 0.9), 0, Math.PI * 2); g.fill(); return; }   // a bud
+    const n = depth === 0 ? 3 : 2;
+    for (let k = 0; k < n; k++) {
+      const t = 0.45 + 0.5 * (k / n) + rnd() * 0.08, side = k % 2 ? 1 : -1;
+      twig(x + (ex - x) * t, y + (ey - y) * t, a + side * (0.35 + rnd() * 0.45), L * (0.42 + rnd() * 0.15), Math.max(1.0, w * 0.62), depth + 1);
+    }
+    twig(ex, ey, a + (rnd() - 0.5) * 0.3, L * 0.45, Math.max(1.0, w * 0.7), depth + 2);
+  };
+  for (let i = 0; i < 6; i++) twig(N / 2, N / 2, (i / 6) * Math.PI * 2 + rnd() * 0.5, N * (0.2 + rnd() * 0.06), 2.6, 0);
+  const d = g.getImageData(0, 0, N, N), out = new Uint8Array(N * N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const r = Math.hypot(x - N / 2 + 0.5, y - N / 2 + 0.5) / (N / 2), k = Math.max(0, Math.min(1, (1 - r) / 0.12));
+    out[y * N + x] = d.data[(y * N + x) * 4] * k;
+  }
+  return out;
+}
+const maskTexture = (data, N, format, mips) => {
+  const t = new THREE.DataTexture(data, N, N, format, THREE.UnsignedByteType);
+  t.mipmaps = mips; t.generateMipmaps = false; t.colorSpace = THREE.NoColorSpace;
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4; t.flipY = false; t.needsUpdate = true;
+  return t;
+};
+/** the winter masks from the leaf mask's level 0: the pool's RG mask (.r leaves + twigs, .g twigs) and twigTex (.r
+ *  twigs only: the far impostors, trees only); coverage-preserving mips per channel */
+function winterMasks(leaf0, N) {
+  const tw = twigCoverage(N), un = new Uint8Array(N * N);
+  for (let i = 0; i < N * N; i++) un[i] = Math.max(leaf0[i], tw[i]);
+  const mu = coverageMips(un, N), mt = coverageMips(tw, N);
+  const rgMips = mu.map((m, l) => { const a = new Uint8Array(m.width * m.height * 2); for (let i = 0; i < m.width * m.height; i++) { a[2 * i] = m.data[i]; a[2 * i + 1] = mt[l].data[i]; } return { data: a, width: m.width, height: m.height }; });
+  twigTex = maskTexture(tw, N, THREE.RedFormat, mt);
+  twigTex.name = "winter twigs";
+  const rg = maskTexture(rgMips[0].data, N, THREE.RGFormat, rgMips);
+  rg.name = "winter leaves + twigs";
+  return rg;
+}
+/** the mask the far impostors bake (trees only): the twigs in winter, else the leaf mask */
+export const farLeafMask = () => (BARE ? (leafMask(), twigTex) : leafMask());
 /** A leafy branch mask in .r: ~70 small pointed leaves on a few twigs inside a soft round cluster. */
 export function leafMask() {
   if (maskTex) return maskTex;
@@ -142,6 +210,13 @@ export function leafMask() {
   // the same share of texels passes 0.5 as at full size (Castaño; game-engine-v1 alphaCoverageMips.js).
   const level0 = new Uint8Array(N * N);
   for (let i = 0; i < N * N; i++) level0[i] = d.data[i * 4];
+  if (BARE) {                                                     // (the winter masks: the same card, its twigs)
+    maskTex = winterMasks(level0, N);
+    // (no city pool or no shrubs in it (?treepool=old / ?bushes=old): the vendor's own materials read .r: twigs only)
+    if (!TREE_POOL || !BUSHES) maskTex = twigTex;
+    window.__treeDebug = { corners: CARD_CORNERS, mask: maskTex, twigs: twigTex, level0, coverageMips };
+    return maskTex;
+  }
   maskTex = new THREE.DataTexture(level0, N, N, THREE.RedFormat, THREE.UnsignedByteType);
   maskTex.mipmaps = coverageMips(level0, N);
   maskTex.generateMipmaps = false;
@@ -344,14 +419,14 @@ export function makeSpecies(def) {
     }
     if (!useImpostors) IMP.start.value = 900;   // no impostors: LOD 2 fades out at 900 m (was a hard cut)
     if (kitMode && renderer) {
-      kit = startTreeKit(renderer, shared, PARAMS.leafMask, VARIANTS);
+      kit = startTreeKit(renderer, shared, def.id === "street" ? farLeafMask() : PARAMS.leafMask, VARIANTS);
       window.__treeKit = kit;
     } else if (useImpostors && renderer && !def.noImpostorBake) {
       // (def.noImpostorBake: a species whose far trees go through the impostor kit (the Tree Lab's copper beech and
       // horse chestnut) never draws these: their 64 MB atlas is not baked)
       const t1 = performance.now();
       shared.U.lodScale.value = 0;                // the bake draws LOD 0 as built (no morph toward the bake camera)
-      const bake = bakeTreeImpostors(renderer, shared, VARIANTS, PARAMS.leafMask);
+      const bake = bakeTreeImpostors(renderer, shared, VARIANTS, def.id === "street" ? farLeafMask() : PARAMS.leafMask);
       shared.U.lodScale.value = 1;
       const ib = { alphaBoost: def.impostorAlphaBoost ?? 0.3 };
       impMat = impostorMaterial(bake, shared.U, ib);
@@ -610,16 +685,22 @@ function barkMaterialReal(m) {
   m.needsUpdate = true;
 }
 
+/** (BARE) the winter colours: the leaf colours x WINTER_F (linear); the light through twigs a third of the leaves' */
+export function winterParams(p) {
+  if (!BARE) return p;
+  const f = (hex, k = 1) => { const c = new THREE.Color(hex); c.r *= WINTER_F[0] * k; c.g *= WINTER_F[1] * k; c.b *= WINTER_F[2] * k; return `#${c.getHexString()}`; };
+  return { ...p, topColor: f(p.topColor), bottomColor: f(p.bottomColor), translucencyColor: f(p.translucencyColor, 0.35) };
+}
 /** The city's street trees (the only species in the city today). */
 export const STREET = makeSpecies({
   id: "street", variants: 6, shape: streetShape, leafMask, bark: barkMaterial,
   // Brussels street trees (planes, limes, chestnuts): olive rather than the fog lab's lime, more
   // spread between trees so a street doesn't read as one green band
   // the branch trees' trunk already reaches the pads; the shade side a soft olive, not black
-  params: {
+  params: winterParams({
     topColor: "#8aa64e", bottomColor: "#27441d", translucencyColor: "#c6d07c", tintVar: 0.3,
     crownLift: 0, fill: 0.35, fillColor: "#8fae7c", aoColor: 0.35, trunkColor: [0.2, 0.15, 0.11],
-  },
+  }),
 });
 /** The parameters every NEW tile's tree field starts from (the dev panel writes its live LOD values here too). */
 export const treeParams = () => STREET.params();
@@ -648,7 +729,11 @@ const treeFades = new FadeSlots();
 // bush's dithered fade-out (from > 40 m: tools/audit/bushGate.mjs). Bushes sway in the foliage wind (the plants' and
 // hedges' wind, viewer/foliage/wind.js, with its motion vectors) and cast sun shadows to BUSH_SHADOW.end.
 const BUSHES = !BUSH_OLD;
-const bushTint = uniformArray([new THREE.Vector4(1, 1, 1, 0), ...BUSH_KINDS.map((t) => new THREE.Vector4(...BUSH_TYPES[t].tint))], "vec4");
+// (BARE) the evergreen shrubs' green back: their tint / WINTER_F (the deciduous ones keep the twig colour x their tint)
+export const bushTintRows = () => [[1, 1, 1, 0], ...BUSH_KINDS.map((t) => { const [r, g, b, w] = BUSH_TYPES[t].tint; return BARE && !BARE_KINDS.has(t) ? [r / WINTER_F[0], g / WINTER_F[1], b / WINTER_F[2], w] : [r, g, b, w]; })];
+const bushTint = uniformArray(bushTintRows().map((v) => new THREE.Vector4(...v)), "vec4");
+/** (BARE) the shrub kinds (treeSlot kind = index + 1) that draw twigs only, as the trees (kind 0) */
+export const BARE_KIND_IDS = BUSH_KINDS.map((t, i) => (BARE_KINDS.has(t) ? i + 1 : -1)).filter((i) => i > 0);
 /** the decoded treeSlot: { s: the fade slot, k: the kind (0 tree), e: the far end (m) } */
 function slotParts() {
   const v = attribute("treeSlot", "float");
@@ -693,6 +778,19 @@ function makeTreePool(shared, P, VARIANTS, { kitRegister = null } = {}) {
     const pm = prepassMaterials(leaf), tr = far ? shared.trunkFar : shared.trunkMat;
     const depth = own(pm.depth, `${pm.depth.name}:pool`); depth.maskNode = and(pm.depth.maskNode, slotKeep());
     const colour = own(pm.colour, `${pm.colour.name}:pool`); colour.maskShadowNode = and(pm.colour.maskShadowNode, slotKeep());
+    if (BARE && NB) {
+      // (winter) the trees and the deciduous shrubs: their twigs only (the mask's .g); the evergreen shrubs: leaves + twigs
+      const bareKeep = () => {
+        const { k } = slotParts();
+        let bare = k.lessThan(0.5);
+        for (const id of BARE_KIND_IDS) bare = bare.or(k.equal(float(id)));
+        const tw = texture(P.leafMask, attribute("card", "vec4").xy.mul(0.5).add(0.5)).g;
+        return bare.not().or(tw.greaterThanEqual(0.5));
+      };
+      depth.maskNode = depth.maskNode.and(bareKeep());
+      colour.maskShadowNode = colour.maskShadowNode.and(bareKeep());
+      depth.userData.bare = colour.userData.bare = true;
+    }
     if (NB && !far) {
       // (the depth pass and the EQUAL colour pass: the same position graph)
       depth.positionNode = pm.depth.positionNode.add(bushWind);

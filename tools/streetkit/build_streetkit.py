@@ -308,6 +308,15 @@ def place_tile(name, src, stats, villo_rank):
             if dirtag in ("forward", "backward"):
                 h = way_dir_at(src, p["id"], dirtag == "forward")
                 if h: h = (tx, tz) if h[0] * tx + h[1] * tz >= 0 else (-tx, -tz); stats["dir_from_osm"] += 1
+            fl = R.flow(r) if not ONEWAY_OLD else None
+            if h is None and fl is not None:
+                # (defects3, rule 30 round 4) a one-way piece has ONE traffic: the sign faces it (the flow), a no-entry C1
+                # faces the traffic that must not come in (against it). Toward-the-junction showed 40 signs' backs to the
+                # only traffic there (owner shot 103: a sign facing the wrong way)
+                fx, fz = tangent(fl, fl.project(q))
+                h = (tx, tz) if fx * tx + fz * tz >= 0 else (-tx, -tz)
+                if codes == ["C1"]: h = (-h[0], -h[1])
+                stats["dir_from_flow"] += 1
             if h is None:
                 # toward the nearer junction end of the road (degree >= 3), else the nearer end
                 da, db = s, r["ls"].length - s
@@ -651,13 +660,15 @@ def snap_props(docs, stats):
         slf = ROOT / "data" / "streetlife" / f"{t}.json"
         sl = json.loads(slf.read_text(encoding="utf-8")) if slf.exists() else {}
         sl0 = json.dumps(sl, sort_keys=True)
-        for it in sl.get("plates", []) + sl.get("postboxes", []):         # an earlier pass's moves: from the originals again
+        for it in sl.get("plates", []) + sl.get("postboxes", []) + sl.get("glass", []):   # an earlier pass's moves: from the originals again
             w = it.pop("was", None)
             if w: it.update(x=w[0], y=w[1], z=w[2], **({"nx": w[3], "nz": w[4]} if len(w) > 3 else {}))
         for i, x, y, z in m["plates"]:
             p = sl["plates"][i]; p.setdefault("was", [p["x"], p["y"], p["z"]]); p.update(x=x, y=y, z=z)
         for i, x, y, z, nx, nz in m["postboxes"]:
             b = sl["postboxes"][i]; b.setdefault("was", [b["x"], b["y"], b["z"], b["nx"], b["nz"]]); b.update(x=x, y=y, z=z, nx=nx, nz=nz)
+        for i, x, y, z, nx, nz in m.get("glass", []):                     # (defects3) the underground glass chutes
+            g = sl["glass"][i]; g.setdefault("was", [g["x"], g["y"], g["z"], g["nx"], g["nz"]]); g.update(x=x, y=y, z=z, nx=nx, nz=nz)
         for k, x, y, z, x0, y0, z0 in m["posts"]:
             q = d["posts"][k]; q["was"] = [x0, y0, z0]; q.update(x=x, y=y, z=z)
         for i, st in m["villo"]:

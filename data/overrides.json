@@ -814,11 +814,46 @@
         "half": 9.3,
         "level": 71.9
       },
-      "_ring": "Both ends overlap the UrbIS street polygons by ~1.5 m (the deck top tucks 10 cm under the drawn street there) of Avenue Carsoel exactly (west: tram road be/id/streetsurface/17109 and sidewalks 134927 / 132971, which already have the new layout; east: 28868, 132776, 132777), so the measured street continues the deck without overlap; the north edge at the east end (railed) is the sidewalk's back edge over the opened cutting (the 1928 bridge's site)."
+      "_ring": "Both ends overlap the UrbIS street polygons by ~1.5 m (the deck top tucks 10 cm under the drawn street there) of Avenue Carsoel exactly (west: tram road be/id/streetsurface/17109 and sidewalks 134927 / 132971, which already have the new layout; east: 28868, 132776, 132777), so the measured street continues the deck without overlap; the north edge at the east end (railed) is the sidewalk's back edge over the opened cutting (the 1928 bridge's site).",
+      "bank": {
+        "why": "claude/footbridge (TODO 2026-11-17 'Saint-Job deck sidewalks over the bank', rule deck-covers-street): the Rue de la Pecherie / Carsoel sidewalk (UrbIS be/id/streetsurface/134927 + the tram road 17109's corner) runs on past the hand ring's west edge over the cutting's south-west bank; the street stage draped it on the bare DTM there (1-5 m over the slope, deckJoins 'street step at the joint' 0.66-0.71 m). The ring widened west to the sidewalk's back edge (x 870.6, z 529.6), its new north-west edge a wing wall into the bank with the railing over the drop. ?footbridge=old: the hand ring.",
+        "ring": [[883.8, 514.3], [881.5, 519.3], [879.6, 519.2], [876.3, 521.3], [874.4, 523.6], [869.6, 524.2], [865.4, 526.8], [863.0, 527.3], [862.6, 529.0], [869.5, 529.6], [877.8, 533.0], [893.51, 543.78], [894.93, 546.42], [918.32, 536.09], [926.92, 539.41], [931.4, 534.7], [932.8, 534.6], [943.0, 528.3], [943.8, 523.0], [932.56, 524.6], [917.33, 496.32]],
+        "free": [10, 11, 19]
+      }
     }
+  },
+  "bridgeProfiles": {
+    "_doc": "OSM road bridges' measured top along the centre line (tools/bridges/deckProfiles.py, rule deck-profile-measured): [x, z, y, ...] every 2 m, m TAW. viewer/streets/bridgeDecks.js bridgeDescriptors draws the deck's profile through it (?bridgeprof=old: the straight line between the ends' ground).",
+    "1002735646": {"name": "Avenue des Hospices - Godshuizenlaan", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [-761.75, 2789.22, 85.18, -760.57, 2787.62, 85.25, -759.4, 2786.02, 85.32, -758.22, 2784.42, 85.37, -757.04, 2782.82, 85.41, -755.86, 2781.21, 85.45, -754.69, 2779.61, 85.49, -753.51, 2778.01, 85.53, -752.33, 2776.41, 85.56, -751.15, 2774.81, 85.6, -749.98, 2773.21, 85.62, -748.8, 2771.61, 85.62, -747.62, 2770.01, 85.61, -746.44, 2768.41, 85.59, -745.27, 2766.81, 85.57, -744.09, 2765.2, 85.54, -742.91, 2763.6, 85.49, -741.73, 2762.0, 85.43, -740.56, 2760.4, 85.37, -739.38, 2758.8, 85.31]},
+    "185310974": {"name": "Avenue des Tilleuls - Lindenlaan", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [-1059.95, 2091.15, 79.4, -1058.42, 2092.44, 79.4, -1056.88, 2093.73, 79.36, -1055.35, 2095.02, 79.35, -1053.81, 2096.31, 79.36, -1052.28, 2097.6, 79.45, -1050.75, 2098.88, 79.54, -1049.21, 2100.17, 79.64, -1047.68, 2101.46, 79.73, -1046.14, 2102.75, 79.82, -1044.61, 2104.04, 79.92, -1043.08, 2105.33, 80.02, -1041.54, 2106.62, 80.12, -1040.01, 2107.91, 80.2, -1038.47, 2109.2, 80.3, -1036.94, 2110.49, 80.38, -1035.4, 2111.78, 80.46, -1033.87, 2113.06, 80.53, -1032.34, 2114.35, 80.61, -1030.8, 2115.64, 80.7, -1029.27, 2116.93, 80.77, -1027.73, 2118.22, 80.86, -1026.2, 2119.51, 80.93, -1024.67, 2120.8, 81.02, -1023.13, 2122.09, 81.1, -1021.6, 2123.38, 81.17, -1020.06, 2124.67, 81.25, -1018.53, 2125.96, 81.33, -1017.0, 2127.24, 81.42, -1015.46, 2128.53, 81.5, -1013.93, 2129.82, 81.58, -1012.39, 2131.11, 81.66, -1010.86, 2132.4, 81.73, -1009.33, 2133.69, 81.82, -1007.79, 2134.98, 81.91, -1006.26, 2136.27, 81.99, -1004.72, 2137.56, 82.06, -1003.19, 2138.85, 82.11, -1001.65, 2140.14, 82.15, -1000.12, 2141.42, 82.16, -998.59, 2142.71, 82.17, -997.05, 2144.0, 82.18, -995.52, 2145.29, 82.19, -993.98, 2146.58, 82.2, -992.45, 2147.87, 82.2, -990.92, 2149.16, 82.21, -989.38, 2150.45, 82.23, -987.85, 2151.74, 82.25, -986.31, 2153.03, 82.27, -984.78, 2154.31, 82.29, -983.25, 2155.6, 82.32, -981.71, 2156.89, 82.34, -980.18, 2158.18, 82.36, -978.64, 2159.47, 82.38, -977.11, 2160.76, 82.4, -975.58, 2162.05, 82.43, -974.04, 2163.34, 82.46, -972.51, 2164.63, 82.49, -970.97, 2165.92, 82.52, -969.44, 2167.21, 82.55, -967.91, 2168.49, 82.58, -966.37, 2169.78, 82.61, -964.84, 2171.07, 82.64, -963.3, 2172.36, 82.67, -961.77, 2173.65, 82.7, -960.23, 2174.94, 82.73, -958.7, 2176.23, 82.77, -957.17, 2177.52, 82.82, -955.63, 2178.81, 82.88, -954.1, 2180.1, 82.94, -952.56, 2181.39, 83.01, -951.03, 2182.67, 83.07, -949.5, 2183.96, 83.14, -947.96, 2185.25, 83.21, -946.43, 2186.54, 83.28, -944.89, 2187.83, 83.34, -943.36, 2189.12, 83.37]},
+    "185310976": {"name": "Avenue des Tilleuls - Lindenlaan", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [-1158.41, 2059.18, 75.05, -1156.44, 2058.98, 75.17, -1154.46, 2058.78, 75.27, -1152.49, 2058.58, 75.35, -1150.52, 2058.38, 75.42, -1148.54, 2058.17, 75.49, -1146.57, 2057.97, 75.56, -1144.6, 2057.77, 75.62, -1142.62, 2057.57, 75.68, -1140.65, 2057.37, 75.73, -1138.67, 2057.17, 75.78, -1136.7, 2056.97, 75.84, -1134.73, 2056.77, 75.89, -1132.75, 2056.56, 75.94, -1130.78, 2056.36, 76.0, -1128.81, 2056.16, 76.05, -1126.83, 2055.96, 76.1, -1124.86, 2055.76, 76.15]},
+    "28030783": {"name": "Rue de Verrewinkel - Verrewinkelstraat", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [-282.54, 1295.27, 76.9, -281.05, 1296.65, 77.0, -279.56, 1298.03, 77.07, -278.07, 1299.42, 76.94, -276.58, 1300.8, 76.82, -275.1, 1302.18, 76.68, -273.61, 1303.56, 76.68, -272.12, 1304.94, 76.63, -270.63, 1306.33, 76.65, -269.14, 1307.71, 76.73, -267.65, 1309.09, 76.91, -266.16, 1310.47, 77.12, -264.67, 1311.86, 77.38, -263.18, 1313.24, 77.67, -261.69, 1314.62, 77.99, -260.21, 1316.0, 78.24, -258.72, 1317.38, 78.42, -257.23, 1318.77, 78.52, -255.74, 1320.15, 78.62, -254.25, 1321.53, 78.71]},
+    "28030785": {"name": "Avenue de la Chênaie - Eikenboslaan", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [46.43, 1042.92, 80.73, 45.57, 1041.09, 80.73, 44.72, 1039.26, 80.66, 43.86, 1037.43, 80.52, 43.01, 1035.6, 80.34, 42.15, 1033.77, 80.18, 41.29, 1031.94, 80.02, 40.44, 1030.11, 79.84, 39.58, 1028.28, 79.67, 38.73, 1026.45, 79.49, 37.87, 1024.62, 79.33, 37.01, 1022.79, 79.16, 36.16, 1020.96, 78.85, 35.3, 1019.13, 78.66, 34.44, 1017.3, 78.4, 33.59, 1015.47, 78.36, 32.73, 1013.64, 78.21, 31.88, 1011.81, 78.12, 31.02, 1009.98, 77.96, 30.16, 1008.15, 77.79, 29.31, 1006.32, 77.63, 28.45, 1004.49, 77.47, 27.6, 1002.66, 77.3, 26.74, 1000.83, 77.13]},
+    "29872606": {"name": "Avenue de Haveskercke - de Haveskerckelaan", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [-2016.76, -789.81, 47.17, -2014.65, -789.76, 47.24, -2012.53, -789.72, 47.31, -2010.42, -789.67, 47.37, -2008.3, -789.63, 47.43, -2006.19, -789.58, 47.49]},
+    "29872629": {"name": "Rue du Merlo - Merlostraat", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [-1686.58, -79.24, 54.72, -1684.75, -80.14, 54.74, -1682.93, -81.04, 54.76, -1681.1, -81.95, 54.78, -1679.28, -82.85, 54.8, -1677.45, -83.75, 54.82, -1675.63, -84.65, 54.84, -1673.8, -85.56, 54.85, -1671.97, -86.46, 54.87, -1670.15, -87.36, 54.89, -1668.32, -88.26, 54.9, -1666.5, -89.16, 54.91, -1664.67, -90.07, 54.92, -1662.85, -90.97, 54.94, -1661.02, -91.87, 54.95, -1659.2, -92.77, 54.96, -1657.37, -93.67, 54.96, -1655.54, -94.58, 54.98, -1653.72, -95.48, 55.01, -1651.89, -96.38, 55.02, -1650.07, -97.28, 55.01, -1648.24, -98.19, 55.02, -1646.42, -99.09, 55.06, -1644.59, -99.99, 55.12]},
+    "31302810": {"name": "Rue du Bourdon - Horzelstraat", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [-1200.7, 2235.44, 69.45, -1201.24, 2233.57, 69.51, -1201.77, 2231.69, 69.55, -1202.31, 2229.82, 69.55, -1202.85, 2227.95, 69.55, -1203.38, 2226.07, 69.55, -1203.92, 2224.2, 69.55, -1204.46, 2222.32, 69.55, -1204.99, 2220.45, 69.54, -1205.53, 2218.58, 69.54, -1206.06, 2216.7, 69.54, -1206.6, 2214.83, 69.55, -1207.14, 2212.96, 69.55, -1207.67, 2211.08, 69.52, -1208.21, 2209.21, 69.47]},
+    "35036093": {"name": "Chaussée de Waterloo - Waterloosesteenweg", "source": "UrbIS DSM 2021 0.5 m, median over the carriageway, outliers off the running median dropped", "line": [1736.43, 308.44, 82.45, 1735.42, 310.09, 82.4, 1734.42, 311.73, 82.35, 1733.41, 313.38, 82.29, 1732.41, 315.02, 82.22, 1731.4, 316.67, 82.14, 1730.4, 318.31, 82.05, 1729.39, 319.96, 81.98, 1728.39, 321.6, 81.91, 1727.38, 323.25, 81.84, 1726.38, 324.89, 81.77, 1725.37, 326.54, 81.71]}
+  },
+  "bridgeWidths": {
+    "_doc": "band decks' measured widths (tools/bridges/deckWidths.mjs, rule deck-width-drawn): deck = the outer width from the UrbIS road-bridge outline, carr = the carriageway kerb to kerb from the street model (on the bridge road, else its measured approaches), m. viewer/roadBuild.js applyRoadOverrides gives the bridge road a lane stack of these widths; the deck follows it (?deckwidth=old: the 12 m lane-less deck)",
+    "1002735646": {"name":"Avenue des Hospices - Godshuizenlaan","carr":7.13,"src":"carr: street model kerbs (M/D), on the bridge road, median of 38"},
+    "1002735650": {"name":"","carr":7.36,"src":"carr: street model kerbs (M/D), on the bridge road, median of 5"},
+    "185310974": {"name":"Avenue des Tilleuls - Lindenlaan","deck":11.05,"carr":7.06,"src":"deck: UrbIS road bridge 864 outline, median width across the line; carr: street model kerbs (M/D), the approaches within 12 m of its ends, median of 8"},
+    "185310976": {"name":"Avenue des Tilleuls - Lindenlaan","deck":11.69,"src":"deck: UrbIS road bridge 939 outline, median width across the line"},
+    "28030785": {"name":"Avenue de la Chênaie - Eikenboslaan","deck":5.03,"carr":3.32,"src":"deck: UrbIS road bridge 899 outline, median width across the line; carr: street model kerbs (M/D), on the bridge road, median of 4"},
+    "29872629": {"name":"Rue du Merlo - Merlostraat","deck":9.25,"carr":5.55,"src":"deck: UrbIS road bridge 833 outline, median width across the line; carr: street model kerbs (M/D), on the bridge road, median of 3"},
+    "31302810": {"name":"Rue du Bourdon - Horzelstraat","carr":8.23,"src":"carr: street model kerbs (M/D), the approaches within 12 m of its ends, median of 13"}
+  },
+  "bridgeLooks": {
+    "_doc": "OSM band road bridges' parapet style, keyed by OSM way (viewer/streets/bridgeDecks.js parapetStyle / deckMesh; rule deck-width-drawn, claude/chenaie): parapet = concrete (the default, also for a way not listed) | brick (red brick walls under a blue-stone coping). Same outline and colliders either way; ?bridgelook=old: vertex colours, concrete.",
+    "28030785": {"name": "Avenue de la Chênaie - Eikenboslaan", "parapet": "brick", "why": "the bridge over L26 is a narrow cobbled lane between ~1 m red-brick parapets with a stone coping (claude/places2 Street View check, look only)"}
   },
   "buildingLooks": {
     "_doc": "UrbIS solid id -> { style (facades.js wall styles: 0 red brick, 1 brown, 2 yellow, 3 white render, 4 cream, 5 grey), roofColor (linear rgb; red-orange = clay tiles), bayScale [s, nx, nz] (the face facing (nx, nz) lays its painted window grid out in u x s: a narrow front with more windows than the 2.6 m bays give; facadeGeom.js) }: the looks a local recognises, each checked on Street View (look only). ?looks=old: none. type (viewer/buildingTypes.js TYPE: 0 generic, 1 maison de maitre, 2 art deco / modernist, 3 bel-etage, 4 block, 5 villa), garage false (no garage door), true (a garage door the classifier did not give). cortenbosch2 (docs/CORTENBOSCH2.md): type 6 = the 1990s house { tone buff|salmon|cream|orange|brown, frame white|brown|anthracite, fascia cream|stained|fibre }, type 7 = the glass curtain wall { grid burgundy|anthracite|silver|green, spandrel glass|metal|grey }; roofTile 'concrete' (interlocking concrete tiles, any type); v2: fields over the entry under round 2 (?cortenbosch2=old: without them); set 'cortenbosch2': only with round 2.",
+    "532108": {"_name": "Le Pigeon Noir, Rue Geleytsbeek 2 / Avenue de la Chênaie (claude/places2; Street View Apr 2024, look only): a warm ochre-mustard painted render over a dark grey plinth, dark window frames; the generated look was a pale cream / random wall. Rule curated-render-tone", "set": "places2", "style": 4, "tone": "mustard"},
+    "506834": {"_name": "Institut Montjoie, Avenue Montjoie (OSM way 30996013; claude/reality1, owner 2026-11-26: 'not at all like this'): the late-19th-century neo-Gothic school, a ~62 m front built straight on the sidewalk in dark orange-red face brick, ground + 3 storeys of tall paired windows (white frames, small panes, iron grilles on the ground floor) between full-height brick pilaster strips, brick corbel friezes under each window row, a light grey stone plinth with arched cellar lights, a row of stepped (crow-step) gable dormers on a steep red clay-tile roof, big stepped gables at both ends, the tall plain brick wing behind the west end; no balconies anywhere (Street View Jun 2024 + aerial, look only). The generator drew a white-render apartment block with continuous balcony slabs. Style 0 red brick, type 1 (tall windows, no balconies), clay-tile roof; ?montjoie=old: generated", "set": "montjoie", "style": 0, "type": 1, "garage": false, "roofColor": [0.30, 0.10, 0.06]},
+    "546951": {"_name": "Institut Montjoie, the 3-storey block at the north end of the court (claude/reality1): red brick and red tiles on the 2024 orthophoto; walls not seen from the street (TO CONFIRM)", "set": "montjoie", "style": 0, "type": 1, "garage": false, "roofColor": [0.30, 0.10, 0.06]},
+    "533351": {"_name": "Rue Geleytsbeek 4, Le Pigeon Noir's west neighbour (claude/places2; Street View Apr 2024, look only): white-painted render", "set": "places2", "style": 3},
     "533271": {"_name": "Chemin privé 't Cortenbosch (the 1990s part), north side by the east end: pale cream-white brick, a dark-stained timber upper band under the eaves, a detached house (Street View Apr 2024); roof keeps its orthophoto colour; type 0 (the generic grid, a two-step eaves moulding): the villa type would add a cottage's half-timbering, the façade system has no 1990s house yet", "set": "cortenbosch", "style": 3, "type": 0, "v2": {"_why": "the 1990s house type (6): pale cream-white face brick, dark-stained timber under the eaves (round 1; not seen again) (Street View Apr 2024, look only, 2026-11-17; round 2, docs/CORTENBOSCH2.md, ?cortenbosch2=old: round 1)", "type": 6, "tone": "cream", "frame": "white", "fascia": "stained", "roofTile": "concrete"}},
     "533330": {"_name": "Chemin privé 't Cortenbosch, north side: pale cream brick, white shutters, a detached house (Street View Apr 2024); roof keeps its orthophoto colour; type 0 (the generic grid, a two-step eaves moulding): the villa type would add a cottage's half-timbering, the façade system has no 1990s house yet", "set": "cortenbosch", "style": 4, "type": 0, "v2": {"_why": "the 1990s house type (6): buff-grey face brick, dark-stained horizontal timber cladding on the upper floor, anthracite frames (Street View Apr 2024, look only, 2026-11-17; round 2, docs/CORTENBOSCH2.md, ?cortenbosch2=old: round 1)", "type": 6, "tone": "buff", "frame": "anthracite", "fascia": "stained", "roofTile": "concrete"}},
     "537192": {"_name": "Chemin privé 't Cortenbosch, north side: pale cream brick, white shutters, a detached house (Street View Apr 2024); roof keeps its orthophoto colour; type 0 (the generic grid, a two-step eaves moulding): the villa type would add a cottage's half-timbering, the façade system has no 1990s house yet", "set": "cortenbosch", "style": 4, "type": 0, "v2": {"_why": "the 1990s house type (6): white render (cream brick ground floor not drawn), anthracite frames, varnished-timber soffits, the linked garages (Street View Apr 2024, look only, 2026-11-17; round 2, docs/CORTENBOSCH2.md, ?cortenbosch2=old: round 1)", "type": 6, "tone": "white", "frame": "anthracite", "fascia": "varnished", "garage": true, "roofTile": "concrete"}},
@@ -916,6 +951,31 @@
       "_name": "Proxy Delhaize block, Ch. de Saint-Job: red brick, dark frames (Street View Jul 2024)",
       "style": 0
     },
+    "556438": {
+      "_name": "Ch. de Saint-Job 701 (Agam nightshop, the white night shop opposite Brico): white-painted two-storey corner house (Street View Apr 2024, claude/places1)",
+      "style": 3
+    },
+    "558122": {
+      "_name": "Carrefour Market Rue Gatti de Gamond 60 (Ukkel, the corner of Avenue Docteur Decroly; OSM shop node 13192287981, claude/carrefour2): a single-storey retail box (UrbIS: flat roof ~4.9 m over the shop floor on the main hall, a lower ~3 m wing at its west end on Rue Gatti de Gamond) clad in pale silver-grey horizontal metal panels, painted white blockwork on the Gatti side, no windows on the long walls, a thin grey coping and a light railing on the roof edge; a thin red line runs along the top of the south face and round the Gatti corner. Its front faces south across its car park to Avenue Docteur Decroly (the shop kit: data/shops/terraces.json osm:n13192287981). Street View Apr 2024 + UrbIS orthophoto 2024 (look only, never kept). The generator drew a long greige block with a row of house windows and a 6.5 m shop slot. shed: the retail box (viewer/facadeGeom.js SHED_PARTY, rule curated-shed-look); style 3 the nearest render (white; the real panels are a pale grey). store: the curated store's parts (tools/audit/curatedPlacesCheck.mjs S); ?carrefour=old: none",
+      "set": "carrefour",
+      "style": 3,
+      "shed": true,
+      "garage": false,
+      "store": {"front": "osm:n13192287981", "sign": "Carrefour", "lot": "carrefour_gatti_lot", "bays": 12}
+    },
+    "529267": {
+      "_name": "Carrefour Market Marlow (Av. Wolvendael 2 / Square Georges Marlow 10, ~100 m north-west of the police station, claude/carrefour): a single-storey retail box (UrbIS: flat roof, 7.7 m to the coping) clad in plain greige / taupe horizontal panels, no windows on any side, a thin dark metal coping; the glazed front and its deep canopy face the car park (the shop kit: data/shops/terraces.json osm:n255033292). Street View Apr 2024 + UrbIS orthophoto 2024 (look only, never kept). The generator drew a two-storey yellow-brick block with house windows and a red front door. shed: the retail box (viewer/facadeGeom.js SHED_PARTY, rule curated-shed-look); style 4 the nearest render (cream, warmer than the real greige); ?carrefour=old: none",
+      "set": "carrefour",
+      "style": 4,
+      "shed": true,
+      "garage": false,
+      "store": {"front": "osm:n255033292", "sign": "Carrefour", "lot": "carrefour_lot", "bays": 3}
+    },
+    "540950": {
+      "_name": "Ch. de Saint-Job 594 (Brico Sint-Job): a low anthracite metal-clad shed set back behind its car park; the facade system has no cladding: grey, no garage door (Street View Apr 2024, claude/places1)",
+      "style": 5,
+      "garage": false
+    },
     "541080": {
       "_name": "Ch. de Saint-Job 662 (Bioffice; White Night in its low wing): cream-painted brick (Street View Jul 2024)",
       "style": 4
@@ -956,6 +1016,9 @@
   },
   "plantsClear": {
     "_doc": "Polygons (city x, z) where no generated plant / garden piece stands (viewer/plants/cityPlants.js, viewer/gardens/cityGardens.js): yards, gate mouths. ?plantsclear=old: none.",
+    "montjoie_front": {"_why": "claude/reality1: Institut Montjoie's ~62 m neo-Gothic front stands straight on the Avenue Montjoie sidewalk on a light grey stone plinth (Street View Jun 2024, look only): no front garden, wall or piers; the front-garden kit drew a brick wall with piers along it. The strip from 0.2 m inside the UrbIS facade line (solid 506834) to 3.5 m out", "set": "montjoie", "ring": [[1031.25, -1224.8], [1092.95, -1240.1], [1093.8, -1236.5], [1032.1, -1221.2]]},
+    "nightshop_front": {"_why": "claude/places1: Agam nightshop (Ch. de Saint-Job 701) opens straight onto the sidewalk (Street View Apr 2024: the shop's front wall on the pavement line, black barriers on the kerb, no garden); the front-garden kit drew a brick wall, piers and a railing across the shop front", "ring": [[859.5,675.6],[869.4,671.3],[868.3,668.6],[858.5,672.9]]},
+    "brico_lot_front": {"_why": "claude/places1: the generated front-garden wall, brick piers and railing along Brico Sint-Job's car park (Ch. de Saint-Job 594): the real lot is open to the sidewalk at its two entrances and fenced by a low mesh fence on the west part only (Street View Apr 2024); the strip 1.2 m either side of the lot's street edge (grounds.brico_lot)", "ring": [[865.4,665.1],[873.6,660.5],[890.6,652.9],[889.4,650.7],[872.6,658.1],[863.2,662.4]]},
     "white_night_lot": {
       "_why": "shops2: the paved forecourt in front of White Night (Ch. de Saint-Job 662's low wing; Street View Jul 2024: asphalt with grass strips, no beds); a generated garden bed stood in front of the shop",
       "ring": [[1060.5, 528.0], [1071.5, 522.0], [1077.5, 533.5], [1066.5, 540.5], [1062.3, 535.6]]
@@ -1052,10 +1115,18 @@
   },
   "gardenRestyle": {
     "_doc": "Polygons (city x, z) where the generated front-garden pieces (viewer/gardens/cityGardens.js: brick walls, railings, pillars, driveway gates) are what a local would NOT see: inside, every wall / railing run becomes a clipped hedge of `hedge` (gardenHedge.js species) `height` m high, set back off the street, the pillars and gates go (the driveways stay open). ?cortenbosch=old: none.",
+    "papenkasteel_hedge_north": {"set": "places2", "hedge": "beech", "height": 2.1, "width": 0.8, "why": "claude/places2: the Papenkasteel's grounds on Rue Papenkasteel are closed by a tall clipped beech / hornbeam hedge (~2.1 m) right behind the narrow verge, trees over it, broken only by the castle's street gate (white-render piers, black iron double gate: data/parkfence/papenkasteel.obs.json); the garden kit plans hedges for house fronts only and drew nothing on this frontage", "source": "Google Street View Apr 2024 (look only, 2026-11-23)", "line": [[-608.87,1115.3],[-608.38,1116.13],[-607.89,1116.95],[-607.39,1117.78],[-606.9,1118.61],[-606.41,1119.44],[-605.92,1120.26],[-605.42,1121.09],[-604.93,1121.92],[-604.44,1122.74],[-603.95,1123.57],[-603.45,1124.4],[-602.96,1125.22],[-602.47,1126.05],[-601.98,1126.88],[-601.49,1127.71],[-600.99,1128.53],[-600.5,1129.36],[-600.01,1130.19],[-599.52,1131.01],[-599.02,1131.84],[-598.53,1132.67],[-598.04,1133.5],[-597.55,1134.32],[-597.05,1135.15]]},
+    "papenkasteel_hedge_south": {"set": "places2", "hedge": "beech", "height": 2.1, "width": 0.8, "why": "claude/places2: the Papenkasteel's grounds on Rue Papenkasteel are closed by a tall clipped beech / hornbeam hedge (~2.1 m) right behind the narrow verge, trees over it, broken only by the castle's street gate (white-render piers, black iron double gate: data/parkfence/papenkasteel.obs.json); the garden kit plans hedges for house fronts only and drew nothing on this frontage", "source": "Google Street View Apr 2024 (look only, 2026-11-23)", "line": [[-594.29,1139.79],[-593.79,1140.63],[-593.29,1141.48],[-592.79,1142.32],[-592.28,1143.16],[-591.78,1144.01],[-591.28,1144.85],[-590.78,1145.69],[-590.28,1146.54],[-589.78,1147.38],[-589.27,1148.22],[-588.77,1149.07],[-588.27,1149.91],[-587.77,1150.75],[-587.27,1151.59],[-586.76,1152.44],[-586.26,1153.28]]},
     "cortenbosch_old_lane": {"hedge": "privet", "height": 1.6, "width": 0.7, "why": "Chemin privé 't Cortenbosch's old lane (setts, ~3 m, between n. 5 and Avenue du Lycée Français): green banks, overgrown hedges and conifers, a dark green metal railing, a few low white picket gates; no brick walls with pillars (the kit drew red-brick walls, white pillars and black iron gates)", "source": "Google Street View Apr 2024 (look only, 2026-11-16)", "ring": [[-345, 812], [-318, 812], [-240, 875], [-200, 940], [-188, 1018], [-205, 1027], [-236, 1000], [-266, 950], [-300, 895], [-345, 842]]},
     "cortenbosch_lane": {"hedge": "beech", "height": 1.4, "width": 0.6, "why": "Chemin privé 't Cortenbosch's 1990s part: every plot is closed by a clipped beech hedge (copper-brown leaves held all winter; a few ivy hedges), open driveways, no walls, no brick pillars, no iron gates (the kit drew red-brick walls, pillars and black gates)", "source": "Google Street View Apr 2024 (look only, 2026-11-16)", "ring": [[-205, 1020], [-200, 1052], [-160, 1074], [-100, 1042], [-52, 1012], [-58, 978], [-95, 976], [-150, 996], [-192, 1008]]}
   },
   "grounds": [
+{"id": "carrefour_gatti_lot", "why": "claude/carrefour2 (owner 2026-11-24: 'same design as Carrefour Market Marlow'; its car park is at ground level): the Carrefour Market Rue Gatti de Gamond 60's asphalt car park, an L round the store: the big part between the glazed front and Avenue Docteur Decroly (a long row of bays nose-in along the street hedge, then five islands of bays square to the front, two of them double with small trees between, two disabled bays by the entrance, painted arrows, a zebra walk from the Decroly sidewalk straight to the entrance) and a strip along the store's east wall (two rows of bays facing each other); entered from Rue Gatti de Gamond by a curved drive at the store's south-west corner past a hatched island, the in / out on Avenue Docteur Decroly at the south-east corner between yellow-and-black bollards; a black mesh fence on a low clipped hedge along the Decroly sidewalk, dark green lantern lamp posts, red round trolley signs on poles; two trolley shelters in red and white (a white metal roof on a red band: a long one at the west end, a short one by the zebra walk; not drawn); the city drew a lawn crossed by paths", "source": "Google Street View Apr 2024 (look only, 2026-11-24) + UrbIS orthophoto 2024 (CC0, 10 cm: the lot's outline and its 12 bay rows read off it); the north edge is the store's footprint (UrbIS solid 558122), the west edge the Gatti de Gamond sidewalk, the south edge the back of the street row of bays, the east edge the hedge", "switch": "?carrefour=old", "edge": 0.6, "lift": 0.05, "osmWrong": [{"id": "osm:n9627537495", "tag": "parking=underground", "truth": "surface", "by": "owner 2026-11-24 (local knowledge): 'P2 Gatti de Gamond is not underground, it is the Carrefour's surface car park' (docs/UNDERGROUND_PLAN.md). Seen on Street View Apr 2024 (look only): the node itself stands about 830 m south of this store, at Rue Gatti de Gamond 333 by the Centre administratif (Rue de Stalle 77), where a P sign and a driveway ramp down under the building; to confirm with the owner before any OSM edit (left to the owner)"}], "chmClear": [[[-1462.8, -604.8], [-1426.2, -601.2], [-1426.2, -597.0], [-1462.8, -600.2]]], "_chmClear": "the strip under the store's canopy: the LiDAR canopy model's 3-3.6 m peaks there (x -1441..-1430) are the canopy edge and the low planters along the front, drawn as small trees whose crowns stood through the canopy (viewer/main.js groundTreesClear)", "frame": {"origin": [-1505.0, -642.0], "angleDeg": 0, "size": [105.0, 84.0]}, "marks": [{"kind": "bays", "at": [5.4, 61.3], "deg": 12.25, "n": 27, "w": 2.5, "depth": 5}, {"kind": "bays", "at": [26.5, 46.0], "deg": 90, "n": 5, "w": 2.5, "depth": 5}, {"kind": "bays", "at": [38.0, 47.5], "deg": 90, "n": 6, "w": 2.45, "depth": 5.5}, {"kind": "bays", "at": [38.0, 62.0], "deg": 270, "n": 6, "w": 2.45, "depth": 5.5}, {"kind": "bays", "at": [54.7, 51.6], "deg": 90, "n": 6, "w": 2.35, "depth": 5.4}, {"kind": "bays", "at": [54.7, 65.7], "deg": 270, "n": 6, "w": 2.35, "depth": 5.4}, {"kind": "bays", "at": [72.5, 52.4], "deg": 90, "n": 7, "w": 2.7, "depth": 5.2}, {"kind": "bays", "at": [75.0, 71.6], "deg": 270, "n": 7, "w": 2.55, "depth": 5}, {"kind": "bays", "at": [85.0, 73.7], "deg": 270, "n": 7, "w": 2.6, "depth": 5.8}, {"kind": "bays", "at": [97.5, 78.5], "deg": 270, "n": 11, "w": 2.45, "depth": 6.5}, {"kind": "bays", "at": [87.0, 7.5], "deg": 93.93, "n": 13, "w": 2.55, "depth": 4.2}, {"kind": "bays", "at": [94.0, 41.0], "deg": 272.1, "n": 10, "w": 2.6, "depth": 5.2}], "ring": [[-1500.9, -605.3], [-1482.06, -603.13], [-1463.08, -600.45], [-1462.52, -604.34], [-1443.06, -602.58], [-1426.62, -600.72], [-1421.51, -639.46], [-1421.3, -641.5], [-1402.5, -641.5], [-1400.3, -600.0], [-1400.3, -561.0], [-1428.0, -560.5], [-1434.8, -560.8], [-1500.8, -575.1], [-1501.5, -582.0], [-1501.5, -598.0], [-1501.3, -602.0]]},
+    {"id": "montjoie_court", "why": "claude/reality1 (owner 2026-11-26: 'the Montjoie school buildings are not at all like this'): Institut Montjoie (Avenue Montjoie, OSM way 30996013), the playground inside the U of the neo-Gothic block (UrbIS solid 506834): grey asphalt with a basketball court painted on it, open to the north where a sand / gravel strip and trees end it; the city drew a lawn", "source": "UrbIS orthophoto 2024 (CC0, Ortho2024NS read at 12.5 cm) + Google aerial (look only, 2026-11-26); the west, south and east edges are the footprint of UrbIS solid 506834 (0.3 m off it), the north edge where the asphalt meets the sand", "switch": "?montjoie=old", "edge": 0.5, "lift": 0.05, "ring": [[1033.2, -1263.4], [1039.3, -1237.9], [1068.9, -1245.3], [1063.1, -1268.9], [1064.5, -1288.0], [1047.0, -1290.0], [1034.5, -1286.0]]},
+    {"id": "montjoie_west_yard", "why": "claude/reality1: Institut Montjoie's west playground, the big grey asphalt yard between the tall west wing of UrbIS solid 506834, its small red-tiled pavilion and the low flat-roofed classrooms (546598 / 546597); the city drew a lawn", "source": "UrbIS orthophoto 2024 (CC0, read at 12.5 cm); edges 0.3 m off the UrbIS footprints", "switch": "?montjoie=old", "edge": 0.5, "lift": 0.05, "ring": [[984.0, -1242.5], [994.0, -1239.6], [1009.8, -1238.0], [1013.6, -1238.8], [1024.4, -1240.6], [1020.6, -1258.1], [1007.6, -1254.9], [1005.1, -1264.6], [1004.0, -1276.0], [984.5, -1279.0], [979.0, -1262.0]]},
+    {"id": "carrefour_lot", "why": "claude/carrefour (owner 2026-11-23: 'the Carrefour Market near the police station does not look like what we have'): the store's asphalt car park between Square Georges Marlow's sidewalk and the store's glazed front (about 35 bays: a row nose-in along the office block to the north, a row along the street hedge, a row along the shop front, a double row of 4 in the middle with painted arrows), entered from the square at its north-west corner past a red-and-white barrier and left at its south-west corner; the city drew a lawn and a paved strip", "source": "Google Street View Apr 2024 (look only, 2026-11-23) + UrbIS orthophoto 2024 (CC0: the lot's outline and its three bay rows read at 10 cm); the west edge is UrbIS sidewalk be/id/streetsurface/137259's back edge, the east edge the store's footprint (UrbIS solid 529267)", "switch": "?carrefour=old", "edge": 0.6, "lift": 0.05, "frame": {"origin": [-614.0, -291.0], "angleDeg": 0, "size": [46.0, 50.0]}, "marks": [{"kind": "bays", "at": [9.75, 2.86], "deg": 17.2, "n": 8, "w": 2.6, "depth": 5}, {"kind": "bays", "at": [8.5, 36.6], "deg": 251.8, "n": 7, "w": 2.5, "depth": 5}, {"kind": "bays", "at": [29.75, 24.9], "deg": 131.4, "n": 7, "w": 2.6, "depth": 5}], "ring": [[-613.0, -270.3], [-608.2, -282.5], [-604.9, -290.4], [-600.2, -290.25], [-582.1, -283.2], [-579.25, -276.9], [-573.9, -274.1], [-596.75, -246.9], [-602.4, -247.5], [-607.4, -255.0], [-610.5, -262.5]]},
+    {"id": "brico_lot", "why": "claude/places1: Brico Sint-Job (Ch. de Saint-Job 594, the DIY shop opposite the night shop at n. 701) has its asphalt car park between the shed and the street (painted bays along the shed front and along the west side, orange bollards at the two entrances); the city drew a lawn with front-garden walls and brick piers", "source": "Google Street View Apr 2024 (look only, 2026-11-23) + UrbIS orthophoto 2024 (CC0, the lot's outline and bay rows read at 25 cm); the street side is UrbIS street surface 132915's back edge", "switch": "?bricolot=old", "edge": 0.5, "lift": 0.06, "frame": {"origin": [853.89, 641.58], "angleDeg": -25.1, "size": [33.2, 24.7]}, "marks": [{"kind": "bays", "at": [17.5, 11.8], "deg": 0, "n": 6, "w": 2.5, "depth": 5}, {"kind": "bays", "at": [2.07, 21.36], "deg": -70.8, "n": 6, "w": 2.5, "depth": 5}], "ring": [[862.0, 641.0], [864.82, 636.46], [872.6, 645.45], [888.78, 638.0], [890.6, 642.5], [890.0, 651.75], [873.15, 659.25], [864.3, 663.75]]},
+    {"id": "white_night_lot", "why": "claude/places1 (owner 2026-11-19: 'the white shop on Place de Saint-Job is placed right, but it stands on grass where the real place has a small car park'): White Night's forecourt (Ch. de Saint-Job 662, the low wing) is a small paved car park for 3-4 cars; the city drew lawn there (shops2 only cleared its plants: plantsClear.white_night_lot, the same ring)", "source": "Google Street View Jul 2024 (look only) + UrbIS orthophoto 2024 (CC0: three cars parked on it)", "switch": "?bricolot=old", "edge": 0.5, "lift": 0.06, "ring": [[1060.5, 528], [1071.5, 522], [1077.5, 533.5], [1066.5, 540.5], [1062.3, 535.6]]},
     {"id": "lycee_courts", "why": "Lycée Français Jean Monnet: the four basketball courts (OSM leisure=pitch, 3 of 4 mapped) on one red acrylic block, each court pale green with white lines; OSM's landuse=recreation_ground drew lawn", "source": "UrbIS orthophoto 2024 (geoservices-grid Ortho2024NS, CC0): the block's corners read at 20 cm", "switch": "?cortenbosch=old", "frame": {"origin": [-263.0, 1218.0], "angleDeg": -52.0, "size": [86.9, 26.2]}, "marks": [{"kind": "courts", "n": 4, "border": 1.6, "band": 2.6, "sideBorder": 1.4}], "ring": [[-263.0, 1218.0], [-209.5, 1149.5], [-188.85, 1165.63], [-242.35, 1234.13]]},
     {"id": "lycee_track_yard", "why": "Lycée Français Jean Monnet: the playground along the long white block (asphalt) with its painted running track (5 lines round two curves) and a centre circle; drawn as lawn before", "source": "UrbIS orthophoto 2024 (CC0): yard outline, the track's curve centres and radii read at 20 cm", "switch": "?cortenbosch=old", "frame": {"origin": [-307.19, 1231.1], "angleDeg": 128.96, "size": [72.55, 29.6]}, "marks": [{"kind": "track", "u0": 14.8, "u1": 57.75, "c": 14.8, "r0": 9.0, "lane": 1.2, "lanes": 5, "circle": {"r": 3.0}}], "ring": [[-322.5, 1203.3], [-380.8, 1273.3], [-377.0, 1279.0], [-345.0, 1290.0], [-336.0, 1281.0], [-315.8, 1255.8], [-295.0, 1236.7], [-319.0, 1207.5]]},
     {"id": "lycee_east_yard", "why": "Lycée Français Jean Monnet: the yard between the entrance block, the white block and the courts (asphalt; OSM landuse=recreation_ground, drawn as lawn)", "source": "OSM way 33525411 + UrbIS orthophoto 2024 (CC0)", "switch": "?cortenbosch=old", "ring": [[-319.0, 1186.0], [-305.0, 1179.0], [-290.34, 1192.0], [-272.54, 1169.57], [-267.53, 1173.87], [-261.62, 1167.05], [-267.84, 1161.81], [-263.62, 1157.18], [-244.65, 1171.87], [-271.9, 1206.27], [-290.0, 1205.0], [-310.0, 1203.3], [-320.0, 1196.0]]},
@@ -1073,5 +1144,115 @@
     "cortenbosch-49": {"at": [-159.6, 1042.2], "dir": [0.926, -0.378], "along": true, "lines": ["Private Weg", "Cortenbosch"], "L": 5.4, "h": 1.1, "gap": 0.2, "why": "the Chemin privé 't Cortenbosch: 'Private Weg' and 'Cortenbosch' in white mixed-case letters, two columns along the lane (the letters' tops to the left of the way in from Avenue du Lycée Français), by n. 49", "source": "Google Street View Apr 2024 (look only, 2026-11-17)"},
     "cortenbosch-50": {"at": [-122.4, 1023.1], "dir": [0.866, -0.5], "along": true, "lines": ["Private Weg", "Cortenbosch"], "L": 5.4, "h": 1.1, "gap": 0.2, "why": "the Chemin privé 't Cortenbosch: 'Private Weg' and 'Cortenbosch' in white mixed-case letters, two columns along the lane (the letters' tops to the left of the way in from Avenue du Lycée Français), by n. 50", "source": "Google Street View Apr 2024 (look only, 2026-11-17)"},
     "cortenbosch-54": {"at": [-98.6, 1007.1], "dir": [0.926, -0.377], "along": true, "lines": ["Private Weg", "Cortenbosch"], "L": 5.4, "h": 1.1, "gap": 0.2, "why": "the Chemin privé 't Cortenbosch: 'Private Weg' and 'Cortenbosch' in white mixed-case letters, two columns along the lane (the letters' tops to the left of the way in from Avenue du Lycée Français), by n. 54", "source": "Google Street View Apr 2024 (look only, 2026-11-17)"}
+  },
+  "playgrounds": {
+    "_doc": "(claude/places2) playground equipment from the park kit (viewer/playgroundCity.js, models/parkkit/playgroundkit) in the city: id -> { set (switch), why, source, osm, ring (the sand, city x / z), kit (claude/places3: the park kit drawn, default playgroundkit; timberkit = the log play frames), pieces: [[piece, x, z, yaw deg], ...], piecesOld (?parkpieces=old: the plastic stand-ins drawn before) }, each piece inside its ring. ?places2=old: none.",
+    "chenaie": {
+      "set": "places2",
+      "osm": "way/1123841132",
+      "why": "owner playtest: 'the children's garden in front of Le Pigeon Noir'. Across Avenue de la Chênaie from the restaurant: a small public garden (OSM park 1123840941) behind an angled parking row on setts and a low clipped hedge: a sand playground (OSM 1123841132, surface sand) with natural timber play frames (log climbing frames with rope nets, a balance frame, a small timber tower), a lawn, a gravel path, park benches and bins, young globe-crowned trees, a lamp post, two boules pitches to the south. Not a fenced kindergarten: the garden is open. The city drew the sand and the benches but no equipment (the playground kit was only in the lab). (claude/places3) drawn with the timber kit made for it (tools/blender/timberPlayKit.py): a small log tower with a rope net, a log climbing frame with two rope nets, a balance course of logs on stumps; piecesOld = the playground kit's plastic stand-ins drawn before (?parkpieces=old)",
+      "source": "Google Street View Apr 2024 from Avenue de la Chênaie 5 (look only, 2026-11-23)",
+      "ring": [
+        [
+          -73.4,
+          756
+        ],
+        [
+          -75.6,
+          757.7
+        ],
+        [
+          -75.9,
+          758.3
+        ],
+        [
+          -74.6,
+          765.5
+        ],
+        [
+          -72.7,
+          767.5
+        ],
+        [
+          -68.2,
+          768.4
+        ],
+        [
+          -65.8,
+          766.7
+        ],
+        [
+          -62.5,
+          766.8
+        ],
+        [
+          -60.4,
+          765
+        ],
+        [
+          -60,
+          763.4
+        ],
+        [
+          -60.9,
+          758.1
+        ],
+        [
+          -61.6,
+          757.6
+        ],
+        [
+          -71.8,
+          755.9
+        ]
+      ],
+      "kit": "timberkit",
+      "pieces": [
+        [
+          "tl_tower",
+          -71.0,
+          760.6,
+          0
+        ],
+        [
+          "tl_climb",
+          -65.0,
+          759.8,
+          0
+        ],
+        [
+          "tl_beam",
+          -64.5,
+          764.6,
+          15
+        ]
+      ],
+      "piecesOld": [
+        [
+          "pg_climb",
+          -71.5,
+          760.5,
+          0
+        ],
+        [
+          "pg_swing",
+          -65.5,
+          759.6,
+          0
+        ],
+        [
+          "pg_seesaw",
+          -64,
+          764.3,
+          0
+        ],
+        [
+          "pg_sandpit",
+          -70,
+          764.9,
+          0
+        ]
+      ]
+    }
   }
 }

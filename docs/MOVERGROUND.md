@@ -85,3 +85,32 @@ Left (why the ceilings are not 0):
 ?quick=1&with=traffic,trams, each with &movground=old alternated: the Av. Carsoel deck (H6, ~880-940, 520-533, by
 the Saint-Job station), a tram 92 crossing it; Place de Saint-Job by Botanea / Pizza Hut (setts); in front of the
 Pasta Commedia; parked cars' kerb-side wheels on a sloped street.
+
+## Round 2: traffic under road decks (claude/defects2, 2026-11-24, rule deck-street-under)
+
+claude/defects1's class 4b listed three "lanes under a road deck" and the Carsoel deck's west end. Each was traced
+point by point (`MG_TRACE=x,z`, `MG_PROBE=x,z`): only one was the city's, the other three were the census's.
+
+| place | what the census said | cause | fix | points before -> after |
+|---|---|---|---|---|
+| D9 (-1033, 2111) Av. des Tilleuls | lane -16.8 m under the deck | the Tilleuls lane ON its own deck, entering D9 from E9: the census marched it from E9 on D9's grid clamped at the border (70 m, no street) and the march kept that layer all along the deck. The city's car arrives on E9's ground (deck owner D9, rule deck-owner-checks) | census: a lane is walked only inside its tile (entering on the top layer); the decks a neighbour draws over the tile are the movers' and the truth's (E9's lanes on the D9 deck were "no drawn surface" before) | 235 -> 5 |
+| F10 (-458, 2999) Kleindalstraat | traffic 8.7 m up "on a bridge" | no bridge: Kleindalstraat itself stood 8.7 m over its sunken lane at the city's edge. It leaves the city at z 3000 into no tile; roadLevels.js dropLifts kept the engine's LIFTED profile on that stretch ("nothing to come down to") and the 32 % grade brought it to the DTM only 30 m in: a causeway in the air | dropLifts holds a road's stretch off every grid at the DTM where it last has data (`heldGround`; `?edgelift=old` as before) | 92 -> 8 |
+| E10 (-755, 2795) Kasteelstraat junction | cars -3.4 m under the drawn road | the census took the service deck's parapet coping as a surface and its 1.5 m layer chain ran coping -> slab -> soffit -> Square Maas 2.4 m under it | census: a deck mesh counts only by its walked top (-0.5 / +0.25 m of the deck line) | 45 -> 41 |
+| H6 (879, 518) Carsoel west end | 12 points +0.26 m | the lane crosses the Saint-Job tram platform's west corner, a 25 cm slab tram.js draws and the drive grid holds (tramPlatformSurface); the census did not count platforms as drawn | census: the tram platforms are drawn surfaces (info `trafficOnPlatform`: 715 lane points city-wide run over a platform, the shared tram roads' boarding platforms) | 16 -> 7 (west end 0) |
+
+City-wide: traffic 2,912 of 1,178,940 points (claude/defects1 measured 3,669 on the same city; the gate ceiling was
+6,199), parked 127, tram 1,423 (unchanged: the track profile, see above).
+
+**The check** (`underdeck`, same row): every lane point with a road deck over it (own, a neighbour's, a hero's) and the
+mover more than 1.5 m under the deck must have its street drawn within 0.3 m and its drive-grid layer within 0.15 m of
+that street. City-wide 9 such points; 5 fail, all at one spot:
+
+- **E10 (-756, 2794), open.** Square Maas runs into the Kasteelstraat junction (n4294363596, 5 arms, reach 44 m) under
+  the service road's deck (OSM 1002735650): the two bridge arms leave the node 20 degrees apart and overlap, the
+  engine's junction pad there is not drawn (the junction and its mouths are bare terrain for ~10 m), and both decks
+  start from the node at the DTM past their ends (84.5-85.3 m) over a junction levelled at 83.39 m. A car on Square Maas
+  passes 2.4 m under the service slab's top. A profile + pad fix of its own (docs/DECKRAIL.md "Open"), registered by
+  the ceiling 5.
+
+Left in the top of the list (not deck classes): E8 (-945, 1926) -1.2 m, D10 (-1207, 2648) -1.2 m, E8 (-972, 1945)
+-0.8 m, D10 (-1029, 2709) +0.8 m, E10 (-791, 2823) +0.6 m.

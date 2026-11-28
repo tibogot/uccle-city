@@ -26,7 +26,12 @@ export const beaconU = {
   led: uniform(0),       // LED-mode flash 0..1
   gL: uniform(0), gR: uniform(0), visor: uniform(0),
   gain: uniform(1),      // emissive gain (day / night: the eye's adaptation is the tone mapper's; this keeps the lens readable by day)
+  // (claude/policeyard) per OBJECT: 0 on a parked patrol car's kit (mesh userData.parked: the police game's second car in
+  // the yard shares these materials, so its beacon stays dark while the driven car's flashes; same pipelines)
+  live: uniform(1).onObjectUpdate(({ object }) => (object?.userData.parked ? 0 : 1)),
 };
+/** the emissive gain every kit lens uses: the day / night gain, 0 on a parked car */
+export const kitGain = beaconU.gain.mul(beaconU.live);
 
 // ------------------------------------------------------------------------------------------------ surfaces of revolution
 /**
@@ -96,15 +101,15 @@ export function beaconMaterials() {
   const cable = new THREE.MeshStandardNodeMaterial({ color: 0x0e0e10, roughness: 0.55 });
   // the bulb: a quartz capsule round a filament, white-hot when on (the dome tints what we see blue)
   const bulb = new THREE.MeshStandardNodeMaterial({ color: 0xd8dde6, roughness: 0.05, metalness: 0 });
-  bulb.emissiveNode = color(0xd4e2ff).mul(beaconU.rot.mul(beaconU.gain).mul(2.2));
+  bulb.emissiveNode = color(0xd4e2ff).mul(beaconU.rot.mul(kitGain).mul(2.2));
   // the mirror's inner face also glows where it reflects the bulb (a cheap stand-in for the reflection of an emitter)
   const mirror = new THREE.MeshStandardNodeMaterial({ color: 0xdfe6ee, roughness: 0.05, metalness: 1 });
-  mirror.emissiveNode = color(BLUE).mul(beaconU.rot.mul(beaconU.gain).mul(0.9));
+  mirror.emissiveNode = color(BLUE).mul(beaconU.rot.mul(kitGain).mul(0.9));
   // LED modules: black PCB faces with three LED dots each (the dots by UV), lit by the LED flash
   const ledFace = new THREE.MeshStandardNodeMaterial({ color: 0x0b0d12, roughness: 0.35 });
   {
     const u = uv(), dots = smoothstep(0.32, 0.18, abs(fract(u.x.mul(3)).sub(0.5))).mul(smoothstep(0.42, 0.22, abs(u.y.sub(0.5))));
-    ledFace.emissiveNode = color(BLUE).mul(dots.mul(beaconU.led).mul(beaconU.gain).mul(14));
+    ledFace.emissiveNode = color(BLUE).mul(dots.mul(beaconU.led).mul(kitGain).mul(14));
   }
   // THE DOME: blue polycarbonate, see-through by alpha to coverage (one opaque draw, as the cars' glass), its
   // emission from the lamp inside: ROTATING = a lobe that follows the mirror (the beam passing through the dome wall)
@@ -119,13 +124,13 @@ export function beaconMaterials() {
     const band = smoothstep(0.055, 0.085, p.y).mul(smoothstep(0.15, 0.115, p.y));     // the beam / LED ring height
     const rot = beaconU.rot.mul(lobe.mul(band.mul(0.8).add(0.2)).add(0.06));
     const led = beaconU.led.mul(band.mul(1.6).add(0.45));
-    dome.emissiveNode = color(BLUE).mul(rot.add(led).mul(beaconU.gain).mul(4.0));
+    dome.emissiveNode = color(BLUE).mul(rot.add(led).mul(kitGain).mul(4.0));
   }
   // grille / visor lenses: clear when off (a hint of the blue LEDs behind), LED segments by UV
   const lens = (which, n) => {
     const m = new THREE.MeshStandardNodeMaterial({ color: 0x1a1f2a, roughness: 0.08, metalness: 0.2 });
     const seg = smoothstep(0.42, 0.25, abs(fract(uv().x.mul(n)).sub(0.5)));
-    m.emissiveNode = color(BLUE).mul(seg.mul(0.75).add(0.25).mul(which).mul(beaconU.gain).mul(16));
+    m.emissiveNode = color(BLUE).mul(seg.mul(0.75).add(0.25).mul(which).mul(kitGain).mul(16));
     return m;
   };
   MATS = { rubber, abs: abs_, plate, chrome, cable, bulb, mirror, ledFace, dome,

@@ -1,0 +1,217 @@
+# The villa on Avenue du Prince d'Orange (claude/villa1)
+
+Owner, 2026-11-20 / 2026-11-22: a big modern luxury villa on Av. du Prince d'Orange, with a gate that opens, grounds you
+can drive into, a garage with cars, a swimming pool and a big interior with stairs to a first floor, without hurting
+performance. Look between real and stylised (docs/LOOK_NTE.md; the owner's NTE shots were a style reference only).
+The villa is FICTIONAL (no owner, no brand); its plot and ground are real. `?villa=0` = the UrbIS house as before.
+
+## Plot
+
+UrbIS solid 543176 (BU 1588559, tile H9): a detached house on the avenue's west side, 25 x 29 m, the nearest building 27 m
+away, ~28 m back from the axis. `tools/villa/site.mjs` writes the frame (u into the plot, w south along the avenue; three
+local x = u, z = w, y = TAW - 100) and the city's terrain sampled in it (heightmap.js `surface`, the tile's own DTM) to
+`models/villa/site.json`. The DTM shows the old house's two basement ramps (2.5 m deep, beside the house): the south one
+became the villa's garage, the north one lies under the living wing; the garden behind is a flat lawn at ~117.7 m.
+
+Plot (frame): u 9.6 (the property line: the avenue's half width 9.2 m) .. 58, w -34 .. 30 (64 x 48 m).
+
+## Design (tools/blender/villa.py)
+
+- Ground floor at 118.40 m on a blue-stone plinth (the terrain under the footprint reaches 118.28): white render, a glass
+  curtain wall onto the garden; a double-height living pavilion (w -23 .. -8) with a sunken lounge (channel-tufted sofas,
+  a marble fireplace wall with a linear fire), kitchen island + dining, the hall with a floating walnut stair (LED under
+  each nosing) between a marble feature wall and a dark slat screen, a brass mesh panel, the lounge with walnut wall
+  cabinetry (brass handles), a wall TV, a lit coffee niche, an LED cove ceiling with downlights.
+- A cantilevered upper box (dark timber, vertical slats over the front and the south side) at 122.40 m: the mezzanine
+  gallery over the living room (glass balustrade), a study, bedroom 2, the master suite.
+- Garage under the lounge, in the old basement ramp, entered from the front (door w 18 .. 22.6); the drive runs straight
+  from the gate. A black saloon in the left bay and a motorbike at the back; the right bay is the player's; a white SUV
+  waits on the forecourt (the city's own car pack / bike models until the luxury cars come).
+- The swing gate (two dark aluminium leaves with timber slats) in a rendered boundary wall with blue-stone piers; clipped
+  hedges on the other three sides; the paved drive / forecourt / garage floor drape on the city's ground (JS).
+- The terrace (blue stone) with the pool (16 x 4.5 m), its steps down to the lawn, a pergola on two dark columns.
+
+Materials: named slots only, no colour baked. Exterior: render_white / stone_blue from the shared library (shipped
+scans), wood_cladding, metal_dark, glass_window, concrete_soffit, glow, hedge (TSL stand-ins in viewer/villa/villaModel.js),
+pool_water (one opaque TSL material: the basin is ray-traced in the fragment against the pool's box: mosaic, depth
+absorption, caustics, night LEDs; lit by the scene, the sky's reflection from the env map). Interior: 12 unlit slots +
+glass (viewer/villa/villaInterior.js), colour in TSL, light from the bakes.
+
+Quality: flat normals on every plane (soft furnishings smooth, weighted normals), every opening a rectangle grid, faces
+split on a world grid (welded seams: rule welded-seams), bevelled steps / copings / frames / furniture, walls and steps
+sunk 0.3 m under the ground (rule model-meets-ground). Mesh audit before the pack: 0 blocking (the kit plants' open
+leaves listed in models/villa/audit/interior.allow.json; the soft node skips streak / bentflat, which guard flat
+architecture). Cycles on OptiX (the script refuses a CPU bake).
+
+## Build
+
+```
+node --import ./tools/road_audit/register.mjs tools/villa/site.mjs
+"C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/villa.py -- models/villa --samples 256 [--preview DIR] [--no-bake]
+node tools/villa/pack.mjs
+```
+~90 s on the RTX 4050 (AO 2 s, sky / sun / night per-corner bakes 6-10 s each, five Cycles previews).
+
+## Runtime (viewer/villa/)
+
+| file | what |
+|---|---|
+| villaPlot.js | the frame + rings, synchronous for main.js: the plot clears the generated garden pieces / shrubs (and 2.5 m over the property line: the old house's front wall), the built rings clear the LiDAR trees and the grass |
+| villaModel.js | the exterior GLB, its materials, LOD0 < 70 m, LOD1 < 240 m (scripted), LOD2 (dithered cross-fades), the animated parts, the open bay's far pane, the pool water |
+| villaGrounds.js + villaGroundsGeom.js | the paved grounds (one mesh, one draw; the garage floor's drape smoothed) |
+| villaCars.js | the parked cars (one merged mesh each) + the bike; their rings for the car's colliders |
+| villaInterior.js | the interior cell: per-corner baked light, the glass fading in over the exterior's, probes for the walker |
+| villaCity.js | hide list, background load + precompile + shadow-pass warm-up, LOD fades, the gate (opens < 13 m of the car / walker / camera; colliders = closed rings or open leaves, never a moving leaf), the pivot door (< 3.5 m while the interior shows), interior streaming (fetch < 60 m, show < 30 m, hide > 45 m), third-person hooks (cell colliders, terrain off in the house and the pool, probe-lit walker) |
+
+The villa root's LOD0 is in viewer/heroColliders.js HERO_ROOTS: its walls, plinth, terrace, hedges and garage are the
+car's blockers and the walker's triangles; the gate leaves and the door live outside the root (they move).
+
+## Perf (round 1)
+
+See the report of claude/villa1 (numbers at the villa vs ?villa=0, same camera, GREEN preflight). Gate row `villa`
+(tools/audit/villaCheck.mjs) holds the budgets; the browser row `villa` the stream-in hitch.
+
+## Round 2 (2026-11-22, the coordinator's review)
+
+| defect | why | fix | rule / check |
+|---|---|---|---|
+| leaves inside the living room | trees were cleared by trunk only; a 9.5 m tree 2.7 m north of the living wing kept its crown | trees whose crown disc (+0.5 m) reaches the house or the terrace are cleared too (villaPlot.js crownHits): 23 more trees | tree-crowns-clear-villa, `villa` row |
+| the drive rolled up at the garage, the floor followed the old ramp | the paving was draped on the DTM, which is the old basement ramp there | the drive + garage floor are ONE designed surface (villa.json drive_plane: 115.74 -> 115.80 m over 4.65 m, then flat); the car drives it (world.decks), the walker stands on it, the cars park on it; the garage narrowed to where the ramp is lowest | villa-drive-plane, `villa` row |
+| rooms too empty for their size | round 1 furnished only the essentials | the lounge split by a double-sided walnut shelving wall (books, vases): a media lounge (sofa, cushions, two armchairs, side table + lamp, arc lamp, rug, planters, art) and a dining room for 8 under three pendants with a bar (counter, stools, bottle shelves); the living room: art, a credenza with books and objects, planters, side tables + lamps, cushions, the fireplace wall off the north window; first floor: a bathroom (freestanding tub, double basin vanity, mirror, stone floor) and the master bed set (cushions, throw, bench, lamps, art) | villa-budgets (200k tris, 16 draws) |
+| a 40 m blank wall on the street | a 1.75 m rendered wall along the whole front | a low wall (0.75 m) with clipped hedges behind, the forecourt open; box hedges along the living wing's plinth; climbers between three slot windows; the entrance recessed 1.2 m (walnut-lined) under a dark fascia canopy with downlights; a mailbox and the house number on the gate's piers | `villa` row (joins, budgets) |
+
+New interior slots: ceramic_white, books (a palette per code: spines, bottles), art (abstract canvases per code): 15 + glass
+= 16 draws. Repeated items (books, chairs, bottles) are merged per slot at build time (one draw per slot).
+
+## Left for round 3
+
+- Luxury car models; a garage door; the pedestrian gate; interior doors.
+- The interior's first floor rooms are sparse (no bathrooms, no wardrobes); the master suite needs a dressing / bath.
+- The slat façade aliases at 40-80 m (thin bars: a pack-side prefilter like docs/JITTER.md §2).
+- (done in round 3a: LOD1 scripted.)
+- Night: the interior's night bake and the exterior glow are set by eye; a night pass against NTE's blue hour.
+- The pool: an infinity edge; a swimming animation for the walker.
+
+## Round 3a (claude/villa2, 2026-11-23): every level closed (gate `heroshell`)
+
+The `heroshell` probe read the villa for the first time (rule gate-dir-deps): 17.7 / 23.2 / 6.8 m2 open at L0 / L1 / L2.
+A diagnostic copy of the probe (each failing ray's entry / exit / hit in the villa frame) sorted the clusters:
+
+| cluster | cause | done | rule / check |
+|---|---|---|---|
+| L0-L2: front u 12..14, the south strip, the back overhang, the pergola (16.5 m2 at L0, all "through", 0 back) | open air under the cantilevered upper box: rays graze under the soffit and come out at its ends | allowed: 4 capsule entries in heroShell.allow.json (new `to` = a segment, `noBack` = never excuses a cluster with a back hit) | villa-lod-shells, `heroshell` |
+| L0: 1.2 m2, 6 back hits at the back (u 37.8, w 7.1) | the hall's OPEN BAY (its panel parked open for the walker): from 30 to 70 m the interior is not shown and the street saw the front wall's inside | a far pane in its own node `Villa_bay` (outside the root: never a collider), drawn while LOD0 is, hidden with the far glass when the interior shows (villaCity.js) | villa-lod-shells, `villa` row |
+| L1: back hits through the entrance; packed audit 7,847 blocking | LOD1 was meshopt of LOD0: the recess's back wall kept the door's hole (the leaf is Villa_door), reveals collapsed, flat faces bent | a SCRIPTED LOD1 (villa.py lod1, 8.1k tris, 7 draws, its own AO bake): walls with openings, reveals, glass panes (the bay too), box frames and mullions, the recess closed, the slat screens as one plane (codes screen / channel: anti-aliased stripes in the wood_cladding TSL, dark glass in the gaps over the ribbon windows, lit at night), stepped hedge boxes; hero_pack.mjs keeps a raw <Name>_lod1. Raw and packed audits 0 blocking | villa-lod-shells, `villa` row (LOD1 scripted) |
+| L2: the overhang rays only (the far box was closed) | (a duplicate roof face: the living box's top under the LPAR rect) | the far box's street side: flush dark panes in the front / side openings, the recess as walnut, the upper box's front + south as the screen codes, its top a grey roof (it was wood: a brown roof popped in at the 240 m cross-fade, seen in the browser A/B); the duplicate face removed (170 tris) | villa-lod-shells |
+
+Ceilings (heroShell.ceil.json): villa L0 0, L1 0, L2 0. Budgets: LOD0 56,994 tris / 8 draws, LOD1 8,098 / 7, LOD2 170 / 6,
+download 5.50 MB, interior 179,420 / 16.
+
+Cross-fades checked in the browser (forced levels, same camera; shots in uccle-villa-ab/round4): LOD0 -> LOD1 at 70 m mean
+pixel difference 1.7/255 over the house (only the climbers, LOD0-only as before); LOD1 -> LOD2 at 240 m the same masses and
+tones after the roof fix. The bay pane: shown at 47 m (interior hidden), hidden at 20 m (interior shown) and beyond LOD0.
+
+## Showing it (claude/villamark, 2026-11-24)
+
+The owner could not find the villa, nor get in (rule enterable-places-findable). Now:
+
+| how | what |
+|---|---|
+| link | **https://uccle-city-pipeline.vercel.app/viewer/index.html?place=villa** (third person on the sidewalk of Av. du Prince d'Orange, 4.8 m in front of the gate, facing it: walk in, the gate opens at 13 m, the front door at 3.5 m). `?place=villa&view=stjob`: the orbit camera there instead. `?place=stalle`: the Stalle chapel's west door. |
+| map | the minimap and the full map (M) show a green **door** marker on every place you can walk into (the villa, the Stalle chapel); the full map's search ("villa", "stalle", "interior") lists them as *go inside*: picking one takes you to its door in third person |
+| Walk in | within 40 m of the door (on foot, in a car, on a bike, the falcon, or the orbit camera within 40 m), not in third person: a "Walk in" pill bottom centre; **E** (on foot / vehicles) or **Enter** (orbit / falcon: E is up / land there) or a click: third person at the entry spot. `?enterprompt=0`: none |
+| dev panel | Go to > *Go inside*: "Villa Prince d'Orange (go inside)", "Stalle chapel, the west door (go inside)" |
+| any spot | `?at=x,z&view=third[&heading=deg | &look=x,z]`: the character AT x, z, facing the heading (clockwise from north) or the look point |
+
+The data: data/places/enterable.json (one row per place: door, entry, heading, map mark, radius). A new enterable place =
+one row there + a viewer/places.js entry with `enter: <id>`; gate row `enterable` checks both, the entry spot (outside
+every footprint, on walkable ground, facing the door) and the wiring.
+
+**The ?at bug** (the owner's `?at=912,2036&view=third` spawned at Saint-Job, Vieille rue du Moulin): with no `?tile` the
+boot tile was always I6, `start` was the nearest road of THE BOOT TILE (main.js roadStart skips every point outside its
+bounds: the nearest I6 road point to the villa is on I6's edge) and third person started at `start`. Fix by cause: the
+boot tile is the tile under `?at` (viewer/placeLink.js bootTile; `?attile=old` = I6), and third person starts at `?at`
+itself (`?atthird=old` = the road start); an `?at` whose tile is not in streams it in through the teleport first.
+
+## v3 job 1 (claude/villa3, 2026-11-26): the window glass + the bed (docs/VILLA_V3_PLAN.md; `?villa3=0` = before)
+
+The owner approved the v3 plan and its budget raise (download 9 MB with the textures fetched with the interior < 60 m,
+interior ~230k triangles, draws as proposed) on the condition that perf stays very good; "glasses" meant the WINDOW
+GLASS ("they looked very fake"). Job 1 = items 0 (glass) and 1 (bed).
+
+| fix | why (cause) | what | rule / check |
+|---|---|---|---|
+| window glass | the near glass was a fixed sky tint at a constant 10-85 % opacity (milky head-on, its reflection dimmed by its own alpha), no garden / tree line / sun in it, the same from inside; the far glass reflected only the PMREM sky over flat grey | ONE glass model, viewer/villa/villaGlass.js: Fresnel (Schlick, F0 0.05) over an analytic outdoor reflection (sky gradient, a ragged tree line, the lawn, the sun's glint: lighting.js env, no SSR / planar pass, no light); from inside, the lit room reflected (dark mirrors at night); the near glass PREMULTIPLIED (reflection x F + the room behind x 0.86 (1 - F)); the far glass = the same reflection over a dim room tone glowing at night, and the near glass fades in from exactly that (no pop at 30 m); a balustrade's top edge reads as thick green glass | villa-glass-v3, `villa` 2b |
+| frames | 10 cm deep, 4 mm chamfer: read as flat black strips | 14 cm deep, 8 mm chamfer (the edges catch the light): same triangle count | `villa` budgets |
+| bed (master 2.0 m, guest 1.8 m) | five inflated boxes, a stiff throw slab floating 10 cm over the bed, flat colour | tools/blender/villa_bed.py: recessed black plinth (shadow gap), boucle platform + tall headboard, fitted-sheet mattress; DUVET, TURN-DOWN and THROW are Blender cloth simulations on the bed's own meshes as colliders (the duvet's head edge pinned: the first build slid it off the foot onto the floor), relaxed, solidified (3 / 2.8 / 1.2 cm), decimated, UV in metres; pinched-corner pillows (2 Euro, 2 sleeping, a cushion); cognac leather bench on a black frame; bedsides with a drawer gap on a recessed plinth. ~9-10k triangles a bed | villa-props-contact, `villa` 2c |
+| fabrics | the soft goods were a colour + value noise (plastic / suede; leather read as wood) | the three fabric slots merged into ONE textured slot `props` (16 -> 14 draws): a KTX2 2D array (models/villa/fabrics.ktx2, 512 px x 4 layers, UASTC + RDO + zstd, 1.0 MB: luminance detail, AO, normal) of CC0 Poly Haven scans (linen, knit, boucle, leather; models/villa/LICENCES.md), tinted per code in TSL, a relief term from the scan's normal (screen-space cotangent frame) under the baked light; streamed with the interior, never at boot. The round-2 items (sofas, chairs, rugs) keep their old look in the same slot until their jobs | villa-licences, `villa` 2d |
+| contact | the per-corner bake (0.42 m grid) cannot hold the crease where furniture meets the floor | interior.json `contact` footprints (from the collider boxes); the floors' TSL (oak, stone, the rug code) darkens round them (7 cm falloff): no decal, no draw | villa-props-contact |
+
+Budgets after job 1: download 6.75 MB (villa.glb 1.25 + interior.glb 4.53 + fabrics.ktx2 0.97) <= 9; LOD0 56,994 tris /
+8 draws (unchanged); interior cell 192,390 tris / 14 draws (was 179,420 / 16). Build: `python tools/villa/fabrics_ktx2.py
+<scan dir> 512` (once), then villa.py + pack.mjs as above; `tools/blender/villa_bed_preview.py` renders the bed alone.
+
+## v3 job 2 (claude/villa3, 2026-11-26): seating, TV, mirror, job-1 polish, and the UV bug
+
+| fix | why (cause) | what | rule / check |
+|---|---|---|---|
+| sofas (pit 6.0 m / 4.2 m, media lounge 4.6 m) + 7 armchairs | round 2: a radiator of 20-28 identical tubes on a soft slab, one plastic off-white (the pit's over-bright under the sun bake), no seams, floating on two black bars | tools/blender/villa_seating.py: recessed black plinth (shadow gap), upholstered deck between arms, a back frame; SEAT and BACK cushions are Blender CLOTH simulations with internal PRESSURE (a welted rounded core, shrunk 4 %, inflated, settled on the deck: bulge, sag, corner wrinkles; the backs with no gravity, leaning 14 deg); scatter cushions in two fabrics; one armchair simulated, its copies placed. The fabric = props codes 13 / 5 / 12 (oatmeal / greige weave, darker than the old white) | villa-props-contact (16 footprints, all within 0.4 mm of their floor) |
+| TV + media wall | a 2.8 x 1.6 m black box: a hole | an 85" TV (1.9 x 1.07 m, 3.5 cm body, 1 cm bezel), its glass reflects the lounge from a baked Cycles PANORAMA (Fresnel F0 0.04), a faint picture at night only; a soundbar; the media unit's three drawers with shadow gaps on a recessed plinth | villa-screens-mirror |
+| bathroom mirror | the same near-black screen code | silvered (88 %) reflection of the bathroom from its own panorama (day / night) | villa-screens-mirror |
+| probes | (new) | models/villa/reflect.ktx2: 4 layers (tv / mirror x day / night), 1024 x 512 equirect, UASTC + zstd, 0.73 MB, streamed with the interior; one lookup in the metal_black slot by face code: no render target, no light, no draw | villa-screens-mirror |
+| throw | the fleece scan alone read as a plain caramel slab | a chunky knit (2.4 x 2 cm V stitches, anti-aliased to its mean under ~2 px) over the scan | (props) |
+| rugs | blotchy value noise | the knit scan at rug scale, full relief, the contact shadow | (props) |
+| glass from high up | the steep downward reflection read as brown wood | the ground reflected darker, neutral, sky-cooled; the tree line rounder (no spiky octave) | villa-glass-v3 |
+| frame spacer / edge line | none | a glazing gasket round every field on both faces (8 mm, a light grey line 2 mm off the pane; 736 strips, ~4.4k triangles: LOD0 56,994 -> 61,410 of 62k) | villa-budgets |
+| **every villa UV** | **since round 1 villa.py make() wrote the UV through a layer reference taken BEFORE the colour attribute was added (which reallocates the mesh's attribute storage): the write went nowhere, every face kept Blender's default 0 / 1 unwrap; every metre pattern (oak planks, cladding boards, marble, tiles, the plaster's noise, the library scans, the fabric scans) was drawn once per face (the audit's "stripy oak", "fish-scale plaster")** | the layer fetched by name right before the write, read back (the build stops if it did not take); the marble's veins re-tuned for the real scale | **uv-written**, `villa` 2e |
+
+Budgets after job 2: download 6.92 MB (villa.glb + interior.glb + fabrics.ktx2 + reflect.ktx2) <= 9; LOD0 61,410 tris /
+8 draws (<= 62k / 9); interior cell 201,038 tris / 14 draws (<= 230k / 16).
+
+## v3 job 3 (claude/villa3, 2026-11-26): the pool, and the mirror's day highlight
+
+| fix | why (cause) | what | rule / check |
+|---|---|---|---|
+| mirror by day | the probe bake clipped the window to white (Standard view, exposure 0): a light box in the mirror | the probes rendered one stop down (gain x2 in the shader) and a soft knee on the mirror's day reflection | villa-screens-mirror |
+| the water | milky, no reflection, giant caustics, steps invisible, a flat cyan sheet at night | viewer/villa/villaPool.js (one opaque material, 2 triangles): calm wind ripples (noise gradients, no mover), Fresnel F0 0.02 over the glass model's outdoor reflection + the HOUSE (ray-box on its masses: glazing low, cladding high, warm at night), the refracted basin traced to the floor, walls and the four ENTRY STEPS (dark nosing tiles), 2.5 cm mosaic, caustics at 0.15 m fading with depth, Beer-Lambert absorption (turquoise -> deep blue-green), four LED niches emissive at night, lit from below | villa-pool-v2 |
+| the dark stripe | round 2's "lane line" tested abs(w - mid w): a 24 cm bar ACROSS the 4.5 m width at mid-length, not along the length: a lap-pool marking a residential pool does not have | removed | villa-pool-v2 (no `lane` in the shader) |
+| coping | four long bars, no joint | ~0.6 m stones with 4 mm joints, a 15 mm round-over | villa-kit-near |
+| the kit | none | Villa_kit (near only, with LOD0; 10.5k tris, 4 draws): a stainless two-rail ladder over the coping, four aluminium loungers (two by the pool + a parasol, two under the pergola), three planters with clipped shrubs, a clipped hedge skirt on the lawn round the terrace (the deck stood as a 0.7 m black block); every piece within 0.4 mm of the deck; the skirt sunk 0.3 m | villa-kit-near, joins |
+
+Budgets after job 3: download 7.0 MB of 9; LOD0 (Villa) 60,978 tris / 8 draws of 62k / 9 (the old coping bars moved
+into the kit); Villa_kit 10,534 tris / 4 draws (its own cap, 12k / 4: asked of the owner); interior unchanged.
+
+## v3 job 3b (2026-11-26): baked caustics, the night glow, the kit budget
+
+- The owner approved the Villa_kit cap (12k tris / 4 draws, near only, outside the 9-draw level cap): recorded in rule villa-budgets.
+- **Caustics** (the owner: "I've seen way better caustics in games"): BAKED, tools/villa/caustics_bake.py: a tileable periodic wave surface refracts a sun bundle onto a floor 1.1 m down, photons splatted into a 256 px tile, R / G / B at n 1.327 / 1.333 / 1.341 (the rainbow edges in ONE lookup), 12 looping frames, ETC1S: models/villa/caustics.ktx2, 162 KB. The water's shader samples it twice (two scales / scroll directions / frame phases) and keeps the MIN (the sharp web), projects it along the refracted sun onto the floor, the treads and the walls, moves it with the ripples, fades it with depth, and drops it where the coping shades the entry point: 2 lookups, no extra pass. The first wiring swapped a placeholder texture after the material was built: it did not rebind (a flat brightening): the texture now loads with the model, before the water's material (rule villa-caustics-baked).
+- **Night** (job 3 read black-blue; a first pass before it blew out white): the LED niches light the basin with an exponential falloff into the deep end, the walls and floor lit from below with the same caustic web, the water faintly luminous; constants in villaPool.js POOL_NIGHT, read by the gate's tone check (peak <= 0.9, mean >= 0.12, deep end >= 0.02: now 0.43 / 0.18 / 0.088).
+
+## v3 job 4 (2026-11-26): the sculptures
+
+Three real CC0 scans (Poly Haven; models/villa/LICENCES.md; downloads untouched in data/raw/villa_sculptures/): a
+classical marble bust on a 1.1 m column (u 47.6, w 10.2), a rearing marble horse (scaled x6, its wooden display base
+dropped, u 50.8, w -23.6), a bronze whale at the end of the pool's axis (u 54.2, w -6.0); pale stone plinths with cap
+stones, a ground uplight in front of each (metal_dark lens code led: emissive at night; the statue's night wash in
+its material, no light). tools/blender/villa_art.py: LOD0 = the scan (welded, the horse's open base filled), LOD1 /
+LOD2 = a voxel remesh, decimated, UV transferred back; ONE material for all (two KTX2 arrays, a layer per statue:
+models/villa/art_col.ktx2 + art_dat.ktx2, 1.2 MB, tools/villa/art_ktx2.py; loaded with the model). The first look
+read as chrome (the scans' glossy roughness under the sky env): roughness >= 0.48, metal x 0.85. The first packs
+had 220 / 8 / 2 blocking mesh-audit items (decimation slits and folds, the x6 horse's seams): fixed by cause (rule
+villa-sculptures). Budgets: Villa_art 41,135 / 7,474 / 782 tris, 1 draw a level; download 8.82 MB of 9.
+
+## v3 job 5 (2026-11-26): the garden on the city's kits
+
+The owner: "the garden was ugly, with the hedges around the villa being like big blocks, not natural at all". Cause:
+villa.py drew its own hedges (stepped boxes with a leaf shader, a second hedge technique next to the city's), so they
+read as blocks at every distance and never matched the street's hedges. Now (rule villa-garden-city-kit) the villa's
+hedges are 10 runs (259 m) of the CITY's front-garden hedge modules (viewer/gardens/gardenHedge.js: baked clipped
+leaf surface, leaf cards inside 24 m, soft lumps, the shadowed foot, species colour by season, 3 dithered LODs,
+colliders): beech behind the street wall, box along the living wing and round the terrace (the old skirt), hornbeam
+2.2 m on the plot's sides and back (ends overlapping: no corner slot); and 17 shrubs from the city's plant kit
+(hydrangeas along the front, rhododendrons / laurels in the back corners, lavender by the lawn steps, box balls
+near the sculptures). viewer/villa/villaPlot.js VILLA_HEDGE_RUNS / villaShrubRows, added to tile H9 after the plot's
+clear ring (cityGardens.extraHedges, main.js). villa.py: CITY_HEDGES (VILLA_BOX_HEDGES=1 = the boxes back). The city
+hedges round the plot are the same modules (one look). Cost: no draw of its own (the city's hedge pool, already
+drawn); +258 module instances (+ cards near), Villa LOD0 49.1k tris (was 61k), download 8.44 MB of 9. `?villa3=0`
+= before (the v2 model and its boxes). Sheet: uccle-villa3/job5/job5_compare.png.

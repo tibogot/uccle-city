@@ -1,0 +1,728 @@
+{
+ "_doc": "Embassy flags (TODO 4b, rule docs/rules/embassy-flags.md). places: the OSM diplomatic places of the commune (pipeline/fetch_diplomatic.py), check = a look at street-level imagery (look only, never stored or traced); poles: written by tools/embassy/places.mjs from the 'yes' places' mounts. Only a real flag gets one.",
+ "osm_base": "2026-11-26T01:53:58Z",
+ "places": [
+  {
+   "osm": "node/12988144226",
+   "country": "ER",
+   "kind": "embassy",
+   "name": "Embassy of the State of Eritrea",
+   "tile": "E4",
+   "x": -595.11,
+   "z": -138.84,
+   "check": {
+    "flag": "yes",
+    "where": "free-standing pole in the side garden, left of the house seen from the avenue",
+    "count": 1,
+    "designs": [
+     "eritrea"
+    ],
+    "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
+    "note": "Av. Wolvendael: one tall pole behind the hedge between the house and its left neighbour",
+    "face_n": [
+     0.93,
+     -0.36
+    ],
+    "mounts": [
+     {
+      "type": "pole",
+      "design": "eritrea",
+      "end": "left",
+      "along": -2.5,
+      "out": 3,
+      "h": 8
+     }
+    ]
+   }
+  },
+  {
+   "osm": "node/12145005092",
+   "country": "NI",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Nicaragua",
+   "tile": "E5",
+   "x": -515.59,
+   "z": 21.32,
+   "check": {
+    "flag": "yes",
+    "where": "façade bracket at the first floor, right of the small balcony",
+    "count": 1,
+    "designs": [
+     "nicaragua"
+    ],
+    "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
+    "note": "Av. Wolvendael 55: one steep bracket pole, blue-white-blue",
+    "face_n": [
+     0.85,
+     -0.53
+    ],
+    "mounts": [
+     {
+      "type": "bracket",
+      "design": "nicaragua",
+      "mid": true,
+      "along": 1,
+      "y": 4.6,
+      "tilt": 60
+     }
+    ]
+   }
+  },
+  {
+   "osm": "node/12145005091",
+   "country": "AF",
+   "kind": "embassy",
+   "name": "Embassy of the Islamic Repubic of Afghanistan",
+   "tile": "F5",
+   "x": -494.93,
+   "z": 51.97,
+   "check": {
+    "flag": "yes",
+    "where": "façade bracket over the front door",
+    "count": 1,
+    "designs": [
+     "afghanistan"
+    ],
+    "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
+    "note": "Av. Wolvendael 61: one steep bracket pole over the door, the black-red-green tricolour",
+    "face_n": [
+     0.94,
+     -0.34
+    ],
+    "mounts": [
+     {
+      "type": "bracket",
+      "design": "afghanistan",
+      "mid": true,
+      "along": 1,
+      "y": 3.4,
+      "tilt": 60
+     }
+    ]
+   }
+  },
+  {
+   "osm": "way/224879849",
+   "country": "GA",
+   "kind": "embassy",
+   "name": "Embassy of the Gabonese Republic (Gabon)",
+   "tile": "G2",
+   "x": 288.64,
+   "z": -1491.92,
+   "check": {
+    "flag": "no",
+    "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
+    "note": "Av. Winston Churchill 112 (corner Rue Marianne): no flag seen"
+   }
+  },
+  {
+   "osm": "way/31300004",
+   "country": "RU",
+   "kind": "embassy",
+   "name": "Embassy of the Russian Federation (Russia)",
+   "tile": "G3",
+   "x": 289.66,
+   "z": -727.55,
+   "check": {
+    "flag": "no",
+    "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
+    "note": "Av. De Fré: no flag pole at the gate; the house stands far back in its park, hidden by trees"
+   }
+  },
+  {
+   "osm": "node/13056896651",
+   "country": "GQ",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Equatorial Guinea",
+   "tile": "H1",
+   "x": 743.39,
+   "z": -1899.67,
+   "check": {
+    "flag": "unseen",
+    "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
+    "note": "the building at the OSM point was not identified on the imagery: nothing recorded"
+   }
+  },
+  {
+   "osm": "node/13056938125",
+   "country": "BF",
+   "kind": "embassy",
+   "name": "Embassy of Burkina Faso",
+   "tile": "H1",
+   "x": 812.94,
+   "z": -1802.21,
+   "check": {
+    "flag": "yes",
+    "where": "free-standing pole in the corner front garden (on the other street)",
+    "count": 1,
+    "designs": [
+     "burkina_faso"
+    ],
+    "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
+    "note": "Rue de la Primevère 2 (corner): one pole in the garden past the house's end along the side street, behind its hedge (set back from the house's front line), red over green",
+    "mounts": [
+     {
+      "type": "pole",
+      "design": "burkina_faso",
+      "end": "left",
+      "along": -5,
+      "out": -2.5,
+      "h": 7
+     }
+    ]
+   }
+  },
+  {
+   "osm": "way/224881413",
+   "country": "RO",
+   "kind": "embassy",
+   "name": "Embassy of Romania",
+   "tile": "H1",
+   "x": 726.73,
+   "z": -1508.88,
+   "check": {
+    "flag": "yes",
+    "where": "two façade brackets from one plate at the first floor, over the door",
+    "count": 2,
+    "designs": [
+     "romania",
+     "eu"
+    ],
+    "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
+    "note": "Rue Gabrielle 105: Romania left, the EU right (a V pair); a Romanian flag also flies on a pole in the garden to the left, behind the wall (not placed: not on this building's front); placed: the two arms 1 m apart at 30 / 50 deg (not one plate) so the two 1.5 x 1.0 m flags never fly through each other in a wind along the front",
+    "mounts": [
+     {
+      "type": "bracket",
+      "design": "romania",
+      "along": -0.5,
+      "y": 5.6,
+      "tilt": 30,
+      "splay": -15
+     },
+     {
+      "type": "bracket",
+      "design": "eu",
+      "along": 0.5,
+      "y": 5.6,
+      "tilt": 50,
+      "splay": 15
+     }
+    ]
+   }
+  },
+  {
+   "osm": "node/12614266195",
+   "country": "AO",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Angola",
+   "tile": "H2",
+   "x": 806.64,
+   "z": -1181.87,
+   "check": {
+    "flag": "yes",
+    "where": "façade bracket at the first floor, the left end of the front",
+    "count": 1,
+    "designs": [
+     "angola"
+    ],
+    "seen": "Google Street View May 2022 (look only, 2026-11-26)",
+    "note": "Av. Montjoie 98: one bracket pole at the left corner, red-black",
+    "mounts": [
+     {
+      "type": "bracket",
+      "design": "angola",
+      "end": "left",
+      "along": 1.5,
+      "y": 4.4,
+      "tilt": 40
+     }
+    ]
+   }
+  },
+  {
+   "osm": "node/13004253815",
+   "country": "KE",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Kenya",
+   "tile": "H2",
+   "x": 932.29,
+   "z": -1415.62,
+   "check": {
+    "flag": "yes",
+    "where": "free-standing pole in the small front garden",
+    "count": 1,
+    "designs": [
+     "kenya"
+    ],
+    "seen": "Google Street View Jul 2024 (look only, 2026-11-26)",
+    "note": "Av. Winston Churchill 208: one pole a little left of the façade's middle, close to the front",
+    "mounts": [
+     {
+      "type": "pole",
+      "design": "kenya",
+      "mid": true,
+      "along": -1,
+      "out": 2,
+      "h": 8
+     }
+    ]
+   }
+  },
+  {
+   "osm": "node/13841940487",
+   "country": "BG",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Bulgaria",
+   "tile": "H2",
+   "x": 943.13,
+   "z": -1092.36,
+   "check": {
+    "flag": "yes",
+    "where": "two façade brackets over the front door",
+    "count": 2,
+    "designs": [
+     "bulgaria",
+     "eu"
+    ],
+    "seen": "Google Street View Jun 2024 (look only, 2026-11-26)",
+    "note": "Av. Moscicki 14: the Bulgarian flag left, the EU flag right, both over the door; placed: the two brackets at 30 / 50 deg so the two flags fly in two layers (not through each other)",
+    "mounts": [
+     {
+      "type": "bracket",
+      "design": "bulgaria",
+      "along": -0.4,
+      "y": 3.4,
+      "tilt": 30,
+      "splay": -20
+     },
+     {
+      "type": "bracket",
+      "design": "eu",
+      "along": 0.4,
+      "y": 3.4,
+      "tilt": 50,
+      "splay": 20
+     }
+    ]
+   }
+  },
+  {
+   "osm": "way/224881475",
+   "country": "SZ",
+   "kind": "embassy",
+   "name": "Embassy of the Kingdom of Eswatini (Swaziland)",
+   "tile": "H2",
+   "x": 784.88,
+   "z": -1403.74,
+   "check": {
+    "flag": "yes",
+    "where": "free-standing pole close to the front, behind the railing",
+    "count": 1,
+    "designs": [
+     "eswatini"
+    ],
+    "seen": "Google Street View Jun 2024 (look only, 2026-11-26)",
+    "note": "Av. Winston Churchill 188: one pole left of the middle, ~1 m in front of the wall, the flag furled on the imagery; placed 2.4 m out: the city draws balconies on this front (the real villa has none), the pole stands clear of them",
+    "face_n": [
+     -0.14,
+     0.99
+    ],
+    "mounts": [
+     {
+      "type": "pole",
+      "design": "eswatini",
+      "mid": true,
+      "along": -2.5,
+      "out": 2.4,
+      "h": 8,
+      "wall_clear": 1.45
+     }
+    ]
+   }
+  },
+  {
+   "osm": "way/224917971",
+   "country": "GT",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Guatemala",
+   "tile": "H2",
+   "x": 930.28,
+   "z": -1349.46,
+   "check": {
+    "flag": "no",
+    "seen": "Google Street View Jun 2024 (look only, 2026-11-26)",
+    "note": "Av. Winston Churchill 185 (corner Rue Ernest Gossart): an apartment block, no flag seen"
+   }
+  },
+  {
+   "osm": "node/8423674093",
+   "country": "KM",
+   "kind": "embassy",
+   "name": "Embassy of the Union of the Comoros",
+   "tile": "H3",
+   "x": 625.67,
+   "z": -983.04,
+   "check": {
+    "flag": "no",
+    "seen": "Google Street View Jun 2024 (look only, 2026-11-26)",
+    "note": "Bosveldweg 14: a house with a gravel drive, no flag"
+   }
+  },
+  {
+   "osm": "node/12762027263",
+   "country": "UA",
+   "kind": "embassy",
+   "name": "Embassy of Ukraine",
+   "tile": "H5",
+   "x": 779.63,
+   "z": 400.74,
+   "check": {
+    "flag": "yes",
+    "where": "free-standing pole in the front garden, left of the entrance",
+    "count": 1,
+    "designs": [
+     "ukraine"
+    ],
+    "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
+    "note": "Av. Albert Lancaster 31: one white pole behind the hedge, the blue-yellow flag",
+    "mounts": [
+     {
+      "type": "pole",
+      "design": "ukraine",
+      "along": -4,
+      "out": 2.2,
+      "h": 8
+     }
+    ]
+   }
+  },
+  {
+   "osm": "node/12762050104",
+   "country": "HU",
+   "kind": "embassy",
+   "name": "Embassy of Hungary",
+   "tile": "I4",
+   "x": 1423.96,
+   "z": -203.17,
+   "check": {
+    "flag": "yes",
+    "where": "two free-standing poles on the front lawn, left of the door",
+    "count": 2,
+    "designs": [
+     "hungary",
+     "eu"
+    ],
+    "seen": "Google Street View Apr 2024 (look only, 2026-11-26)",
+    "note": "Av. du Vert Chasseur 44: the Hungarian flag nearer the door, the EU flag further left",
+    "mounts": [
+     {
+      "type": "pole",
+      "design": "hungary",
+      "along": -3.5,
+      "out": 3,
+      "h": 8,
+      "colour": "steel"
+     },
+     {
+      "type": "pole",
+      "design": "eu",
+      "along": -6.5,
+      "out": 3.2,
+      "h": 8,
+      "colour": "steel"
+     }
+    ]
+   }
+  },
+  {
+   "osm": "node/12762057644",
+   "country": "IL",
+   "kind": "embassy",
+   "name": "Embassy of the State of Israel",
+   "tile": "J4",
+   "x": 1507.32,
+   "z": -460.28,
+   "check": {
+    "flag": "unseen",
+    "seen": "Google Street View Apr 2019 (look only, 2026-11-26)",
+    "note": "the imagery is blurred here: nothing recorded"
+   }
+  },
+  {
+   "osm": "node/12461850166",
+   "country": "KZ",
+   "kind": "embassy",
+   "name": "Embassy of the Republic of Kazakhstan",
+   "tile": "L7",
+   "x": 2514.77,
+   "z": 1426.35,
+   "check": {
+    "flag": "no",
+    "seen": "Google Street View Jul 2024 (look only, 2026-11-26)",
+    "note": "Av. Van Bever 30: the house stands far back behind trees and the fence; no pole seen"
+   }
+  },
+  {
+   "osm": "node/12869199203",
+   "country": "RU",
+   "kind": "embassy",
+   "name": "Représentation Commerciale de Russie en Belgique - Handeltvertegenwoordiging van Rusland in België",
+   "tile": "L8",
+   "x": 2566.41,
+   "z": 1683.43,
+   "check": {
+    "flag": "no",
+    "seen": "Google Street View Jul 2025 (look only, 2026-11-26)",
+    "note": "Drève de Lorraine 45: a walled gate, no flag pole seen"
+   }
+  }
+ ],
+ "poles": [
+  {
+   "id": "node/12988144226#0",
+   "place": "node/12988144226",
+   "tile": "E4",
+   "type": "pole",
+   "design": "eritrea",
+   "x": -583.4,
+   "z": -134.55,
+   "h": 8,
+   "wall_m": 3.9
+  },
+  {
+   "id": "node/12145005092#0",
+   "place": "node/12145005092",
+   "tile": "E5",
+   "type": "bracket",
+   "design": "nicaragua",
+   "x": -510.1,
+   "z": 17.12,
+   "n": [
+    0.8582,
+    -0.5133
+   ],
+   "y": 4.6,
+   "ground_at": [
+    -509.07,
+    16.5
+   ],
+   "tilt": 60,
+   "wall_m": 0
+  },
+  {
+   "id": "node/12145005091#0",
+   "place": "node/12145005091",
+   "tile": "F5",
+   "type": "bracket",
+   "design": "afghanistan",
+   "x": -491.14,
+   "z": 48.46,
+   "n": [
+    0.8397,
+    -0.543
+   ],
+   "y": 3.4,
+   "ground_at": [
+    -490.14,
+    47.8
+   ],
+   "tilt": 60,
+   "wall_m": 0
+  },
+  {
+   "id": "node/13056938125#0",
+   "place": "node/13056938125",
+   "tile": "H1",
+   "type": "pole",
+   "design": "burkina_faso",
+   "x": 806.76,
+   "z": -1810.19,
+   "h": 7,
+   "wall_m": 1.79
+  },
+  {
+   "id": "way/224881413#0",
+   "place": "way/224881413",
+   "tile": "H1",
+   "type": "bracket",
+   "design": "romania",
+   "x": 736.86,
+   "z": -1514.09,
+   "n": [
+    0.9767,
+    -0.2144
+   ],
+   "y": 5.6,
+   "ground_at": [
+    738.03,
+    -1514.35
+   ],
+   "tilt": 30,
+   "splay": -15,
+   "t": [
+    -0.2144,
+    -0.9767
+   ],
+   "wall_m": 0.01
+  },
+  {
+   "id": "way/224881413#1",
+   "place": "way/224881413",
+   "tile": "H1",
+   "type": "bracket",
+   "design": "eu",
+   "x": 736.64,
+   "z": -1515.07,
+   "n": [
+    0.9767,
+    -0.2144
+   ],
+   "y": 5.6,
+   "ground_at": [
+    738.03,
+    -1514.35
+   ],
+   "tilt": 50,
+   "splay": 15,
+   "t": [
+    -0.2144,
+    -0.9767
+   ],
+   "wall_m": 0.01
+  },
+  {
+   "id": "node/12614266195#0",
+   "place": "node/12614266195",
+   "tile": "H2",
+   "type": "bracket",
+   "design": "angola",
+   "x": 803.04,
+   "z": -1175.04,
+   "n": [
+    0.2493,
+    0.9684
+   ],
+   "y": 4.4,
+   "ground_at": [
+    803.34,
+    -1173.88
+   ],
+   "tilt": 40,
+   "wall_m": 0
+  },
+  {
+   "id": "node/13004253815#0",
+   "place": "node/13004253815",
+   "tile": "H2",
+   "type": "pole",
+   "design": "kenya",
+   "x": 933.75,
+   "z": -1403.62,
+   "h": 8,
+   "wall_m": 2
+  },
+  {
+   "id": "node/13841940487#0",
+   "place": "node/13841940487",
+   "tile": "H2",
+   "type": "bracket",
+   "design": "bulgaria",
+   "x": 949.79,
+   "z": -1095.18,
+   "n": [
+    0.9823,
+    -0.1875
+   ],
+   "y": 3.4,
+   "ground_at": [
+    950.96,
+    -1095.4
+   ],
+   "tilt": 30,
+   "splay": -20,
+   "t": [
+    -0.1875,
+    -0.9823
+   ],
+   "wall_m": 0
+  },
+  {
+   "id": "node/13841940487#1",
+   "place": "node/13841940487",
+   "tile": "H2",
+   "type": "bracket",
+   "design": "eu",
+   "x": 949.63,
+   "z": -1095.96,
+   "n": [
+    0.9823,
+    -0.1875
+   ],
+   "y": 3.4,
+   "ground_at": [
+    950.96,
+    -1095.4
+   ],
+   "tilt": 50,
+   "splay": 20,
+   "t": [
+    -0.1875,
+    -0.9823
+   ],
+   "wall_m": 0
+  },
+  {
+   "id": "way/224881475#0",
+   "place": "way/224881475",
+   "tile": "H2",
+   "type": "pole",
+   "design": "eswatini",
+   "x": 784.2,
+   "z": -1391.54,
+   "h": 8,
+   "wall_m": 2.4,
+   "wall": {
+    "n": [
+     0.0168,
+     0.9999
+    ],
+    "d": 0.95
+   }
+  },
+  {
+   "id": "node/12762027263#0",
+   "place": "node/12762027263",
+   "tile": "H5",
+   "type": "pole",
+   "design": "ukraine",
+   "x": 780.36,
+   "z": 406.77,
+   "h": 8,
+   "wall_m": 2.2
+  },
+  {
+   "id": "node/12762050104#0",
+   "place": "node/12762050104",
+   "tile": "I4",
+   "type": "pole",
+   "design": "hungary",
+   "x": 1424.69,
+   "z": -214.68,
+   "h": 8,
+   "colour": "steel",
+   "wall_m": 3.3
+  },
+  {
+   "id": "node/12762050104#1",
+   "place": "node/12762050104",
+   "tile": "I4",
+   "type": "pole",
+   "design": "eu",
+   "x": 1427.35,
+   "z": -216.08,
+   "h": 8,
+   "colour": "steel",
+   "wall_m": 5.36
+  }
+ ]
+}

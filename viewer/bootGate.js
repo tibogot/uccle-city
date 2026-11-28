@@ -25,7 +25,7 @@ const EARLY = params.get("landmarksearly") === "1";   // (round 3 measured: the 
 export const GATED = {
   augustin: [-896, -1961], calevoet: [-1225, 790], papenkasteel: [-637, 1154], heros: [-533, -484], observatory: [654, 60], police: [-514, -340],
   rosaire: [1279, -1254], sacrecoeur: [-264, -1631], saintmarc: [454, -620], latourdefrein: [112, 2310], russian: [-354, -468], stalle: [-1150, 57], stpierre: [-709, -493], townhall: [-1148, -506],
-  vanbuuren: [303, -1230], wolvendael: [-469, -366],
+  vanbuuren: [303, -1230], wolvendael: [-469, -366], villa: [881, 2056],
   // the hero rail bridges / road tunnels (models/rail/<name>.json)
   bigarreaux: [-1106, 1636], "rail:calevoet": [-1125, 1123], engeland: [-691, 1795], engeland_chord: [-701, 1787],
   kauwberg: [273, 869], linkebeek: [-1328, 2304], ruestalle: [-1489, 276], "rail:stjob": [417, 791], verrewinkel: [-269, 1308],
@@ -57,6 +57,20 @@ export function whenNeeded(id) {
   if (HELD && EARLY) return Promise.resolve();
   const margin = 150;                       // a model straddling the ring's edge counts as inside
   if (p[0] > start.x0 - margin && p[0] < start.x1 + margin && p[1] > start.z0 - margin && p[1] < start.z1 + margin) return Promise.resolve();
+  const k = queued++;
+  return liftP.then(() => new Promise((r) => setTimeout(r, 400 + k * STAGGER))).finally(() => { released++; });
+}
+
+// CHRISTMAS (plan job 3, docs/CHRISTMAS.md "Boot with the layer on"): from 1 December the layer is on for every visitor.
+// Its downloads (~7 MB) start at once only when a decorated area (models/christmas/site.json select.areas: centre +
+// radius, city metres) reaches into the boot's ring: then it can be on screen at the reveal and loads under the cover,
+// at low fetch priority. Otherwise it waits for the cover, staggered as the far landmarks (nothing of it is in view:
+// the garlands fade out by 650 m). ?quick=1: at once (quickReady waits for it: window.__xmasPending). Rule
+// xmas-low-priority: gate row `xmas` checks this gate and the fetch priority.
+export const XMAS_AREAS = [[1150, 525, 420], [-720, -500, 520]];
+export function whenXmasNeeded() {
+  if (QUICK || !BOOT_DEFER || !start || lifted) return Promise.resolve();
+  if (XMAS_AREAS.some(([x, z, r]) => x > start.x0 - r && x < start.x1 + r && z > start.z0 - r && z < start.z1 + r)) return Promise.resolve();
   const k = queued++;
   return liftP.then(() => new Promise((r) => setTimeout(r, 400 + k * STAGGER))).finally(() => { released++; });
 }

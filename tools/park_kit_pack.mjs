@@ -5,6 +5,8 @@
 //
 //   node tools/park_kit_pack.mjs rock        (models/parkkit/rockkit.raw.glb -> rockkit.glb)
 //   node tools/park_kit_pack.mjs playground  (models/parkkit/playgroundkit.raw.glb -> playgroundkit.glb)
+//   node tools/park_kit_pack.mjs timber      (models/parkkit/timberkit.raw.glb -> timberkit.glb: claude/places3, the log
+//                                             play frames, tools/blender/timberPlayKit.py; packed like the playground)
 //   [--force-audit] [--no-audit]
 //
 // Per piece (node "<piece>", optional "<piece>__detail" = LOD0-only parts such as chains / nets / wires, optional
@@ -27,7 +29,7 @@ import { auditParts } from "./mesh_audit/audit.js";
 
 const KIT = process.argv[2] || "rock";
 const DIR = "models/parkkit";
-const NAME = KIT === "rock" ? "rockkit" : KIT === "cliff" ? "sauvagere_cliff" : "playgroundkit";
+const NAME = KIT === "rock" ? "rockkit" : KIT === "cliff" ? "sauvagere_cliff" : KIT === "timber" ? "timberkit" : "playgroundkit";
 const ROCKLIKE = KIT === "rock" || KIT === "cliff";       // the cliff (one hero surface cut in chunks) packs like the rocks,
 const LOCK = KIT === "cliff";                             // with the chunk borders LOCKED (no cracks between chunks at different LODs)
 const SRC = path.join(DIR, `${NAME}.raw.glb`), DST = path.join(DIR, `${NAME}.glb`);
@@ -227,7 +229,9 @@ function renormal(m, creaseDeg) {
 /** PLAYGROUND BATCHING: every slot of a piece merged into ONE primitive ("playground" material): COLOR_0.r holds the
  *  slot's index in SLOT_ORDER (/ 32 + 1/64), COLOR_0.a the vertex AO (LOD1 / LOD2; 1 at LOD0). One draw per piece and LOD. */
 const SLOT_ORDER = ["wood_stained", "wood_log", "wood_bench", "steel_galvanised", "steel_painted_red", "steel_painted_green", "hpl_panel",
-  "hdpe_green", "hdpe_red", "rope_grey", "rubber_black", "stainless_steel", "surface_rubber", "sand"];
+  "hdpe_green", "hdpe_red", "rope_grey", "rubber_black", "stainless_steel", "surface_rubber", "sand",
+  // (claude/places3, the timber kit: appended, the indices above unchanged)
+  "wood_robinia", "bark", "end_grain", "rope_hemp", "wood_board"];
 function oneSlot(prims) {
   for (const m of prims) {
     const si = SLOT_ORDER.indexOf(m.slot); if (si < 0) throw new Error(`slot ${m.slot} not in SLOT_ORDER`);
@@ -271,7 +275,7 @@ for (const piece of pieces) {
   CFG.lod.forEach((L0, k) => {
    // meshopt can leave a fold (two faces overlapping): the checker runs on the LOD as made, and the LOD is re-made with
    // a slightly different error until it is clean (at most 5 tries; the last one is kept and the final audit reports it)
-   for (const mul of (k === 0 && !ROCKLIKE) ? [1] : [1, 0.85, 1.15, 0.7, 1.3, 0.6, 1.45, 0.92, 1.07, 1.6]) {
+   for (const mul of ((k === 0 || meshes[`${piece}__lod${k}`]) && !ROCKLIKE) ? [1] : [1, 0.85, 1.15, 0.7, 1.3, 0.6, 1.45, 0.92, 1.07, 1.6]) {
     const L = { ...L0, err: (ERR_OVERRIDE[`${piece}:${k}`] ?? L0.err) * mul };
     let prims;
     // rock LOD0 keeps smooth normals except folds over 85 deg (the normal map was baked against the low-poly's smooth normals)
@@ -279,6 +283,10 @@ for (const piece of pieces) {
     if (KIT === "cliff") prims = main.map((m) => (L.weld ? simplifyWelded(m, L.err, L.prune) : simplifySeams(m, L.err, false)));   // (normals: below, on the whole surface)
     else if (ROCKLIKE) prims = main.map((m) => renormal(L.weld ? simplifyWelded(m, L.err, L.prune) : simplifySeams(m, L.err, false), L.weld ? CREASE : 85));
     else if (k === 0) prims = oneSlot(mergeSlots([...main, ...detail]).map((m) => renormal(m, CREASE_PG)));
+    // (claude/places3, the timber kit) LOD1 / LOD2 SCRIPTED in Blender ("<piece>__lod<k>": fewer log sides and rings,
+    // the nets as thick ropes / none): taken as made, their lightmap kept (meshopt on crooked logs that cross each other
+    // welded them into open, crossing shells)
+    else if (meshes[`${piece}__lod${k}`]) prims = oneSlot(mergeSlots(meshes[`${piece}__lod${k}`]).map((m) => renormal(m, CREASE_PG)));
     // LOD1 / LOD2: welded + vertex AO like the rocks (the hard-surface seams would block meshopt), + the far stand-ins
     else prims = oneSlot(mergeSlots([...main.map((m) => simplifyWelded(m, L.err, L.prune)), ...far.map((m) => simplifyWelded(m, k === 2 ? L.err * 0.5 : 0.0005, false))]).map((m) => renormal(m, CREASE_PG)));
     prims = prims.filter((m) => m.I.length);
@@ -286,6 +294,8 @@ for (const piece of pieces) {
       const r = auditParts(prims.map((m) => ({ name: `${piece}_lod${k}`, slot: m.slot, positions: m.P, normals: m.N, index: m.I, maxDistance: CFG.range[k] })), { ignoreBelow: KIT === "rock" ? 0.07 : KIT === "cliff" ? -0.3 : -0.02 });
       // (a cliff CHUNK alone has open cut edges where its neighbours join: "leak" is judged on the whole LOD, below)
       const c = r.summary.counts, b = ["coplanar", "depth", "crossing", ...(KIT === "cliff" ? [] : ["leak", "streak", "bentflat"]), "flipped"].reduce((s, x) => s + (c[x] ?? 0), 0);
+      if (b && process.env.KIT_WHERE) console.log("    open edges", r.summary.open_edges, "tris", r.summary.triangles);
+      if (b && process.env.KIT_WHERE) for (const kk of ["crossing", "leak", "coplanar", "depth"]) for (const it of (r.items?.[kk] || []).slice(0, 12)) console.log(`    ${kk} at ${it.at.map((v) => v.toFixed(2))} ${it.angle_deg ?? ""}`);
       if (b) { console.log(`  ${piece} lod${k} err ${L.err.toFixed(4)}: ${b} blocking (${Object.entries(c).filter(([, v]) => v).map(([kk, v]) => kk + " " + v).join(", ")}), re-made`); continue; }
     }
     const t = prims.reduce((s, m) => s + tris(m), 0);
@@ -294,6 +304,9 @@ for (const piece of pieces) {
     break;
    }
   });
+  // (claude/places3) a level that never passed its audit is an error, not a silent gap (a failed LOD0 shifted every
+  // level down a slot: the table's "lod0" was the LOD1)
+  if (table[piece].lods.length !== CFG.lod.length) throw new Error(`${piece}: ${CFG.lod.length - table[piece].lods.length} LOD(s) failed the mesh audit (KIT_WHERE=1 shows where)`);
   const raw = [...main, ...detail].reduce((s, m) => s + tris(m), 0);
   console.log(`${piece.padEnd(14)} raw ${String(raw).padStart(6)}  ` + table[piece].lods.map((l, k) => `lod${k} ${String(l.triangles).padStart(6)} (${l.draws})`).join("  "));
 }

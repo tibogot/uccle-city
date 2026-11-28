@@ -91,7 +91,7 @@ Reports: docs/vivier/bridge_audit_old.json, bridge_audit.json.
 | Rue de Verrewinkel (ROB 879) | hero bridge | ok |
 | Rue du Merlo (ROB 833), Av. de la Chênaie (899), Rue du Bourdon (820), Av. des Tilleuls (864 / 939), Av. des Hospices (923) | OSM band decks, 90-100 % of the UrbIS polygon | ok; their UrbIS slab in the cutting / ballast removed |
 | Rue de Stalle, Château d'Or, Ch. de Saint-Job x2, Kauwberg, Bigarreaux, Engeland, Linkebeek (roads under the line) | hero rail bridges | ok |
-| Vivier d'Oie station footbridges (PB 751, 752) | none (their slab lay in the ballast) | OPEN: needs a model (deck, stairs to both platforms, piers) |
+| Vivier d'Oie station footbridges (PB 751, 752) | none (their slab lay in the ballast) | FIXED in claude/footbridge (viewer/rail/footbridge.js, rule footbridge-built, row footbridge) |
 | Warnings: low contact-wire room under Av. des Tilleuls (3.6 m), Av. des Hospices (2.9-3.2 m), Carsoel (4.5 m) | | the deck / rail heights there to measure |
 
 ## Browser check (2026-11-17, after foundation was merged in: 10c1d69b)

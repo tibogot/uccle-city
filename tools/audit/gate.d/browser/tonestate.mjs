@@ -1,0 +1,5 @@
+// browser gate row `tonestate` (run on a browser turn; docs/WORKFLOW.md)
+export default {
+  name: "tonestate",
+  text: "TONE STATE (claude/perf5, 2026-11-26: a line inserted between main.js's precompile `if` and its tone-mapping `else` set renderer.toneMappingExposure = 0.55 on every non-game page, under the pipeline's own exposure: all 22 tour views darker, mean luma 107 -> 78; node check in row sharedgraph). In a FRESH tab (rule perf-fresh-tab), sound off: /viewer/index.html?quick=1&quality=native&rscale=1&dynres=0&still=1&xmas=0&time=golden&at=1500,900,300&look=700,250,0&radius=300&far=2 and &place=stjob-street, then (await import('/debug/perf5Luma.js')).measure() (the tour's settle, then the frame's mean luma + the top quarter's): renderer.exposure 1 with the pipeline on (toneMapping 4), and luma / skyLuma within 1 % of the same view on claude/foundation (2026-11-26: far-300m 106.88 / 192.32 vs 106.89 / 192.32; stjob-street 88.01 / 152.5 vs the tour's 88.43 / 153.08); then ?game=police after the loader: renderer.toneMappingExposure 1",
+};

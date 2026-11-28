@@ -25,6 +25,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { env } from "./lighting.js";
 import { fadeVariant, SMOOTH } from "./lodFade.js";
+import { wireGeometries, withWire, wireOff, THIN_SLOTS } from "./heroWires.js";   // (claude/defects3, rule 35 round 2: the thin strokes widened + dithered, docs/JITTER.md 6)
+const WIRE_SLOTS = new Set();
 import { libSource } from "./materials/libSwitch.js";
 
 import { withAOKtx2 } from "./aoTexture.js";
@@ -55,6 +57,9 @@ const SOURCE = libSource("police", "./materials/shipped.js");   // 2026-11-13: t
 export const poLook = { aoStrength: uniform(1.0), aoDirect: uniform(0.55), weather: uniform(1.0), thinFar: uniform(1.0),
   glassRefl: uniform(1.0), relief: uniform(1.0) };
 
+/** (claude/flags2) the GLB's modelled flags out of every level, cloth flags flown instead (?policeflag=old: kept) */
+export const RIGID_FLAGS_OUT = (typeof location === "undefined" ? "" : new URLSearchParams(location.search).get("policeflag")) !== "old";
+
 let promise = null;
 export function loadPolice() {
   return (promise ??= (async () => {
@@ -79,6 +84,8 @@ export function loadPolice() {
       o.geometry.userData.shared = true;
       lods[k].push({ slot: o.material.name, geometry: o.geometry });
     });
+    // (defects3) the straight thin strokes' wire data, off the main thread; the slots that carry one get the wire material
+    (await wireGeometries(lods.flat().map((l) => l.geometry))).forEach((w, i) => { if (w?.wired && THIN_SLOTS.has(lods.flat()[i].slot)) WIRE_SLOTS.add(lods.flat()[i].slot); });
     const tris = lods.map((l) => l.reduce((s, m) => s + (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3, 0));
     const materials = {};
     for (const s of PO_SLOTS) materials[s] = wrapAO(sourceMaterial(SLOT_TABLE[s], lib), aoTex, s);
@@ -87,9 +94,13 @@ export function loadPolice() {
     const b = notes.bounds_city;
     const boundsWorld = new THREE.Box3(new THREE.Vector3(b.x[0], b.y[0], b.z[0]), new THREE.Vector3(b.x[1], b.y[1], b.z[1]));
     const groups = [];
+    // the modelled still flags (police.json rigid_flag_slots) are left out: the city flies cloth flags on the poles
+    // (policeCity.js -> flagsCity.js flyHeroFlags; rule flags-are-cloth). ?policeflag=old keeps them (the old look).
+    const rigid = new Set(RIGID_FLAGS_OUT ? notes.rigid_flag_slots ?? [] : []);
     const make = (k) => {
       const g = new THREE.Group(); g.name = `police_lod${k}`;
       for (const { slot, geometry } of lods[k]) {
+        if (rigid.has(slot)) continue;
         const m = new THREE.Mesh(geometry, materials[slot]);
         m.name = slot; m.userData.slot = slot; m.userData.base = m.material; m.userData.aoScale = PO_LOD_AO[k];
         m.castShadow = slot !== "glass_window"; m.receiveShadow = true;
@@ -120,7 +131,7 @@ export function loadPolice() {
       aoBytes: aoTex.userData.bytes, glbBytes: lods_json.glbBytes, lodsJson: lods_json,
       tempMaterial: (s) => wrapAO(TEMP[s](), aoTex, s),
       libraryMaterial: (name) => sourceMaterial(name, lib),
-      drawCalls: lods.map((l) => l.length),
+      drawCalls: lods.map((l) => l.filter((x) => !rigid.has(x.slot)).length), rigidFlagSlots: [...rigid],
     };
   })());
 }
@@ -182,7 +193,7 @@ function wrapAO(src, aoTex, slot) {
   const foot = length(fwidth(positionWorld));
   const k = smoothstep(0.6, 1.6, foot.div(width)).mul(poLook.thinFar);
   // (the white joinery keeps more of its share: the white window grid reads from 50 m on the street views)
-  const cover = mix(float(1), clamp(width.mul(2.0).div(foot), slot === "painted_metal_white" ? 0.75 : 0.35, 1.0), k);
+  const cover = mix(float(1), clamp(width.mul(2.0).div(foot), slot === "painted_metal_white" ? 0.75 : 0.35, 1.0), k.mul(wireOff()));   // (defects3: a wired stroke keeps its true coverage itself)
   if (slot !== "glass_window" && slot !== "solar_panel") {
     const base = src.colorNode ?? vec3(src.color?.r ?? 1, src.color?.g ?? 1, src.color?.b ?? 1);
     m.userData.farBase = base;                          // (perfgame round 7: farMerge.js bakes the AO-free colour)
@@ -192,6 +203,7 @@ function wrapAO(src, aoTex, slot) {
   m.userData.shared = true;
   m.userData.slot = slot;
   m.userData.farAO = { aoTex, look: poLook };          // (perfgame round 7: the merged far LOD's AO, farMerge.js)
+  if (WIRE_SLOTS.has(slot)) withWire(m);
   return m;
 }
 

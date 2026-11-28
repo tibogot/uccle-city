@@ -26,13 +26,14 @@ const { CHILD, TILES, OUT, JOBS, WORST, flag, opt } = cli();
 // move without the tram tracks and the OSM width, the plate posts moved at load); --max k=v,...: count ceilings (exit 1
 // over); --register (claude/street1, rule gap-register): every finding judged against data/gaps.json by its stable id
 // (`streetprops.<check>:<kind>@<x>,<z>:0-0`, tools/audit/gaps.mjs), no counts; --write-register rewrites those entries
+const PLATOLD = flag("--platold"), FAROLD = flag("--farold"), SIGNOLD = flag("--signold");   // --farold: ?propreach=old (offLane without its 16 m pass)   // (claude/defects1) ?platpole=old: every `platform` STIB pole kept, the platforms as OSM put them
 const OLD = flag("--old"), MAX = opt("--max", null), QUIET = flag("--quiet"), RAILOLD = flag("--railold"), REG = flag("--register"), WREG = flag("--write-register");
 const GATED = ["plateGap", "signFacing", "signConflict", "inRoad", "villo", "onRail", "inHero"].map((k) => `streetprops.${k}`);   // --railold: ?rail=old (no track-bed keep-clear, rule 39)
 const TRAM_HW = 1.3, GAP = 0.15, FACE_TOL = 45, NEAR_ROAD = 12;
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: streetProps.mjs [--all | T ...] [--out FILE]"); process.exit(2); }
-  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(RAILOLD ? ["--railold"] : [])], log: !QUIET });
+  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(RAILOLD ? ["--railold"] : []), ...(PLATOLD ? ["--platold"] : []), ...(FAROLD ? ["--farold"] : []), ...(SIGNOLD ? ["--signold"] : [])], log: !QUIET });
   const sum = {}, items = { plateGap: [], signFacing: [], inRoad: [], villo: [], onRail: [] };
   for (const r of res) {
     if (r.error) continue;
@@ -74,6 +75,10 @@ const sl = json(join(ROOT, "data/streetlife", `${T}.json`)) || {};
 const sk = json(join(ROOT, "data/streetkit", `${T}.json`)) || {};
 const furn = json(join(ROOT, "data/furniture", `${T}.json`));
 const stops = json(join(ROOT, "data/stops", `${T}.json`));
+// (claude/defects1) as main.js loadTile: the platform poles follow their fitted platform (platformFollow), and one with no
+// platform DRAWN under it is an ordinary pole (platformUnflag, ?platpole=old: kept as flagged)
+const TP = await imp("viewer/streets/tramPlatforms.js");
+if (!OLD && stops?.stops) { TP.platformFollow(stops.stops.map((s) => (s.pole?.platform ? s.pole : null)), { lines: S.platforms }); if (!PLATOLD) TP.platformUnflag(stops.stops, { lines: S.platforms }); }
 // as main.js: snap(doc, paths) (no road decks here: the few deck points are left as they are)
 const { trackIndex } = await imp("viewer/streets/carriageway.js");
 const { smoothPolyline } = await imp("viewer/track.js");
@@ -108,11 +113,12 @@ if (OLD) {
   // (CLASS T, rule 39) + the track beds (railData.js railBed; main.js propOpt.rail), the furniture inside a hero road
   // bridge dropped (its model draws the deck's benches), the rest lifted onto its deck (main.js deckDoc heroDeckY)
   const R = RAIL.off ? null : RAIL;
-  const o = { osm: true, tram: tracks, ...(R ? { rail: R.bed } : {}) };
+  const o = { osm: true, far: !FAROLD, tram: tracks, ...(R ? { rail: R.bed } : {}) };
   const snap = (doc, paths, op = o) => (doc ? docOffLanes(doc, paths, lanes, fit, op).doc : doc);
-  skS = R ? R.lift(snap(sk, [["signs"]]), [["signs"]]) : snap(sk, [["signs"]]);
+  const so = SIGNOLD ? o : { ...o, signSide: true };     // (defects3) main.js: a sign keeps to its traffic's side (--signold = ?signside=old)
+  skS = R ? R.lift(snap(sk, [["signs"]], so), [["signs"]]) : snap(sk, [["signs"]], so);
   furnS = snap(furn, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]], R ? { ...o, drop: (p) => R.bed.inHero(p.x, p.z) } : o);
-  stopsS = snap(stops, [["stops", "pole"], ["stops", "shelter"], ["panels"]], { osm: true, keep: (p) => p.platform, ...(R ? { rail: R.bed } : {}) });
+  stopsS = snap(stops, [["stops", "pole"], ["stops", "shelter"], ["panels"]], { osm: true, far: !FAROLD, keep: (p) => p.platform, ...(R ? { rail: R.bed } : {}) });
   if (R) R.lift(stopsS, [["stops", "pole"], ["stops", "shelter"], ["panels"]]);
 }
 const counts = { plates: 0, plateGap: 0, plateNoPost: 0, signs: 0, signFacing: 0, signMovedFar: 0, pieces: 0, inRoad: 0, inLane: 0, onTram: 0 };
@@ -137,7 +143,9 @@ const segs = [];
 for (const r of roads.roads || []) {
   if (NOT_DRIVEN.has(r.meta?.highway)) continue;
   const pts = [N.get(r.a), ...(r.pts || []), N.get(r.b)].filter(Boolean);
-  for (let i = 1; i < pts.length; i++) segs.push({ ax: pts[i - 1].x, az: pts[i - 1].z, bx: pts[i].x, bz: pts[i].z, name: r.meta?.name || r.id });
+  // (defects3) the flow of a one-way piece: +1 along a -> b, -1 against, 0 two-way (OSM oneway=yes / -1, as build_streetkit R.flow)
+  const ow = r.meta?.oneway, flow = ow === "yes" || ow === "true" || ow === "1" || r.type === "oneWay" && ow !== "-1" ? 1 : ow === "-1" || ow === "reverse" ? -1 : 0;
+  for (let i = 1; i < pts.length; i++) segs.push({ ax: pts[i - 1].x, az: pts[i - 1].z, bx: pts[i].x, bz: pts[i].z, name: r.meta?.name || r.id, flow });
 }
 const axisOff = (fx, fz, ux, uz) => { const c = Math.abs(fx * ux + fz * uz); return (Math.acos(Math.min(1, c)) * 180) / Math.PI; };
 (sk.signs || []).forEach((s0, i) => {
@@ -147,7 +155,7 @@ const axisOff = (fx, fz, ux, uz) => { const c = Math.abs(fx * ux + fz * uz); ret
   const moved = Math.hypot(s.x - s0.x, s.z - s0.z);
   if (moved > 1.5) counts.signMovedFar++;
   const fx = Math.sin(s.yaw), fz = Math.cos(s.yaw);
-  let off = 90, near = null, nd = Infinity;
+  let off = 90, near = null, nd = Infinity, along = null, ad = Infinity; const cands = [];
   for (const g of segs) {
     const dx = g.bx - g.ax, dz = g.bz - g.az, L2 = dx * dx + dz * dz; if (L2 < 1e-6) continue;
     const t = Math.max(0, Math.min(1, ((s.x - g.ax) * dx + (s.z - g.az) * dz) / L2)), d = Math.hypot(s.x - g.ax - dx * t, s.z - g.az - dz * t);
@@ -155,6 +163,28 @@ const axisOff = (fx, fz, ux, uz) => { const c = Math.abs(fx * ux + fz * uz); ret
     const L = Math.sqrt(L2), o = axisOff(fx, fz, dx / L, dz / L);
     if (o < off) off = o;
     if (d < nd) { nd = d; near = g.name; }
+    if (o <= FACE_TOL) { const c = { g, ux: dx / L, uz: dz / L, cx: g.ax + dx * t, cz: g.az + dz * t, d }; cands.push(c); if (d < ad) { ad = d; along = c; } }
+  }
+  // (defects3, rule 30 round 4: owner shot 103 "a one-way sign faces the wrong way") the SENSE: a sign on its street's
+  // axis can still show its BACK to the traffic it is for. The traffic it addresses drives toward its face (heading -f).
+  // One-way piece: that heading is the flow (a C1 no-entry: against the flow); two-way: the sign stands on that
+  // traffic's right (Belgium), never across the street's centre line on its left.
+  // A sign is right when ANY carriageway on its axis within 12 m has that traffic (a one-way pair's island C1 stands
+  // nearer the other carriageway than the one it closes)
+  const gw = s.src === "osm" && s.plates.some((p) => p.code === "B1" || p.code === "B5");
+  const c1 = s.plates.some((p) => p.code === "C1"), hx = -fx, hz = -fz, rx = -hz, rz = hx;   // right of the heading (x east, z south)
+  const judgeC = (c) => {
+    const sense = hx * c.ux + hz * c.uz, side = (s.x - c.cx) * rx + (s.z - c.cz) * rz;
+    // (a give-way B1 / stop B5 against a one-way flow: OSM tags them for the contraflow cyclists (SUL), facing them: kept)
+    if (c.g.flow) { const ok = c1 ? sense * c.g.flow < 0 : sense * c.g.flow > 0 || gw; return ok ? null : c1 ? "C1 faces the one-way flow's own traffic" : "back to the one-way traffic"; }
+    return side < -2.0 ? "faces the far carriageway (on its traffic's left)" : null;
+  };
+  if (along && !s.plates.some((p) => p.code === "D7") && !cands.some((c) => judgeC(c) === null)) {
+    const why = judgeC(along), side = (s.x - along.cx) * rx + (s.z - along.cz) * rz, g = along.g;
+    if (why) {
+      counts.signBack = (counts.signBack || 0) + 1;
+      items.signFacing.push({ why, codes: s.plates.map((p) => p.code).join("+"), off: 180, side: +side.toFixed(1), moved: +moved.toFixed(1), at: at(s.x, s.z), street: g.name });
+    }
   }
   if (near != null && off > FACE_TOL) {
     counts.signFacing++;
@@ -221,12 +251,26 @@ for (const k of ["benches", "bins", "hoops", "boxes", "banks"]) for (const p of 
 const { isTramPlatform, platformRing, inRing2, TRAM_PLATFORM } = await imp("viewer/drive/colliders.js");
 const plats = (S.feats.lines || []).filter(isTramPlatform), platRings = plats.map(platformRing).filter(Boolean);
 const platLines = lineIndex(plats.filter((l) => !platformRing(l)).map((l) => l.line));
-const onPlatform = (x, z) => platRings.some((r) => inRing2(r, x, z)) || (platLines.dist(x, z, 4)?.d ?? 9) <= TRAM_PLATFORM.W / 2 + 0.2;
-counts.onPlatform = 0;
+const onPlatformOsm = (x, z) => platRings.some((r) => inRing2(r, x, z)) || (platLines.dist(x, z, 4)?.d ?? 9) <= TRAM_PLATFORM.W / 2 + 0.2;
+// (claude/defects1) the platforms as DRAWN (fitted beside their tracks, S.platforms), not where OSM put them; --old / --platold: OSM
+const onPlatform = OLD || PLATOLD ? onPlatformOsm : (x, z) => S.platforms.some((l) => TP.onPlatform(l, x, z));
+counts.onPlatform = 0; counts.platInLane = 0;   // (info) poles on a drawn platform that a driven lane covers (the platform slab in the lane: tramfit's class, not a prop)
 for (const s of stopsS?.stops || []) {
-  if (s.pole?.platform && onPlatform(s.pole.x, s.pole.z)) { counts.onPlatform++; if (s.shelter) test("shelter", s.shelter.x, s.shelter.z, { stop: s.fr }); continue; }
+  if (s.pole?.platform && onPlatform(s.pole.x, s.pole.z)) { counts.onPlatform++; if (lanes.inside(s.pole.x, s.pole.z, 0)) counts.platInLane++; if (s.shelter) test("shelter", s.shelter.x, s.shelter.z, { stop: s.fr }); continue; }
   if (s.pole) test("stop pole", s.pole.x, s.pole.z, { stop: s.fr }); if (s.shelter) test("shelter", s.shelter.x, s.shelter.z, { stop: s.fr }); }
 for (const p of stopsS?.panels || []) test("ad panel", p.x, p.z);
+// (defects3) the layers the census never looked at: the fuel stations' kit (data/fuel, viewer/fuel/: totems / price
+// boards, islands, dispensers, bollards, canopy columns; the LUMO board on the Rue de Stalle roadway, owner round 3) and
+// the street life's underground glass chutes
+{
+  const fuel = json(join(ROOT, "data/fuel", `${T}.json`));
+  const FUEL_TESTED = /^(totem|island|dispenser|bollard|column_base|canopy_column|airstand|pylon|price)/;
+  for (const st of fuel?.stations || []) for (const [k, arr] of Object.entries(st.inst || {})) {
+    if (!FUEL_TESTED.test(k) || !Array.isArray(arr)) continue;
+    for (let i = 0; i + 2 < arr.length; i += 8) test(`fuel ${k}`, arr[i], arr[i + 2], { id: st.id, station: st.name });
+  }
+  for (const g of sl.glass || []) if (g.underground) test("glass chute", g.x, g.z);   // (the overground banks: data/furniture banks, snapped above)
+}
 
 // (claude/streetprops, round 2) every Villo station as ONE straight row on paving: docks (or the 1.5 m of bike in front
 // of them) off the measured sidewalk / square / parking, and rows bent (a dock > 0.3 m off the line through its ends)

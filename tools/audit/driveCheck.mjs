@@ -121,7 +121,7 @@ globalThis.fetch = async (u, o) => {
 if (!globalThis.OffscreenCanvas) globalThis.OffscreenCanvas = class { constructor(w, h) { this.width = w; this.height = h; }
   getContext() { return new Proxy({}, { get: (t, k) => (k === "getImageData" ? (x, y, w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }) : () => {}), set: () => true }); } };
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
-const { buildTileData } = await imp("viewer/tileData.js");
+const { tileData: buildTileData } = await imp("tools/gate/tileBuild.mjs");     // (the worker build through the gate tile cache, rule tile-cache)
 const { Heightmap } = await imp("viewer/heightmap.js");
 const { KIND, driveHeight, gather, itemContact, heightClear, addCircles, extendColliders } = await imp("viewer/drive/colliders.js");
 const { surfaceLayers } = await imp("viewer/drive/surfaceLayers.js");
@@ -141,6 +141,7 @@ const entries = JSON.parse(readFileSync(join(ROOT, "tools/boot3/entries.json"), 
 const m = manifest.tiles.find((t) => t.name === T);
 const entry = { ...entries.find((e) => !e.lite).entry, ...m, cache: false };
 for (const kv of SETS) { const [k, v] = kv.split("="); entry[k] = JSON.parse(v); }
+entry.keepNet = true;          // (claude/street4: the street model, net.streetModel: its axes stand for the streets it covers)
 const overrides = JSON.parse(readFileSync(join(ROOT, "data/overrides.json"), "utf8"));
 const realLog = console.log; console.log = () => {};
 const d = await buildTileData(entry, pathToFileURL(join(ROOT, "data/tiles") + "/").href);
@@ -168,6 +169,8 @@ for (const name of HERO_ROOTS) {
 // world.decks: the tile's OSM decks (main.js addBridgeDecks) + the hero road decks (main.js: deckHeightFn per road bridge)
 const decks = [];
 for (const dk of d.bridgeDecks || []) decks.push(Object.assign(deckHeight(dk, (x, z) => hm.ground(x, z), { drawn: true }), { osm: true }));
+// (claude/places1, rule deck-owner-checks) + the decks a neighbour draws over this tile (the city holds them in world.decks)
+for (const dk of d.neighbourDecks || []) decks.push(Object.assign(deckHeight(dk, (x, z) => hm.ground(x, z), { drawn: true }), { osm: true }));
 for (const h of heroes) if (h.info.kind === "road_over_rail") decks.push(deckHeightFn(h.info));
 const layers = (x, z) => surfaceLayers(decks, hm, ground, x, z);
 // a hero road deck's carriageway is its drawn roadway between the parapets (the OSM band is wider: Rue de Verrewinkel's
@@ -246,7 +249,7 @@ const near = (x, z) => { let best = null, bd = 60; for (const [px, pz, nm] of RN
 
 // ---- the walk
 const lanesAt = carriageway(d.roads, { classAt: fit?.classAt, onDeck: null, lanesOnly: true });
-const HARD = new Set([KIND.building, KIND.wall, KIND.tree, KIND.lamp, KIND.post, KIND.furniture]);
+const HARD = new Set([KIND.building, KIND.wall, KIND.tree, KIND.lamp, KIND.post, KIND.furniture, KIND.hedgeWall]);   // (hedgeWall: rule hedge-wall)
 const contact = {}, out = [], hits = new Map(), info = {};
 const intrudeMemo = new Map();
 function intrudes(id) {
@@ -270,8 +273,24 @@ const paths = [];
 const pkind = [];          // per path: "lane", "turn" (a junction connector), "centre" (an OSM centre line)
 if (tr?.xy) for (let p = 0; p + 1 < tr.off.length; p++) { const l = []; for (let i = tr.off[p]; i < tr.off[p + 1]; i++) l.push(tr.xy[i * 2], tr.xy[i * 2 + 1]); paths.push(l); pkind.push(tr.kind[p] ? "turn" : "lane"); }
 const nLanes = paths.length;
+// (claude/street4, rule street-lanes: on a road the street model covers, the player's proxy is the model's AXIS, the
+// mid-line of the measured carriageway, not the raw OSM centre line (plan 1: the proxies the model retires); the
+// traffic's lanes / turns above are the driven ones, from the same builder as the runtime. ?streetlanes=old: as before)
+const modelRoads = new Set();
+if (entry.streetLanes !== false && d.net?.streetModel) for (const E of d.net.streetModel.segments) {
+  if (E.sources.roads.some((id) => { const r = d.roads.roads.find((q) => q.id === id); return r && NOT_DRIVEN.has(r.meta?.highway); })) continue;
+  for (const id of E.sources.roads) modelRoads.add(id);
+  // (where the player drives: the axis with the car's whole width over the roadway / parking, or where UrbIS maps
+  // nothing; not over a tram reservation or a median the measured carriageway holds in its middle: Av. Churchill's
+  // tree rows)
+  let l = [];
+  const flush = () => { if (l.length >= 4) { paths.push(l); pkind.push("centre"); } l = []; };
+  const drv = (x, z) => { const c = fit?.classAt ? fit.classAt(x, z) : -1; return c === 0 || c === 3 || c < 0; };
+  for (let i = 0; i < E.n; i++) { if ([0, CAR_HW, -CAR_HW].every((w) => drv(E.ax[i] + E.nx[i] * w, E.az[i] + E.nz[i] * w))) l.push(E.ax[i], E.az[i]); else flush(); }
+  flush();
+}
 { const N = new Map(d.roads.nodes.map((n) => [n.id, n]));
-  for (const r of d.roads.roads) { if (NOT_DRIVEN.has(r.meta?.highway)) continue; const l = []; for (const p of [N.get(r.a), ...(r.pts || []), N.get(r.b)]) if (p) l.push(p.x ?? p[0], p.z ?? p[1]); if (l.length >= 4) { paths.push(l); pkind.push("centre"); } } }
+  for (const r of d.roads.roads) { if (NOT_DRIVEN.has(r.meta?.highway) || modelRoads.has(r.id)) continue; const l = []; for (const p of [N.get(r.a), ...(r.pts || []), N.get(r.b)]) if (p) l.push(p.x ?? p[0], p.z ?? p[1]); if (l.length >= 4) { paths.push(l); pkind.push("centre"); } } }
 let lanes = 0, laneM = 0;
 for (const [pi, P] of paths.entries()) {
   lanes++;

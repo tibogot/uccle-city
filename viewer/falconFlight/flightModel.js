@@ -91,6 +91,12 @@ export class FalconFlight {
     this.r3 = !COL_OLD;            // collisions round 3 (falconfix)
     this.noLand = 0;               // s: no touch-down (just took off)
     this.forces = { lift: 0, drag: 0, thrust: 0 };
+    // FALCON FUN (claude/falconfun, docs/rules/falcon-catch-fun.md; ?falconfun=old = null): the game's arcade feel, set
+    // by falconGame.js. null = the pure model (the lab, the old game). { dive, diveDrag, sprint, sprintV }: see sub()
+    this.arcade = null;
+    this.sprint = 0;               // s left of a flap sprint (falconGame.js starts it; arcade only)
+    this.boostA = 0;               // m/s^2: the arcade push along the path this substep (dive boost + sprint), for the HUD
+    this.chaseA = 0;               // m/s^2: the auto-dive's pursuit push (falconGame.js, set every frame; arcade only)
   }
 
   /** start in free flight: position, heading (rad), airspeed, path angle */
@@ -193,7 +199,23 @@ export class FalconFlight {
     // ---- drag: body + wing profile + induced (k = 1 / (pi e AR)) + the stall + the flare
     const k = 1 / (Math.PI * 0.85 * w.AR);
     const cdW = w.cd0 + k * clEff * clEff + pol.cdStall + P.flare.cd * this.brake * (1 - this.fold);
-    const D = q * (P.bodyCDA + cdW * w.S);
+    let D = q * (P.bodyCDA + cdW * w.S);
+    // ---- FALCON FUN, the arcade stoop and sprint (this.arcade, null in the lab / ?falconfun=old): a real 50 m stoop
+    // ends at ~90 km/h and 200 m of drop are needed for 140 km/h, so over the city's roofs the player never felt the
+    // speed (owner playtest 2026-11-24: "I was only doing like 70 km/h max"). A tucked bird going DOWN gets a push along
+    // its path of `dive` x g x sin(dive angle) (gravity's own share along a steep path, scaled up) and `diveDrag` of its
+    // drag taken off (both grow with the tuck): a 50 m stoop reaches ~150 km/h, 150 m ~250 km/h (tools/falconFunTest.mjs).
+    // The sprint: a few strong beats in level flight (`sprint` g along the path, fading to 0 at `sprintV` m/s).
+    let Tb = 0;
+    const AR = this.arcade;
+    if (AR && !stunned) {
+      const tuck = smooth(this.fold, 0.55, 1), down = Math.max(0, -ey);
+      Tb = AR.dive * W * down * tuck;
+      D *= 1 - AR.diveDrag * tuck * Math.min(1, down * 1.6);
+      if (this.sprint > 0) { this.sprint -= dt; Tb += AR.sprint * W * clamp(1 - V / AR.sprintV, 0, 1); }
+      Tb += this.chaseA * m;
+    }
+    this.boostA = Tb / m;
     // ---- flapping thrust (along the path), from stamina
     const st = P.stamina;
     const tired = clamp(this.stamina / st.low, 0, 1);
@@ -205,9 +227,9 @@ export class FalconFlight {
     if (this.assisted) this.stamina = clamp(this.stamina + (st.regen * (1 - this.flapLevel) - st.drain * this.flapLevel * this.flapLevel * (1 + this.extraMass)) * dt, 0, 1);
     else this.stamina = clamp(this.stamina + (this.flapLevel > 0.1 ? -st.drain * this.flapLevel * (1 + this.extraMass) : st.regen) * dt, 0, 1);
     // ---- acceleration
-    const ax = (L * lx - D * ex + T * ex) / m;
-    const ay = (L * ly - D * ey + T * ey + Tup) / m - G;
-    const az = (L * lz - D * ez + T * ez) / m;
+    const ax = (L * lx - D * ex + (T + Tb) * ex) / m;
+    const ay = (L * ly - D * ey + (T + Tb) * ey + Tup) / m - G;
+    const az = (L * lz - D * ez + (T + Tb) * ez) / m;
     this.n = L / W;
     this.forces.lift = L; this.forces.drag = D; this.forces.thrust = T;
     this.vel.x += ax * dt; this.vel.y += ay * dt; this.vel.z += az * dt;

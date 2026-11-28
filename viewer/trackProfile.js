@@ -9,6 +9,11 @@
 //   prof.railTop(x, z, roadOff, reach) -> the drawn rail top: the profile + the road's own lift over the DTM there
 //   (both Catmull-Rom through the strand's samples every ~4 m: the grade is continuous, no pitch steps)
 const CELL = 8, LIFT_REACH = 8;
+// (allocrate, ?liftcache=old: a partial lift average, a tap in a tile not loaded yet, was recomputed on every call: the
+// trams outside the loaded ring asked for it every frame, 17 roadOff taps per sample, each a new object: ~150 KB a frame,
+// the biggest single allocator of the falcon flight and the police drive, tools/perf/allocSample.mjs) the partial value is
+// kept too, per roadOff function that tells its loaded-tile generation (roadOff.gen()), until that generation changes
+export const LIFT_CACHE = new URLSearchParams(globalThis.location?.search || "").get("liftcache") !== "old";
 
 export async function loadTrackProfile(url) {
   const r = await fetch(url);
@@ -28,6 +33,7 @@ export function makeTrackProfile(doc) {
     });
   }
   const LIFT = new Float32Array(PX.length).fill(NaN);
+  const partial = new WeakMap();                          // roadOff -> { gen, v: Float64Array (NaN = not computed) }
   const grid = new Map(), key = (i, j) => i * 100003 + j, segs = [];
   for (let g = 0; g + 1 < PX.length; g++) {
     if (last[g] === g) continue;                          // strand end
@@ -64,6 +70,15 @@ export function makeTrackProfile(doc) {
   const liftOf = (g, roadOff) => {
     let v = LIFT[g];
     if (v === v) return v;                                   // not NaN: cached
+    let P = null;
+    if (LIFT_CACHE && roadOff.gen) {                         // a partial average kept while the loaded tiles stay the same
+      const gen = roadOff.gen();
+      P = partial.get(roadOff);
+      if (!P) partial.set(roadOff, (P = { gen, v: new Float64Array(PX.length).fill(NaN) }));   // (64-bit: the value the old path returned)
+      else if (P.gen !== gen) { P.gen = gen; P.v.fill(NaN); }
+      const pv = P.v[g];
+      if (pv === pv) return pv;
+    }
     let s = 0, w = 0, miss = 0;
     for (let k = -LIFT_REACH; k <= LIFT_REACH; k++) {
       const o = roadOff(PX[g] + TX[g] * k, PZ[g] + TZ[g] * k), wk = LIFT_REACH + 1 - Math.abs(k);
@@ -72,6 +87,7 @@ export function makeTrackProfile(doc) {
     }
     v = w ? s / w : 0;
     if (!miss) LIFT[g] = v;                                  // a partial average (a tap in a tile not loaded yet) is not kept
+    else if (P) P.v[g] = v;                                  // (... for good: only until the loaded tiles change)
     return v;
   };
   return {

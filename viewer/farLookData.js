@@ -17,7 +17,7 @@
 // Left out against the near analysis (cheap at 150 m and more): the ground fit (the base is UrbIS's), the street /
 // door / shop flags, the façade kit, cornice and detail geometry.
 import { hash01, wallStyle } from "./facadeGeom.js";
-import { classify, TYPE, typedStyle } from "./buildingTypes.js";
+import { classify, TYPE, typedStyle, renderToneStyle } from "./buildingTypes.js";
 
 const PROBE = 0.35;
 
@@ -86,7 +86,8 @@ export function farBuildings(doc, P, I, opts = {}) {
     // (cortenbosch2) the curated looks as the full tile (facadeGeom.js): far, the Cortenbosch houses kept their generated look
     const look = opts.looks?.[b.id.split("/").pop()];
     const btype = look?.type != null && cls ? look.type : cls && !landmark ? cls.type[bi] : TYPE.GENERIC;
-    const style = (cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height));
+    // (claude/places2) a curated render tone (buildingTypes.js renderToneStyle: Le Pigeon Noir's ochre-mustard) in the fraction
+    const style = renderToneStyle((cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height)), btype, look);
     stats.types[btype]++;
     // ---- walls: planar faces (as facadeGeom.js: ~3 degrees, 25 cm, then merged along one plane)
     const faces = new Map();
@@ -145,7 +146,9 @@ export function farBuildings(doc, P, I, opts = {}) {
       // up to its top
       const ob = width > 0.3 ? otherAt(mx + f.nx * PROBE, mz + f.nz * PROBE, bi) : -1;
       const same = ob >= 0 && b.attrs?.BU_ID && B[ob].attrs?.BU_ID === b.attrs.BU_ID;
-      const partyH = ob < 0 ? 0 : (same || landmark) ? Math.max(0.01, B[ob].top - base) : 999;
+      const partyH0 = ob < 0 ? 0 : (same || landmark) ? Math.max(0.01, B[ob].top - base) : 999;
+      // (claude/carrefour) a curated retail box (look.shed): the near tile's plain clad wall far too (facadeGeom.js SHED_PARTY)
+      const partyH = look?.shed && !landmark && partyH0 < 999 ? 997 : partyH0;
       stats.faces++; if (partyH) stats.party++;
       const gable = top - base > faceEaves + 0.3 ? 1 : 0;      // the face rises over its eaves line (a gable): no eaves band
       const fbv = [style, partyH, btype + 8 * gable, rnd];

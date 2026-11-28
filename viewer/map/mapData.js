@@ -22,14 +22,28 @@ const norm = (t) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').rep
 
 export async function loadMap(base, { paths = true } = {}) {
   const t0 = performance.now();
-  const [doc, bin] = await Promise.all([
+  const [doc, bin, ent] = await Promise.all([
     fetch(new URL('map.json', base)).then((r) => { if (!r.ok) throw new Error(`map.json: HTTP ${r.status}`); return r.json(); }),
     fetch(new URL('geo.bin', base)).then((r) => { if (!r.ok) throw new Error(`geo.bin: HTTP ${r.status}`); return r.arrayBuffer(); }),
+    fetch(new URL('../places/enterable.json', base)).then((r) => (r.ok ? r.json() : null)).catch(() => null),
   ]);
+  if (ent) mergeEnterable(doc, ent.places || []);
   const tFetch = performance.now() - t0;
   const M = new MapData(doc, bin, paths);
   M.ms = { fetch: +tFetch.toFixed(1), decode: +(performance.now() - t0 - tFetch).toFixed(1) };
   return M;
+}
+
+/** (claude/villamark, rule enterable-places-findable) the places you can walk into (data/places/enterable.json) as map
+ *  landmarks of kind 'enter' (their own glyph: a door): a place on an existing landmark (its `landmark` id: the Stalle
+ *  chapel) turns that one into an 'enter' landmark, the others are added at their `mark`. { enter: id } on each. */
+export function mergeEnterable(doc, places) {
+  for (const p of places) {
+    const lm = p.landmark && doc.landmarks.find((l) => l.id === p.landmark);
+    if (lm) Object.assign(lm, { was: lm.kind, kind: 'enter', enter: p.id });
+    else doc.landmarks.push({ id: `enter:${p.id}`, kind: 'enter', enter: p.id, fr: p.fr, nl: p.nl, x: p.mark[0], z: p.mark[1] });
+  }
+  return doc;
 }
 
 export class MapData {
@@ -343,7 +357,7 @@ export class MapData {
       const [fr, nl] = this.names[s.nid];
       items.push({ ...s, fr, nl, terms: norm(`${fr} ${nl}`), x: (s.minX + s.maxX) / 2, z: (s.minZ + s.maxZ) / 2, w: 1 + Math.min(s.len, 3000) / 3000 });
     }
-    for (const l of this.landmarks) items.push({ type: 'landmark', kind: l.kind, fr: l.fr, nl: l.nl, x: l.x, z: l.z, terms: norm(`${l.fr} ${l.nl}`), w: l.kind === 'hero' ? 3 : 1.5 });
+    for (const l of this.landmarks) items.push({ type: 'landmark', kind: l.kind, enter: l.enter, fr: l.fr, nl: l.nl, x: l.x, z: l.z, terms: norm(`${l.fr} ${l.nl}${l.enter ? ' interieur interior inside binnen enter' : ''}`), w: l.kind === 'hero' || l.enter ? 3 : 1.5 });
     for (const s of this.stops) items.push({ type: 'stop', fr: `${s.name} (tram 92)`, nl: `${s.name} (tram 92)`, x: s.x, z: s.z, terms: norm(`${s.name} tram 92 arret halte`), w: 1.4 });
     for (const a of this.areas) items.push({ type: 'area', kind: a.kind, fr: a.fr, nl: a.nl, x: a.x, z: a.z, terms: norm(`${a.fr} ${a.nl}`), w: 1.6 });
     this.searchItems = items;
