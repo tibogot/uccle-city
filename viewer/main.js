@@ -1920,6 +1920,9 @@ async function main() {
     // (at boot, ?view=fly: wait up to 15 s for the family and the bird to load)
     for (let i = 0; i < 150 && (!falconsReady || (OLD_FLIGHT && !flyerGltf)) && params.get("falcons") !== "0" && params.get("flystart") !== "spire"; i++) await new Promise((r) => setTimeout(r, 100));
     if (!OLD_FLIGHT) await flyer.ready.catch(() => {});
+    // (rule falcon-gym "the v2 in the city") the default v2 falcon, swapped in at the first flight of a page that booted
+    // the current bird (not a falcon page: no v2 load in the plain city / the police game until someone flies)
+    if (!OLD_FLIGHT) await flyer.ensureModel?.().catch(() => {});
     // the intro plays in view: not under the boot cover
     for (let i = 0; i < 600 && !document.getElementById("cover")?.classList.contains("gone"); i++) await new Promise((r) => setTimeout(r, 100));
     const fam = falconsReady;

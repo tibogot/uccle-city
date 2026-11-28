@@ -131,6 +131,7 @@ export const FALCON_GAME = {
     // (rule falcon-rings) a ring course: its own light layer (no hunt, no pigeons, no mobbers)
     if (mode?.startsWith("rings-")) {
       await fl.ready;
+      await fl.ensureModel?.();                         // (the default v2 on a page that booted the current bird)
       if (fl.game.assist) fl.game.assist.avoid = options.avoid !== false && !/[?&]falconavoid=0(&|$)/.test(location.search);
       await startRings(kit, mode.slice(6));
       tiercel(fl, true);
@@ -139,6 +140,9 @@ export const FALCON_GAME = {
     kit.hud.toast({ title: "Saint-Job church", text: "The tiercel wakes in the belfry…" }, 0);
     try {
       await fl.ready;
+      // (rule falcon-gym "the v2 in the city": the default v2, loaded + warmed under the play loader when this page
+      // booted the current bird: a start from the menu of a page that is not ?game=falcon)
+      await fl.ensureModel?.();
       if (!S.hunt) {
         const B = window.__birds;
         S.hunt = new FalconHunt({ flyer: fl, camera: host.camera, gpu: B?.sky ? new GpuPrey(B) : null });
@@ -283,7 +287,7 @@ function flockMarkers(kit, fl) {
 /** the player as the tiercel: the adult plumage on the player's bird, the family's own male out of the way */
 function tiercel(fl, on) {
   const fam = window.__falcons;
-  // (?falconmodel=v2: its own plumages, gymBird.js)
+  // (the v2, the default since 2026-11-27: its own plumages, gymBird.js)
   if (fl.bird?.setPlumage) fl.bird.setPlumage(on ? "adult" : "juvenile");
   const mat = fl.bird?.mesh?.material;
   let n = mat?.colorNode;

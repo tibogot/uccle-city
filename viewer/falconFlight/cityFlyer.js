@@ -13,7 +13,9 @@
 //             and perch rings, messages; a "Falcon flight" panel (viewer/panelUI.js) while flying
 // SWITCHES (rule falcon-gym "the gym in the city" / "the v2 in the city"): ?falconctl=gym|current (the Falcon Gym's
 // controller, gymCity.js, against cityGymWorld.js), ?falconmodel=v2|current (the v2 falcon, viewer/falconGym/gymBird.js,
-// its far LOD by the drawn size); both default to current.
+// its far LOD by the drawn size); both DEFAULT to gym / v2 since the owner's OK 2026-11-27 (=current: the old ones).
+// The v2 loads at boot only on a falcon page (gymCity.js V2_AT_BOOT); elsewhere the current bird boots as before and
+// ensureModel() swaps the v2 in (loaded + warmed) when the falcon flight first starts.
 // Nothing here adds a light. Every material is compiled before it shows (warm(): the page's precompile + one parked draw
 // of the bird for its shadow pass inside a parallel-pipeline window).
 import * as THREE from "three/webgpu";
@@ -25,7 +27,7 @@ import { AirField } from "./air.js";
 import { Pigeons } from "./pigeons.js";
 import { ThermalHints } from "./hints.js";
 import { FalconBird } from "./falconBird.js";
-import { FALCON_CTL, FALCON_MODEL } from "./gymCity.js";
+import { FALCON_CTL, FALCON_MODEL, V2_AT_BOOT } from "./gymCity.js";
 import { FalconInput } from "./falconInput.js";
 import { FalconCamera } from "./falconCamera.js";
 import { FalconAudio } from "./falconAudio.js";
@@ -113,11 +115,13 @@ export class CityFlyer {
     const slots = Array.from({ length: 12 }, () => ({ x: 1e6, z: 1e6, heat: 0, radius: 18, ground: 0 }));
     this.air = new AirField({ grid: null, floor: (x, z) => w.floor(x, z), sources: slots });
     this.air.setWind(+(P.get("wind") ?? 4), +(P.get("windfrom") ?? 240));
-    // (?falconmodel=v2: the v2 falcon, its juvenile plumage, its far LOD; the current one if it fails to load)
-    this.model = FALCON_MODEL;
-    if (FALCON_MODEL === "v2") {
-      try { const { GymBird } = await import("../falconGym/gymBird.js"); this.bird = await GymBird.create("v2", LIFE, this.opts.renderer || null); }
-      catch (e) { this.log(`falcon flight: the v2 falcon failed (${e.message}): the current one`); this.model = "current"; }
+    // (the v2 falcon, the default: its juvenile plumage, its far LOD; the current one if it fails to load. At boot only
+    // on a falcon page, V2_AT_BOOT; elsewhere the current bird, and ensureModel() brings the v2 at the first flight)
+    this.model = "current";
+    if (V2_AT_BOOT) {
+      this._v2 = true;
+      try { this.bird = await this.loadV2(); this.model = "v2"; }
+      catch (e) { this.log(`falcon flight: the v2 falcon failed (${e.message}): the current one`); }
     }
     this.bird ??= await FalconBird.create(LIFE);
     this.bird.root.visible = false;
@@ -142,14 +146,44 @@ export class CityFlyer {
     if (this.puff) this.puff.mesh.visible = true;
     // (round 3 part B: the held bird's material too, shown in the falcon's parked warm-up draw; one pipeline for every
     // species: heldPrey.js shapes share their attributes)
-    const held = this.bird.held?.mesh;
-    if (held) held.visible = true;
-    // (v2: its far LOD's meshes compiled too, then the near ones shown again)
-    for (const m of this.bird.far || []) m.visible = true;
-    await this.warm(this.puff ? [this.bird.root, this.hints.group, this.fcam.streaks, this.puff.mesh] : [this.bird.root, this.hints.group, this.fcam.streaks]);
+    await this.warmBird(this.puff ? [this.hints.group, this.fcam.streaks, this.puff.mesh] : [this.hints.group, this.fcam.streaks]);
     if (this.puff && !this.puff.alive) this.puff.mesh.visible = false;
-    if (held && this.bird.prey !== held) held.visible = false;
-    if (this.bird.far) { for (const m of this.bird.far) m.visible = false; for (const m of this.bird.meshes) m.visible = true; this.bird.lod = "near"; }
+  }
+  /** the v2 falcon (gymBird.js), its juvenile plumage, its far LOD */
+  async loadV2() {
+    const { GymBird } = await import("../falconGym/gymBird.js");
+    return GymBird.create("v2", LIFE, this.opts.renderer || null);
+  }
+  /** the bird's shaders (with `extra` roots): its held prey and (v2) its far LOD's meshes compiled too, then the near
+   *  ones shown again */
+  async warmBird(extra = []) {
+    const b = this.bird, held = b.held?.mesh;
+    if (held) held.visible = true;
+    for (const m of b.far || []) m.visible = true;
+    await this.warm([b.root, ...extra]);
+    if (held && b.prey !== held) held.visible = false;
+    if (b.far) { for (const m of b.far) m.visible = false; for (const m of b.meshes) m.visible = true; b.lod = "near"; }
+  }
+  /** the default model (v2) on a page that booted the current bird (not a falcon page: gymCity.js V2_AT_BOOT): loaded,
+   *  warmed while the current one is still the bird, then swapped in, before the flight starts (main.js fly(), the
+   *  falcon game's start). Once; a failed load keeps the current one. */
+  ensureModel() {
+    if (FALCON_MODEL !== "v2" || this._v2) return this._v2swap ?? Promise.resolve();
+    this._v2 = true;
+    return (this._v2swap = (async () => {
+      await this.ready;
+      const t0 = performance.now(), old = this.bird;
+      let b;
+      try { b = await this.loadV2(); }
+      catch (e) { this.log(`falcon flight: the v2 falcon failed (${e.message}): the current one`); return; }
+      b.root.visible = false;
+      this.scene.add(b.root);
+      this.bird = b; this.game.bird = b; this.model = "v2";
+      await this.warmBird();
+      b.root.visible = this.on;
+      this.scene.remove(old.root);
+      this.log(`falcon flight: model v2 swapped in (the flight's first start) in ${(performance.now() - t0).toFixed(0)} ms`);
+    })());
   }
 
   /** the shaders of `roots` before they show: the page's precompile (scene pass target + MRT), then the bird drawn once
@@ -534,7 +568,7 @@ export class CityFlyer {
 <span class="k">stamina</span> ${bar(f.stamina, f.stamina < 0.15 ? "#e0705a" : "#7fd18b")}
 <span class="k">target </span> ${win ? `${win.d.toFixed(0)} m, closing ${win.closing.toFixed(0)} m/s${win.ok ? "  <b>WINDOW</b>" : ""}${g.talonsOut ? " · talons" : ""}` : "-"}
 <span class="k">score  </span> ${sc.points} · caught ${sc.catches} · delivered ${sc.delivered} · best ${sc.bestStrike} m/s${this.bird.prey ? "\n<b>CARRYING</b>: to the eyrie's ledge (E near it)" : ""}
-${g.gw ? `<span class="k">gym controller (?falconctl=gym)${g.f.mode === "ground" || g.f.mode === "hop" ? "  W walk · Shift+W hop · Space / E take off" : ""}
+${g.gw ? `<span class="k">gym controller (?falconctl=current: the old one)${g.f.mode === "ground" || g.f.mode === "hop" ? "  W walk · Shift+W hop · Space / E take off" : ""}
 mouse aim = where to fly · Space power · Shift stoop · E land
 F hold = auto-dive on the ring · V camera · Esc out</span>` : g.assist ? `<span class="k">assist </span> ${ASSIST_NAMES[g.assist.mode] ?? g.assist.mode}${g.assist.hT != null && g.assist.mode === "hold" ? ` (${(g.assist.hT - f.pos.y + (g.agl ?? 0)).toFixed(0)} m)` : ""}${g.assist.avoid ? "" : " · avoid off"}
 <span class="k">mouse / A D steer · W S down / up · Space climb · Shift stoop

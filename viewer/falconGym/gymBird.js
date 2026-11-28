@@ -8,7 +8,8 @@
 //             plumage (falcon_v2_juvenile.ktx2: the player is the young of the year) or the adult (the glb's own)
 // Modes: fly | land | perch (= standing) | walk | hop | launch. One mixer, the clip weights eased (sum 1), then the
 // layers (fold, tuck, flare, talons, bank) as falconBird.js. No per-frame allocation.
-// IN THE CITY GAME (?falconmodel=v2, viewer/falconFlight/cityFlyer.js; rule falcon-gym "the v2 in the city"): the
+// IN THE CITY GAME (the default since 2026-11-27, ?falconmodel=current = the old bird; viewer/falconFlight/cityFlyer.js;
+// rule falcon-gym "the v2 in the city"): the
 // player's bird with falconBird.js's catch: the caught bird held in the talons (heldPrey.js, the same carry / grip /
 // holdPrey / gripCheck, on v2's own foot bones: its rig keeps our names Toes_L / Toes_tip_L ...; the grip layers gripL /
 // gripR calibrated in the Glide as the others), the strike pose from v2's Talons clip (pose's `strike`), the far LOD.

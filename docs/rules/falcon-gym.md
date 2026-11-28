@@ -187,9 +187,9 @@ The old sign fails 12 of these checks.
 
 **Why.** Owner, 2026-11-25: "I need an orbit camera to see the look of the falcon in the lab".
 
-## The gym in the city (?falconctl=gym, 2026-11-25)
+## The gym in the city (the default since 2026-11-27; ?falconctl=current = the old)
 
-**Rule.** `?falconctl=gym` flies the city falcon game (`?game=falcon`) with the gym controller; `current` (the default for now) keeps the city's. Everything else of the game stays the same: the lock-on, the auto-dive, the catch, the slow motion, the score, the eyrie. The gym controller asks its world what the greybox answered, and the city answers it from its own data:
+**Rule.** The city falcon game (`?game=falcon`) flies with the gym controller BY DEFAULT since the owner's OK on 2026-11-27 (he played `?falconctl=gym&falconmodel=v2`: "far better than the old bird"). `?falconctl=current` keeps the city's own controller for comparison; `?falconctl=old` still gives that one's raw round-1 controls. (Before 2026-11-27 the gym was behind `?falconctl=gym`, current the default.) Everything else of the game stays the same: the lock-on, the auto-dive, the catch, the slow motion, the score, the eyrie. The gym controller asks its world what the greybox answered, and the city answers it from its own data:
 
 - **The world** (`viewer/falconFlight/cityGymWorld.js`, over `cityStream.js` CityFalconWorld):
   - `column`: the DTM, the drawn roof grid, the church / landmark proxies, the bridges and the trees' crowns.
@@ -216,7 +216,7 @@ The old sign fails 12 of these checks.
 
 **Check.** Gate row `falconcity` (`tools/falconCityTest.mjs`, a test street as the city world answers it), through the game's own FalconGame:
 
-- the switches and their defaults
+- the switches and their defaults: no switch = gym + v2; `?falconctl=current&falconmodel=current` = the old ones; `?falconctl=old` = the current controller; the v2 loads at boot only on a falcon page (`?game=falcon` or `?falconmodel=v2`: `V2_AT_BOOT`), not on the plain city or `?game=police`; the first flight elsewhere swaps it in (`ensureModel`, called from main.js `fly()` and the falcon game's start; a source check)
 - the gym: a take-off from the street; a nearly vertical take-off out of a 4 m alley (<= 2.5 m/s below the roofs); E onto a sill, standing 4 s, a launch along the street; a 300 m stoop over the town >= 300 km/h with no contact; the fun catch (the first <= 30 s, >= 3 in 90 s)
 - the current controller's stoop and catch as before; self-test: its street take-off touches down again
 - the pool's slices (<= 520 samples) and its two fixed pools
@@ -224,9 +224,11 @@ The old sign fails 12 of these checks.
 
 Browser row `falconcity`.
 
-## The v2 in the city (?falconmodel=v2, 2026-11-25)
+## The v2 in the city (the default since 2026-11-27; ?falconmodel=current = the old)
 
-**Rule.** `?falconmodel=v2` makes the v2 falcon (`viewer/falconGym/gymBird.js`, its far LOD by the drawn span, its plumages: the juvenile at the nest, the adult tiercel in the game) the player's bird; `current` (the default) keeps the current model. The Saint-Job family (`viewer/falcons.js`) keeps its model: its rig, instancing and baked Perch are its own, so no flag swaps it.
+**Rule.** The v2 falcon (`viewer/falconGym/gymBird.js`, its far LOD by the drawn span, its plumages: the juvenile at the nest, the adult tiercel in the game) is the player's bird BY DEFAULT since the owner's OK on 2026-11-27; `?falconmodel=current` keeps the current model for comparison. (Before, it was behind `?falconmodel=v2`.)
+
+- **Where it loads.** On a falcon page (`?game=falcon`, or an explicit `?falconmodel=v2`: `gymCity.js` `V2_AT_BOOT`) `cityFlyer.js` init loads it at boot and warms it with its far LOD and the held prey under the play loader (no first-frame shader hitch). Every other page (the plain city, `?game=police`) boots the current bird as before: no extra download there. When such a page first starts the falcon flight (main.js `fly()`, the falcon game's start from the menu), `ensureModel()` loads the v2, warms it while the current one is still the bird, then swaps it in; once, and a failed load keeps the current one. The Saint-Job family (`viewer/falcons.js`) keeps its model: its rig, instancing and baked Perch are its own, so no flag swaps it.
 
 - **The catch is falconBird.js's own.** It uses the same carry / grip / holdPrey / gripCheck on v2's foot bones, which keep our names (Toes_L / Toes_tip_L ...), with the grip layers calibrated in the Glide.
 - **The strike pose** is v2's Talons clip (pose's `strike`). It comes in over the last 14 m of a strike with the talons out, and is held for 0.7 real s through the catch. During the dive itself the stoop stays tucked.

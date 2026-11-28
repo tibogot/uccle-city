@@ -1,19 +1,27 @@
-// THE GYM CONTROLLER IN THE CITY GAME (?falconctl=gym, rule falcon-gym "the gym in the city"; default: current).
+// THE GYM CONTROLLER IN THE CITY GAME (rule falcon-gym "the gym in the city"; the DEFAULT since the owner's OK 2026-11-27,
+// ?falconctl=current = the city's own controller, ?falconctl=old = its raw round-1 controls).
 // viewer/falconGym/gymFlight.js (the Falcon Gym's controller: mouse direction steering, auto-level, flap-glide cruise,
 // Space power, the stoop, soft walls, the ground take-off / hop out, the flare) flies the city falcon against
 // cityGymWorld.js (the city's own heights, crowns, sills, railings, lamps, roof edges). falconGame.js keeps everything
 // else: the lock-on, the auto-dive (its aim handed to the gym's steering), the catch, the slow motion, the score, the
 // eyrie. CityGymFlight is the gym's flight with the few fields the city game reads off its flight (falconFlight.js's
 // names), the eyrie preferred for a landing with prey, and a landing target that allocates nothing.
-// ?falconmodel=v2|current (default current): the v2 falcon (viewer/falconGym/gymBird.js, models/bird/v2/) as the
-// player's bird (cityFlyer.js).
+// ?falconmodel=v2|current (default v2 since the owner's OK 2026-11-27): the v2 falcon (viewer/falconGym/gymBird.js,
+// models/bird/v2/) as the player's bird (cityFlyer.js). LOADED AT BOOT only on a falcon page (?game=falcon, or an explicit
+// ?falconmodel=v2): there it loads + warms under the play loader. Any other page (the plain city, ?game=police) boots
+// the current bird as before (no extra load) and swaps the v2 in, loaded + warmed, when the falcon flight first starts
+// (cityFlyer.js ensureModel(): main.js fly(), the falcon game's start).
 import { GymFlight, GYM } from "../falconGym/gymFlight.js";
 
 const Q = typeof location !== "undefined" ? location.search : "";
-/** the controller: "gym" | "current" (?falconctl=old stays the raw controls of the current one: falconInput.js) */
-export const FALCON_CTL = /[?&]falconctl=gym(&|$)/.test(Q) ? "gym" : "current";
-/** the player's model: "v2" | "current" */
-export const FALCON_MODEL = /[?&]falconmodel=v2(&|$)/.test(Q) ? "v2" : "current";
+/** the controller: "gym" (default) | "current" (?falconctl=current; ?falconctl=old = the current one's raw controls:
+ *  falconInput.js) */
+export const FALCON_CTL = /[?&]falconctl=(current|old)(&|$)/.test(Q) ? "current" : "gym";
+/** the player's model: "v2" (default) | "current" (?falconmodel=current) */
+export const FALCON_MODEL = /[?&]falconmodel=current(&|$)/.test(Q) ? "current" : "v2";
+/** the v2 loads at boot (cityFlyer.js init) only on a falcon page: ?game=falcon or an explicit ?falconmodel=v2; else
+ *  the current bird boots and the v2 comes in when the falcon flight first starts (ensureModel) */
+export const V2_AT_BOOT = FALCON_MODEL === "v2" && /[?&](game=falcon|falconmodel=v2)(&|$)/.test(Q);
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 

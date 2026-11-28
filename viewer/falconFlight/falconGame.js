@@ -15,7 +15,8 @@
 // (the pigeon nearest the view centre), the AUTO-DIVE while the strike button is held, an automatic grab within 5.5 m
 // with speed / angle as bonus points, a slow motion just before contact, the arcade stoop and the flap sprint, combos,
 // the run goal (5 in 2:00), hunting on with prey in the talons (the eyrie a bonus), the tame first pigeon.
-// ?falconctl=gym (gymCity.js, rule falcon-gym "the gym in the city"): the Falcon Gym's controller flies instead
+// THE GYM CONTROLLER (gymCity.js, rule falcon-gym "the gym in the city"; the default since 2026-11-27, ?falconctl=current
+// = the controller above): the Falcon Gym's controller flies instead
 // (CityGymFlight against cityGymWorld.js), the lock-on, the auto-dive's aim, the catch and the rest stay as above.
 // Traces: every 0.1 s, time / airspeed / height above the floor / altitude / stamina / specific energy (h + V^2/2g) /
 // the air's vertical speed / mode, for the lab's graph and the verification records.
@@ -363,7 +364,7 @@ export class FalconGame {
   }
 
   /**
-   * THE GYM CONTROLLER (?falconctl=gym, gymCity.js): the input to the gym's controls (gymFlight.js fillGymControls, as
+   * THE GYM CONTROLLER (the default, gymCity.js): the input to the gym's controls (gymFlight.js fillGymControls, as
    * the lab: Space = power and its press the take-off, Shift = the stoop, E = land / take off, the mouse aim a
    * direction), the fun's auto-dive aim as the gym's steering (its eased lead point; within the homing distance the bird
    * itself), the gym flight step, its modes as the game's (ground / hop = perch, land = land, launch / fly = fly), the

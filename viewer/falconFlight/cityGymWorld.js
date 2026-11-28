@@ -1,4 +1,5 @@
-// THE GYM CONTROLLER'S WORLD IN THE CITY (?falconctl=gym, rule falcon-gym "the gym in the city"): what
+// THE GYM CONTROLLER'S WORLD IN THE CITY (the default controller since 2026-11-27, ?falconctl=current = the old; rule
+// falcon-gym "the gym in the city"): what
 // viewer/falconGym/gymFlight.js asks of a world (its greybox gymLayout.js answers it from boxes), answered from the
 // city's own falcon world (cityStream.js CityFalconWorld: the DTM, the drawn roof grid, the church / landmark proxies,
 // the bridges, the street trees' crowns), read-only:
