@@ -232,14 +232,31 @@ export const BIKE_FLOW = {
   driftLean: 0,         // x driftAngle more with the lean back (X), less with the lean forward (Z)
   driftBoost: 0,        // m/s at a clean exit (the skid let go, the bike straight < 15 deg within 0.8 s) after driftMinT
   driftMinT: 0.45,      // s of sliding (> 20 deg) a drift needs for the boost
+  // ---- GOING BACKWARD (claude/bikeback, owner 2026-11-28, rule bike-backward-real): a BMX cannot pedal backward (the
+  // rear hub freewheels). S held AT A STOP = the kid stands over the bike, feet on the ground, and walks it back; a
+  // bike stopped on a ramp face rolls back down it (fakie), steerable, never a crash. 0 = off (?bikeback=old)
+  backWalk: 1.0,        // m/s walking the bike backward (S held at a standstill); 0: no back-walk
+  backDelay: 0.25,      // s of S held at a standstill (< backStill) before the feet start walking back
+  backStill: 0.3,       // m/s: "at a standstill" (faster, S is the rear brake / the skid, as before)
+  backAccel: 5,         // m/s^2: the feet push up to backWalk (and stop it when S is let go)
+  backGrade: 0.15,      // |grade| over which the kid does not walk back (a steep slope: the foot holds the bike)
+  fakie: 1,             // 1: a bike stopped on a face (grade over fakieGrade) rolls back down it instead of standing
+  fakieGrade: 0.25,     // grade (front higher) over which a stopped bike with no brake rolls back: a ramp face (the
+                        // funbox 47 %, a roller); a street hill (Uccle to ~20 %) is held by the foot, as before
+  fakieDrag: 1.4,       // m/s^2: rolling back slowly onto flat ground the feet drag it to a soft stop ...
+  fakieDragV: 2.2,      // m/s: ... fading out to none at this backward speed (a fast fakie out of the quarter pipe rolls on)
 };
 const FL = BIKE_FLOW;
+// ?bikeback=old (viewer/features.js): no back-walk, no fakie (the bike held at a stop, standing on a ramp face)
+if (typeof location !== "undefined" && /[?&]bikeback=old(&|$)/.test(location.search)) { FL.backWalk = 0; FL.fakie = 0; }
 /** panel ranges of BIKE_FLOW: key -> [min, max, step, group] */
 export const BIKE_FLOW_RANGES = {
   dropGrace: [0, 1.5, 0.05, "flow"], dropNose: [0, 0.8, 0.01, "flow"], endoBack: [-1, 3, 0.05, "flow"], faceCrashH: [0.05, 0.6, 0.01, "flow"], popDetach: [0, 0.6, 0.01, "flow"], chargedPop: [0, 2, 0.01, "flow"],
   transGain: [0, 3, 0.05, "flow"], flatLoss: [0, 0.5, 0.01, "flow"], flatH: [0.1, 2, 0.05, "flow"], flatWobble: [0, 1, 0.05, "flow"],
   pumpPush: [0, 12, 0.1, "flow"], pumpFace: [0, 1.5, 0.05, "flow"], pumpVmax: [3, 15, 0.1, "flow"], pumpBerm: [0, 2, 0.05, "flow"], pumpStroke: [0.1, 2, 0.05, "flow"],
   driftAngle: [0, 1.1, 0.01, "flow"], driftLean: [0, 1, 0.05, "flow"], driftBoost: [0, 3, 0.05, "flow"], driftMinT: [0, 1.5, 0.05, "flow"],
+  backWalk: [0, 2, 0.05, "backward"], backDelay: [0, 1, 0.05, "backward"], backStill: [0.05, 1, 0.05, "backward"], backAccel: [1, 12, 0.5, "backward"], backGrade: [0, 0.4, 0.01, "backward"],
+  fakie: [0, 1, 1, "backward"], fakieGrade: [0, 0.6, 0.01, "backward"], fakieDrag: [0, 4, 0.1, "backward"], fakieDragV: [0.5, 5, 0.1, "backward"],
 };
 /** panel ranges of BIKE_PARK: key -> [min, max, step, group] */
 export const BIKE_PARK_RANGES = {
@@ -311,7 +328,9 @@ export function createBikeState(x, z, heading, groundY = 0, B = BIKE) {
     park: { vertT: -1.5, vertDur: 0.5, vertH: 0.5, vertP: 0.5, vertDir: 1, verts: 0, wallIdx: -1, wallT: 0.5, wallV: 0.5, wallDir: 1, wallSide: 1, wallU: 0.5, wallrides: 0, wallExit: "",
       attached: 0, attV: 0.5, attMax: 0.5, attLast: -9.5, unleanT: 0 },
     // (round 3, BIKE_FLOW: its own object as park; doubles initialised as doubles)
-    flow: { dropT: -0.5, drops: 0, pumpHeld: 0.5, driftT: -0.5, exitT: -0.5, exitAmt: 0.5, boosts: 0, pumpGain: 0.5, transGain: 0.5, flats: 0 },
+    flow: { dropT: -0.5, drops: 0, pumpHeld: 0.5, driftT: -0.5, exitT: -0.5, exitAmt: 0.5, boosts: 0, pumpGain: 0.5, transGain: 0.5, flats: 0,
+      // (going backward: backMode 0 riding, 1 walking the bike back, 2 rolling back (fakie); the S-at-a-stop timer)
+      backMode: 0, backGo: 0, backHold: 0.5, backT: 0.5, backs: 0, fakies: 0 },
     skid: false, wheelspin: false, frontLock: false, slip: 0, slipAngle: 0, washT: 0, buzz: 0,
     manual: 0, pushing: false, pushT: 0, footDown: 1, grade: 0, walkPhase: 0, trick: 0,
     crashed: false, crashT: 0, crashCause: "", crashes: 0, rider: { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 },
@@ -321,6 +340,7 @@ export function createBikeState(x, z, heading, groundY = 0, B = BIKE) {
     prev: { x, y: groundY + restHeight(B), z, heading, lean: 0, pitch: 0 },
   };
   s.flow.pumpGain = 0; s.flow.transGain = 0; s.flow.pumpHeld = 0;      // (telemetry: m/s gained; the fields already doubles)
+  s.flow.backHold = 0; s.flow.backT = 0;
   return s;
 }
 
@@ -615,6 +635,36 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   s.popT = Math.max(0, s.popT - dt);
   // ---- trick (placeholder: a tabletop while held in the air)
   if (!grounded && trick) s.trick = Math.min(1, s.trick + dt * 3); else s.trick = Math.max(0, s.trick - dt * 4);
+  // ---- GOING BACKWARD (rule bike-backward-real): a BMX freewheels, so no pedalling back. S held at a STANDSTILL for
+  // backDelay = the kid walks the bike back (backMode 1: the rear brake is his command, not a brake); a bike rolling
+  // backward on its own (a ramp face it stopped on) = a fakie (backMode 2: S brakes it, never a back-walk while it rolls).
+  // Never in the air, never while pushing; W or letting go of S ends the walk; both brakes (Q + S, the lab's NO_INPUT
+  // while mounting) = the bike held, no walk
+  let bRuse = bR, bFuse = bF;
+  {
+    const fl = s.flow, both = s.contact[0] && s.contact[1], gradeH = (s.ground[0] - s.ground[1]) / B.wheelbase;
+    if (FL.backWalk > 0) {
+      if (fl.backMode === 1) {
+        // (S let go / Q squeezed: the feet stop the walk - backGo 0, the target 0 m/s - then it ends; W / the air /
+        // a steep grade end it at once)
+        const cmd = bR >= 0.1 && bF <= 0.3;
+        if (pedal > 0 || !grounded || s.pushing || hop || gradeH > FL.backGrade + 0.05 || gradeH < -FL.backGrade - 0.05 || (!cmd && vF > -0.05)) fl.backMode = 0;
+        else fl.backGo = cmd ? 1 : 0;
+      }
+      if (fl.backMode !== 1) {
+        const still = vF < FL.backStill && vF > -FL.backStill;
+        fl.backHold = grounded && bR > 0.1 && bF < 0.1 && pedal === 0 && still && !s.pushing && !hop ? fl.backHold + dt : 0;
+        if (fl.backHold >= FL.backDelay && both && gradeH < FL.backGrade && gradeH > -FL.backGrade) { fl.backMode = 1; fl.backGo = 1; fl.backT = 0; fl.backs++; }
+      }
+    } else if (fl.backMode === 1) fl.backMode = 0;
+    if (fl.backMode !== 1) {
+      // (the fakie: rolling backward on the ground; ends when it stops or rolls forward again, or in the air)
+      if (FL.fakie > 0 && grounded && vF < -0.15) { if (fl.backMode !== 2) { fl.backMode = 2; fl.backT = 0; fl.fakies++; } }
+      else if (fl.backMode === 2 && (vF > -0.05 || !grounded)) fl.backMode = 0;
+    }
+    if (fl.backMode === 1) { bRuse = 0; bFuse = 0; fl.backT += dt; }      // (the feet carry it: no brake force, no torque)
+    else if (fl.backMode === 2) fl.backT += dt;
+  }
 
   // (feel round 4, the zero-garbage step: the rest of the step in four functions of their own. V8 inlines a function's
   // small helpers only up to a budget per optimised function; stepBike in one piece ran out, and every helper call past
@@ -622,7 +672,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   // scratch object; the phases are called with objects only)
   const w = W;
   w.vF = vF; w.vL = vL; w.fx = fx; w.fz = fz; w.lx = lx; w.lz = lz; w.steer = steer; w.pedal = pedal; w.leanIn = leanIn;
-  w.bF = bF; w.bR = bR; w.sprint = sprint; w.pump = s.flow.pumpHeld < FL.pumpStroke ? pump : 0; w.grounded = grounded; w.blocked0 = s.blocked;
+  w.bF = bFuse; w.bR = bRuse; w.sprint = sprint; w.pump = s.flow.pumpHeld < FL.pumpStroke ? pump : 0; w.grounded = grounded; w.blocked0 = s.blocked;
   if (facePhase(s, w, env, B)) return s;
   if (contactPhase(s, w, env, B, S)) return s;
   motionPhase(s, w, B);
@@ -823,7 +873,8 @@ function contactPhase(s, w, env, B, S) {
       brake = Math.min(brake, mu * Fn);
     } else {
       brake = bR * B.brakeRear;
-      const lock = (bR > B.skidAt || brake > mu * Fn || (B.skidSteerLock > 0 && bR > 0.4 && Math.abs(w.steer) > 0.4 && v > 2)) && v > 1.2;
+      // (going backward: rolling back the rear brake only brakes - no skid, no drift backward)
+      const lock = (bR > B.skidAt || brake > mu * Fn || (B.skidSteerLock > 0 && bR > 0.4 && Math.abs(w.steer) > 0.4 && v > 2)) && v > 1.2 && (vF > 0 || !(FL.fakie > 0));
       if (lock) { brake = mu * B.skidMu * Fn * B.skidBrake; s.skid = true; }
       brake = Math.min(brake, mu * Fn);
       // pedalling: the rear wheel pushes (power over speed, a force cap, spinning out at the top cadence)
@@ -864,9 +915,14 @@ function contactPhase(s, w, env, B, S) {
     else s.pushT = 0;
   }
   // (the park: never on a steep transition - a bike at a stop on a quarter pipe's wall rolls back, it does not stand)
-  const footHold = contactNow && !s.pushing && pedal === 0 && v < B.footSpeed && (bF + bR > 0.1 || up > -0.03) && s.slope[0] < 0.6 && s.slope[1] < 0.6 && s.slope[0] > -0.6 && s.slope[1] > -0.6;
-  s.footDown += ((footHold && v < 0.3 ? 1 : 0) - s.footDown) * (1 - Math.exp(-6 * dt));
-  if (s.pushing || footHold) aF = 0;           // the walker / the planted foot carries the slope
+  // (going backward, rule bike-backward-real: walking the bike back, the feet carry it - no hold; and a bike stopped on a
+  // FACE with no brake (the funbox's 25 deg) rolls back down it - a fakie - instead of standing on it: the foot held it)
+  const backM = s.flow.backMode, gradeH = (Q[0].h - Q[1].h) / B.wheelbase;
+  const fakieRoll = FL.fakie > 0 && bF + bR <= 0.1 && (backM === 2 || gradeH > FL.fakieGrade);
+  const footHold = contactNow && !s.pushing && pedal === 0 && v < B.footSpeed && (bF + bR > 0.1 || up > -0.03) && s.slope[0] < 0.6 && s.slope[1] < 0.6 && s.slope[0] > -0.6 && s.slope[1] > -0.6
+    && backM !== 1 && !(fakieRoll && (gradeH > FL.fakieGrade || gradeH < -FL.fakieGrade));
+  s.footDown += ((footHold && v < 0.3 || backM === 1 ? 1 : 0) - s.footDown) * (1 - Math.exp(-6 * dt));
+  if (s.pushing || footHold || backM === 1) aF = 0;           // the walker / the planted foot carries the slope
 
   // ---- rider pitch: a pull back / push forward (torque); in a manual the assist turns the input into a held angle
   const relR = s.pitch - Math.atan(s.slope[1]);
@@ -926,7 +982,14 @@ function motionPhase(s, w, B) {
   if (s.pushing) {
     const want = pedal > 0 ? B.walk * (up > 0.16 ? 0.8 : 1) : 0;
     vF += clamp(want - vF, -2.5 * dt, 2.5 * dt);
+  } else if (s.flow.backMode === 1) {
+    // (going backward) the feet walk the bike back at backWalk: up to it, and the walk's own pace
+    vF += clamp((s.flow.backGo ? -FL.backWalk : 0) - vF, -FL.backAccel * dt, FL.backAccel * dt);
   } else if (footHold) vF *= Math.exp(-6 * dt);
+  else if (s.flow.backMode === 2 && vF < 0 && contactNow && w.up > -0.03 && w.up < 0.03) {
+    // (the fakie back on flat ground: the feet drag it to a soft stop)
+    vF = Math.min(0, vF + FL.fakieDrag * (1 - smooth(0.4 * FL.fakieDragV, FL.fakieDragV, -vF)) * dt);
+  }
   const dv = retard * dt;
   vF = Math.abs(vF) <= dv ? 0 : vF - sgn(vF) * dv;
   const hs = hyp(vF, vL), dragK = 1 / (1 + B.drag * (s.legs < 0 ? 1 + B.crouchDrag * s.legs : 1) * hs * dt);   // (crouched: less drag)
@@ -1196,7 +1259,7 @@ function settlePhase(s, w, env, B, S) {
   if (pedalling && fwd > 0) { s.crank = (s.crank + fwd / B.rollout * Math.PI * 2) % (Math.PI * 2); s.cadence = fwd / dt / B.rollout * 60; }
   else if (pedalling) { s.crank = (s.crank + dt * 3) % (Math.PI * 2); s.cadence = 25; }
   else s.cadence *= Math.exp(-6 * dt);
-  if (s.pushing) s.walkPhase = (s.walkPhase + Math.abs(fwd) / 0.7 * Math.PI) % (Math.PI * 2);
+  if (s.pushing || s.flow.backMode === 1) s.walkPhase = (s.walkPhase + Math.abs(fwd) / (s.pushing ? 0.7 : 0.45) * Math.PI) % (Math.PI * 2);   // (backing: short steps)
   const sp = S[s.surf[1]] || S[0];
   s.buzz = sp.buzz * Math.min(1, v / 6) * (s.contact[0] || s.contact[1] ? 1 : 0);
   // the last safe pose (upright, rolling, nothing touching)

@@ -8,7 +8,7 @@
 //   the quarter pipe (up and back down), the ledge grind, the manual pad, the stair block + handrail, both kickers over
 //   their gaps, a pump-track lap, the table jump, the whoops, the hill up and down, the drift pad; every spot level and
 //   clear of the colliders
-import { DT, BIKE, SURF, createBikeState, stepBike, bikeSpeed, groundQuery } from "../../viewer/bike/bikePhysics.js";
+import { DT, BIKE, BIKE_FLOW, SURF, createBikeState, stepBike, bikeSpeed, groundQuery } from "../../viewer/bike/bikePhysics.js";
 import { SPOT, SPOT_SPOTS, SOLIDS, spotGround, spotEdges, spotColliders, withOneWay, spotHeight, solidAt, BOUNDS } from "../../viewer/bike/bikeSpot.js";
 import { buildColliders, KIND } from "../../viewer/drive/colliders.js";
 import { createBikeEnv } from "../../viewer/bike/bikeEnv.js";
@@ -252,6 +252,57 @@ applyFeel(FEELN);
     check("THE DRIFT: the steer asks the slide angle (full lock ~ driftAngle, half lock less), a clean exit gives the boost, no crash", d1.q.crashes === 0 && dh.q.crashes === 0 && d1.slide > 1.6 * dh.slide && d1.slide > 35 && d1.q.flow.boosts === 1,
       `full lock ${f1(d1.slide)} deg, half ${f1(dh.slide)} deg; boosts ${d1.q.flow.boosts}, out ${f1(bikeSpeed(d1.q))} m/s`, "full > 1.6 x half, 1 boost");
   }
+}
+// ---------------------------------------------------------------- GOING BACKWARD (claude/bikeback, rule
+// bike-backward-real): S held at a standstill walks the bike back; a bike stopped on a ramp face rolls back (fakie)
+{
+  const FLW = BIKE_FLOW;
+  const flat = () => spawnAt(-2.8, -14, 0, 0);
+  // S held at a standstill: backing within 0.5 s at the target speed
+  { let at = -1; const q = ride(flat(), () => ({ brakeR: 1 }), 0.5, null, (b) => { if (at < 0 && b.flow.backMode === 1) at = b.t; });
+    const vb = -bikeSpeed(q);
+    check("S held at a standstill: the kid walks the bike BACK within 0.5 s at the walk speed (0.8-1.2 m/s)", q.flow.backMode === 1 && vb > 0.8 && vb < 1.2 && q.crashes === 0,
+      `back-walk from ${f2(at)} s, ${f2(vb)} m/s back at 0.5 s, feet ${f2(q.footDown)}`, "0.8-1.2 m/s by 0.5 s"); }
+  // A / D while backing: the steering geometry reversed (the nose swings the other way than riding forward)
+  { const h0 = 0; const b = ride(flat(), (s, t) => ({ brakeR: 1, steer: t > 0.5 ? 1 : 0 }), 2.5);
+    const f = ride(spawnAt(-2.8, -14, 0, 1.0), () => ({ pedal: 0, steer: 1 }), 1.0);
+    const dB = (b.heading - h0) * 57.3, dF = (f.heading - h0) * 57.3;
+    check("A held while backing: the bike turns the reversing way (heading the opposite way of riding forward, > 25 deg in 2 s), no crash", dB < -25 && dF > 0 && b.crashes === 0 && b.flow.backMode === 1,
+      `backing ${f1(dB)} deg, forward ${f1(dF)} deg`, "opposite signs"); }
+  // W cancels: from the back-walk to pedalling forward
+  { let cut = -1, fwdT = -1; const q = ride(flat(), (s, t) => (t < 1.2 ? { brakeR: 1 } : { pedal: 1 }), 2.4, null, (b) => { if (b.t > 1.2 && cut < 0 && b.flow.backMode !== 1) cut = b.t - 1.2; if (b.t > 1.2 && fwdT < 0 && bikeSpeed(b) > 0.2) fwdT = b.t - 1.2; });
+    check("W cancels the back-walk at once and pedals forward (within 1 s)", cut >= 0 && cut < 0.05 && fwdT > 0 && fwdT < 1 && q.crashes === 0, `walk ended ${f2(cut)} s, forward > 0.2 m/s ${f2(fwdT)} s after W`, "< 0.05 s, < 1 s");
+    let st = -1; const r = ride(flat(), (s, t) => ({ brakeR: t < 1 ? 1 : 0 }), 2.2, null, (b) => { if (b.t > 1 && st < 0 && Math.abs(bikeSpeed(b)) < 0.05) st = b.t - 1; });
+    check("letting go of S stops the back-walk softly (still within 0.6 s, no roll on)", st >= 0 && st < 0.6 && Math.abs(bikeSpeed(r)) < 0.05 && r.crashes === 0, `stopped ${f2(st)} s after, ${f2(bikeSpeed(r))} m/s at the end`, "< 0.6 s"); }
+  // S while MOVING: the brake and the skid as before, never a reverse until stopped for backDelay
+  { let skid = 0, stillAt = -1, backAt = -1;
+    const q = ride(spawnAt(-2.8, -16, 0, 5), () => ({ brakeR: 1 }), 7, null, (b) => { if (b.skid) skid++; const v = bikeSpeed(b); if (stillAt < 0 && v < FLW.backStill) stillAt = b.t; if (backAt < 0 && v < -0.05) backAt = b.t; });
+    check("S while moving (18 km/h): the rear brake + skid, no reverse until stopped for backDelay", skid > 10 && stillAt > 0 && backAt - stillAt >= FLW.backDelay - 0.01 && q.crashes === 0,
+      `${skid} skid steps, stopped at ${f2(stillAt)} s, backing from ${f2(backAt)} s`, `skid, back >= ${FLW.backDelay} s after the stop`); }
+  // never in the air
+  { const q = flat(); q.y += 1.2; let worst = 0, mode = 0;
+    ride(q, () => ({ brakeR: 1 }), 0.7, null, (b) => { if (b.air || !(b.contact[0] || b.contact[1])) { worst = Math.min(worst, bikeSpeed(b)); if (b.flow.backMode === 1) mode++; } });
+    check("no reverse in the air (S held while falling 1.2 m: no back-walk, no backward speed)", mode === 0 && worst > -0.05, `${mode} air steps walking back, ${f2(worst)} m/s`, "0"); }
+  // FAKIE: stopped on the funbox's 25 deg face -> rolls back down, steerable, no crash, no stick
+  const F = SPOT.funbox;
+  const fakie = (input, v = 2.6) => { let minV = 0, walk = 0; const q = ride(spawnAt(F.xc, F.z0 - 3, 0, v), input, 5, null, (b) => { minV = Math.min(minV, bikeSpeed(b)); if (b.flow.backMode === 1 && bikeSpeed(b) < -FLW.backStill - 0.05) walk++; }); q._minV = minV; q._walk = walk; return q; };
+  { const q = fakie(() => ({}));
+    check("fakie: stopped on the funbox's 25 deg face it ROLLS BACK down it and out (no stick, no crash)", q.crashes === 0 && q.flow.fakies >= 1 && q.z < F.z0 - 0.3 && q._minV < -1,
+      `${crashTxt(q)}, ${q.flow.fakies} fakie(s), out at z ${f1(q.z)} (face foot ${f1(F.z0)}), ${f2(-q._minV)} m/s back`, "back off the face");
+    const qs = fakie((b) => ({ steer: b.flow.backMode === 2 ? 1 : 0 }));
+    check("fakie steered (A while rolling back): turns the reversing way, no crash", qs.crashes === 0 && qs.heading < -0.15, `${crashTxt(qs)}, heading ${f1(qs.heading * 57.3)} deg`, "< -9 deg");
+    const qb = fakie((b) => ({ brakeR: b.flow.backMode === 2 && (b._br || (b._br = bikeSpeed(b) < -0.8)) ? 1 : 0 }));
+    check("braking (S) during a fakie slows it (less back speed), no back-walk while it rolls, no crash", qb.crashes === 0 && qb._minV > q._minV + 0.3 && qb._walk === 0,
+      `${crashTxt(qb)}, ${f2(-qb._minV)} m/s back (unbraked ${f2(-q._minV)}), ${qb._walk} walk steps faster than ${FLW.backStill}`, "slower, 0 walks"); }
+  // FAKIE on the quarter pipe: up part way, rolled back, A steers it, no crash
+  { const Q = SPOT.qp; let fk = 0;
+    const q = ride(spot("quarter pipe", 4), (b) => ({ steer: b.flow.backMode === 2 && b.z < Q.foot && b.flow.backT < 1.5 ? 0.6 : 0 }), 8, (b) => b.vz < 0 && b.z < Q.foot - 5, (b) => { if (b.flow.backMode === 2) fk++; });
+    check("fakie on the quarter pipe (14 km/h up, rolled back, steered out), no crash", q.crashes === 0 && fk > 30 && q.z < Q.foot - 0.5 && Math.abs(q.heading) > 0.1, `${crashTxt(q)}, ${fk} fakie steps, out at z ${f1(q.z)}, heading ${f1(q.heading * 57.3)} deg`, "rolled back out"); }
+  // ?bikeback=old: none of it (the old stand at a stop with S, the foot holding the bike on the funbox face)
+  { const keep = { backWalk: FLW.backWalk, fakie: FLW.fakie }; FLW.backWalk = 0; FLW.fakie = 0;
+    const q = ride(flat(), () => ({ brakeR: 1 }), 1.5), f = ride(spawnAt(F.xc, F.z0 - 3, 0, 2.6), () => ({}), 5);
+    Object.assign(FLW, keep);
+    check("?bikeback=old (backWalk 0, fakie 0): S at a stop stands, the funbox face holds the bike (the old behaviour)", Math.abs(bikeSpeed(q)) < 0.05 && q.flow.backs === 0 && f.flow.fakies === 0, `S: ${f2(bikeSpeed(q))} m/s; funbox: ${f.flow.fakies} fakies, z ${f1(f.z)}`, "old"); }
 }
 // ---------------------------------------------------------------- the obstacles ridden
 {

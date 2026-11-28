@@ -70,6 +70,7 @@ Kid numbers (a ~11 year old, 40 kg + an 11 kg BMX): flat 25 km/h seated, 30.6 km
 |---|---|---|
 | pedal / sprint | W or Up / Shift (stand up) | RT / RB |
 | rear brake (held = skid) / front brake | S or Down (ramps in) / Q | LT / LB |
+| walk the bike BACK (claude/bikeback, rule bike-backward-real: at a standstill only; A / D steer the reversing way; let go or W ends it). A bike stopped on a ramp face rolls back (fakie): A / D steer, S brakes | S or Down held at a stop (0.25 s) | LT held at a stop |
 | steer (lean) | A / D or Left / Right (ramped) | left stick X |
 | lean forward / back (manual, nose, air pitch) | Z / X (or I / K) | left stick Y |
 | crouch + hop (back slope: a tap pumps, a charged release still pops: round 3) | Space hold / release | A |

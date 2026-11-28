@@ -79,7 +79,10 @@ export class CameraRig {
     this.spd += (sm(c.speedLow, c.speedHigh, v) - this.spd) * (this.first ? 1 : 1 - Math.exp(-dt / c.speedEase));
     // ---- the heading followed
     let want = pose.heading;
-    if (v > 2 && (s.air || Math.abs(s.slipAngle || 0) > 0.5)) want = Math.atan2(s.vx, s.vz);
+    // (going backward, claude/bikeback: rolling back / walking back the velocity points behind the bike - never
+    // followed, the camera stays behind the heading and looks over the bike, not back at itself)
+    const fwdV = s.vx * Math.sin(s.heading) + s.vz * Math.cos(s.heading), back = fwdV < -0.05;
+    if (v > 2 && !back && (s.air || Math.abs(s.slipAngle || 0) > 0.5)) want = Math.atan2(s.vx, s.vz);
     if (this.first) this.yaw = want;
     let d = want - this.yaw; d -= Math.round(d / (Math.PI * 2)) * Math.PI * 2;
     this.yaw += d * (1 - Math.exp(-c.yawRate * dt));
@@ -134,9 +137,9 @@ export class CameraRig {
     const sh = (s.buzz || 0) * c.shake;
     this.pos.x = px; this.pos.y = py + Math.abs(sh * Math.sin(this.t * 71) * 0.6); this.pos.z = pz;
     // ---- the look: ahead along the velocity, turned into the corner
-    const vAng = v > 1 ? Math.atan2(s.vx, s.vz) : this.yaw;
-    const la = vAng + Math.max(-0.6, Math.min(0.6, (s.yawVel || 0) * c.turnLook));
-    const ahead = c.side ? 0 : c.lookAhead + Math.min(3, v * c.lookTime);
+    const vAng = v > 1 && !back ? Math.atan2(s.vx, s.vz) : this.yaw;
+    const la = vAng + (back ? 0 : Math.max(-0.6, Math.min(0.6, (s.yawVel || 0) * c.turnLook)));
+    const ahead = c.side ? 0 : c.lookAhead + (back ? 0 : Math.min(3, v * c.lookTime));
     const lx = pose.x + Math.sin(la) * ahead, lz = pose.z + Math.cos(la) * ahead, ly = base + c.lookHeight + this.dipY * 0.5;
     if (this.first) { this.look.x = lx; this.look.y = ly; this.look.z = lz; }
     else { const k = 1 - Math.exp(-14 * dt); this.look.x += (lx - this.look.x) * k; this.look.y += (ly - this.look.y) * k; this.look.z += (lz - this.look.z) * k; }

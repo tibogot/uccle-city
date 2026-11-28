@@ -366,6 +366,7 @@ card.textContent = [
   "Shift        STAND UP and sprint: much quicker,",
   "             up to ~29 km/h (downhill: no limit)",
   "S / Down     rear brake (hold = skid)   Q  front brake",
+  "S at a stop  hold = walk back (A / D steer it)",
   "A D / Left Right   steer (lean)",
   "Space        hold = crouch / preload / absorb",
   "             release = hop (on a back slope: a pump)",
@@ -555,7 +556,8 @@ window.__bike = { get state() { return s; }, ORB, orbitToggle, orbitPreset, get 
 
 // ---------------------------------------------------------------- loop
 const pose = {};
-const NO_INPUT = { pedal: 0, sprint: false, brakeF: 0, brakeR: 1, steer: 0, lean: 0, hop: false, pump: 0, trick: false };
+// (both brakes: the bike held still - S alone at a stop would walk it back, bikePhysics backMode)
+const NO_INPUT = { pedal: 0, sprint: false, brakeF: 1, brakeR: 1, steer: 0, lean: 0, hop: false, pump: 0, trick: false };
 const ease = (x) => { const u = Math.min(1, Math.max(0, x)); return u * u * (3 - 2 * u); };
 let last = performance.now(), frames = 0, physMs = 0, histT = 0, kidMs = 0, landT = -1;
 renderer.setAnimationLoop(() => {
