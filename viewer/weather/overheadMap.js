@@ -19,6 +19,10 @@ import { computeOverheadShape, SHAPE } from "./overheadShape.js";
 export { SHAPE };
 import { positionWorld, vec4, vec2, float, uniform, texture, clamp, ivec2, textureLoad } from "three/tsl";
 
+/** ?wxfill=old (snowfix, rule overhead-fill-bounded): the bake's hole fill in place (it flooded sparse passes) */
+const FILL_OLD = typeof location !== "undefined" && /[?&]wxfill=old(&|$)/.test(location.search);
+/** ?snowsdf=old (snowfix, rule snow-edge-sdf): the wall feet cut as before (the layer's cut = every cliff cell) */
+const SDF_OLD = typeof location !== "undefined" && /[?&](snowsdf|snowedge|polish1)=old(&|$)/.test(location.search);
 export const SOLID_LAYER = 20;     // meshes that stop rain and carry snow (ground, roads, roofs, cars, walls)
 export const CANOPY_LAYER = 21;
 export const CAR_LAYER = 23;      // snow caps (claude/snowtracks): parked cars carry their own cap meshes (snowCaps.js); the layer is cut on their tops
@@ -45,8 +49,10 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
   tex.needsUpdate = true;
   // snowfast (claude/snow2): base height + shelter as a FILTERED float texture for the materials' exposure: one bilinear
   // fetch instead of 4 texel loads + 1 (WebGPU float32-filterable; three falls back to unfilterable without it)
-  const dataLin = new Float32Array(res * res * 2);
-  const texLin = new THREE.DataTexture(dataLin, res, res, THREE.RGFormat, THREE.FloatType);
+  // snowfix (rule snow-edge-sdf): B, A = the layer cut's signed distance (m; overheadShape signedCut): B cliffs only,
+  // A cliffs + carriageways (salted). The layer's fragment cuts at its 0 line (smooth, not the mesh's triangles)
+  const dataLin = new Float32Array(res * res * 4);
+  const texLin = new THREE.DataTexture(dataLin, res, res, THREE.RGBAFormat, THREE.FloatType);
   texLin.minFilter = texLin.magFilter = THREE.LinearFilter; texLin.generateMipmaps = false; texLin.colorSpace = THREE.NoColorSpace;
   texLin.wrapS = texLin.wrapT = THREE.ClampToEdgeWrapping; texLin.needsUpdate = true;
   const cell = size / res;
@@ -63,7 +69,7 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
     sample: (xz) => { const c = clamp(xz.sub(uOrigin).div(uSize).mul(res).floor(), 0, res - 1); return textureLoad(tex, ivec2(c)); },
     /** integer texel load (vertex / compute) */
     load: (i, j) => textureLoad(tex, ivec2(i, j)),
-    /** bilinear (base height, shelter) at a world xz: fragment stages, explicit level (fine in per-pixel branches) */
+    /** bilinear (base height, shelter, cut distance: cliffs, cut distance: cliffs + roads) at a world xz: fragment stages, explicit level (fine in per-pixel branches) */
     sampleLin: (xz) => texture(texLin, xz.sub(uOrigin).div(uSize)).level(0),
     texLin,
     inside: (xz) => { const u = xz.sub(uOrigin).div(uSize); return u.x.greaterThan(0).and(u.x.lessThan(1)).and(u.y.greaterThan(0)).and(u.y.lessThan(1)); },
@@ -86,7 +92,7 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
       const roadPx = await pass(scene, ROAD_LAYER);
       // (snow caps: the parked cars' tops, only when the caller marked some: the layer is cut there)
       const carPx = map.carsMarked ? await pass(scene, CAR_LAYER) : null;
-      const job = { solidPx, canopyPx, roadPx, carPx, res, cell, origin: [bakeO.x, bakeO.y] };
+      const job = { solidPx, canopyPx, roadPx, carPx, res, cell, origin: [bakeO.x, bakeO.y], fillOld: FILL_OLD, sdfOld: SDF_OLD };
       const t1 = performance.now();
       let r;
       try {
@@ -99,9 +105,10 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
       }
       map.centre.copy(bakeC); uOrigin.value.copy(bakeO);
       H.set(r.H); shelter.set(r.shelter); shape.set(r.shape); cliff.set(r.cliff); map.eaves = r.eaves; map.Hs = r.Hs;
-      for (let k = 0; k < res * res; k++) { data[k * 4] = r.Hs[k]; data[k * 4 + 1] = shelter[k]; data[k * 4 + 2] = shape[k]; data[k * 4 + 3] = cliff[k] + 2 * r.road[k]; }
+      for (let k = 0; k < res * res; k++) { data[k * 4] = r.Hs[k]; data[k * 4 + 1] = shelter[k]; data[k * 4 + 2] = shape[k]; data[k * 4 + 3] = r.cut[k] + 2 * r.road[k]; }
       tex.needsUpdate = true;
-      for (let k = 0; k < res * res; k++) { dataLin[k * 2] = r.Hs[k]; dataLin[k * 2 + 1] = shelter[k]; }
+      for (let k = 0; k < res * res; k++) { dataLin[k * 4] = r.Hs[k]; dataLin[k * 4 + 1] = shelter[k]; dataLin[k * 4 + 2] = r.sdA[k]; dataLin[k * 4 + 3] = r.sdB[k]; }
+      map.sdA = r.sdA; map.sdB = r.sdB; map.road = r.road; map.cut = r.cut; map.narrowCells = r.narrowCells;
       texLin.needsUpdate = true;
       map.ready = true;
       map.bakeMs = performance.now() - t0;

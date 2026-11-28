@@ -447,3 +447,28 @@ beltline teeth, a drape down the hatch).
   cells), a thin bright straight line across the Heros lawn snow (east of the monument), the dark kerb face as a zig-zag
   crack where the road is unsalted.
 - Costs measured on a RED machine only.
+
+---
+
+# Snow-day edges (branch claude/snowfix, 2026-11-28)
+
+The four snow-day defects of the season check (docs/CHRISTMAS.md, 2026-11-27; the same with `?xmas=0&wx=snow_cover`)
+were weather-system classes, not Christmas code. Gate row `snowedge` (tools/audit/snowEdgeCheck.mjs, node: the shape
+pass on synthetic bakes), browser row `snowedge` (debug/snowEdge.js `audit()`: the classes counted round the camera).
+
+| Defect | Root cause (class) | Fix | Rule / switch |
+|---|---|---|---|
+| Place Saint-Job: a polygonal patch of bare setts at 15 cm | the bake's hole fill ran IN PLACE in raster order: every empty stretch of the sparse ROAD pass was flooded right / down from the carriageway up-left of it; where the flood came within 5 cm of the paving, the salted-road test cut the layer (16 816 cells of the Saint-Job window; the canopy and car passes flooded alike) | each pass reads a snapshot, pinholes only (>= 2 neighbours) | overhead-fill-bounded, `?wxfill=old` |
+| its edge in ~25 cm saw-teeth | the cut was the hide flag interpolated over the layer's triangles (25 cm in the outer chunks) | the static cut is a signed distance per cell (exact EDT, blurred, thin cuts keep their sign) in the filtered map texture (B, A), cut per pixel at 0; wall feet (> 0.3 m up) not cut, a cut vertex over much lower snow at that snow's height (no dropped slivers: no teeth along facades), exact taper / drift distances | snow-edge-sdf, `?snowsdf=old` |
+| dark rings round the police yard's tree pits + white domes on its young trees | the Wolvendael pond's REFLECTION trees (layer 9, drawn by the mirror only) were baked as solid: the layer lay over their invisible crowns, the ground under them read "under an eave" | the bake takes only meshes the city camera draws (their layers) | wx-bake-drawn-only, `?wxdrawn=old` |
+| (found on the way) a dark hole under every hanging basket on Saint-Job | furniture drawn under new names (claude/props proxies `props-*`), lamp extras, bollards, poles, billboards baked as solid | in FURN_RE: shelter | wx-bake-drawn-only, `?wxprops=old` |
+| thin white zigzags on copings / shop fascias | a 30-45 cm raised ledge kept a 1-2 cell strip of the layer, drawn on the grid's triangles, on top of the coping's own cap | narrow raised kept patches (<= 2.25 cells from the cut, rim drop > 0.3 m) cut in the shape pass (narrowCut) | snow-thin-ledge, `?snowsdf=old` |
+
+Counts (debug/snowEdge.js `audit()`, 64 m window, `?quick=1&with=weather&day=350&xmas=0&wx=snow_cover&time=midday`,
+before = `&wxfill=old&wxdrawn=old&wxprops=old&snowsdf=old`): docs/CHRISTMAS.md, season check, "Counts" (flooded shelter
+was the biggest: 44-66 % of the window under a phantom crown before).
+Images (local): `C:/Users/tibog/Downloads/uccle-jobs/snowfix_shots/` (before / after, day + night: Saint-Job paving,
+police yard pits, a young tree, a coping, a hedge front, the yard's facade foot).
+Shape pass (worker, 512^2): ~240-430 ms with the four EDTs and blurs (was ~100-350): off the main thread, once per bake.
+Left: the snow at a facade foot still waves a few cm along diagonal walls; the layer's drop-edge taper reads a little
+wavy along kerbs; parked two-wheelers are still solid (a slab on a seat, as cars before their caps).
