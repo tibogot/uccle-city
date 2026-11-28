@@ -77,6 +77,15 @@ export const BIKE = {
   brakeRear: 4.6,       // m/s^2
   skidAt: 0.85,         // rear lever over this locks the rear (a skid, on purpose)
   skidMu: 0.75,         // sliding grip / static grip
+  // (bike lab 2, the BMX skid drift: the defaults are the old skid; the lab's "new" feel sets the power-slide)
+  skidLat: 0.35,        // x the side grip while the rear is locked (lower: the tail slides out further)
+  skidLoose: 1.0,       // x skidLat more on loose ground (dirt, gravel, grass, sand): the brutal slide on the gravel pad
+  skidBrake: 1.0,       // x the locked rear's braking (lower: a power-slide keeps its speed)
+  skidSteerLock: 0,     // 1: the rear brake held + steer locks the rear at once (no lever ramp): the drift on S + A / D
+  slideOut: 1.15,       // rad: a skid past this slip angle over 4 m/s = "slid out" (a crash)
+  skidCarry: 0,         // rad/s: in a skid the rolling front wheel turns the momentum toward the heading (a power-slide
+                        // goes ROUND instead of scrubbing to a stop); and for 0.7 s after a skid the sideways slide is
+                        // the drift's, not a wash-out (0: the old skid)
   grip: 1.0,            // x every surface's grip
   // steering / lean
   maxLean: 0.65,        // rad (37 deg)
@@ -211,7 +220,7 @@ export const BIKE_RANGES = {
   legRange: [0, 0.3, 0.01, "contacts"], legRate: [2, 30, 0.5, "contacts"], pumpGain: [0, 120, 1, "contacts"],
   powerCruise: [40, 300, 5, "pedal"], powerSprint: [100, 700, 10, "pedal"], forceCruise: [1, 8, 0.1, "pedal"], forceSprint: [1, 10, 0.1, "pedal"],
   rollout: [3, 6, 0.01, "pedal"], cadenceMax: [80, 180, 1, "pedal"], drag: [0, 0.02, 0.0005, "pedal"], crouchDrag: [0, 0.5, 0.01, "pedal"],
-  brakeFront: [1, 10, 0.1, "brakes"], brakeRear: [1, 10, 0.1, "brakes"], skidAt: [0.3, 1, 0.01, "brakes"], skidMu: [0.3, 1, 0.01, "brakes"], grip: [0.3, 1.5, 0.01, "brakes"],
+  brakeFront: [1, 10, 0.1, "brakes"], brakeRear: [1, 10, 0.1, "brakes"], skidAt: [0.3, 1, 0.01, "brakes"], skidMu: [0.3, 1, 0.01, "brakes"], skidLat: [0.05, 1, 0.01, "brakes"], skidLoose: [0.2, 1, 0.01, "brakes"], skidBrake: [0.1, 1, 0.01, "brakes"], skidSteerLock: [0, 1, 1, "brakes"], slideOut: [0.8, 1.6, 0.01, "brakes"], skidCarry: [0, 6, 0.1, "brakes"], grip: [0.3, 1.5, 0.01, "brakes"],
   maxLean: [0.3, 1.0, 0.01, "steer"], leanRate: [1, 20, 0.5, "steer"], leanV0: [0, 4, 0.1, "steer"], leanV1: [1, 10, 0.1, "steer"],
   lowSteer: [0.2, 1.2, 0.01, "steer"], barV0: [0, 4, 0.1, "steer"], barV1: [1, 8, 0.1, "steer"], yawResponse: [2, 30, 0.5, "steer"],
   tyreRate: [5, 60, 1, "steer"], skidYaw: [0, 4, 0.1, "steer"], washSlip: [0.5, 4, 0.1, "steer"], washTime: [0.05, 1, 0.05, "steer"],
@@ -751,8 +760,8 @@ function contactPhase(s, w, env, B, S) {
       brake = Math.min(brake, mu * Fn);
     } else {
       brake = bR * B.brakeRear;
-      const lock = (bR > B.skidAt || brake > mu * Fn) && v > 1.2;
-      if (lock) { brake = mu * B.skidMu * Fn; s.skid = true; }
+      const lock = (bR > B.skidAt || brake > mu * Fn || (B.skidSteerLock > 0 && bR > 0.4 && Math.abs(w.steer) > 0.4 && v > 2)) && v > 1.2;
+      if (lock) { brake = mu * B.skidMu * Fn * B.skidBrake; s.skid = true; }
       brake = Math.min(brake, mu * Fn);
       // pedalling: the rear wheel pushes (power over speed, a force cap, spinning out at the top cadence)
       if (pedal > 0 && !s.pushing && !lock) {
@@ -928,6 +937,12 @@ function motionPhase(s, w, B) {
   fx = Math.sin(s.heading); fz = Math.cos(s.heading);
   const nlx = fz, nlz = -fx;
   vF = s.vx * fx + s.vz * fz; vL = s.vx * nlx + s.vz * nlz;
+  // (the skid drift) the front wheel, still rolling, carries the momentum round toward the heading
+  if (s.skid) s._skidT = 0; else s._skidT = (s._skidT ?? 9) + dt;
+  if (contactNow && s.skid && B.skidCarry > 0 && v > 0.5) {
+    const ang = Math.atan2(vL, vF), da = clamp(-ang, -B.skidCarry * dt, B.skidCarry * dt), c = Math.cos(da), sn = Math.sin(da);
+    const f2 = vF * c - vL * sn, l2 = vF * sn + vL * c; vF = f2; vL = l2;
+  }
   // the tyres take out the sideways slip within the grip left (friction circle)
   if (contactNow) {
     const load = Math.min(1, (fnF + fnR) / g);
@@ -937,7 +952,7 @@ function motionPhase(s, w, B) {
     // grip away and every turn washed out)
     const longA = Math.min(mu * g, w.brakes + drive);
     let lat = Math.sqrt(Math.max(0, (mu * g) ** 2 - longA * longA)) * load;
-    if (s.skid) lat *= 0.35;
+    if (s.skid) lat *= B.skidLat * (s.surf[1] >= 2 ? B.skidLoose : 1);
     if (s.frontLock) lat *= 0.5;
     lat *= 1 - B.wobbleGrip * wob;
     vL += w.aL * dt;                    // (the park: the bank's sideways push, before the tyres take out what is left)
@@ -947,9 +962,9 @@ function motionPhase(s, w, B) {
     s.slipAngle = Math.atan2(vL, Math.max(0.3, Math.abs(vF)));
     // washing out: sliding sideways with no skid on purpose (too much lean for the surface, or a locked front)
     // (a slide along a wall the bike is scraping is the wall's, not a wash-out: owner round 2, 40 km/h down the hill lane)
-    if (!(s.wobbleT > 0) && !s.envContacts && ((Math.abs(vL) > B.washSlip && !s.skid) || (s.frontLock && Math.abs(s.lean) > 0.25))) { s.washT += dt; if (s.washT > B.washTime) { crash(s, "washed out"); } }
+    if (!(s.wobbleT > 0) && !s.envContacts && ((Math.abs(vL) > B.washSlip && !s.skid && !(B.skidCarry > 0 && s._skidT < 0.7)) || (s.frontLock && Math.abs(s.lean) > 0.25))) { s.washT += dt; if (s.washT > B.washTime) { crash(s, "washed out"); } }
     else s.washT = Math.max(0, s.washT - dt * 2);
-    if (s.skid && Math.abs(s.slipAngle) > 1.15 && v > 4 && !(s.wobbleT > 0)) crash(s, "slid out");
+    if (s.skid && Math.abs(s.slipAngle) > B.slideOut && v > 4 && !(s.wobbleT > 0)) crash(s, "slid out");
   } else { s.slip = 0; s.slipAngle = 0; }
   s.vx = fx * vF + nlx * vL; s.vz = fz * vF + nlz * vL;
   w.fx = fx; w.fz = fz;

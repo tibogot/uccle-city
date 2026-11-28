@@ -12,11 +12,13 @@ import { DT, BIKE, createBikeState, stepBike, bikeSpeed } from "../../viewer/bik
 import { SPOT, SPOT_SPOTS, SOLIDS, spotGround, spotEdges, spotColliders, spotHeight, solidAt, BOUNDS } from "../../viewer/bike/bikeSpot.js";
 import { buildColliders, KIND } from "../../viewer/drive/colliders.js";
 import { createBikeEnv } from "../../viewer/bike/bikeEnv.js";
+import { applyFeel } from "../../viewer/bike/bikeFeel.js";
 
 const quiet = process.argv.includes("--quiet"), ridesOnly = process.argv.includes("--rides-only");
 const rows = [];
 let failed = 0;
-const check = (name, ok, got, want) => { rows.push([name, ok ? "PASS" : "FAIL", got, want]); if (!ok) failed++; };
+let FEELN = "";
+const check = (name, ok, got, want) => { rows.push([(FEELN ? `[feel ${FEELN}] ` : "") + name, ok ? "PASS" : "FAIL", got, want]); if (!ok) failed++; };
 const f1 = (v) => (Number.isFinite(v) ? v.toFixed(1) : String(v)), f2 = (v) => (Number.isFinite(v) ? v.toFixed(2) : String(v));
 const T0 = performance.now();
 const CL = spotColliders(KIND), COL = buildColliders(CL.polys, CL.circles, CL.bounds);
@@ -95,6 +97,8 @@ if (!ridesOnly) {
   check("the fine ground's border is level with the far grid (no crack where they meet)", border < 1e-4, `max ${border.toExponential(1)} m`, "< 0.1 mm");
 }
 
+for (FEELN of ["new", "old"]) {
+applyFeel(FEELN);
 // ---------------------------------------------------------------- the spots
 {
   const bad = [];
@@ -169,11 +173,32 @@ const hopGrind = (name, startZ, v, leads, pedal = 0.3, at = null) => {
   ride(s, pumper(follow(-1)), 30, null, (q) => { const a = Math.atan2(q.z - T.z, q.x - (T.ax + T.bx) / 2); let da = a - prev; da -= Math.round(da / (2 * PI)) * 2 * PI; turned += da; prev = a; if (q.t > 2) minV = Math.min(minV, Math.abs(bikeSpeed(q))); });
   const laps = Math.abs(turned) / (2 * PI);
   check("pump-track loop: pumped round it (rollers + both berms): a lap, no crash", s.crashes === 0 && laps >= 1 && minV > 2.5, `${f2(laps)} laps in 30 s, min ${f1(minV)} m/s, ${crashTxt(s)}`, ">= 1 lap, > 2.5 m/s, 0 crashes");
-  const TB = SPOT.table, tj = ride(spot("table jump", 7), (q) => ({ pedal: q.z < TB.z0 - 1 && bikeSpeed(q) < 7 ? 1 : 0, sprint: true }), 7, (q) => q.z > TB.z1 + 3);
-  const TL = airs(tj, 0.2)[0];
-  check("dirt table jump at 25 km/h: an air off the lip, landed on the table / its down slope, ridden out", tj.crashes === 0 && tj.z > TB.z1 && TL && TL.band !== "bail", `air ${f2(TL?.air)} s ${TL?.band || ""}, ${crashTxt(tj)}`, "an air, no crash");
-  const tjs = ride(spot("table jump", 5.5), () => ({ pedal: 1 }), 9, (q) => q.z > TB.z1 + 3);
-  check("dirt table jump rolled at 20 km/h, pedalling: over it, no crash", tjs.crashes === 0 && tjs.z > TB.z1, crashTxt(tjs), "no crash");
+  const TB = SPOT.table, past = (q) => q.z < TB.z1 - 3, tj = ride(spawnAt(TB.xc, TB.z0 + 3, Math.PI, 7), () => ({ pedal: 0 }), 7, past);
+  const TL = airs(tj, 0.12)[0];
+  check("dirt table jump at 25 km/h: an air off the lip, landed on the table / its down slope, ridden out", tj.crashes === 0 && tj.z < TB.z1 && TL && TL.band !== "bail", `air ${f2(TL?.air)} s ${TL?.band || ""}, ${crashTxt(tj)}`, "an air, no crash");
+  const tjs = ride(spot("table jump", 4.2), () => ({ pedal: 1 }), 9, past);
+  check("dirt table jump rolled at 15 km/h, pedalling: over it, no crash", tjs.crashes === 0 && tjs.z < TB.z1, crashTxt(tjs), "no crash");
+  if (FEELN === "new") {
+    // (round 2, owner: "the table clearable from ~15 km/h"): a charged pop at the lip clears the top
+    const topEnd = TB.z0 - TB.up - TB.top, lipZ = TB.z0 - TB.up;
+    let best = null;
+    for (const lead of [0.1, 0.15, 0.2, 0.25]) {
+      let land = null, wasAir = false;
+      const q = ride(spawnAt(TB.xc, TB.z0 + 3, Math.PI, 4.2), (b) => ({ hop: b.z > lipZ + lead && b.z < lipZ + lead + 1.3 }), 7, past,
+        (b) => { if (wasAir && !b.air && land == null && b.lastLanding?.air > 0.15) land = b.z; wasAir = b.air; });
+      if (q.crashes === 0 && land != null && (!best || land < best.land)) best = { land, lead };
+    }
+    check("dirt table at 15 km/h: a charged hop off the lip clears the 1 m top (lands on the down slope)", best && best.land < topEnd + 0.3, best ? `lands at ${f2(topEnd - best.land)} m past the top's end (released ${best.lead} m before the lip)` : "never cleared", "past the top, no crash");
+    // the berm: out of the whoops, round the half ring, onto the table line heading south
+    const B = SPOT.berm;
+    const bq = ride(spot("berm", 5), (b) => { const dx = b.x - B.x, dz = b.z - B.z, d = Math.hypot(dx, dz) || 1; let tx = dz / d, tz = -dx / d; if (b.z < B.z - 0.5) { tx = 0; tz = b.x < B.x ? 1 : -1; } const back = (B.R - d) * 0.6; if (b.z > B.z - 0.5) { tx += dx / d * back; tz += dz / d * back; } return { pedal: bikeSpeed(b) < 5 ? 1 : 0, steer: steerTo(b, Math.atan2(tx, tz)) }; }, 8, (b) => b.x > B.x && b.z < B.z - 1.5 && Math.cos(b.heading) < -0.8);
+    check("dirt berm: carved round from the whoops onto the table line (heading south), no crash", bq.crashes === 0 && Math.cos(bq.heading) < -0.8 && bq.x > B.x, `${crashTxt(bq)}, out at (${f1(bq.x)}, ${f1(bq.z)}) heading ${f1(bq.heading * 57.3)} deg`, "round, no crash");
+    // THE SKID DRIFT: S + full steer at 23 km/h: a power-slide round on the gravel, less on asphalt
+    const drift = (x, z, h) => { const q = spawnAt(x, z, h, 6.5); let maxSlip = 0; const h0 = q.heading; ride(q, (b, t) => ({ brakeR: t > 0.2 && t < 1.0 ? 1 : 0, steer: t > 0.2 && t < 1.0 ? 1 : 0 }), 1.6, null, (b) => { maxSlip = Math.max(maxSlip, Math.abs(b.slipAngle)); }); return { q, turned: (q.heading - h0) * 57.3, maxSlip: maxSlip * 57.3 }; };
+    const dg = drift(SPOT.drift.x - 3, SPOT.drift.z - 3, 0.6), da = drift(-2.8, -14, 0);
+    check("skid drift (S + steer at 23 km/h): a power-slide on the gravel pad (tail out > 35 deg, > 60 deg turned, no crash), tighter on asphalt", dg.q.crashes === 0 && da.q.crashes === 0 && dg.maxSlip > 35 && Math.abs(dg.turned) > 60 && dg.maxSlip > da.maxSlip,
+      `gravel: tail ${f1(dg.maxSlip)} deg, turned ${f1(dg.turned)} deg, out ${f1(bikeSpeed(dg.q))} m/s; asphalt: tail ${f1(da.maxSlip)} deg, turned ${f1(da.turned)} deg; ${dg.q.crashes + da.q.crashes} crashes`, "slide, no crash");
+  }
   const W = SPOT.whoops, w = ride(spot("whoops", 5), pumper(), 10, (q) => q.z > W.z1 + 1), wc = ride(spot("whoops", 6), () => ({ pedal: 1 }), 10, (q) => q.z > W.z1 + 1);
   check("whoops: pumped and pedalled through, no crash", w.crashes === 0 && w.z > W.z1 && wc.crashes === 0 && wc.z > W.z1, `pumped ${f1(bikeSpeed(w))} m/s out; pedalled ${crashTxt(wc)}`, "through, no crash");
   const H = SPOT.hill, hu = ride(spot("hill"), (q) => ({ pedal: 1, sprint: true }), 30, (q) => q.z > H.z + H.rz + 1);
@@ -184,6 +209,8 @@ const hopGrind = (name, startZ, v, leads, pedal = 0.3, at = null) => {
   check("drift pad: a skid turn on the packed gravel (rear brake + full steer at 23 km/h), no crash", dr.crashes === 0, `${crashTxt(dr)}, heading turned ${f1((dr.heading - SPOT_SPOTS["drift pad"][2]) * 57.3)} deg`, "no crash");
 }
 
+}
+applyFeel("old");
 const ms = performance.now() - T0;
 if (!quiet || failed) {
   console.log("| check | result | got | want |\n|---|---|---|---|");

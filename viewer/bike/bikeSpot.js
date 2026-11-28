@@ -54,24 +54,27 @@ export function profAt(S, s) {
 }
 
 export const SPOT = {
-  plaza: { x0: -13, x1: 22, z0: -22, z1: 17, r: 3 },
-  slab: { x0: -6, x1: 6, z0: 3, z1: 12 },
+  // (round 2, owner: "obstacles closer": the plaza fits its obstacles, every line a few seconds from the next)
+  plaza: { x0: -10, x1: 14, z0: -18, z1: 12, r: 2.5 },
+  slab: { x0: -5, x1: 5, z0: -1.5, z1: 5.5 },
   funbox: { xc: 0, w: 3.2, z0: -8, h: 0.6, ramp: 25 * D, top: 3.0, rail: 0.3 },
-  qp: { xc: 0, w: 8, foot: 6, R: 2.1, top: 80 * D, deck: 1.5 },
-  ledge: { x: -7, z0: -12, z1: -2, h: 0.37 },
-  pad: { xc: -7, w: 3, z0: 2, len: 6, h: 0.15 },
-  stairs: { xc: 8.5, w: 4, z0: -14, h: 0.75, grade: 0.125, plat: 2.5, n: 5, rise: 0.15, run: 0.32 },
+  qp: { xc: 0, w: 8, foot: 1, R: 2.1, top: 80 * D, deck: 1.5 },
+  ledge: { x: -6.5, z0: -10, z1: 0, h: 0.37 },
+  pad: { xc: -6.5, w: 3, z0: 2.5, len: 6, h: 0.15 },
+  stairs: { xc: 7, w: 4, z0: -13, h: 0.75, grade: 0.125, plat: 2.5, n: 5, rise: 0.15, run: 0.32 },
   kickers: [
-    { name: "kicker", xc: 13.5, z0: -2, h: 0.80, lip: 34, gap: 1.8, land: 0.65, kw: 1.6, lw: 2.4, v: 7.0 },
-    { name: "small kicker", xc: 18.5, z0: -2, h: 0.45, lip: 30, gap: 1.0, land: 0.38, kw: 1.6, lw: 2.4, v: 6.0 },
+    { name: "kicker", xc: 7, z0: 0, h: 0.80, lip: 34, gap: 1.8, land: 0.65, kw: 1.6, lw: 2.4, v: 7.0 },
+    { name: "small kicker", xc: 12, z0: -8, h: 0.45, lip: 30, gap: 1.0, land: 0.38, kw: 1.6, lw: 2.4, v: 6.0 },
   ],
-  pump: { ax: -34, bx: -24, z: 0, R: 6, w: 3.2, amp: 0.30, lambda: 4.8, berm: 1.6 },
-  table: { xc: -25, w: 3.4, z0: 18, up: 3.2, top: 3, down: 5, h: 1.0 },
-  whoops: { xc: -17, z0: 12, z1: 31, lambda: 2.4, amp: 0.11 },
-  hill: { x: 4, z: 34, rx: 18, rz: 16, flat: 0.25, h: 1.5 },
-  drift: { x: 31, z: 3, r: 8.5 },
-  wall: { x0: -12, x1: 6, z: -24.5, t: 0.3, h: 2.3 },
-  bench: { x: -10.6, z: 12, yaw: Math.PI / 2 },
+  // the dirt line: the pump track -> north up the whoops -> round the berm -> south over the table -> back
+  pump: { ax: -29, bx: -21, z: -2, R: 6, w: 3.2, amp: 0.30, lambda: 4.8, berm: 1.6 },
+  whoops: { xc: -24, z0: 9, z1: 26, lambda: 2.4, amp: 0.11 },
+  berm: { x: -20, z: 27.5, R: 4, w: 3.2, h: 1.3 },
+  table: { xc: -16, w: 3.4, z0: 25, dir: -1, lip: 30 * D, top: 1.0, down: 3.5, h: 0.5 },
+  hill: { x: 2, z: 25, rx: 14, rz: 9, flat: 0.25, h: 1.5 },
+  drift: { x: 24, z: -4, r: 7 },
+  wall: { x0: -9, x1: 7, z: -20.5, t: 0.3, h: 2.3 },
+  bench: { x: -8.5, z: 10.6, yaw: Math.PI },
   // the drawn ground: a fine grid over the riding area (whole multiples of the far grid's 4 m), the far terrain round it
   fine: { x0: -48, x1: 44, z0: -28, z1: 56, res: 0.25 },
   far: { x0: -320, x1: 320, z0: -320, z1: 320, res: 4 },
@@ -130,20 +133,34 @@ function stadium(T, x, z) {
 }
 const PT = P.pump, PT_M = PT.R + PT.w / 2 + 2.2;
 const TB = P.table;
-TB.z1 = TB.z0 + TB.up + TB.top + TB.down;
+// (round 2: the take-off a concave arc to a 30 deg lip, as a real dirt table's: it throws the bike, a convex hump only rolled)
+TB.R = TB.h / (1 - Math.cos(TB.lip)); TB.up = TB.R * Math.sin(TB.lip);
+TB.L = TB.up + TB.top + TB.down; TB.z1 = TB.z0 + TB.dir * TB.L; TB.zmin = Math.min(TB.z0, TB.z1); TB.zmax = Math.max(TB.z0, TB.z1);
 function tableH(x, z) {
-  const ax = Math.abs(x - TB.xc), s = z - TB.z0;
-  if (s < -1.5 || s > TB.up + TB.top + TB.down + 1.5 || ax > TB.w / 2 + 2) return 0;
+  const ax = Math.abs(x - TB.xc), s = (z - TB.z0) * TB.dir;
+  if (s < -1.5 || s > TB.L + 1.5 || ax > TB.w / 2 + 2) return 0;
   // the shoulders fall off the table's sides over 2 m (a dirt jump is a heap, never a wall)
   const side = 1 - sstep(TB.w / 2, TB.w / 2 + 2, ax);
   let h;
   if (s < 0) h = 0;
-  else if (s < TB.up) h = TB.h * Math.pow(s / TB.up, 1.6);
+  else if (s < TB.up) h = TB.R - Math.sqrt(TB.R * TB.R - s * s);
   else if (s < TB.up + TB.top) h = TB.h;
-  else if (s < TB.up + TB.top + TB.down) h = TB.h * (1 - sstep(0, 1, (s - TB.up - TB.top) / TB.down));
+  else if (s < TB.L) h = TB.h * (1 - sstep(0, 1, (s - TB.up - TB.top) / TB.down));
   else h = 0;
-  // the take-off's sides and the down slope's sides heaped the same way (the side fall-off scaled by the height there)
   return h * side;
+}
+/** the dirt berm: a half ring (the north half) banked to its outer edge, joining the whoops (west leg) to the table (east) */
+const BM = P.berm;
+function bermH(x, z) {
+  const dx = x - BM.x, dz = z - BM.z;
+  if (dz < -1 || Math.abs(dx) > BM.R + BM.w / 2 + 2.2 || dz > BM.R + BM.w / 2 + 2.2) return 0;
+  const d = hyp(dx, dz), u = d - BM.R, hw = BM.w / 2;
+  const a = (uu) => { const t = clamp((uu + hw) / BM.w, 0, 1); return BM.h * t * t; };
+  let h;
+  if (u >= -hw && u <= hw) h = a(u);
+  else if (u > hw) h = a(hw) * (1 - sstep(hw, hw + 2.0, u));
+  else h = 0;
+  return h * sstep(-0.5, 1.5, dz);            // (the banking comes in round the turn: the legs run flat into it)
 }
 const WH = P.whoops;
 function whoopsH(x, z) {
@@ -171,7 +188,7 @@ export function farH(x, z) {
 export function terrainH(x, z) {
   let h = farH(x, z);
   if (x > PT.ax - PT_M && x < PT.bx + PT_M && z > PT.z - PT_M && z < PT.z + PT_M) h += stadium(PT, x, z);
-  h += tableH(x, z) + whoopsH(x, z) + hillH(x, z);
+  h += tableH(x, z) + whoopsH(x, z) + bermH(x, z) + hillH(x, z);
   return h;
 }
 /** the solid under (x, z) or null */
@@ -220,16 +237,17 @@ export function spotPaint(x, z, out = [0, 0, 0, 0]) {
     const t = clamp((x - PT.ax) / (PT.bx - PT.ax), 0, 1), d = hyp(x - (PT.ax + (PT.bx - PT.ax) * t), z - PT.z), u = Math.abs(d - PT.R);
     dirt = Math.max(dirt, 1 - sstep(PT.w / 2 + 1.4, PT.w / 2 + 2.6, u + ragged(x, z, 0.5)));
   }
-  dirt = Math.max(dirt, 1 - sstep(-0.4, 0.6, sdRect(x, z, TB.xc - TB.w / 2 - 1.6, TB.xc + TB.w / 2 + 1.6, TB.z0 - 2, TB.z1 + 1.5, 1.5) + ragged(x, z, 0.6)));
+  dirt = Math.max(dirt, 1 - sstep(-0.4, 0.6, sdRect(x, z, TB.xc - TB.w / 2 - 1.6, TB.xc + TB.w / 2 + 1.6, TB.zmin - 1.5, TB.zmax + 1.5, 1.5) + ragged(x, z, 0.6)));
   dirt = Math.max(dirt, 1 - sstep(-0.4, 0.6, sdRect(x, z, WH.xc - 2.2, WH.xc + 2.2, WH.z0 - 1.5, WH.z1 + 1.5, 1.2) + ragged(x, z, 0.6)));
+  { const d = hyp(x - BM.x, z - BM.z) - BM.R; if (z > BM.z - 2) dirt = Math.max(dirt, (1 - sstep(BM.w / 2 + 1.2, BM.w / 2 + 2.4, Math.abs(d) + ragged(x, z, 0.5))) * sstep(BM.z - 2, BM.z, z)); }
   // worn desire paths (1.2 m wide): plaza -> the whoops, the table <-> the whoops' end, plaza -> up the hill
-  const path = Math.min(sdSeg(x, z, -13, 9, -17, 11), sdSeg(x, z, -17, 31.5, -25, 30), sdSeg(x, z, -25, 15, -26, 9), sdSeg(x, z, 2, 16, 4, 26), sdSeg(x, z, 4, 26, 4.5, 34));
+  const path = Math.min(sdSeg(x, z, -10, 8, -14, 12), sdSeg(x, z, -16, 16, -17, 10), sdSeg(x, z, 2, 11, 2, 21), sdSeg(x, z, 14, -2, 17, -3));
   dirt = Math.max(dirt, 1 - sstep(0.45, 1.0, path + ragged(x, z, 0.25)));
   // the gravel drift pad
   const dDrift = hyp(x - P.drift.x, z - P.drift.z) - P.drift.r + ragged(x, z, 0.8);
   let grav = 1 - sstep(-0.4, 0.4, dDrift);
   // the gravel apron between the plaza and the pad
-  grav = Math.max(grav, (1 - sstep(-0.3, 0.5, sdRect(x, z, 20, 26, -4, 9, 2) + ragged(x, z, 0.6))) * (1 - asph));
+  grav = Math.max(grav, (1 - sstep(-0.3, 0.5, sdRect(x, z, 13, 18, -9, 1, 1.5) + ragged(x, z, 0.6))) * (1 - asph));
   conc *= 1;
   // (the slab is painted over the asphalt in the shader: the asphalt stays whole under its edge, no grass seam)
   dirt *= (1 - asph) * (1 - conc);
@@ -260,10 +278,10 @@ export const SPOT_FEATURES = { lines: [{ id: "spot:steps", kind: "steps", line: 
 /** the funbox rail (a steel tube 0.3 m over the table) */
 export const FUNBOX_RAIL = { x: P.funbox.xc, z0: P.funbox.zt0 + 0.3, z1: P.funbox.zt1 - 0.3, y: P.funbox.h + P.funbox.rail };
 /** the cones (a slalom on the drift pad, two at the plaza) and the bins: [x, z] */
-export const CONES = [[27, -1], [30, 2], [33, 5], [30, 8], [27, 11], [35.5, -1.5], [-2.5, -15], [2.5, -15]];
-export const BINS = [[-10.4, 14.4], [3.8, -20.6], [21, 13.5]];
+export const CONES = [[29, -9.5], [29.6, -6.5], [29, -3.5], [29.6, -0.5], [-2.5, -15.5], [2.5, -15.5]];        // (a slalom on the pad's east side: the west is the drift's)
+export const BINS = [[-6.6, 11.2], [9.5, -17], [13, 10]];
 /** the trees that stand in the riding area (trunk colliders); the rest are round it, far from the lines */
-export const NEAR_TREES = [[-12, 19.5], [-15.5, 15], [24, 16], [-8, 24], [17, 22], [-36, 15], [-41, -12], [-20, -16], [27, -14], [40, 16], [-44, 22]];
+export const NEAR_TREES = [[-8, 16], [12, 15], [-34, 14], [-40, -16], [-14, -16], [20, -16], [33, 8], [16, 24], [-30, 32], [-12, 32], [8, -24], [-24, -18]];
 
 export const BOUNDS = { x0: -120, x1: 120, z0: -100, z1: 140 };
 export function spotEdgeLines() {
@@ -294,12 +312,14 @@ export function spotColliders(KIND) {
   // the quarter pipe's deck back and the stair block's platform sides: walls as high as the solid there (a rider never
   // drives into a 1.5 m face of the ground sideways; a rider on top is over them)
   for (const S of SOLIDS) {
-    if (S.name !== "quarter pipe" && S.name !== "stair block") continue;
-    const step = 0.5;
+    // (round 2, owner: "ramp side panels, no open ground steps at the ramp sides": EVERY solid's sides are walls as
+    // high as the solid there - a rider beside a ramp meets its side panel, never a step in the ground; a rider on it
+    // is over them)
+    const step = S.mat === "wood" ? 0.25 : 0.5;
     for (let s = 0; s < S.L - 1e-6; s += step) {
       let h = 0;
       for (let k = 0; k <= 4; k++) h = Math.max(h, profAt(S, Math.min(S.L, s + k * step / 4)));
-      if (h < 0.35) continue;
+      if (h < 0.12) continue;
       const za = S.z0 + S.dir * s, zb = S.z0 + S.dir * Math.min(S.L, s + step);
       polys.push({ ...box(S.x0 - 0.12, S.x0, Math.min(za, zb), Math.max(za, zb), KIND.wall, h - 0.02), what: `${S.name} side` }, { ...box(S.x1, S.x1 + 0.12, Math.min(za, zb), Math.max(za, zb), KIND.wall, h - 0.02), what: `${S.name} side` });
     }
@@ -326,17 +346,18 @@ export const FENCES = [[-46, 53, 42, 53], [-46, -26, -46, 53]];
 
 /** the spots: [x, z, heading, speed m/s] (the panel's menu, keys 1-9 / N / B) */
 export const SPOT_SPOTS = {
-  "start": [0, -17, 0, 0],
-  "funbox + rail": [P.funbox.xc - 0.3, P.funbox.z0 - 8, 0, 5],
+  "start": [0, -16, 0, 0],
+  "funbox + rail": [P.funbox.xc - 0.3, -14, 0, 5],
   "quarter pipe": [P.qp.xc - 2.8, P.qp.foot - 10, 0, 7],
   "ledge": [P.ledge.x - 0.45, P.ledge.z0 - 6, 0, 4],
-  "manual pad": [P.pad.xc - 0.8, P.pad.z0 - 3, 0, 4.5],
-  "stairs + handrail": [P.stairs.xc, P.stairs.z0 - 4, 0, 3.5],
-  "kicker": [P.kickers[0].xc, P.kickers[0].z0 - 12, 0, P.kickers[0].v],
-  "small kicker": [P.kickers[1].xc, P.kickers[1].z0 - 10, 0, P.kickers[1].v],
+  "manual pad": [P.pad.xc - 0.8, P.pad.z0 - 2, 0, 4.5],
+  "stairs + handrail": [P.stairs.xc, P.stairs.z0 - 3.5, 0, 3.5],
+  "kicker": [P.kickers[0].xc, P.kickers[0].z0 - 2.4, 0, P.kickers[0].v],
+  "small kicker": [P.kickers[1].xc, P.kickers[1].z0 - 6, 0, P.kickers[1].v],
   "pump track": [PT.ax + 2, PT.z - PT.R, Math.PI / 2, 4],
-  "table jump": [TB.xc, TB.z0 - 7, 0, 7],
-  "whoops": [WH.xc, WH.z0 - 4, 0, 5],
-  "hill": [HL.x, HL.z - HL.rz - 4, 0, 4],
+  "table jump": [TB.xc, TB.z0 + 1.2, Math.PI, 5.5],
+  "whoops": [WH.xc, WH.z0 - 0.7, 0, 5],
+  "berm": [WH.xc, WH.z1 + 0.3, 0, 5],
+  "hill": [HL.x, HL.z - HL.rz - 3, 0, 4],
   "drift pad": [P.drift.x - 6, P.drift.z - 9, 0.6, 6],
 };
