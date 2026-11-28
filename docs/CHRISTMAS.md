@@ -37,6 +37,9 @@ du Ham, the police yard (the police game's start). Shots: `C:/Users/tibog/Downlo
   numbers as an upper bound, but they agree with the hot-machine numbers of 27 Nov (0.67 / 0.48), not with 7.2's 24 Nov
   0.121 / 0.086: the layer got ~4x dearer since claude/xmas3 (poles, windows, the fir rounds 3-4?): a job for
   the Christmas side before 1 Dec (not the snow fixes: ?xmas=1 has no weather here).
+  **Answered in 7.7 (claude/xmasperf4): mostly the hot GPU (the 24 Nov code reads 0.19-0.43 / 0.11-0.37 the same
+  afternoon); the real growth is content (swag modules 335 -> 551 since the reality1 site refit, the pole garlands),
+  now counted by gate row `xmasload` and `passes()`.**
 - **Snow cover GPU, before / after the snow fixes** (same session, the snow layer's camera layers off / on, 12 rounds,
   scale 0.75, bakes frozen during the A/B; before = `&wxfill=old&wxdrawn=old&wxprops=old&snowsdf=old`): Saint-Job street
   spot -0.012 +- 0.013 -> 0.006 +- 0.027 ms, the paving spot 0.036 +- 0.031 -> 0.091 +- 0.040 (the patch is covered now:
@@ -818,6 +821,64 @@ The extras: poles 0.004-0.028 ms, windows within noise (<= 0.005 ms): both under
 PASS: each extra < 0.05 ms, the whole layer with both 0.13-0.19 ms < 0.30. The whole-layer row moves by up to 0.2 ms
 between page LOADS of the same code (the xmas3 layer alone read 0.20-0.34 in this session, 0.121 on xmas3's day):
 compare rows only inside one page; the extras' own rows are the in-page A/B.
+
+## 7.7 The "4x dearer" layer of 28 Nov: mostly the GPU's state; the load now counted (claude/xmasperf4, 2026-11-28)
+
+**Question.** The XMASPERF recipe read layer-street 0.497 / fir-8m 0.268 ms on claude/snowfix (7.3 on 24 Nov: 0.121 /
+0.086). Real, or the measurement?
+
+**Measured** (`?quick=1&place=stjob-street&xmas=1&time=night`, render scale pinned 0.75, browser.lock held, the page in
+front: document.hasFocus() true before and after every read, no Blender / python / other gate during the reads; one
+server on 8838 switched between foundation d0d15755 and the 24 Nov commit b991456e (scratch worktree), so old and new
+alternate in ONE session). Preflight: system YELLOW (another city server listening), page YELLOW (CPU +8.5 %, GPU
+-2.9 %, boot +20 %) at the start, GPU 56 C at rest. During the session (tools/perf/gpuWatch.mjs, 1 s samples):
+**HOT**, median 82-85 C, max 88 C, ~34 W, 52-63 % of the busy seconds under the power cap / thermal slowdown.
+
+| order | code | layer-street (ms) | fir-8m (ms) |
+|---|---|---|---|
+| 1 | foundation | 0.475 +- 0.043 | 0.272 +- 0.033 |
+| 2 | 24 Nov (b991456e) | 0.431 +- 0.047 | 0.157 +- 0.016 |
+| 3 | 24 Nov | | 0.178 +- 0.008 (12 rounds) |
+| 4 | foundation `?firglow=0` | | 0.126 +- 0.012 |
+| 5 | foundation | 0.470 +- 0.059 | 0.085 +- 0.070 |
+| 6 | 24 Nov (after a 15 min pause, GPU 48 C at the start) | 0.314 +- 0.004 | 0.374 +- 0.049 |
+| 7 | foundation | 0.514 +- 0.051 | 0.209 +- 0.054 |
+| 8 | 24 Nov | 0.192 +- 0.023 | 0.106 +- 0.016 |
+| 9 | foundation | (thrown out: frame 10.4 ms, se 1.29) | 0.153 +- 0.032 |
+
+**Verdict.** Mostly MEASUREMENT. The 24 Nov code itself reads 0.19-0.43 ms at the street and 0.11-0.37 ms at the fir
+on this machine today; its own day's 0.121 / 0.086 is not reproducible on a hot laptop, and the spread from one page
+load to the next (0.2 ms) is far above the per-run standard errors. The fir did NOT get dearer (old 0.11-0.37, new
+0.09-0.27; the LED glow swapped live in one page: +0.009 +- 0.013 ms). The preflight cannot see the heat: it reads the
+GPU at rest; a city page at 60 Hz takes it from 56 C to 82+ C within ~15 min (rule timing-gpu-state).
+
+**What did grow (real, structural; counted, not timed).** `passes()` (debug/xmasPerf.js, the layer's draws per pass per
+frame) at the street spot: 24 Nov 74 draws / 513 k triangles -> 82 / 607 k; at the fir 60 / 537 k -> 65 / 619 k; the sun
+map 0.47 / 0.2 draws a frame (its cache) on both; the lamp maps 0 in steady state on both (the night warm-up of
+claude/nightload draws stand-ins only while keys are pending; after a camera jump the lamp maps refresh for ~1 s, then
+stop). The growth is content: `node --import ./tools/christmas/hook.mjs tools/christmas/xmasLoad.mjs --json`: **swag
+modules 335 -> 551 (+64 %), fronts 109 -> 181**, wreaths 119 -> 106, star motifs 21 -> 28, pole garlands 0 -> 13. The
+guilty merge: **claude/reality1 (69c009f4, 2026-11-26)**, whose merge fix ff47bb82 re-baked site.json for the filled
+shop streets (rule shop-street-fill: right for the look; nobody counted the layer's load). In one page (hot): the swags
+0.184 +- 0.038 ms at the street spot, the pole garlands + street garlands 0.038 +- 0.023, the chalets 0.050 +- 0.039,
+the December windows 0.015 +- 0.017. Tried live, not taken: the swags' far band ending at 100 m instead of 150 m saves
+0.050 +- 0.033 (hot) but drops the far shop garlands down the Chaussee; the 45 m switch at 30 m saves 0.019 +- 0.022
+(noise). The layer at the street is therefore about 0.1 ms dearer hot (~0.04 ms on a cool GPU) than on 24 Nov, by
+design (more decorated fronts, the owner's pole garlands): kept.
+
+**Recipe recalibrated (rules xmas-pass-budget, timing-gpu-state):**
+- gate row `xmasload` (node, every merge that touches models/christmas/, the street life's terraces, the shop kit or
+  viewer/christmas/): the placed pieces within models/christmas/load_budget.json (+5 % ceilings: swags 579, wreaths
+  112, star motifs 30, pole garlands 15, ...), the LOD0 triangles if all were near (4.27 M, ceiling 4.48 M) and the
+  instanced sets (162); a mutation (every front twice: 1 102 swags) fails it. A change that adds load raises the ceiling
+  in the same commit with a re-measure (`node ... xmasLoad.mjs --write`).
+- browser row `xmasperf`: first `passes()` (structure, any machine): street main <= 86 draws / 640 k triangles, fir-8m
+  <= 68 / 650 k, sun <= 1, lamp <= 0.1, other 0 (2026-11-28: PASS, 82 / 607 k, 65 / 619 k, 0.47 / 0.2, 0, 0); then
+  `run()` bracketed by `node tools/perf/gpuWatch.mjs start` / `stop`: its ms budgets count on COOL / WARM only; HOT
+  = an upper bound; a regression only from old and new alternated in one session. Each row now gives `costPct` (its
+  share of the frame without it): today 9.5-10.3 % (foundation) vs 4.2-8.9 % (24 Nov code) at the street.
+- **Budgets today:** layer-street over 0.30 ms on the HOT laptop (0.47-0.51), fir-8m 0.09-0.27 around its 0.10:
+  re-measure on a COOL GPU (laptop rested, lid open, nothing else rendering) before reading them as a FAIL.
 
 ## 8. Browser turn checklist (server 8828, one tab)
 
