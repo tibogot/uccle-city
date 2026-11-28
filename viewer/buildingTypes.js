@@ -115,6 +115,7 @@ function mergeEv(a, b) {
   if (b.inst && !o.inst) o.inst = b.inst;
   if (b.wall && !o.wall) o.wall = b.wall;
   if (b.shop) o.shop = true;
+  if (b.drive && !o.drive) o.drive = b.drive;                 // (rule garage-needs-drive) a car way in front of any part
   if (b.era && (!o.era || ERA_RANK[b.era] < ERA_RANK[o.era])) { o.era = b.era; o.year = b.year; }   // the oldest part dates the group
   if (!o.era && b.near && !o.near) o.near = b.near;
   return o;
@@ -289,7 +290,12 @@ export function classify(doc, P, I, legacyStyle) {
     const wl = BC && (type === TYPE.MAITRE || type === TYPE.DECO || (type === TYPE.BLOCK && g.ev?.wall === "buff")) ? g.ev?.wall : null;
     const styleW = wl === "brick" ? (h01(key + "|klinker") < 0.15 ? 1 : 0) : wl === "stone" ? 4 : wl === "buff" ? 2
       : BC && type === TYPE.MAITRE && (g.ev?.era === "pre" || g.ev?.era === "inter" || g.ev?.near === "old") && !g.ev?.inst ? pick(rs, [[0, 0.6], [1, 0.15], [4, 0.15], [3, 0.1]]) : null;
-    const garage = g.ev?.inst && BC ? 0 : type === TYPE.BELETAGE || (type === TYPE.VILLA && h01(key + "|gar") < 0.45) ? 1 : 0;
+    // (claude/facades5, rule garage-needs-drive) a garage door needs a car way in front of the solid (data/bldclass drive:
+    // an UrbIS Topo CR42L driveway line, an UrbIS ramp / dropped kerb, an OSM service road, tools/bldclass/build_evidence.py);
+    // before, every bel-etage and 45 % of the villas by a coin drew one, the gardens then paved a drive to it.
+    // doc._garageOld (?garageev=old): the coin again
+    const gEv = !BC || doc._garageOld === true || !!g.ev?.drive;
+    const garage = g.ev?.inst && BC ? 0 : gEv && (type === TYPE.BELETAGE || (type === TYPE.VILLA && h01(key + "|gar") < 0.45)) ? 1 : 0;
     T.set(key, { type, style: styleW ?? styleI ?? style, garage, form, flat, steep, row: steepRow(g, partyShare), ev: BC ? g.ev : null });
   }
   const type = new Uint8Array(n), style = new Float32Array(n), garage = new Uint8Array(n), form = new Array(n), steepS = new Float32Array(n), rowS = new Uint8Array(n);

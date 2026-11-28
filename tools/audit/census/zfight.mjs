@@ -20,7 +20,10 @@
 //           within 3 cm of the opening's wall plane.
 //
 //   node --import ./tools/road_audit/register.mjs tools/audit/census/zfight.mjs [--heroes] [--ivy] [T... | --all] [--jobs 4] [--out FILE]
-//        [--old] [--quiet] [--max pairs=N,m2=M,heroNew=K,ivyShop=J]
+//        [--old] [--quiet] [--max pairs=N,m2=M,heroNew=K,ivyShop=J,details=D]
+//   details  (claude/facades5, rule strip-square-to-edge) the pairs inside the detail mesh (cornices, bands, parapets,
+//            ridge beams ...): collinear strip pieces left overlapping, facing strips through each other, a ridge twice;
+//            BUILD_OVER='{"stripFit":false}' (= ?stripfit=old) must fail it
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
@@ -217,7 +220,7 @@ const srcBad = [];
 }
 if (srcBad.length) console.log(`packed codes: ${srcBad.join("; ")}`);
 if (Object.keys(MAX).length) {
-  const got = { pairs: out.tiles?.pairs, m2: out.tiles?.m2, heroNew: out.heroes ? +out.heroes.reduce((a, h) => a + (h.newM2 || 0), 0).toFixed(1) : undefined, ivyShop: out.ivyShop?.leaves, errors: out.tiles?.errors };
+  const got = { pairs: out.tiles?.pairs, m2: out.tiles?.m2, details: out.tiles ? out.tiles.bySrc["details+details"] || 0 : undefined, heroNew: out.heroes ? +out.heroes.reduce((a, h) => a + (h.newM2 || 0), 0).toFixed(1) : undefined, ivyShop: out.ivyShop?.leaves, errors: out.tiles?.errors };
   const bad = Object.entries(MAX).filter(([k, v]) => got[k] === undefined || got[k] > v).map(([k, v]) => `${k} ${got[k]} > ${v}`);
   if (out.tiles?.errors) bad.push(`${out.tiles.errors} tile errors`);
   bad.push(...srcBad);

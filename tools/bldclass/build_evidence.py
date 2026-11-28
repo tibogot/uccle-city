@@ -30,6 +30,9 @@ from pyproj import Transformer  # noqa: E402
 
 SRC = ROOT / "data" / "bldclass" / "src"
 OUT = ROOT / "data" / "bldclass"
+# the UrbIS Topo lines (CR42L driveways) live in the main checkout's data/raw (a junction in a worktree); --raw <dir>
+RAW = Path(sys.argv[sys.argv.index("--raw") + 1]) if "--raw" in sys.argv else ROOT / "data" / "raw"
+DRIVES = "--no-drives" not in sys.argv
 BBOX = (50.7613, 4.3081, 50.8193, 4.4163)
 UA = {"User-Agent": "osm-research-client/1.0"}
 
@@ -139,6 +142,94 @@ def area(r):
     return abs(sum(r[i - 1][0] * r[i][1] - r[i][0] * r[i - 1][1] for i in range(len(r)))) / 2
 
 
+# (claude/facades5, rule garage-needs-drive) a GARAGE needs a car way in front of it: UrbIS Topo CR42L (the driveway /
+# dropped-kerb line drawn on the property line), an UrbIS ramp surface (a dropped kerb, surfaces.json class 8) or an OSM
+# service road. A solid's footprint edge (>= 2 m, not against another solid) whose corridor (0.3 m in from its ends, 0.3
+# - 35 m out, the deepest front garden tools/gardens/build_gardens.py takes) holds such a point, nearer this solid than any other, carries `drive`. viewer/buildingTypes.js classify
+# draws a garage door only there (Av. Arnold Delvaux 36: a villa given a garage by a 45 % coin, Street View a low plinth,
+# a railing and a garden gate).
+DRIVE_OUT = 35.0
+
+
+def drive_points(T, raw):
+    """the car-way evidence of tile T as points every 0.5 m (local x, z)"""
+    from shapely.geometry import LineString, shape
+    lines = []
+    f = raw / "urbis" / "topo_poles" / f"{T}.street_furniture_line.geojson"
+    if f.exists():
+        for ft in json.loads(f.read_text(encoding="utf8"))["features"]:
+            if ft["properties"].get("topo_type") != "CR42L": continue
+            g = shape(ft["geometry"])
+            for ln in (g.geoms if hasattr(g, "geoms") else [g]):
+                lines.append((f"topo:{ft['properties'].get('urbis_id')}", [(x - ORIGIN_E, ORIGIN_N - y) for x, y, *_ in ln.coords]))
+    sf = ROOT / "data" / "tiles" / T / "surfaces.json"
+    if sf.exists():
+        for su in json.loads(sf.read_text(encoding="utf8"))["surfaces"]:
+            if su.get("c") == 8 and su.get("rings"):
+                lines.append((f"ramp:{su.get('id', '').split('/')[-1]}", [tuple(q) for q in su["rings"][0]] + [tuple(su["rings"][0][0])]))
+    rf = ROOT / "data" / "tiles" / T / "roads.json"
+    if rf.exists():
+        for r in json.loads(rf.read_text(encoding="utf8")).get("roads", []):
+            if (r.get("meta") or {}).get("highway") == "service" and len(r.get("pts") or []) > 1:
+                lines.append((f"osm:w{(r.get('meta') or {}).get('osm')}", [(q["x"], q["z"]) for q in r["pts"]]))
+    pts = []
+    for kind, c in lines:
+        if len(c) < 2: continue
+        ls = LineString(c)
+        n = max(1, int(ls.length / 0.5))
+        for i in range(n + 1):
+            q = ls.interpolate(ls.length * i / n)
+            pts.append((q.x, q.y, kind))
+    return pts
+
+
+def drive_solids(T, rings, raw):
+    """{solid id: evidence kind} for the solids with a car way in front of one of their edges"""
+    from shapely.geometry import Point, Polygon
+    from shapely.strtree import STRtree
+    pts = drive_points(T, raw)
+    if not pts: return {}
+    polys, ids = [], []
+    for sid, r, b in rings:
+        try:
+            pg = Polygon(r).buffer(0)
+        except Exception:
+            continue
+        if pg.is_empty: continue
+        polys.append(pg); ids.append(sid)
+    tree = STRtree(polys)
+    grid = {}
+    for x, z, k in pts: grid.setdefault((int(math.floor(x / 10)), int(math.floor(z / 10))), []).append((x, z, k))
+    out = {}
+    for pi, (pg, sid) in enumerate(zip(polys, ids)):
+        r = list(pg.exterior.coords) if pg.geom_type == "Polygon" else []
+        sg = 1 if area(r) >= 0 else -1
+        for k in range(len(r) - 1):
+            (x0, z0), (x1, z1) = r[k][:2], r[k + 1][:2]
+            L = math.hypot(x1 - x0, z1 - z0)
+            if L < 2.0: continue
+            tx, tz = (x1 - x0) / L, (z1 - z0) / L
+            nx, nz = sg * tz, -sg * tx                      # outward (the ring's turn)
+            mx, mz = (x0 + x1) / 2 + nx * 0.35, (z0 + z1) / 2 + nz * 0.35
+            if pg.contains(Point(mx, mz)): nx, nz = -nx, -nz; mx, mz = (x0 + x1) / 2 + nx * 0.35, (z0 + z1) / 2 + nz * 0.35
+            if any(polys[j].contains(Point(mx, mz)) for j in tree.query(Point(mx, mz)) if j != pi): continue   # a party wall
+            xs = [x0, x1, x0 + nx * DRIVE_OUT, x1 + nx * DRIVE_OUT]; zs = [z0, z1, z0 + nz * DRIVE_OUT, z1 + nz * DRIVE_OUT]
+            hit = None
+            for i in range(int(math.floor(min(xs) / 10)), int(math.floor(max(xs) / 10)) + 1):
+                for j in range(int(math.floor(min(zs) / 10)), int(math.floor(max(zs) / 10)) + 1):
+                    for (px, pz, kd) in grid.get((i, j), []):
+                        u = (px - x0) * tx + (pz - z0) * tz; v = (px - x0) * nx + (pz - z0) * nz
+                        if u < 0.3 or u > L - 0.3 or v < 0.3 or v > DRIVE_OUT: continue
+                        P = Point(px, pz)
+                        if any(polys[q].distance(P) < v - 0.05 for q in tree.query(P.buffer(v)) if q != pi): continue   # another solid nearer
+                        hit = kd; break
+                    if hit: break
+                if hit: break
+            if hit:
+                out[sid] = hit; break
+    return out
+
+
 def main():
     if "--fetch" in sys.argv:
         fetch()
@@ -184,6 +275,8 @@ def main():
         S = [s for s in sites if any(x0 <= x <= x1 and z0 <= z <= z1 for r in s["rings"] for x, z in r[::max(1, len(r) // 8)])]
         out = {}
         rings = [(b["id"].split("/")[-1], b["footprint"][0], b) for b in doc["buildings"]]
+        drv = drive_solids(T, rings, RAW) if DRIVES else {}
+        tot["drive"] = tot.get("drive", 0) + len(drv)
         # (claude/reality2) the solids with a shop front on them (data/streetlife/<T>.json: real shops + the fill)
         slf = ROOT / "data" / "streetlife" / f"{T}.json"
         shop_bu = {p["face"]["bu"] for p in json.loads(slf.read_text(encoding="utf8"))["pois"] if p.get("face") and p.get("kind") not in ("atm",)} if slf.exists() else set()
@@ -260,13 +353,16 @@ def main():
                         e["near"] = "new"
             if (b.get("attrs") or {}).get("BU_ID") in shop_bu:
                 e["shop"] = True
+            if sid in drv:
+                e["drive"] = drv[sid].split(":")[0]           # topo / ramp / osm
+                src.append(drv[sid])
             if e:
                 e["src"] = src
                 out[sid] = e
                 tot["era"] += "era" in e; tot["inst"] += "inst" in e; tot["near"] += "near" in e
         tot["solids"] += len(rings)
         (OUT / f"{T}.json").write_text(json.dumps({"_doc": "claude/reality1 rule bldclass-evidence: tools/bldclass/build_evidence.py (urban.brussels Irismonument inventory CC BY 4.0 + OpenStreetMap ODbL)", "solids": out}, separators=(",", ":"), ensure_ascii=False), encoding="utf8")
-    print(f"{len(tiles)} tiles, {tot['solids']} solids: {tot['era']} dated, {tot['inst']} institutions, {tot['near']} with a neighbour prior")
+    print(f"{len(tiles)} tiles, {tot['solids']} solids: {tot['era']} dated, {tot['inst']} institutions, {tot['near']} with a neighbour prior, {tot.get('drive', 0)} with a car way in front (garage evidence)")
 
 
 if __name__ == "__main__":

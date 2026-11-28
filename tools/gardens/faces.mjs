@@ -19,6 +19,7 @@ const doc = JSON.parse(rd("buildings.json"));
 // (claude/reality1, rule bldclass-evidence) the types as the city draws them: the evidence first (data/bldclass/<T>.json)
 const evf = new URL(`../../data/bldclass/${tile}.json`, import.meta.url);
 if (process.env.BLDCLASS !== "old" && fs.existsSync(evf)) applyBuildingEvidence(doc, JSON.parse(fs.readFileSync(evf, "utf8")));
+if (process.env.GARAGE_EV === "old") doc._garageOld = true;   // (rule garage-needs-drive) the coin garages
 const bin = rd("buildings.bin"), buf = bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.byteLength);
 const roads = JSON.parse(rd("roads.json")), feats = JSON.parse(rd("features.json"));
 const bi = new Map(doc.buildings.map((b, i) => [b, i]));

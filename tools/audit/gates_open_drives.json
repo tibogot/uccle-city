@@ -498,6 +498,18 @@
    "street": "Chemin de la Source",
    "type": "terraced",
    "why": "its gate is still built, 2.1 m from the door at (262.1, -494.32), moved 1.5 m from the foundation spot by the garage opening; the census sees none within 8 m (its leaf where the census clears pieces in a driven lane): to look at in the next round"
+  },
+  {
+   "key": "C7 -1923.9, 1441",
+   "street": "Chaussée de Drogenbos - Drogenbossesteenweg",
+   "type": "terraced",
+   "why": "claude/facades5 (rule garage-needs-drive): no pedestrian gate at this door on claude/foundation 6f8c80ba either; its only gate within 8 m was the 3.5 m car gate of the coin garage, removed (no car way in UrbIS / OSM in front)"
+  },
+  {
+   "key": "K8 2101.9, 1546.4",
+   "street": "Avenue des Châlets - Kasteeltjeslaan",
+   "type": "villa",
+   "why": "claude/facades5 (rule garage-needs-drive): the door gate (0.98 m, flag 4) is the same entry as on claude/foundation 6f8c80ba; the census no longer finds a garage-drive car gate near it (the neighbouring coin garage removed); not a builder loss"
   }
  ]
 }

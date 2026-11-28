@@ -617,7 +617,7 @@ export async function buildTileData(entry, base) {
   const nb = bDoc.buildings.length;
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;      // ?colfix=0: the old way
   hideBuildings(bDoc, entry.hide);
-  if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name));   // (rule bldclass-evidence; ?bldclass=old: off)
+  if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name)); if (entry.garageEv === false) bDoc._garageOld = true;   // (rule bldclass-evidence; ?bldclass=old: off)
   roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));      // the falcon's collision (drawn roofs)
   // the railway for the car (viewer/rail/railData.js): fences along the line where it runs on the ground (not on bridges,
   // not over a tunnel, broken at road crossings), and below the line's own surface in the drive grid (rail top, shoulders)
@@ -678,7 +678,7 @@ export async function buildTileData(entry, base) {
   // entry.roofs !== false: the roof kit (viewer/roofs/roofPlace.js, docs/assets/ROOFS.md; ?roofs=old = the roofs before)
   const roofKit = entry.roofs !== false ? roofCollector() : null;
   const feet = entry.colFeet === false ? await feetLate() : feetEarly;   // (the walls' feet: sunk before the drive colliders, above)
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, wallEmpty: entry.wallEmpty !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, stripFit: entry.stripFit !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, wallEmpty: entry.wallEmpty !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
   // (round 5) the falcon's drawn-roof grid from the roofs as drawn (entry.surfDrawn === false = ?falconroof=old: buildings.bin's)
@@ -764,7 +764,7 @@ export async function buildLiteData(entry, base) {
   await MeshoptSimplifier.ready;
   const [idxS] = MeshoptSimplifier.simplify(idx, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
   hideBuildings(bDoc, entry.hide);
-  if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name));   // (rule bldclass-evidence) the far tiles classify as the near
+  if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name)); if (entry.garageEv === false) bDoc._garageOld = true;   // (rule bldclass-evidence) the far tiles classify as the near
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T * 3);
   // (farcity, docs/FARCITY.md) the walls' face coordinates + the building type for viewer/farLook.js; entry.farLook ===
