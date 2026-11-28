@@ -643,6 +643,69 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     }
     warming = 1;
   };
+  // ---- (claude/nightload, rule night-warm-at-night) THE NIGHT WARM-UP. The by-day warm above runs only while the lamps
+  // are dark (it points both shadow lamps at the city from 350 m up for a frame): a game STARTED at night (?time=night)
+  // never ran it, so warmPending() never fell and the play loader sat at its 70 s limit (~750 casters queued), and each
+  // caster's lamp pass was then built on screen as lamps came near. At night the lamps cannot move, so the casters'
+  // lamp passes are warmed IN PLACE: one stand-in per (material, geometry layout) - the node build and the pipeline are
+  // shared by every mesh with that key, so ~750 casters are a few dozen keys - drawn with a zero-scale matrix (no pixel
+  // written, nothing to see) on the lamps' own layer, both lamps' maps forced to a full render that frame. Under the play
+  // loader up to NIGHT_HOLD_PER keys a frame (the loader waits for those of the spawn ring: warmPending({ x, z, r })),
+  // after play ONE key at most every NIGHT_GAP frames (a 1-3 ms depth-only build per lamp). ?nightwarm=old: as before.
+  const NIGHT_WARM = qp.get("nightwarm") !== "old", NIGHT_HOLD_PER = 48, NIGHT_GAP = 12;
+  const nightKeys = new Set(), nightPend = new Map();               // keys warmed / queued (key -> the mesh + material)
+  const nightGroup = new THREE.Group(); nightGroup.name = "lamp-night-warm"; nightGroup.matrixAutoUpdate = false;
+  const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+  let nightFlight = null, nightLast = -1e9;
+  const passCount = (L) => { const c = L.shadow.shadowNode?.counts; return c ? c.full + c.movers + c.plain : -1; };
+  const nightKey = (o, m) => `${m.uuid}|${fadeLayoutKey(o)}`;
+  const nightQueue = () => {                                          // the casters tagged so far -> their unique keys
+    for (let i = 0; i < warmList.length; i += 2) {
+      const o = warmList[i];
+      if (!o.parent || o.isSkinnedMesh || !o.geometry) continue;      // (skinned: their own boot warm-ups, characterKit / crowd)
+      const src = o.userData.proxyOf;
+      const m = src ? (src.userData.fadeOrig || src.material) : (o.userData.fadeOrig || o.material);
+      if (!m || Array.isArray(m)) continue;
+      const add = (mm) => { const k = nightKey(o, mm); if (!nightKeys.has(k) && !nightPend.has(k)) nightPend.set(k, { o, m: mm }); };
+      add(m);
+      // (rule fade-shadow-warm) a tile's caster fades in / out with its fading copy: that copy's lamp pass too
+      if (FADE_SHADOW_WARM && !src && o.isMesh && m.isNodeMaterial && !m.userData.objectFade && !m.userData.noFade && !isLampMover(o) && !(o.isInstancedMesh && o.count === 0)) add(fadeVariant(m));
+    }
+    warmList.length = 0;
+  };
+  /** at night, each frame: true when stand-ins are drawn this frame (both lamp maps must render in full) */
+  const nightStep = () => {
+    if (nightFlight) {
+      // kept until BOTH lamps' passes really drew them (under the loader the loop renders one rAF in three: perf7)
+      nightFlight.f++;
+      const drawn = shadowLights.every((L, k) => { const c = passCount(L); return c < 0 ? nightFlight.f >= 3 : c > nightFlight.c[k]; });
+      if (!drawn && nightFlight.f < 40) return true;
+      stats.nightWarmed = (stats.nightWarmed || 0) + nightGroup.children.length;
+      if (!drawn) stats.nightWarmLost = (stats.nightWarmLost || 0) + 1;
+      nightGroup.clear(); nightGroup.removeFromParent(); nightFlight = null; nightLast = frames;
+      return false;
+    }
+    if (warmList.length) nightQueue();
+    if (!nightPend.size || frames < 4) return false;
+    const hold = !!holding?.();
+    if (!hold && frames - nightLast < NIGHT_GAP) return false;
+    let n = hold ? NIGHT_HOLD_PER : 1;
+    for (const [k, { o, m }] of nightPend) {
+      if (n-- <= 0) break;
+      nightPend.delete(k); nightKeys.add(k);
+      if (!o.parent) continue;
+      const p = o.isInstancedMesh ? new THREE.InstancedMesh(o.geometry, m, 1) : new THREE.Mesh(o.geometry, m);
+      if (o.isInstancedMesh && o.instanceColor) p.instanceColor = o.instanceColor;
+      p.matrixAutoUpdate = false; p.matrix.copy(ZERO); p.matrixWorld.copy(ZERO);
+      p.castShadow = true; p.receiveShadow = false; p.frustumCulled = false; p.userData.fade = 0.5;
+      p.layers.set(LAMP_SHADOW_LAYER); p.name = "lamp-night-warm";
+      nightGroup.add(p);
+    }
+    if (!nightGroup.children.length) return false;
+    scene.add(nightGroup);
+    nightFlight = { c: shadowLights.map(passCount), f: 0 };
+    return true;
+  };
   // ---- the pop metric per CAR (?nightdebug=1; nightSources' Track is per list position, the city's list is re-sorted
   // every frame): the largest frame-to-frame change of a car's real head / rear weight, and the worst event's details
   const dbg = DEBUG ? { carJump: 0, carJumpMax: 0, events: [], prev: new Float32Array(NS * 2), cur: new Float32Array(NS * 2), pos: new Float32Array(NS * 3), ppos: new Float32Array(NS * 3) } : null;
@@ -828,9 +891,17 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     if (scale > 0) {
       let refreshed = false;
       if (TILE_REACH && !PROXY) gateTiles();
+      const nightWarmNow = NIGHT_WARM && !warming && nightStep();     // (claude/nightload) stand-ins in both maps this frame
       for (let k = 0; k < 2; k++) {
         const L = shadowLights[k], id = night.shadow.lamp[k];
         L.shadow.autoUpdate = false;
+        if (nightWarmNow) {
+          // a full render of both maps (also a dark lamp's: its pass is the one the night will use), valid as any refresh
+          L.shadow.needsUpdate = true; sLamp[k] = L.intensity > 0 ? id : -2; sCam[k].copy(camPos); stats.shadowRenders++; stats.shadowFull++;
+          if (PROXY && L.intensity > 0) fillProxies(k, L.position);
+          if (L.shadow.shadowNode) { L.shadow.shadowNode.on = api.lampCache; L.shadow.shadowNode.plan = "full"; }
+          continue;
+        }
         if (!(L.intensity > 0)) { sLamp[k] = -2; continue; }
         let full = api.shadowMode === "full" || id !== sLamp[k];
         let go = full || (mover[k] === 1 && api.shadowMode !== "calm");   // ("calm": movers ignored, a measurement mode)
@@ -1094,7 +1165,26 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     debug: dbg,                        // (?nightdebug=1: the pop metric, its worst events)
     /** (checks) queue every lamp-shadow caster for the next by-day warm-up */
     /** perf8: casters queued for the lamp-shadow warm-up (first tries only) + a warm render in progress: main.js areaReady waits for 0 */
-    warmPending: () => { let n = warming ? 1 : 0; for (let i = 0; i < warmList.length; i += 2) if (!warmList[i].userData.__nightWarmTries) n++; return n; },
+    warmPending: (near = null) => {
+      // (claude/nightload) at night: the stand-in KEYS still to warm (+ one in flight), only those of casters within
+      // near.r of (near.x, near.z) when given (the spawn ring: the rest warm after play, one key per NIGHT_GAP frames)
+      if (NIGHT_WARM && lastScale > 0) {
+        if (warmList.length) nightQueue();
+        let n = nightFlight ? 1 : 0;
+        const v = new THREE.Vector3();
+        for (const { o } of nightPend.values()) {
+          if (!near) { n++; continue; }
+          const g = o.geometry; if (!g.boundingSphere) g.computeBoundingSphere();
+          v.copy(g.boundingSphere?.center ?? v.set(0, 0, 0)).applyMatrix4(o.matrixWorld);
+          const r = (g.boundingSphere?.radius ?? 0) * o.matrixWorld.getMaxScaleOnAxis();
+          if (o.isInstancedMesh || Math.hypot(v.x - near.x, v.z - near.z) - r < near.r) n++;   // (a tile-wide instanced set: always)
+        }
+        return n;
+      }
+      let n = warming ? 1 : 0; for (let i = 0; i < warmList.length; i += 2) if (!warmList[i].userData.__nightWarmTries) n++; return n;
+    },
+    /** (claude/nightload) the night warm-up's counts: keys warmed / queued, stand-ins drawn, in flight */
+    nightWarm: () => ({ on: NIGHT_WARM, keys: nightKeys.size, pending: nightPend.size, drawn: stats.nightWarmed || 0, lost: stats.nightWarmLost || 0, inFlight: !!nightFlight }),
     rewarm: () => { const t = performance.now() - WARM_DELAY; scene.traverse((o) => { if (o.isMesh && o.layers.isEnabled(LAMP_SHADOW_LAYER)) warmList.push(o, t); }); return warmList.length / 2; },
     /** the car-lamp offsets in use (check: forward z > 0 for the head, < 0 for the tail) */
     lampOffsets: () => [...lampsOf.entries()].map(([k, v]) => ({ type: traffic?.T?.types?.[k]?.name, ...v })),

@@ -253,6 +253,8 @@ export class GameKit {
   async spawnPlayer({ at, mode = null, face = null, road = true }) {
     const p = this.places.resolve(at, this);
     if (!p) throw new Error(`spawn: unknown place ${at}`);
+    const T = (globalThis.__gameTimes ||= []); let tt = performance.now();   // (claude/nightload debug: the spawn's parts)
+    const mark = (k) => { const n = performance.now(); T.push([`spawn ${k}`, Math.round(n - tt)]); tt = n; };
     let x = p.x, z = p.z, yaw = 0;
     const map = this.host.getMap();
     if (road && map) {
@@ -270,9 +272,11 @@ export class GameKit {
       }
       if (Math.cos(yaw) * dx + Math.sin(yaw) * dz < 0) yaw += Math.PI;
     }
-    if (mode === "third" && !this.host.getThird()) await this.host.thirdPerson();
+    mark("snap / route");
+    if (mode === "third" && !this.host.getThird()) { await this.host.thirdPerson(); mark("third person boot"); }
     this.hud.toast({ title: "On your way", text: `Going to ${p.name}…` }, 0);
     try { await this.host.teleport({ x, z, yaw, exact: true, mode }); } finally { this.hud.toast(null); }
+    mark("teleport (+ area)");
     this.markDriveHud();
     this.last = performance.now();
   }
