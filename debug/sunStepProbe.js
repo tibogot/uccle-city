@@ -1,5 +1,5 @@
 // SUN SHADOW STEP PROBE (claude/sunstep, rule docs/rules/sun-shadow-step.md, browser row `sunshadowstep`).
-// Hold C:/Users/tibog/Downloads/uccle-jobs/browser.lock; measure timings only on a GREEN / YELLOW preflight, page in front.
+// Hold browser.lock (node tools/gate/lock.mjs browser hold --owner <job>); measure timings only on a GREEN / YELLOW preflight, page in front.
 //   const P = await import("/debug/sunStepProbe.js");
 //   await P.run({ speed: 60, seconds: 20 })
 //       the sun moved like the dev panel's "sun speed (x real)" (lighting.hourOverride each frame); over `seconds`:

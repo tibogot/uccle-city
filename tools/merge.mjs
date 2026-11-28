@@ -17,7 +17,7 @@
 //      junctions (data/raw, node_modules: rmdir, never a delete through them), then `git worktree remove`; data/raw's
 //      file count is checked before and after. A worktree with uncommitted changes to tracked files is kept.
 // Never deletes a branch, never force-pushes.
-import { spawnSync, execFileSync } from "node:child_process";
+import { spawn, spawnSync, execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, readdirSync, lstatSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -25,6 +25,7 @@ import { createInterface } from "node:readline/promises";
 import { loadRows } from "./gate/rowFiles.mjs";
 import { selectRows } from "./gate/select.mjs";
 import { ROOT } from "./gate/rowFiles.mjs";
+import { acquire, LOCK_BUSY_EXIT } from "./gate/lock.mjs";
 
 const argv = process.argv.slice(2);
 const opt = (k, d = null) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
@@ -48,6 +49,17 @@ if (gitTry("rev-parse", "--verify", "--quiet", `refs/heads/${branch}`).status !=
 const dirty = git("status", "--porcelain", "--untracked-files=no");
 const NO_MERGE = flag("--no-merge");
 if (dirty && !NO_MERGE && !DRY) die(`the tree has uncommitted changes:\n${dirty}`);
+
+// ------------------------------------------------------------------ 0b. gate.lock (rule gate-lock-held)
+// held for the WHOLE merge (merge, bundle build, gate, push, cleanup): one gate at a time on the laptop. mergeGate is
+// run with --no-lock (and sees its parent's pid in the lock anyway: a nested acquire, never a self-deadlock).
+// GATE_LOCK_WAIT_S caps the wait (exit 76).
+if (!DRY) {
+  try {
+    const h = await acquire("gate", { owner: `merge(${branch.replace(/[^\w.-]+/g, "_")})`, waitS: process.env.GATE_LOCK_WAIT_S ? +process.env.GATE_LOCK_WAIT_S : Infinity, pollS: 15, onWait: (m) => console.log(`[gate.lock] ${m}`) });
+    console.log(`[gate.lock] ${h.nested ? "already ours" : "taken"} for the merge of ${branch}: ${h.file}`);
+  } catch (e) { if (e.code === LOCK_BUSY_EXIT) die(`${e.message}: nothing merged`, LOCK_BUSY_EXIT); throw e; }
+}
 
 // ------------------------------------------------------------------ 1. formats
 {
@@ -143,8 +155,10 @@ if (DRY && ROWS === "auto") {
 } else step(`gate rows (${ROWS}): node tools/audit/mergeGate.mjs ${gateArgs.join(" ")}`);
 if (DRY) { console.log("\n(dry run: nothing merged, built, run, pushed or removed)"); process.exit(0); }
 const t0 = Date.now();
-const g = spawnSync(process.execPath, ["tools/audit/mergeGate.mjs", ...gateArgs], { cwd: ROOT, stdio: "inherit" });
+// (async: a spawnSync would block this process' gate.lock heartbeat for the whole gate)
+const g = await new Promise((r) => { const p = spawn(process.execPath, ["tools/audit/mergeGate.mjs", ...gateArgs, "--no-lock"], { cwd: ROOT, stdio: "inherit" }); p.on("close", (status) => r({ status })); });
 console.log(`(gate ${((Date.now() - t0) / 1000).toFixed(0)} s)`);
+if (g.status === LOCK_BUSY_EXIT) die(`the gate ran, no row FAILED, but row(s) whose lock (browser.lock) stayed busy were NOT RUN (exit ${LOCK_BUSY_EXIT}): nothing pushed. Run them when the lock is free (the gate's last line names them), then push yourself`, LOCK_BUSY_EXIT);
 if (g.status !== 0) die(`the gate FAILED (exit ${g.status}): nothing pushed. The merge is a local commit: fix on ${branch} and merge again, or undo it yourself (git reset --hard ORIG_HEAD)`);
 
 // ------------------------------------------------------------------ 5. push

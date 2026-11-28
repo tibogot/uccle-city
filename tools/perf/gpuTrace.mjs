@@ -7,9 +7,10 @@
 //        [--seconds 4] [--out trace.json] [--port 9334]
 // Close every other city tab first (browser.lock): two cities on one laptop GPU skew each other.
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { writeFileSync } from "node:fs";
 import path from "node:path";
+import { acquire, LOCK_BUSY_EXIT } from "../gate/lock.mjs";
+import { makeProfile, sweepProfiles } from "../gate/chromeProfile.mjs";
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(`--${k}`); return i >= 0 ? argv[i + 1] : d; };
@@ -19,14 +20,20 @@ const CHROME = opt("chrome", "C:/Program Files/Google/Chrome/Application/chrome.
 const CATS = ["gpu", "dawn", "disabled-by-default-gpu.dawn", "disabled-by-default-gpu.service", "webgpu", "disabled-by-default-webgpu", "toplevel"];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const prof = mkdtempSync(path.join(tmpdir(), "uccle-gtrace-"));
+// rule browser-lock-helper: browser.lock (tools/gate/lock.mjs; busy -> exit 76); rule chrome-profiles-removed
+let lock = null;
+try { lock = await acquire("browser", { owner: process.env.UCCLE_LOCK_OWNER || "gpuTrace", waitS: +(process.env.UCCLE_LOCK_WAIT_S || 1800) }); }
+catch (e) { if (e.code === LOCK_BUSY_EXIT) { console.log(`lock busy: ${e.message}`); process.exit(LOCK_BUSY_EXIT); } throw e; }
+sweepProfiles({ log: console.log });
+const profile = makeProfile("gtrace"), prof = profile.dir;
 const chrome = spawn(CHROME, [`--remote-debugging-port=${PORT}`, `--user-data-dir=${prof}`, "--mute-audio", "--no-first-run", "--no-default-browser-check",
   "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows", "--window-size=1600,900", "about:blank"], { stdio: "ignore" });
 let done = false;
 const cleanup = () => {
   if (done) return; done = true;
   if (process.platform === "win32") spawnSync("taskkill", ["/PID", String(chrome.pid), "/T", "/F"], { stdio: "ignore" }); else try { chrome.kill("SIGKILL"); } catch { /* gone */ }
-  for (let i = 0; i < 20; i++) { try { rmSync(prof, { recursive: true, force: true }); break; } catch { const t = Date.now(); while (Date.now() - t < 250); } }
+  profile.remove();
+  lock?.release();
 };
 process.on("exit", cleanup); process.on("SIGINT", () => { cleanup(); process.exit(130); });
 
