@@ -14,7 +14,13 @@ export const SHAPE = {
   shelter: 0.65,        // under a full crown, snow depth x (1 - shelter)
 };
 
-export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, carPx = null, res, cell, origin }) {
+/** the signed cut distance's clamp (m): the blur (2 cells) must see a linear field round the line */
+export const SD_CLAMP = 0.6;
+/** a raised kept patch whose cells all lie within this many cells of the cut is a ledge (narrowCut) */
+export const NARROW = 2.25;
+
+export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, carPx = null, res, cell, origin, fillOld = false, sdfOld = false }) {
+  const FILL_OLD = fillOld;
   const N = res, S = SHAPE;
   const H = new Float32Array(N * N), Hs = new Float32Array(N * N), shelter = new Float32Array(N * N), shape = new Float32Array(N * N), cliff = new Uint8Array(N * N);
   const uOrigin = { value: { x: origin[0], y: origin[1] } };
@@ -29,12 +35,23 @@ export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, carPx =
       const o = j * res + i;
       if (!(out[o] >= v)) out[o] = v;            // the topmost when two texels land in one cell
     }
-    // holes (no texel landed: rounding at cell borders; or nothing there): the neighbour's value, else `empty`
-    for (let pass = 0; pass < 2; pass++) for (let j = 0; j < res; j++) for (let i = 0; i < res; i++) {
-      const o = j * res + i;
-      if (out[o] === out[o]) continue;
-      const n = [i > 0 ? out[o - 1] : NaN, i < res - 1 ? out[o + 1] : NaN, j > 0 ? out[o - res] : NaN, j < res - 1 ? out[o + res] : NaN].filter((v) => v === v);
-      if (n.length) out[o] = Math.max(...n); else if (pass === 1) out[o] = empty;
+    // holes (no texel landed: rounding at cell borders; or nothing there): the neighbour's value, else `empty`.
+    // snowfix (rule overhead-fill-bounded): each pass reads a SNAPSHOT of the grid, so a hole takes a value from at most
+    // 2 cells away, and only a pinhole is filled. The fill used to run in place in raster order: a filled cell fed the next one, and every empty
+    // stretch of a sparse pass (roads, crowns, cars) was flooded right / down with the heights of what lay up-left of it:
+    // 16.8 k cells of Place Saint-Job's window "carriageway" with no road there (the salted layer cut: a polygonal
+    // patch of bare setts at 15 cm), crowns' shelter spread over open ground. ?wxfill=old = before
+    const OLD_FILL = FILL_OLD;      // (the page's switch, passed in the job: a worker has no page URL)
+    for (let pass = 0; pass < 2; pass++) {
+      const src = OLD_FILL ? out : out.slice();
+      for (let j = 0; j < res; j++) for (let i = 0; i < res; i++) {
+        const o = j * res + i;
+        if (out[o] === out[o]) continue;
+        const n = [i > 0 ? src[o - 1] : NaN, i < res - 1 ? src[o + 1] : NaN, j > 0 ? src[o - res] : NaN, j < res - 1 ? src[o + res] : NaN].filter((v) => v === v);
+        // (snowfix: a pinhole has >= 2 present neighbours; an empty cell beside a sparse pass's edge only one: it stays
+        // empty, so a road / crown / car never grows by the fill)
+        if (n.length >= (OLD_FILL ? 1 : 2)) out[o] = Math.max(...n); else if (pass === 1) out[o] = empty;
+      }
     }
   }
   function blur(a, r) {
@@ -60,6 +77,92 @@ export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, carPx =
       D[o] = d;
     }
     return D;
+  }
+  /** exact squared Euclidean distance (cells^2) to the nearest seed cell (Felzenszwalb + Huttenlocher, separable) */
+  function edt2(seed) {
+    const INF = 1e12, f = new Float64Array(N), d = new Float64Array(N), v = new Int32Array(N), zz = new Float64Array(N + 1);
+    const g = new Float64Array(N * N);
+    for (let o = 0; o < N * N; o++) g[o] = seed[o] ? 0 : INF;
+    const pass = (base, stride) => {
+      for (let q = 0; q < N; q++) f[q] = g[base + q * stride];
+      let k = 0; v[0] = 0; zz[0] = -INF; zz[1] = INF;
+      for (let q = 1; q < N; q++) {
+        let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+        while (s <= zz[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+        k++; v[k] = q; zz[k] = s; zz[k + 1] = INF;
+      }
+      k = 0;
+      for (let q = 0; q < N; q++) { while (zz[k + 1] < q) k++; d[q] = (q - v[k]) * (q - v[k]) + f[v[k]]; }
+      for (let q = 0; q < N; q++) g[base + q * stride] = d[q];
+    };
+    for (let i = 0; i < N; i++) pass(i, N);
+    for (let j = 0; j < N; j++) pass(j * N, 1);
+    return g;
+  }
+  /** cut the kept 4-connected patches that are narrow (max distance to the cut <= NARROW cells) and raised (most of
+   *  their rim cells have ground > 0.3 m lower within 2 cells). Returns the cells cut */
+  function narrowCut(cutM) {
+    const g = edt2(cutM), comp = new Int32Array(N * N).fill(-1), st = [];
+    let id = 0, total = 0;
+    for (let o0 = 0; o0 < N * N; o0++) {
+      if (cutM[o0] || comp[o0] >= 0) continue;
+      const cells = [o0]; comp[o0] = id; st.length = 0; st.push(o0);
+      let maxD = 0, rim = 0, raised = 0, big = false;
+      while (st.length) {
+        const o = st.pop(), i = o % N, j = (o / N) | 0;
+        if (g[o] > maxD) maxD = g[o];
+        if (maxD > NARROW * NARROW) big = true;
+        let edgeCell = false;
+        for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          const ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= N || jj >= N) continue;
+          const p = jj * N + ii;
+          if (cutM[p]) { edgeCell = true; continue; }
+          if (comp[p] < 0) { comp[p] = id; st.push(p); if (!big) cells.push(p); }
+        }
+        if (!big && edgeCell) {
+          rim++;
+          let lo = Infinity;
+          for (let dj = -2; dj <= 2; dj++) for (let di = -2; di <= 2; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < N && jj < N) lo = Math.min(lo, H[jj * N + ii] > -1e3 ? H[jj * N + ii] : Infinity); }
+          if (lo < H[o] - 0.3) raised++;
+        }
+      }
+      if (!big && rim > 0 && raised > 0.5 * rim) { for (const o of cells) cutM[o] = 1; total += cells.length; }
+      id++;
+    }
+    narrowCells = total;
+    return total;
+  }
+  let narrowCells = 0;
+  /** the signed distance (m) to the cut (cliff | road): + kept, - cut, clamped to +-SD_CLAMP, blurred [1 4 6 4 1] x 2;
+   *  a cut cell keeps <= its own value (no cut ever closes) */
+  function signedCut(cl, rd) {
+    const cut = new Uint8Array(N * N), keep = new Uint8Array(N * N);
+    let any = 0;
+    for (let k = 0; k < N * N; k++) { cut[k] = cl[k] || (rd && rd[k]) ? 1 : 0; keep[k] = 1 - cut[k]; any += cut[k]; }
+    const out = new Float32Array(N * N);
+    if (!any) { out.fill(SD_CLAMP); return out; }
+    if (any === N * N) { out.fill(-SD_CLAMP); return out; }
+    const dc = edt2(cut), dk = edt2(keep);
+    for (let k = 0; k < N * N; k++) {
+      const s = cut[k] ? -(Math.sqrt(dk[k]) - 0.5) : Math.sqrt(dc[k]) - 0.5;
+      out[k] = Math.max(-SD_CLAMP, Math.min(SD_CLAMP, s * cell));
+    }
+    const raw = out.slice(), t = new Float32Array(N * N), W = [1 / 16, 4 / 16, 6 / 16, 4 / 16, 1 / 16];
+    for (let it = 0; it < 2; it++) {
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { let s = 0; for (let d = -2; d <= 2; d++) s += W[d + 2] * out[j * N + Math.min(N - 1, Math.max(0, i + d))]; t[j * N + i] = s; }
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { let s = 0; for (let d = -2; d <= 2; d++) s += W[d + 2] * t[Math.min(N - 1, Math.max(0, j + d)) * N + i]; out[j * N + i] = s; }
+    }
+    // a cut cell stays cut (a 1-2 cell kerb / wall-foot line would blur away): the blur only lets the line move OUT over
+    // the kept notches of a staircase (its envelope: straight), never open a cut
+    // (only a THIN cut, no cell deeper than 1.5 cells within 2 cells: a wide cut's protruding raster corners may go, so
+    // its edge follows the line, not the staircase's envelope)
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const k = j * N + i; if (!cut[k]) continue;
+      let deep = 0;
+      for (let dj = -2; dj <= 2 && !deep; dj++) for (let di = -2; di <= 2; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < N && jj < N && cut[jj * N + ii] && dk[jj * N + ii] > 2.25) { deep = 1; break; } }
+      if (!deep) out[k] = Math.min(out[k], raw[k]);
+    }
+    return out;
   }
   function computeShape() {
     const S = SHAPE, N = res;
@@ -89,10 +192,19 @@ export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, carPx =
         if (e > tol) hi = true;
       }
       edge[o] = lo ? 1 : 0; wall[o] = hi ? 1 : 0;
+      // (a WALL's foot: the step up is > 0.3 m; a kerb's / a low step's foot stays cut: the kerb keeps a 2-cell cut)
+      foot[o] = hi && !lo && Math.max(at(i - 1, j), at(i + 1, j), at(i, j - 1), at(i, j + 1)) > h + 0.3 ? 1 : 0;
       cliff[o] = lo || hi ? 1 : 0;
       if (h < -1e3) cliff[o] = 1;
     }
-    const dE = distance(edge), dW = distance(wall);
+    // (snowfix: exact distances, blurred once: the chamfer distance to a diagonal raster wall alternated 1 / 1.41 cells
+    // along it, and the drift / taper height with it: scallops along every facade foot; ?snowsdf=old = the chamfer)
+    const smooth1 = (a) => { const t = new Float32Array(N * N), W = [1 / 16, 4 / 16, 6 / 16, 4 / 16, 1 / 16];
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { let v = 0; for (let d = -2; d <= 2; d++) v += W[d + 2] * a[j * N + Math.min(N - 1, Math.max(0, i + d))]; t[j * N + i] = v; }
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { let v = 0; for (let d = -2; d <= 2; d++) v += W[d + 2] * t[Math.min(N - 1, Math.max(0, j + d)) * N + i]; a[j * N + i] = v; }
+      return a; };
+    const exact = (seed) => { const g = edt2(seed), D = new Float32Array(N * N); for (let k = 0; k < N * N; k++) D[k] = Math.min(64, Math.sqrt(g[k])); return smooth1(D); };
+    const dE = sdfOld ? distance(edge) : exact(edge), dW = sdfOld ? distance(wall) : exact(wall);
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
       const o = j * N + i;
       const shed = 1 - Math.min(1, Math.max(0, (slope[o] - S.shedFrom) / (S.shedTo - S.shedFrom)));
@@ -113,6 +225,7 @@ export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, carPx =
   }
   
   const t0 = Date.now();
+  const foot = new Uint8Array(N * N);       // a wall / kerb FOOT only (a higher neighbour, no lower one)
   toGrid(solidPx, H, -1e4);
   const Cn = new Float32Array(N * N);
   toGrid(canopyPx, Cn, -1e4);
@@ -121,7 +234,8 @@ export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, carPx =
   computeShape();
   // snow caps (claude/snowtracks): a parked car's top cuts the layer (the car carries its own cap mesh); the ground under
   // it stays the topmost-surface test's "sheltered"
-  if (carPx) { const Cr = new Float32Array(N * N); toGrid(carPx, Cr, -1e4); for (let k = 0; k < N * N; k++) if (Cr[k] > H[k] - 0.05) cliff[k] = 1; }
+  const carCut = new Uint8Array(N * N);
+  if (carPx) { const Cr = new Float32Array(N * N); toGrid(carPx, Cr, -1e4); for (let k = 0; k < N * N; k++) if (Cr[k] > H[k] - 0.05) { cliff[k] = 1; carCut[k] = 1; } }
   // road cells: a carriageway is the topmost surface here
   const road = new Uint8Array(N * N);
   if (roadPx) { const Rd = new Float32Array(N * N); toGrid(roadPx, Rd, -1e4); for (let k = 0; k < N * N; k++) road[k] = Rd[k] > H[k] - 0.05 ? 1 : 0; }
@@ -144,6 +258,21 @@ export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, carPx =
     }
     Hs.set(tmp);
   }
+  // snowfix (rule snow-edge-sdf): the layer's CUT as a smooth signed distance (m) per cell centre, read per PIXEL by the
+  // layer's fragment (a bilinear tap): + inside the snow, - in the cut, 0 on the line between the cut cells and the
+  // kept ones. The layer's vertices only TAPER toward it: the cut no longer follows the mesh's 12.5 / 25 cm triangles
+  // (the saw-teeth of the coarse outer chunks round Place Saint-Job's paving, 2026-11-27). Blurred ~1.4 cells so a raster
+  // staircase on a shallow diagonal reads as its line. sdA: cliffs / no surface; sdB: + the carriageways (salted)
+  // the layer's cut: the cliffs, but not a wall's / kerb face's FOOT (snowfix): the snow runs on into the wall at full
+  // depth (its drift) and the wall hides the rest; tapered to 0 at the foot cell, its top met the wall in 12.5 cm
+  // teeth (the police yard's facades). Drop edges (eaves, kerb tops, wall tops), cars and "no surface" stay cut
+  const cut = new Uint8Array(N * N);
+  for (let k = 0; k < N * N; k++) cut[k] = cliff[k] && !(foot[k] && !sdfOld && H[k] > -1e3 && !carCut[k]) ? 1 : 0;
+  // narrow RAISED strips (snowfix, rule snow-thin-ledge): a kept patch no wider than ~0.6 m (every cell within 2.25
+  // cells of the cut) whose rim drops > 0.3 m (a garden coping, a shop fascia, a sill, a parapet): the layer draws it
+  // as a 1-2 cell strip that zigzags along any diagonal; the caps (snowCaps.js) and the materials' cover carry them
+  if (!sdfOld) narrowCut(cut);
+  const sdA = signedCut(cut, null), sdB = signedCut(cut, road);
   // eaves: a drop edge cell whose lower neighbour is > 1.5 m below (roofs, not kerbs or car roofs)
   const eaves = [];
   let seed = 1;
@@ -160,5 +289,5 @@ export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, carPx =
       }
     }
   }
-  return { H, Hs, shelter, shape, cliff, road, eaves: new Float32Array(eaves), ms: Date.now() - t0 };
+  return { H, Hs, shelter, shape, cliff, cut, road, sdA, sdB, narrowCells, eaves: new Float32Array(eaves), ms: Date.now() - t0 };
 }

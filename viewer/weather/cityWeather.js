@@ -57,9 +57,19 @@ const CAPS_CUT = new URLSearchParams(location.search).get("snowcaps") !== "0";
 // bus / tram shelters, the street kit) is baked as SHELTER, not as solid ground: as a solid its top became the layer's
 // base, the cliff round it cut a hard, blotchy hole in the snow under a bench (a pale outline: the material cover) and a
 // jagged cut round the shelters; now the snow runs on under them, thinner under the seat / roof, and the caps (snowCaps.js) stay on top
-const FURN_RE = /^(furniture2|streetkit|stops|street-furniture|street-lamps|furniture2-|streetkit-|stops-|tram-poles$|tram-shelter)/;
+// snowfix (rule wx-bake-drawn-only, its second half): the physics props' proxies (claude/props: "props-furniture2:bin_round",
+// "props-streetkit:sign_pole", bollards, ...: the FURNITURE drawn under another name since then), the lamps' hanging
+// flower baskets and brackets (lamp-extras: a dark hole under every basket on Place Saint-Job), bollards, the tram /
+// rail / embassy poles, traffic-light posts and billboards were baked as solid ground again: holes and "under an eave"
+// shadows in the snow under each of them. Shelter, as the joins2 furniture
+// (?wxprops=old: the joins2 list alone, as before)
+const FURN_RE = qp.get("wxprops") === "old" ? /^(furniture2|streetkit|stops|street-furniture|street-lamps|furniture2-|streetkit-|stops-|tram-poles$|tram-shelter)/
+  : /^(furniture2|streetkit|stops|street-furniture|street-lamps|furniture2-|streetkit-|stops-|tram-poles$|tram-shelter|props-(furniture2|streetkit|stops|streetlife|mesh:bollards)|lamp-extras|bollard-set$|bollards$|tram-pole|rail-masts$|embassy-poles|tlights|billboards)/;
 const SNOW_FURN = new URLSearchParams(location.search).get("snowfurn") !== "old";
-const MOVER_RE = /^(tram2?-|tram$|trains$|traffic-fleet$|car$|moto|player-falcon$|falcons$|pigeons$|air-streaks$)/;
+const MOVER_RE = qp.get("wxprops") === "old" ? /^(tram2?-|tram$|trains$|traffic-fleet$|car$|moto|player-falcon$|falcons$|pigeons$|air-streaks$)/
+  : /^(tram2?-|tram$|trains$|traffic-fleet$|car$|moto|player-falcon$|falcons$|pigeons$|air-streaks$|falcon-feather-puff$|FirmamentSkyDome$)/;
+const DRAWN_OLD = qp.get("wxdrawn") === "old";
+const WX_LAYER_BITS = (1 << SOLID_LAYER) | (1 << CANOPY_LAYER) | (1 << ROAD_LAYER) | (1 << CAR_LAYER);
 const lerp = THREE.MathUtils.lerp, sstep = THREE.MathUtils.smoothstep;
 
 export const cityWeather = {
@@ -294,10 +304,17 @@ export const cityWeather = {
     const off = (o) => o.traverse((m) => { if (m.isMesh) { m.layers.disable(SOLID_LAYER); m.layers.disable(ROAD_LAYER); } });
     const M = this.movers, own = new Set([M?.driver?.car?.root, M?.driver?.moto?.root, M?.third?.()?.tp?.body?.root].filter(Boolean));
     for (const r of own) off(r);
+    // snowfix (rule wx-bake-drawn-only, ?wxdrawn=old = before): only what the city's camera DRAWS is ground. A mesh on
+    // another camera layer only (the Wolvendael pond's reflection trees: 179 crowns + trunks on layer 9, drawn by the
+    // mirror pass alone) was baked as solid: the snow layer lay over invisible crowns (white domes on the police
+    // yard's young trees) and the ground under them read "under an eave" (bare rings round their pits)
+    const camMask = this.camera?.layers?.mask ?? 1;
+    const drawn = (o) => DRAWN_OLD || (o.layers.mask & ~WX_LAYER_BITS & camMask) !== 0;
     for (const top of this.scene.children) {
       if (MOVER_RE.test(top.name) || own.has(top)) { off(top); continue; }
       top.traverseVisible((o) => {
       if (!o.isMesh || o.userData.wxSkip) return;
+      if (!drawn(o)) { for (const L of [SOLID_LAYER, CANOPY_LAYER, ROAD_LAYER, CAR_LAYER]) o.layers.disable(L); return; }
       if (o.isSkinnedMesh) { o.layers.disable(SOLID_LAYER); return; }
       const m = Array.isArray(o.material) ? o.material[0] : o.material;
       if (!m) return;

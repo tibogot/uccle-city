@@ -28,6 +28,12 @@ import { polishOld } from "../polish.js";
 // fragment cuts at the 0.5 iso-line of the interpolated flag (a straight, chamfered line through the triangles);
 // a face steeper than ~55 deg (a sliver across a kerb face) is cut too.
 const SOFT_EDGE = !polishOld("snowedge");
+// snowfix (rule snow-edge-sdf, ?snowsdf=old = before): the STATIC cut (cliffs: kerbs, eaves, car tops; salted
+// carriageways) is read per pixel from the overhead map's signed cut distance (overheadShape signedCut: exact EDT,
+// blurred, bilinear) and cut at its 0 line. The vertex flag interpolated over the triangles drew that line as the
+// mesh's 12.5 cm (inner) / 25 cm (outer chunks) saw-teeth on every diagonal or curved edge (Place Saint-Job's paving,
+// 2026-11-27). The vertex flag keeps only the DYNAMIC cut (too little snow: the window's rim, steep roofs)
+const SDF_EDGE = SOFT_EDGE && !/[?&]snowsdf=old(&|$)/.test(location.search);
 
 const NSTAMP = 6;
 // perf pass 2 (docs/perf/AUDIT.md step 12, ?snowlod=old = every chunk at full resolution): the layer is 8 x 8 chunks of
@@ -116,8 +122,9 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     // ---- /snowtracks
     // A = cliff + 2 x road: a salted carriageway keeps only a little (it is slush on the material below)
     const road = s.w.greaterThan(1.5).select(float(1), float(0));
-    const d = wx.uSnowDepth.mul(rim).mul(s.z).mul(float(1).sub(shelterK.mul(s.y))).mul(float(1).sub(road.mul(wx.uSalt)));     // (unevenness is baked in the shape)
-    return { s, tr, d };
+    const d0 = wx.uSnowDepth.mul(rim).mul(s.z).mul(float(1).sub(shelterK.mul(s.y)));     // (unevenness is baked in the shape)
+    const d = d0.mul(float(1).sub(road.mul(wx.uSalt)));
+    return { s, tr, d, d0 };
   };
   const C = depthAt(ii, jj), L = depthAt(ii.sub(1), jj), R = depthAt(ii.add(1), jj), U = depthAt(ii, jj.sub(1)), D = depthAt(ii, jj.add(1));
   const rimOf = (X) => max(float(0), L.tr.add(R.tr).add(U.tr).add(D.tr).mul(0.25).sub(X.tr)).mul(trail ? 0.9 : 0.5);   // (snowtracks: a fuller berm)
@@ -130,18 +137,40 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   const nW = normalize(vec3(hL.sub(hR), uCell.mul(2), hU.sub(hD)));
   const hideOf = (X) => select(isCliff(X).or(X.d.lessThan(0.004)).or(X.s.x.lessThan(-1000)), float(1), float(0));
   const hide = hideOf(C);
+  // (snowfix) the dynamic part of the cut only: too little snow here (not a cliff, not a salted road: those are the SDF's)
+  const hideDynOf = (X) => select(X.d0.lessThan(0.004).or(X.s.x.lessThan(-1000)), float(1), float(0));
   // the seam stitch (SNOW_LOD): the mean of the two neighbours along the coarse chunk's edge, as their own vertices put them
   const st = attribute("snowStitch", "float");
-  const yOf = (X) => (SOFT_EDGE ? X.s.x.add(hOf(X, float(0)).sub(X.s.x).mul(float(1).sub(hideOf(X)))) : hOf(X, float(0)));
+  const yOf = (X) => (SDF_EDGE ? select(isCliff(X), hOf(X, float(0)), X.s.x.add(hOf(X, float(0)).sub(X.s.x).mul(float(1).sub(hideDynOf(X)))))
+    : SOFT_EDGE ? X.s.x.add(hOf(X, float(0)).sub(X.s.x).mul(float(1).sub(hideOf(X)))) : hOf(X, float(0)));
   const stitchY = (y) => (SNOW_LOD ? select(st.greaterThan(1.5), yOf(U).add(yOf(D)).mul(0.5), select(st.greaterThan(0.5), yOf(L).add(yOf(R)).mul(0.5), y)) : y);
   let vHide, cutAt;
   if (SOFT_EDGE) {
     // soft flag: 1 on a hidden vertex, (its hidden 4-neighbours) / 6 next to one; thickness x (1 - flag)^2 so the
     // surface meets the materials' own cover at the cut instead of ending in a 1-cell step
     const soft = max(hide, hide.mul(2).add(hideOf(L)).add(hideOf(R)).add(hideOf(U)).add(hideOf(D)).div(6));
-    const keepT = float(1).sub(soft).pow(2);
-    mat.positionNode = vec3(positionGeometry.x, stitchY(C.s.x.add(hC.sub(C.s.x).mul(keepT))).add(0.003), positionGeometry.z);
-    vHide = varying(soft); cutAt = 0.42;
+    if (SDF_EDGE) {
+      // (snowfix) the thickness tapers for the DYNAMIC cut only (the static one: the shape's rounded drop-edge taper and
+      // the wall-foot drift are already in the depth). A statically cut vertex next to a much LOWER kept one (a wall /
+      // eave / car top over the ground) is put at that neighbour's snow surface: the triangles between them stay flat
+      // and the pixel cut (the signed distance) draws the edge. At its own height they stood up as slivers, were dropped
+      // whole, and the snow met every facade foot in 12.5 cm teeth (the police yard). Diagonals count (the quads' split)
+      const hd = hideDynOf(C);
+      const softD = max(hd, hd.mul(2).add(hideDynOf(L)).add(hideDynOf(R)).add(hideDynOf(U)).add(hideDynOf(D)).div(6));
+      const keepT = float(1).sub(softD).pow(2);
+      const diag = (di, dj) => { const s = map.load(ii.add(di).clamp(0, N - 1), jj.add(dj).clamp(0, N - 1)); const road = s.w.greaterThan(1.5).select(float(1), float(0));
+        return { s, tr: float(0), d: wx.uSnowDepth.mul(rim).mul(s.z).mul(float(1).sub(shelterK.mul(s.y))).mul(float(1).sub(road.mul(wx.uSalt))) }; };
+      const low = (X) => select(isCliff(X).not().and(X.s.x.lessThan(C.s.x.sub(0.3))).and(X.s.x.greaterThan(-1000)), hOf(X, float(0)), float(1e9));
+      const m = min(min(min(low(L), low(R)), min(low(U), low(D))), min(min(low(diag(-1, -1)), low(diag(1, -1))), min(low(diag(-1, 1)), low(diag(1, 1)))));
+      const yC = select(isCliff(C).and(m.lessThan(1e8)), m, C.s.x.add(hC.sub(C.s.x).mul(keepT)));
+      mat.positionNode = vec3(positionGeometry.x, stitchY(yC).add(0.003), positionGeometry.z);
+      vHide = varying(softD);
+    } else {
+      const keepT = float(1).sub(soft).pow(2);
+      mat.positionNode = vec3(positionGeometry.x, stitchY(C.s.x.add(hC.sub(C.s.x).mul(keepT))).add(0.003), positionGeometry.z);
+      vHide = varying(soft);
+    }
+    cutAt = 0.42;
   } else {
     mat.positionNode = vec3(positionGeometry.x, stitchY(hC).add(0.003), positionGeometry.z);
     vHide = varying(hide); cutAt = 0.001;
@@ -193,6 +222,11 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   // ---- /snowtracks
   mat.colorNode = Fn(() => {
     If(vHide.greaterThan(cutAt), () => { Discard(); });
+    if (SDF_EDGE) {
+      // the static cut at the signed distance's 0 line, per pixel (one filtered fetch: smooth, whatever the mesh)
+      const cut = map.sampleLin(P.xz);
+      If(select(wx.uSalt.greaterThan(0.95), cut.w, cut.z).lessThan(0), () => { Discard(); });
+    }
     if (SOFT_EDGE) {
       // the triangle's own (flat) normal from the screen derivatives: a sliver standing across a kerb / eave is dropped
       const fn = normalize(P.dFdx().cross(P.dFdy()));

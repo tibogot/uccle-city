@@ -15,6 +15,27 @@ du Ham, the police yard (the police game's start). Shots: `C:/Users/tibog/Downlo
   polygonal patch with only a thin material cover (cobbles showing) at 15 cm depth, and the snow layer's edge round it in
   ~25 cm saw-teeth (the coarse outer chunks of snowLayer.js); dark rings round the police yard's tree pits; white domes
   on young trees (garden caps); thin white zigzags on wall copings. Worth a snow job before 15 Dec.
+- **Fixed (claude/snowfix, 2026-11-28; docs/WEATHER.md "Snow-day edges"):** the four snow-day defects were weather
+  classes. (1) the bare patch = the overhead bake's in-place hole fill flooding the ROAD pass (rule overhead-fill-bounded,
+  `?wxfill=old`); (2) its saw-teeth = the cut along the layer's 25 cm triangles, now a per-pixel signed distance (rule
+  snow-edge-sdf, `?snowsdf=old`; the facade-foot teeth too); (3)+(4) the yard's rings and domes = the Wolvendael pond's
+  REFLECTION trees (layer 9) baked as solid (rule wx-bake-drawn-only, `?wxdrawn=old`); found on the way: a dark hole
+  under every hanging basket (props / lamp extras baked solid, `?wxprops=old`); (5) the coping / fascia zigzags = a
+  1-2 cell strip of the layer on narrow raised ledges (rule snow-thin-ledge). Gate row `snowedge` + browser row
+  `snowedge` (debug/snowEdge.js audit). Shots: `C:/Users/tibog/Downloads/uccle-jobs/snowfix_shots/`.
+- **XMASPERF re-measured (2026-11-28, claude/snowfix):** preflight YELLOW at the start (system: 2 warn, other city
+  servers listening; page: CPU +1.5 %, GPU +5.8 %, boot +16 %), browser.lock held, page in front (hasFocus true before
+  and after each read); render scale pinned 0.75: **layer-street 0.497 +- 0.047 ms (budget 0.30: FAIL), fir-8m
+  0.268 +- 0.052 ms (budget 0.10: FAIL)**, extra-poles 0.014 +- 0.031, extra-windows 0.023 +- 0.069 (pass). The closing
+  preflight was RED (GPU 6.16 vs 4.52 ms: the machine got busy at the end: another agent's gate Chrome), so read the
+  numbers as an upper bound, but they agree with the hot-machine numbers of 27 Nov (0.67 / 0.48), not with 7.2's 24 Nov
+  0.121 / 0.086: the layer got ~4x dearer since claude/xmas3 (poles, windows, the fir rounds 3-4?): a job for
+  the Christmas side before 1 Dec (not the snow fixes: ?xmas=1 has no weather here).
+- **Snow cover GPU, before / after the snow fixes** (same session, the snow layer's camera layers off / on, 12 rounds,
+  scale 0.75, bakes frozen during the A/B; before = `&wxfill=old&wxdrawn=old&wxprops=old&snowsdf=old`): Saint-Job street
+  spot -0.012 +- 0.013 -> 0.006 +- 0.027 ms, the paving spot 0.036 +- 0.031 -> 0.091 +- 0.040 (the patch is covered now:
+  more layer drawn), a walk view 0.058 +- 0.016 -> p50 -0.10 (noisy: se 0.28): no regression beyond the noise. The shape
+  pass (worker, once per bake) 231 -> 258 ms.
 - Seen, kept: under the night snowfall the fir reads as a flocked white tree; its LEDs are clear within ~15 m and fainter
   from the square's edge (the snow is lit by the city, the glow uses the needles' own albedo).
 - GPU (RED preflight: two other agents' jobs, GPU 58 % busy at rest, power cap; read as noise): whole frame p50 at the
