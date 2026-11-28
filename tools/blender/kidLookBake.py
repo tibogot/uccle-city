@@ -195,6 +195,91 @@ cav[sh] *= (1 - 0.06 * sstep(30, 0, up))[sh]                                    
 # the waistband top (just under the jacket's hem; mostly hidden): a welt
 h[sh] += (0.5 * ridge((Y - (hem + 0.006)) * 1000, 2.5))[sh]
 
+# --- ROUND 2 (docs/KIDCHAR.md phase 7): the sleeves, socks, cap, brims and the hair shell have 2-D cells now
+# (kidGame.py R2, the layout in kidA_rig.json "cells"): their folds / ribs / seams are BAKED here (round 1 computed them
+# in the material from the bind position; kidModel.js turns that off for this mesh)
+RIG = json.load(open(os.path.join(CH, "kidA_rig.json")))
+if RIG.get("look") == "r2":
+    CL = RIG["cells"]
+    def in_cell(name):
+        x0_, y0_, w_, h_ = CL[name]
+        return (TUV[..., 0] * AW >= x0_) & (TUV[..., 0] * AW < x0_ + w_) & (TUV[..., 1] * AH >= y0_) & (TUV[..., 1] * AH < y0_ + h_)
+    def cell_v(name):
+        x0_, y0_, w_, h_ = CL[name]; return (TUV[..., 1] * AH - y0_ - 1.5) / (h_ - 3)
+    gauss = lambda x, c, w: np.exp(-((x - c) / w) ** 2)
+    # the sleeves (T-pose: the arm along x): the elbow's rings, the stack above the cuff, the cuff's rib, the shoulder's
+    # drag; the colour-band seams (welt + stitch groove) and the underarm seam; the cuff's two channel stitches
+    sl = is_("jacket") & in_cell("jk_sleeve")
+    sA = np.clip((AX - 0.149) / 0.4, 0, 1)
+    aArm = np.arctan2(Z - 0.034, Y - 1.117)
+    sleeveH = (0.9 * np.sin(AX * 2 * np.pi / 0.011 + 2 * np.sin(2 * aArm)) * gauss(sA, 0.5, 0.09)
+               + 0.8 * np.sin(AX * 2 * np.pi / 0.009 + 1.5 * np.sin(3 * aArm)) * gauss(sA, 0.84, 0.05)
+               + 0.5 * np.cos(aArm * 36) * sstep(0.925, 0.945, sA)
+               + 0.6 * np.sin(2 * aArm + 40 * AX) * gauss(sA, 0.1, 0.08))
+    h[sl] += sleeveH[sl]
+    tv = cell_v("jk_sleeve"); Ls = 0.4 * 1000
+    for v0 in (0.5, 0.86):
+        d = np.abs(tv - v0) * Ls; h[sl] += (0.5 * ridge(d - 1.5, 0.9) + 0.5 * ridge(d + 1.5, 0.9) - 0.6 * ridge(d, 0.45))[sl]
+        cav[sl] *= (1 - 0.16 * ridge(d, 0.7))[sl]
+    under = np.abs(np.abs(aArm) - np.pi) * 0.045 * 1000                         # mm from the underarm seam (r ~ 4.5 cm)
+    h[sl] += (0.45 * ridge(under - 1.4, 0.8) - 0.55 * ridge(under, 0.45))[sl]; cav[sl] *= (1 - 0.12 * ridge(under, 0.6))[sl]
+    for v0 in (0.955, 0.985):
+        h[sl] -= (0.45 * ridge(np.abs(tv - v0) * Ls, 0.5))[sl]
+    g[sl & (sA > 0.93)] += 0.1                                                   # the elastic matte
+    # the socks: TUBE-SOCK ribs the whole length (finer, shallower below the cuff), the rib cuff deeper, the cuff's
+    # turn line, the stripes' knit change, the ankle's slouch rings
+    so_ = is_("socks")
+    if so_.any():
+        aLeg = np.arctan2(Z + 0.003, AX - 0.088)
+        stop = float(np.percentile(Y[so_], 99.5)); rib0 = stop - 0.026
+        cuffm = sstep(rib0 - 0.002, rib0 + 0.002, Y)
+        sockH = (np.cos(aLeg * 44) * (0.25 + 0.4 * cuffm)
+                 + 0.6 * np.sin(Y * 2 * np.pi / 0.009 + 2 * np.sin(2 * aLeg)) * gauss(Y, 0.115, 0.03) * (1 - cuffm)
+                 - 0.6 * ridge((Y - rib0) * 1000, 0.6))
+        h[so_] += sockH[so_]
+        cav[so_] *= (1 - 0.08 * ridge((Y - rib0) * 1000, 0.8))[so_]
+        g[so_] += (0.06 * cuffm)[so_]
+    # the cap: six panels (seams at +-15 deg (the white front panel's edges), +-75, +-135), each seam a welt with two
+    # stitch rows; the panels' slight puff between the seams. The seams' angle is read from the cap cell's OWN u (the
+    # angle round the crown the colour cell was painted with, kidGame.py cp_uv2: u x 1.1 = the turn, 0.5 = the front):
+    # the first try took it from the bind position round the Head joint, and its seams drifted off the white panel's
+    # edges up the crown (the cavity darkened the white: "red bleeding into the white", the coordinator 2026-11-28). No
+    # sweatband stitch line: it drew a hard horizontal line across the white panel near the brim (that stitching is
+    # inside a real cap)
+    cp = is_("cap")
+    if cp.any():
+        x0_, y0_, w_, h_ = CL["cap"]
+        cuc = np.clip((TUV[..., 0] * AW - x0_ - 1.5) / (w_ - 3), 0, 1)
+        aCap = (cuc * 1.1 - 0.5) * 360.0                                      # deg, 0 = the front
+        Jh = J["Head"]
+        rr_ = np.hypot(X - Jh[0], Z - Jh[2])
+        dmin = np.full((H, W), 1e9, np.float32)
+        for a0 in (15, -15, 75, -75, 135, -135):
+            dmin = np.minimum(dmin, np.abs(((aCap - a0 + 180) % 360) - 180))
+        ds = np.radians(dmin) * rr_ * 1000                                    # mm from the nearest seam
+        front = np.abs(aCap) < 15
+        # (the welts sit on the coloured panels' side, never over the white one: no darker rim on the white)
+        h[cp] += (0.55 * ridge(ds - 1.3, 0.8) * ~front + 0.55 * ridge(ds - 1.3, 0.8) * 0.4 * front - 0.6 * ridge(ds, 0.45)
+                  + 0.35 * np.clip(ds / 25, 0, 1))[cp]
+        cav[cp] *= (1 - 0.1 * ridge(ds, 0.5) * ~front)[cp]
+    # the brims: four stitch rows parallel to the front edge (v = 0 at the cap, 1 at the edge), the edge's bead
+    for bn in ("brim_f", "brim_b"):
+        br = is_(bn)
+        if not br.any(): continue
+        bv = cell_v("brim") * 68.0                                            # mm from the cap (~ the brim's depth)
+        for v0 in (36.0, 44.0, 52.0, 60.0):
+            h[br] -= (0.55 * ridge(bv - v0, 0.5))[br]; cav[br] *= (1 - 0.1 * ridge(bv - v0, 0.6))[br]
+        h[br] += (0.5 * sstep(62, 66, bv))[br]
+    # the hair shell: strands along the locks (fine ridges round the head, a little wavy), the locks' grooves deeper
+    hs = is_("hair") & in_cell("hairshell")
+    if hs.any():
+        aH = np.arctan2(X, Z - J["Head"][2])
+        strands = 0.5 * np.sin(aH * 160 + 6 * np.sin(Y * 90)) + 0.35 * np.sin(aH * 330 + 3 * np.sin(Y * 150 + 1))
+        locks = 0.8 * np.sin(aH * 23 + 40 * Y + 1.7 * np.sin(aH * 5))
+        h[hs] += (strands + locks)[hs]; cav[hs] *= (0.9 + 0.1 * np.clip(locks, -1, 1))[hs]
+        g[hs] += 0.08
+    print("round 2 cells baked: sleeves", int(sl.sum()), "socks", int(so_.sum()), "cap", int(cp.sum()), "hair shell", int(hs.sum()))
+
 # --- the tee strip in the open zip: the collar rib (1.5 mm ribs, 1.6 cm deep) at the neckline
 te = is_("tee")
 if te.any():

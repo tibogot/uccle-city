@@ -8,7 +8,7 @@
   "leg": 0.705
  },
  "kid": {
-  "height": 1.4746,
+  "height": 1.4751,
   "pelvisScale": 0.81877,
   "slots": [
    "skin",
@@ -26,9 +26,9 @@
    "socks"
   ],
   "tris": [
-   21518,
-   7999,
-   1998
+   30854,
+   9800,
+   2371
   ],
   "sole": 0,
   "atlas": "kidA_atlas.ktx2",

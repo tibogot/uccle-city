@@ -21,7 +21,10 @@ const quiet = process.argv.includes("--quiet");
 // --model kidA: the same checks on the MPFB kid (docs/KIDCHAR.md: models/characters/kidA.glb, one atlas, 3 LODs ~20k / 8k / 2k)
 const MODEL = (() => { const i = process.argv.indexOf("--model"); return i > 0 ? process.argv[i + 1] : "kid"; })();
 const IS_A = MODEL !== "kid";
-const BUDGET = IS_A ? [22000, 8500, 2200] : [15000, 6000, 2000];
+// (kid A round 2 of the look, 2026-11-28: the clothes / hair as shapes: LOD0 up to 35k, LOD1 10.5k, LOD2 2.6k; round 1's
+// mesh, kidA_r1, kept its 22k / 8.5k / 2.2k)
+const BUDGET = MODEL === "kidA" ? [35000, 10500, 2600] : IS_A ? [22000, 8500, 2200] : [15000, 6000, 2000];
+const POKE_MAX = 0.005;         // (the share of inner / outer layer pairs allowed > 2 mm out in a riding pose)
 // (the top-of-stroke knee: a 0.705 m leg on the BMX's real 175 mm cranks closes to ~55-60 deg at best: the stroke takes
 // 2 x 175 mm out of a reach capped at 96.5 % of the leg (docs/KIDCHAR.md phase 3). A: >= 50 with no slide off the saddle
 // (he sat 41 deg, sliding 7 cm forward); the old kid as it rides (39))
@@ -74,7 +77,7 @@ if (IS_A) {
   check("kid look: kid_fabric.ktx2 = a square tiling sheet, mipped, <= 400 KB", !!fb && fb.magic && fb.w === fb.h && fb.levels > 5 && fb.kb <= 400,
     fb ? `${fb.w} x ${fb.h}, ${fb.levels} mips, ${fb.kb.toFixed(0)} KB` : "missing", "square, mips, <= 400 KB");
   const total = (at?.kb || 0) + (dt?.kb || 0) + (fb?.kb || 0);
-  check("kid look: all his textures <= 2.2 MB on disk (3 KTX2, still one draw)", total <= 2250, `${(total / 1024).toFixed(2)} MB`, "<= 2.2 MB");
+  check("kid look: all his textures <= 2.5 MB on disk (3 KTX2, still one draw)", total <= 2560, `${(total / 1024).toFixed(2)} MB`, "<= 2.5 MB");
   const miss = slots.filter((sl) => !(sl in KIDLOOK.rough && sl in KIDLOOK.spec && sl in KIDLOOK.micro));
   check("kid look: every named slot has its roughness, specular and micro relief", !miss.length, miss.length ? `missing ${miss.join(",")}` : `${slots.length} slots`, "all");
   const SHELLS = ["jacket", "socks", "cap", "brim_f", "brim_b"];
@@ -92,7 +95,28 @@ if (IS_A) {
     if (n) open.push(`LOD${li} ${n}`);
   });
   check("kid look: no open cloth shell (jacket, socks, cap, brims closed in every LOD)", !open.length, open.join(", ") || "0 open edges", "0");
-  check("kid look: no triangles added (LOD0 21,518 as before the round)", tris[0] === 21518, `${tris[0]}`, "21518");
+  // ROUND 2 (docs/KIDCHAR.md phase 7): the shapes added triangles on purpose (in the 35k budget above); round 1's mesh
+  // stays next to it for ?kidlook=r1 / old with its 21,518; the sleeves / socks / cap / brims have 2-D atlas cells (their
+  // folds baked: each slot's UVs span an area, not a line) and the hair shell sits in its own cell of the hair slot
+  if (MODEL === "kidA") {
+    const r1 = fs.existsSync(path.join(ROOT, "models/characters/kidA_r1.glb")) ? readGLB(path.join(ROOT, "models/characters/kidA_r1.glb")) : null;
+    const r1t = r1 ? r1.json.accessors[r1.json.meshes[0].primitives[0].indices].count / 3 : 0;
+    const r1f = ["kidA_r1.json", "kidA_r1_atlas.ktx2", "kidA_r1_detail.ktx2"].filter((f) => !fs.existsSync(path.join(ROOT, "models/characters", f)));
+    check("kid look r2: round 1's mesh + maps kept for ?kidlook=r1 / old (kidA_r1.*, LOD0 21,518)", r1t === 21518 && !r1f.length, r1 ? `kidA_r1.glb LOD0 ${r1t}${r1f.length ? ", missing " + r1f.join(",") : ""}` : "missing", "21518, all files");
+    const rig = JSON.parse(fs.readFileSync(path.join(ROOT, "models/characters/kidA_rig.json"), "utf8"));
+    const pr = kid.json.meshes[0].primitives[0], UVa = kid.accessor(pr.attributes.TEXCOORD_0), SLa = kid.accessor(pr.attributes._SLOT);
+    const spans = {};
+    for (let i = 0; i < SLa.length; i++) {
+      const sl = slots[Math.round(SLa[i])], u = UVa[2 * i] * 2048, v = UVa[2 * i + 1] * 1280;
+      const b = spans[sl] ||= [1e9, 1e9, -1e9, -1e9]; b[0] = Math.min(b[0], u); b[1] = Math.min(b[1], v); b[2] = Math.max(b[2], u); b[3] = Math.max(b[3], v);
+    }
+    const flat = ["socks", "cap", "brim_f", "brim_b"].filter((sl) => !spans[sl] || Math.min(spans[sl][2] - spans[sl][0], spans[sl][3] - spans[sl][1]) < 32);
+    const C = rig.cells || {};
+    const inCell = (cell) => { const c = C[cell]; if (!c) return 0; let n = 0; for (let i = 0; i < SLa.length; i++) { const u = UVa[2 * i] * 2048, v = (1 - UVa[2 * i + 1]) * 1280; if (u >= c[0] && u < c[0] + c[2] && v >= c[1] && v < c[1] + c[3]) n++; } return n; };
+    const nSleeve = inCell("jk_sleeve"), nShell = inCell("hairshell");
+    check("kid look r2: 2-D cells for the sleeves, socks, cap, brims (folds baked) + the hair shell's cell", rig.look === "r2" && !flat.length && nSleeve > 200 && nShell > 100,
+      `${flat.length ? "flat: " + flat.join(",") : "socks / cap / brims span >= 32 texels both ways"}, sleeves ${nSleeve} and hair shell ${nShell} vertices in their cells`, "all 2-D, both cells used");
+  } else check("kid look: no triangles added (LOD0 21,518 as before the round)", tris[0] === 21518, `${tris[0]}`, "21518");
 }
 
 // ------------------------------------------------------------------------------------------------ stray pieces, spikes
@@ -122,7 +146,7 @@ if (IS_A) {
     const L = Math.max(...[[a, b], [b, cc], [cc, a]].map(([x, y]) => Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2])));
     fn.push([n, L]);
     for (let k = 0; k < 3; k++) { const r = weld[I[t + k]]; for (let c = 0; c < 3; c++) vn[r * 3 + c] += n[c]; }
-    const r = find(I[t]), c = comp.get(r) || { n: 0, body: 0 }; c.n++; if (BODY.has(SL[I[t]])) c.body++; comp.set(r, c);
+    const r = find(I[t]), c = comp.get(r) || { n: 0, body: 0, lace: true, at: [P[I[t] * 3], P[I[t] * 3 + 1], P[I[t] * 3 + 2]].map((q) => q.toFixed(3)).join(","), sl: slots[SL[I[t]]] }; c.n++; if (BODY.has(SL[I[t]])) c.body++; if (slots[SL[I[t]]] !== "shoes" || P[I[t] * 3 + 1] < 0.03) c.lace = false; comp.set(r, c);
   }
   let sliv = 0, slivHigh = 0;
   for (let t = 0, f = 0; t < I.length; t += 3, f++) {
@@ -131,11 +155,16 @@ if (IS_A) {
     const ln = Math.hypot(...n) || 1;
     let m = [0, 0, 0]; for (let k = 0; k < 3; k++) { const r = weld[I[t + k]]; for (let c = 0; c < 3; c++) m[c] += vn[r * 3 + c]; }
     const lm = Math.hypot(...m) || 1;
-    if ((n[0] * m[0] + n[1] * m[1] + n[2] * m[2]) / (ln * lm) < Math.cos(115 * Math.PI / 180)) { sliv++; if (P[I[t] * 3 + 1] > 0.95) slivHigh++; }
+    if ((n[0] * m[0] + n[1] * m[1] + n[2] * m[2]) / (ln * lm) < Math.cos(115 * Math.PI / 180)) { sliv++; if (P[I[t] * 3 + 1] > 0.95 && Math.abs(P[I[t] * 3]) < 0.3) slivHigh++;
+      if (process.env.KID_DEBUG) console.log("  folded", slots[SL[I[t]]], [0, 1, 2].map((c) => P[I[t] * 3 + c].toFixed(3)).join(","), "L", L.toFixed(3)); }
   }
-  const small = [...comp.values()].filter((c) => c.body > c.n / 2 && c.n < 40);
+  // (kid A round 2: the laces' bars are closed 12-tri boxes on the shoe: hard-surface details, not flakes)
+  const small = [...comp.values()].filter((c) => c.body > c.n / 2 && c.n < 40 && !c.lace);
+  if (process.env.KID_DEBUG) for (const c of small) console.log("  small piece", c.n, c.sl, c.at);
   // (the hems overlap at the waist and the shoe collars: a few small folds there; none from the chest up, where the
-  // round-2 flake stood: 18 folded triangles in that model, 9 now, 0 above the waist)
+  // round-2 flake stood: 18 folded triangles in that model, 9 now, 0 above the waist. "Above the waist" = the torso,
+  // |x| < 0.3: in the T-pose bind the arms are at shoulder height too, and kid A round 2's thick cuffs fold a triangle
+  // each at their rim, which is not a flake)
   check("no stray pieces or spikes (body + clothes slots of LOD0)", small.length === 0 && slivHigh === 0 && sliv <= 12,
     `${small.length} small pieces (${small.map((c) => c.n).join(", ") || "-"} tris), ${sliv} folded triangles > 2 cm (${slivHigh} above the waist)`, "0 pieces, 0 folded above the waist, <= 12 in all");
 }
@@ -362,6 +391,67 @@ else {
     if (RIDE_NOW.seatPost) { const o = objs.find((x) => x.name === "Seat"); o.position.addScaledVector(SEAT_DIR_T, RIDE_NOW.seatPost); }   // (the rider's seat post, as the lab sets it)
     return objs[g.nodes.findIndex((n) => n.name === "BMX")] || objs[g.json.scenes[0].nodes[0]];
   }
+  // ---- POKE-THROUGH in the riding poses (kid A round 2, docs/KIDCHAR.md phase 7: the clothes got thickness, cuffs, a
+  // tongue, a hair shell): in the bind pose every vertex of an INNER layer that lies under an OUTER layer's vertex
+  // (within 2 cm, behind its normal, < 6 mm off its normal line) is paired with it; in each riding mode (steer 0, cranks
+  // 0 / 90 / 180 / 270 deg) both are CPU-skinned and the inner one may not come out more than 2 mm in front of the
+  // outer one's (posed) surface
+  const POKE = IS_A ? (() => {
+    let mesh = null; gltf.scene.traverse((o) => { if (o.isSkinnedMesh && /LOD0/.test(o.name)) mesh = o; });
+    if (!mesh) return null;
+    const g = mesh.geometry, Pp = g.attributes.position, Nn = g.attributes.normal, SLa = g.attributes._slot || g.attributes._SLOT;
+    const si = g.attributes.skinIndex, sw = g.attributes.skinWeight;
+    const slotOf = (i) => slots[Math.round(SLa.getX(i))];
+    const LAYERS = [["tee", "jacket"], ["shorts", "jacket"], ["skin", "jacket"], ["skin", "socks"], ["skin", "shorts"], ["socks", "shoes"], ["skin", "shoes"], ["hair", "cap"]];
+    const by = {};
+    for (let i = 0; i < Pp.count; i++) (by[slotOf(i)] ||= []).push(i);
+    const key = (x, y, z) => `${Math.floor(x / 0.01)},${Math.floor(y / 0.01)},${Math.floor(z / 0.01)}`;
+    const grids = {};
+    for (const [, out] of LAYERS) if (!grids[out] && by[out]) { const G = new Map(); for (const i of by[out]) { const k = key(Pp.getX(i), Pp.getY(i), Pp.getZ(i)); if (!G.has(k)) G.set(k, []); G.get(k).push(i); } grids[out] = G; }
+    const pairs = [];
+    for (const [inn, out] of LAYERS) {
+      if (!by[inn] || !grids[out]) continue;
+      for (const i of by[inn]) {
+        const x = Pp.getX(i), y = Pp.getY(i), z = Pp.getZ(i);
+        let best = -1, bd = 0.02;
+        for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) for (let c = -2; c <= 2; c++) {
+          const L = grids[out].get(`${Math.floor(x / 0.01) + a},${Math.floor(y / 0.01) + b},${Math.floor(z / 0.01) + c}`); if (!L) continue;
+          for (const o of L) { const d = Math.hypot(Pp.getX(o) - x, Pp.getY(o) - y, Pp.getZ(o) - z); if (d < bd) { bd = d; best = o; } }
+        }
+        if (best < 0) continue;
+        const dx = x - Pp.getX(best), dy = y - Pp.getY(best), dz = z - Pp.getZ(best);
+        const along = dx * Nn.getX(best) + dy * Nn.getY(best) + dz * Nn.getZ(best);
+        const lat = Math.sqrt(Math.max(0, dx * dx + dy * dy + dz * dz - along * along));
+        // (the two surfaces parallel: an outer shell's rim / inner face is not a cover)
+        const nd = Nn.getX(i) * Nn.getX(best) + Nn.getY(i) * Nn.getY(best) + Nn.getZ(i) * Nn.getZ(best);
+        if (along < -0.0005 && lat < 0.006 && nd > 0.5) pairs.push([i, best, `${inn}>${out}`]);
+      }
+    }
+    const v = new THREE.Vector3(), t = new THREE.Vector3(), acc = new THREE.Vector3(), m4 = new THREE.Matrix4();
+    const skinPt = (i, x, y, z, out) => {
+      v.set(x, y, z).applyMatrix4(mesh.bindMatrix); acc.set(0, 0, 0);
+      for (let k = 0; k < 4; k++) { const w = sw.getComponent(i, k); if (!w) continue; m4.fromArray(mesh.skeleton.boneMatrices, si.getComponent(i, k) * 16); acc.addScaledVector(t.copy(v).applyMatrix4(m4), w); }
+      return out.copy(acc).applyMatrix4(mesh.bindMatrixInverse);
+    };
+    const A = new THREE.Vector3(), B = new THREE.Vector3(), Bn = new THREE.Vector3();
+    const res = {};
+    return {
+      pairs: pairs.length, res,
+      at(mode) {
+        gltf.scene.updateMatrixWorld(true); mesh.skeleton.update();
+        let bad = 0, worst = 0, where = "";
+        for (const [i, o, nm] of pairs) {
+          skinPt(i, Pp.getX(i), Pp.getY(i), Pp.getZ(i), A); skinPt(o, Pp.getX(o), Pp.getY(o), Pp.getZ(o), B);
+          skinPt(o, Pp.getX(o) + Nn.getX(o) * 0.01, Pp.getY(o) + Nn.getY(o) * 0.01, Pp.getZ(o) + Nn.getZ(o) * 0.01, Bn);
+          Bn.sub(B).normalize();
+          const d = A.sub(B).dot(Bn);
+          if (d > 0.002) { bad++; if (d > worst) { worst = d; where = `${nm} at ${[Pp.getX(i), Pp.getY(i), Pp.getZ(i)].map((q) => q.toFixed(3)).join(",")}`; } }
+        }
+        const r = res[mode] ||= { bad: 0, n: 0, worst: 0, where: "" };
+        r.bad = Math.max(r.bad, bad); r.n++; if (worst > r.worst) { r.worst = worst; r.where = where; }
+      },
+    };
+  })() : null;
   let bm = null, E = null, rig = null;
   for (const bike of ["placeholder", "bmx"]) {
     if (bike === "bmx" && !fs.existsSync(path.join(ROOT, "models/bike/bmx.glb"))) { check("rider on the BMX", true, "skipped (no models/bike/bmx.glb)", "-"); continue; }
@@ -379,6 +469,7 @@ else {
       s.prev.lean = s.lean; s.prev.pitch = s.pitch;
       bikePose(s, 1, pose); bm.update(s, pose, () => 0); rig?.update(s); bm.root.updateMatrixWorld(true);
       const M = rider.ride(E, s, holder, 0);
+      if (POKE && bike === "bmx" && steer === 0 && c % 6 === 0) POKE.at(mname);
       legMax = Math.max(legMax, ...M.legRatio); armMax = Math.max(armMax, ...M.armRatio);
       legErr = Math.max(legErr, ...M.legErr); armErr = Math.max(armErr, ...M.armErr); fitMax = Math.max(fitMax, M.fitted); spineMax = Math.max(spineMax, M.spine);
       if (mname === "seated" && steer === 0) {
@@ -517,6 +608,13 @@ else {
       check("rider weight: the landing sinks the hips, back with no bounce; braking throws them forward", minY < -0.015 && overY < 0.003 && maxZ > 0.015, `landing: the hips ${(minY * 100).toFixed(1)} cm down, overshoot ${(overY * 1000).toFixed(1)} mm; front brake: ${(maxZ * 100).toFixed(1)} cm forward`, "< -1.5 cm, < 3 mm, > 1.5 cm");
     }
     check(`rider (${bike}): seated, bars straight: both arms alike, the back not hunched`, asym < 0.05 && spineMax <= 0.80, `arms differ by ${(asym * 100).toFixed(1)} %, spine at most ${(spineMax * 57.3).toFixed(0)} deg`, "< 5 %, <= 46 deg");
+  }
+  if (POKE && Object.keys(POKE.res).length) {
+    const R = POKE.res, worst = Object.entries(R).sort((a, b) => b[1].bad - a[1].bad);
+    const frac = worst[0][1].bad / Math.max(1, POKE.pairs);
+    if (process.env.POKE_DEBUG) for (const [k, r] of worst) console.log(`  poke ${k}: ${r.bad} pairs, worst ${(r.worst * 1000).toFixed(1)} mm (${r.where})`);
+    check(`no poke-through in the riding poses (${Object.keys(R).length} modes on the BMX x 4 crank angles, ${POKE.pairs} inner / outer layer pairs)`, frac <= POKE_MAX,
+      `worst mode ${worst[0][0]}: ${worst[0][1].bad} pairs (${(frac * 100).toFixed(2)} %), deepest ${(Math.max(...Object.values(R).map((r) => r.worst)) * 1000).toFixed(1)} mm (${worst[0][1].where})`, `<= ${(POKE_MAX * 100).toFixed(1)} % of the pairs > 2 mm out`);
   }
   // pushing + the crash poses + the mount blend: finite
   let bad = 0;

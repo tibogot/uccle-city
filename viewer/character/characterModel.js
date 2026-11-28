@@ -33,7 +33,10 @@ export const CHARACTERS = {
   // THE MPFB KID (docs/KIDCHAR.md phase 2: the owner's candidate A, tools/blender/kidMakeHuman.py --game +
   // tools/characters/kidABuild.mjs): the same UAL rig + 33 clips, real proportions, one atlas (KTX2), 3 LODs.
   // Gaits: the old kid's x his leg-length ratio (1.07).
+  // (round 2 of the kid look, 2026-11-28: the clothes / hair / face as shapes; ?kidlook=r1 / old load round 1's mesh:
+  // the r1 files)
   kidA: { file: "kidA.glb", meta: "kidA.json", label: "The kid A (MakeHuman MPFB, UAL rig + clips, CC0)", system: "loco", kid: true, atlas: "kidA_atlas.ktx2", detail: "kidA_detail.ktx2", fabric: "kid_fabric.ktx2",
+    r1: { file: "kidA_r1.glb", meta: "kidA_r1.json", atlas: "kidA_r1_atlas.ktx2", detail: "kidA_r1_detail.ktx2" },
     move: { walk: 1.18, run: 4.25, sprint: 6.0, crouch: 0.77, accel: 12, decel: 14 } },
   hoodie: { file: "hoodie.glb", label: "Hoodie (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
   casual: { file: "casual.glb", label: "Casual (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
@@ -49,11 +52,17 @@ const LEG = (s) => ({ upper: `UpperLeg${s}`, lower: `LowerLeg${s}`, end: `LowerL
  */
 async function loadLoco(name, def, renderer = null) {
   const base = new URL("../../models/characters/", import.meta.url).href;
+  let look = null;
+  if (def.kid) {
+    const { KID_LOOK } = await import("../kid/kidModel.js");
+    look = KID_LOOK;
+    if (def.r1 && look !== "r2") def = { ...def, ...def.r1 };       // (?kidlook=r1 / old: round 1's mesh + maps)
+  }
   const [gltf, meta] = await Promise.all([new GLTFLoader().loadAsync(base + def.file), fetch(base + def.meta).then((r) => { if (!r.ok) throw new Error(`${def.meta} ${r.status}`); return r.json(); })]);
   let tris = 0, mesh = null, kid = null;
   if (def.kid) {
     const { prepareKid } = await import("../kid/kidModel.js");
-    kid = prepareKid(gltf, def.atlas ? { atlas: base + def.atlas, detail: def.detail && base + def.detail, fabric: def.fabric && base + def.fabric, renderer } : {}); tris = kid.tris[0];
+    kid = prepareKid(gltf, def.atlas ? { atlas: base + def.atlas, detail: def.detail && base + def.detail, fabric: def.fabric && base + def.fabric, renderer, look } : {}); tris = kid.tris[0];
   }
   gltf.scene.traverse((o) => { if (o.isSkinnedMesh && !mesh) mesh = o; });
   if (mesh && !kid) {
