@@ -72,8 +72,8 @@ Kid numbers (a ~11 year old, 40 kg + an 11 kg BMX): flat 25 km/h seated, 30.6 km
 | rear brake (held = skid) / front brake | S or Down (ramps in) / Q | LT / LB |
 | steer (lean) | A / D or Left / Right (ramped) | left stick X |
 | lean forward / back (manual, nose, air pitch) | Z / X (or I / K) | left stick Y |
-| crouch + hop (back slope: pump) | Space hold / release | A |
-| pump | C | B |
+| crouch + hop (back slope: a tap pumps, a charged release still pops: round 3) | Space hold / release | A |
+| pump (round 3, feel new: press on the back side of a roller / berm, let go on the face; one press = a 0.6 s stroke) | C | B |
 | trick (air) | F | X |
 | reset / get up / camera / pause / spots | R / G / V / P / 1-9 (start, kicker, table, pump, roots, bowl, kerb, sand, ...); 0 / N / B the BMX park (the Park folder) | Back / - / Y |
 | get on / off the bike (claude/kid) | E (walk up to it; off when slow: stopped = it stands, rolling = it falls) | - |
@@ -650,3 +650,36 @@ on its face (the ledge rule) instead of a drop; the casual rider does not yet ri
     roll 0.15, FOV kick; never inside the kicker / table.
 13. **Gamepad**: stick expo, trigger pedal + brakes, A hop timing.
 14. Perf: the lab's `phys` ms in the panel's state line (target << 0.1 ms a frame); one tab only.
+
+## Bike lab 2: the BMX spot (2026-11-28, claude/bikelab2)
+debug/bikeLab.html now opens THE BMX SPOT (debug/bikeSpot.js; ?lab=old or ?city= the old test ground, debug/bikeLab.js
+unchanged): a compact 90s Brussels waste-ground spot, every line a few seconds from the next. World: viewer/bike/bikeSpot.js
+(heights, surfaces, paint weights, solids, colliders, edge layer, spots); meshes: viewer/bike/bikeSpotMeshes.js (one fine
+0.25 m ground grid + a far 4 m grid cut out under it, solids as side profiles extruded with a 12 mm bevel, a 2 cm toe plate
+so no top is ever coplanar with the ground, every piece closed and standing on the ground); look: debug/bikeSpotLook.js
+(the city's lighting / sky / post, CC0 scans blended by soft paint weights, grass blades, stylised trees, terraces on the
+hills). Obstacles: funbox + rail, quarter pipe (2.1 m R, 80 deg) with coping, ledge, manual pad, stair block + handrail, two
+wooden kickers to landings, dirt pump-track loop with berms, dirt table, whoops, a hill, a gravel drift pad with cones.
+Gate row `bikespot` (tools/bike/spotTest.mjs): the meshes closed / grounded / tops = ridden height / no coplanar ground,
+and a scripted ride over every obstacle.
+
+### Round 3: drop-offs, landings, pumping, the drift, polish (2026-11-28, rule bike-drop-off-rolls-on)
+Owner (round 2 "way better"): riding OFF a low box over a sharp edge crashed. Root causes (a sweep of every solid's top
+ridden off in 8 directions: 204 crashes): the endo rule fired as the rear left the edge (front already down in the gap,
+judged against the landing face ahead); the side panels caught a wheel leaving the top and pushed it back in ("hit a
+wall" / stuck); the ramp-follow kept a bike leaving a ramp's side nose-up and the loop-out read the edge as a slope.
+Fixes (both feels, BIKE_FLOW in bikePhysics.js, the lab's "Bike: flow (round 3)" folder): `dropGrace` 0.6 s / `dropNose`
+0.3 rad after a wheel rolls off an edge, `endoBack` 0.3 rad/s (no endo while the nose comes back up), the spot's side
+panels ONE-WAY (`col.oneWay`, bikeSpot.js withOneWay), `faceCrashH` 0.25 m (a frontal face crashes only over the axle),
+`popDetach` 0.25 s (the ramp-follow no longer swallows a hop) and, feel new, `chargedPop` 0.35 (a charged release on a
+back slope pops). Feel "new" (bikeFeel.js; ?feel=old keeps the old):
+
+| | tunables (feel new) | what it does |
+|---|---|---|
+| landings | transGain 2.0, flatLoss 0.12, flatH 0.5 m, flatWobble 0.45, noseBail 0.85, yawBail 0.75 | a clean landing on a down slope keeps its speed + transGain x slope (the small kicker: +0.24 m/s); a flat one from 0.5 m loses 5-12 % and wobbles; nose down past 49 deg / crossed past 43 deg bails |
+| pumping | pumpPush 7, pumpFace 0.35, pumpStroke 0.6 s, pumpBerm 0.6, pumpVmax 9 | C pressed on the back side of a roller / bump (and stroked round a berm) pushes the bike down it; still held on the face it costs; one press pushes 0.6 s (the legs' stroke): rhythm, not holding. Pumped with no pedalling the pump track keeps 4.5 m/s for 20 s (95 m) vs 26 m coasting; C held all lap = coasting |
+| drift | driftAngle 0.8 rad, driftBoost 1.3 m/s, driftMinT 0.45 s | in a skid the steer ASKS a slide angle (full lock ~45 deg, a tap / half ~18 deg), let go and the bike straightens; a slide held 0.45 s and exited straight (< 15 deg within 0.8 s) gets the boost (the lab's banner "clean drift") |
+
+Polish: the dust puffs fade in / out with a per-puff opacity (peak 0.2, 0.3-0.8 s, softer rim, a little emissive: no dark disc in shade); the skid marks lie in the
+ground's plane (debug/bikeSpotFx.js streakBasis); the hills' houses got stone cornices, capped brick chimneys and zinc
+dormers with windows (bikeSpotMeshes.js houseDetails: closed boxes sunk into the body / roof). All in `bikespot`.

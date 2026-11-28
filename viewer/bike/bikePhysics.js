@@ -77,6 +77,15 @@ export const BIKE = {
   brakeRear: 4.6,       // m/s^2
   skidAt: 0.85,         // rear lever over this locks the rear (a skid, on purpose)
   skidMu: 0.75,         // sliding grip / static grip
+  // (bike lab 2, the BMX skid drift: the defaults are the old skid; the lab's "new" feel sets the power-slide)
+  skidLat: 0.35,        // x the side grip while the rear is locked (lower: the tail slides out further)
+  skidLoose: 1.0,       // x skidLat more on loose ground (dirt, gravel, grass, sand): the brutal slide on the gravel pad
+  skidBrake: 1.0,       // x the locked rear's braking (lower: a power-slide keeps its speed)
+  skidSteerLock: 0,     // 1: the rear brake held + steer locks the rear at once (no lever ramp): the drift on S + A / D
+  slideOut: 1.15,       // rad: a skid past this slip angle over 4 m/s = "slid out" (a crash)
+  skidCarry: 0,         // rad/s: in a skid the rolling front wheel turns the momentum toward the heading (a power-slide
+                        // goes ROUND instead of scrubbing to a stop); and for 0.7 s after a skid the sideways slide is
+                        // the drift's, not a wash-out (0: the old skid)
   grip: 1.0,            // x every surface's grip
   // steering / lean
   maxLean: 0.65,        // rad (37 deg)
@@ -194,6 +203,44 @@ export const BIKE_PARK = {
   wallLift: 1.2,        // m/s up at least onto the wall (carving up it)
 };
 const PK = BIKE_PARK;
+/** BIKE LAB ROUND 3 (2026-11-28): the drop-off fixes and the flow feel (landings, pumping, the drift). Their own object
+ *  (BIKE is at 123 properties: past ~128 its reads in the step allocate). The DEFAULTS are the fixes ON and the feel
+ *  OFF (the city's kid, the tests and ?feel=old ride the old feel with the fixes); bikeFeel.js "new" sets the feel. */
+export const BIKE_FLOW = {
+  // ---- the drop-off fixes (owner 2026-11-28: "riding OFF the top of a low obstacle must not crash")
+  dropGrace: 0.6,       // s after a wheel rolls off an edge (its ground falls > stepRoll in one step): the endo rule
+                        // (front wheel down, rear up = over the bars) is the bail limit + dropNose, not endo
+  dropNose: 0.3,        // rad more nose-down allowed in that window (a front wheel dropping first is not an endo)
+  faceCrashH: 0.25,     // m: a face met square at speed crashes only when higher than this: the axle (wheelR 0.254);
+                        // a lower one the wheel cannot climb stops the bike (was 0.1)
+  endoBack: 0.3,        // rad/s: past the endo limit, a nose already coming back up faster than this is not an endo
+  popDetach: 0.25,      // s after a pop the transition does not hold the bike (it swallowed the hop's lift on a ramp)
+  chargedPop: 2,        // preload over which a release on a back slope is still a POP, under it a pump (2: never)
+  // ---- landings (feel "new"; 0 = off)
+  transGain: 0,         // m/s gained landing cleanly on a down slope, per unit of slope (capped at slope 1)
+  flatLoss: 0,          // fraction of speed lost by a flat (< 7 deg) landing from flatH, more from higher
+  flatH: 0.5,           // m of drop from which a flat landing costs flatLoss and wobbles
+  flatWobble: 0,        // wobble (0..1) of a flat landing from 2 x flatH
+  // ---- pumping (feel "new"): C held = the legs pushing the bike down the back side of a roller / a bump
+  pumpPush: 0,          // m/s^2 per unit of back slope under a wheel while C is held (a pump track's free speed)
+  pumpFace: 0.35,       // x pumpPush lost per unit of up slope while C is still held on a face (timing matters)
+  pumpVmax: 9,          // m/s: the push fades out toward this speed
+  pumpStroke: 0.6,      // s one press pushes (the legs' stroke); held longer the push stops until C is pressed again
+  pumpBerm: 0.6,        // x pumpPush per unit of bank (the normal's sideways part) while turning on a berm with C held
+  // ---- the drift (feel "new")
+  driftAngle: 0,        // rad: the slide angle the steer asks at full lock in a skid (0: the old open yaw)
+  driftLean: 0,         // x driftAngle more with the lean back (X), less with the lean forward (Z)
+  driftBoost: 0,        // m/s at a clean exit (the skid let go, the bike straight < 15 deg within 0.8 s) after driftMinT
+  driftMinT: 0.45,      // s of sliding (> 20 deg) a drift needs for the boost
+};
+const FL = BIKE_FLOW;
+/** panel ranges of BIKE_FLOW: key -> [min, max, step, group] */
+export const BIKE_FLOW_RANGES = {
+  dropGrace: [0, 1.5, 0.05, "flow"], dropNose: [0, 0.8, 0.01, "flow"], endoBack: [-1, 3, 0.05, "flow"], faceCrashH: [0.05, 0.6, 0.01, "flow"], popDetach: [0, 0.6, 0.01, "flow"], chargedPop: [0, 2, 0.01, "flow"],
+  transGain: [0, 3, 0.05, "flow"], flatLoss: [0, 0.5, 0.01, "flow"], flatH: [0.1, 2, 0.05, "flow"], flatWobble: [0, 1, 0.05, "flow"],
+  pumpPush: [0, 12, 0.1, "flow"], pumpFace: [0, 1.5, 0.05, "flow"], pumpVmax: [3, 15, 0.1, "flow"], pumpBerm: [0, 2, 0.05, "flow"], pumpStroke: [0.1, 2, 0.05, "flow"],
+  driftAngle: [0, 1.1, 0.01, "flow"], driftLean: [0, 1, 0.05, "flow"], driftBoost: [0, 3, 0.05, "flow"], driftMinT: [0, 1.5, 0.05, "flow"],
+};
 /** panel ranges of BIKE_PARK: key -> [min, max, step, group] */
 export const BIKE_PARK_RANGES = {
   faceAbrupt: [1.2, 6, 0.1, "park"], transFollow: [0, 1, 0.05, "park"], transSlope: [0.05, 2, 0.01, "park"], vertSlope: [1, 4, 0.05, "park"], vertBack: [0, 1.5, 0.05, "park"], bankLean: [0, 1.5, 0.05, "park"],
@@ -211,7 +258,7 @@ export const BIKE_RANGES = {
   legRange: [0, 0.3, 0.01, "contacts"], legRate: [2, 30, 0.5, "contacts"], pumpGain: [0, 120, 1, "contacts"],
   powerCruise: [40, 300, 5, "pedal"], powerSprint: [100, 700, 10, "pedal"], forceCruise: [1, 8, 0.1, "pedal"], forceSprint: [1, 10, 0.1, "pedal"],
   rollout: [3, 6, 0.01, "pedal"], cadenceMax: [80, 180, 1, "pedal"], drag: [0, 0.02, 0.0005, "pedal"], crouchDrag: [0, 0.5, 0.01, "pedal"],
-  brakeFront: [1, 10, 0.1, "brakes"], brakeRear: [1, 10, 0.1, "brakes"], skidAt: [0.3, 1, 0.01, "brakes"], skidMu: [0.3, 1, 0.01, "brakes"], grip: [0.3, 1.5, 0.01, "brakes"],
+  brakeFront: [1, 10, 0.1, "brakes"], brakeRear: [1, 10, 0.1, "brakes"], skidAt: [0.3, 1, 0.01, "brakes"], skidMu: [0.3, 1, 0.01, "brakes"], skidLat: [0.05, 1, 0.01, "brakes"], skidLoose: [0.2, 1, 0.01, "brakes"], skidBrake: [0.1, 1, 0.01, "brakes"], skidSteerLock: [0, 1, 1, "brakes"], slideOut: [0.8, 1.6, 0.01, "brakes"], skidCarry: [0, 6, 0.1, "brakes"], grip: [0.3, 1.5, 0.01, "brakes"],
   maxLean: [0.3, 1.0, 0.01, "steer"], leanRate: [1, 20, 0.5, "steer"], leanV0: [0, 4, 0.1, "steer"], leanV1: [1, 10, 0.1, "steer"],
   lowSteer: [0.2, 1.2, 0.01, "steer"], barV0: [0, 4, 0.1, "steer"], barV1: [1, 8, 0.1, "steer"], yawResponse: [2, 30, 0.5, "steer"],
   tyreRate: [5, 60, 1, "steer"], skidYaw: [0, 4, 0.1, "steer"], washSlip: [0.5, 4, 0.1, "steer"], washTime: [0.05, 1, 0.05, "steer"],
@@ -263,6 +310,8 @@ export function createBikeState(x, z, heading, groundY = 0, B = BIKE) {
     // to dictionary mode and every number stored allocated: the zero-garbage check's flat ground 0 -> 16)
     park: { vertT: -1.5, vertDur: 0.5, vertH: 0.5, vertP: 0.5, vertDir: 1, verts: 0, wallIdx: -1, wallT: 0.5, wallV: 0.5, wallDir: 1, wallSide: 1, wallU: 0.5, wallrides: 0, wallExit: "",
       attached: 0, attV: 0.5, attMax: 0.5, attLast: -9.5, unleanT: 0 },
+    // (round 3, BIKE_FLOW: its own object as park; doubles initialised as doubles)
+    flow: { dropT: -0.5, drops: 0, pumpHeld: 0.5, driftT: -0.5, exitT: -0.5, exitAmt: 0.5, boosts: 0, pumpGain: 0.5, transGain: 0.5, flats: 0 },
     skid: false, wheelspin: false, frontLock: false, slip: 0, slipAngle: 0, washT: 0, buzz: 0,
     manual: 0, pushing: false, pushT: 0, footDown: 1, grade: 0, walkPhase: 0, trick: 0,
     crashed: false, crashT: 0, crashCause: "", crashes: 0, rider: { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 },
@@ -271,6 +320,7 @@ export function createBikeState(x, z, heading, groundY = 0, B = BIKE) {
     yLow: groundY, t: 0, steps: 0, _prepX: NaN, _prepZ: NaN,
     prev: { x, y: groundY + restHeight(B), z, heading, lean: 0, pitch: 0 },
   };
+  s.flow.pumpGain = 0; s.flow.transGain = 0; s.flow.pumpHeld = 0;      // (telemetry: m/s gained; the fields already doubles)
   return s;
 }
 
@@ -519,6 +569,10 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   // (after a pop the kid pulls the bike up under him while rising: the wheels tuck)
   const legT = hop || s.hopBuf > 0 ? -1 : s.popT > 0 ? 1 : !grounded && s.hopT < 0.6 && s.vy > -1.5 ? -1 : pump > 0 ? pump : 0;
   s.hopT += dt; s._catchT = (s._catchT || 0) - dt; s._bonkT = (s._bonkT || 0) - dt;
+  s.flow.dropT -= dt; s.flow.exitT -= dt;
+  // (round 3, the pump's STROKE: the legs extend once per press - C pushes for pumpStroke s, then the legs are long;
+  // let go and press again on the next back side: the rhythm is the skill, holding C all lap gains nothing more)
+  s.flow.pumpHeld = pump > 0 ? s.flow.pumpHeld + dt : 0;
   const nl = s.legs + (legT - s.legs) * (1 - Math.exp(-B.legRate * dt));
   s.legSpeed = (nl - s.legs) / dt;
   // crouching on the ground lowers the BODY (the wheels stay on the ground); extending pushes the ground (a force)
@@ -534,7 +588,9 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   if (hop && s.hopBuf > 0) s.hopBuf = 0;            // pressed again while held: preloading again (the preload kept)
   if (!hop && s.hopHeld) {
     if (s.sinceContact <= B.coyote && s.preload > 0.04 && !s.pushing) {
-      const back = Math.min(s.slope[0], s.slope[1]) < -0.12 && grounded;
+      // (round 3: a CHARGED release is a pop on a back slope too - a ramp's down side, a landing - only a short tap
+      // there is a pump: the charged hop was swallowed on and off the ramps)
+      const back = Math.min(s.slope[0], s.slope[1]) < -0.12 && grounded && s.preload < FL.chargedPop;
       if (back) { s.pumps++; s.popT = 0.18; }
       else {
         let wait = 0;
@@ -566,7 +622,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   // scratch object; the phases are called with objects only)
   const w = W;
   w.vF = vF; w.vL = vL; w.fx = fx; w.fz = fz; w.lx = lx; w.lz = lz; w.steer = steer; w.pedal = pedal; w.leanIn = leanIn;
-  w.bF = bF; w.bR = bR; w.sprint = sprint; w.grounded = grounded; w.blocked0 = s.blocked;
+  w.bF = bF; w.bR = bR; w.sprint = sprint; w.pump = s.flow.pumpHeld < FL.pumpStroke ? pump : 0; w.grounded = grounded; w.blocked0 = s.blocked;
   if (facePhase(s, w, env, B)) return s;
   if (contactPhase(s, w, env, B, S)) return s;
   motionPhase(s, w, B);
@@ -576,7 +632,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
 
 /** the step's shared values (doubles initialised as doubles: V8 keeps them unboxed in place) */
 const W = { vF: 0.5, vL: 0.5, fx: 0.5, fz: 0.5, lx: 0.5, lz: 0.5, aF: 0.5, aY: 0.5, alpha: 0.5, retard: 0.5, brakes: 0.5, aL: 0.5, drive: 0.5, fnF: 0.5, fnR: 0.5, muF: 0.5, muR: 0.5,
-  v: 0.5, steer: 0.5, pedal: 0.5, leanIn: 0.5, bF: 0.5, bR: 0.5, up: 0.5, contactNow: false, footHold: false, sprint: false, grounded: false, landCheck: false, blocked0: 0 };
+  v: 0.5, steer: 0.5, pedal: 0.5, pump: 0.5, leanIn: 0.5, bF: 0.5, bR: 0.5, up: 0.5, contactNow: false, footHold: false, sprint: false, grounded: false, landCheck: false, blocked0: 0 };
 
 /** stepBike, part 1: the ground under the wheels and where they go (the face test: kerbs, the kerb catch, bonks).
  *  true = the step ended (a crash) */
@@ -589,6 +645,9 @@ function facePhase(s, w, env, B) {
   for (let i = 0; i < 2; i++) {
     const wx = s.x + fx * RF[i], wz = s.z + fz * RF[i], wy = s.y + RU[i];
     GP.x = wx; GP.z = wz; groundAt(env, Q[i]);
+    // (round 3, the drop-off) a wheel that was on the ground rolled off an edge: its ground fell more than it rolls
+    // in one step - the bike is dropping off a ledge / a box, not balancing on its front wheel (the endo rule waits)
+    if (s.contact[i] && s.ground[i] - Q[i].h > B.stepRoll && FL.dropGrace > 0) { if (!(s.flow.dropT > 0)) s.flow.drops++; s.flow.dropT = FL.dropGrace; }
     s.wheelY[i] = wy;
     GP.x = wx + dx; GP.z = wz + dz;
     const qn = groundAt(env, QN[i]);
@@ -659,7 +718,9 @@ function facePhase(s, w, env, B) {
           break;
         }
         // the front wheel square into a face it cannot climb: it stops the bike (or the kid goes over the bars)
-        if (vF > B.faceCrash && rise > 0.1) { s.blocked++; crash(s, "front wheel hit the kerb"); s.vx *= 0.3; s.vz *= 0.3; return true; }
+        // (round 3: a crash only on a face higher than faceCrashH - the axle in the feel "new" - met square at speed;
+        // a lower one the wheel cannot climb stops the bike, a bounce back)
+        if (vF > B.faceCrash && rise > FL.faceCrashH) { s.blocked++; crash(s, "front wheel hit the kerb"); s.vx *= 0.3; s.vz *= 0.3; return true; }
         s.vx -= fx * vF * 1.15; s.vz -= fz * vF * 1.15;       // a small bounce back
         s.pitchVel -= Math.min(3, vF * 0.6);
         s.blocked++;
@@ -741,6 +802,17 @@ function contactPhase(s, w, env, B, S) {
     const ext = s.legSpeed * B.legRange;          // m/s, > 0 extending
     if (ext > 0 && sl < 0) aF += B.pumpGain * ext * -sl * 0.5;
     else if (ext < 0 && sl > 0) aF += B.pumpGain * -ext * sl * 0.25;
+    // (round 3, PUMPING: C held = the legs and arms pushing the bike DOWN the back side of a roller: a steady push along
+    // it, per unit of back slope, fading toward pumpVmax; still held on the next face it costs (pumpFace): press on the
+    // back sides, let go on the faces - the pump track's rhythm, no pedalling)
+    if (w.pump > 0 && FL.pumpPush > 0 && vF > 0.5) {
+      const fade = vF >= FL.pumpVmax ? 0 : 1 - vF / FL.pumpVmax, sl1 = sl < -1 ? -1 : sl > 1 ? 1 : sl;
+      let a = sl1 < -0.04 ? FL.pumpPush * w.pump * -sl1 * fade * 0.5 : sl1 > 0.04 ? -FL.pumpPush * FL.pumpFace * w.pump * sl1 * 0.5 : 0;
+      // (and a BERM pumped: turning on a bank, C pushes the bike into it - the turn's exit speed)
+      const bankN = q.nx * lx + q.nz * lz, bk = bankN < 0 ? -bankN : bankN;
+      if (bk > 0.1 && (s.yawVel > 0.3 || s.yawVel < -0.3)) a += FL.pumpPush * FL.pumpBerm * w.pump * bk * fade * 0.5;
+      aF += a; s.flow.pumpGain += a * DT;
+    }
     alpha += (RF[i] * Fn * nU - RU[i] * Fn * nF);
     // rolling resistance + soft ground (sand sinks) + brakes: retarding, horizontal
     let r = surfP.roll * Fn + surfP.sink * v * (Fn / (g / 2)) * 0.5;
@@ -751,8 +823,8 @@ function contactPhase(s, w, env, B, S) {
       brake = Math.min(brake, mu * Fn);
     } else {
       brake = bR * B.brakeRear;
-      const lock = (bR > B.skidAt || brake > mu * Fn) && v > 1.2;
-      if (lock) { brake = mu * B.skidMu * Fn; s.skid = true; }
+      const lock = (bR > B.skidAt || brake > mu * Fn || (B.skidSteerLock > 0 && bR > 0.4 && Math.abs(w.steer) > 0.4 && v > 2)) && v > 1.2;
+      if (lock) { brake = mu * B.skidMu * Fn * B.skidBrake; s.skid = true; }
       brake = Math.min(brake, mu * Fn);
       // pedalling: the rear wheel pushes (power over speed, a force cap, spinning out at the top cadence)
       if (pedal > 0 && !s.pushing && !lock) {
@@ -892,7 +964,13 @@ function motionPhase(s, w, B) {
     // (forgiving falls) never asking more side grip than the surface has (the handlebar's turn at walking pace was not
     // limited: a full lock at 3 m/s on sand slid the bike out, "washed out"); a skid steers past it on purpose
     { const cap = (muLean + Math.tan(bank)) * g * 0.92 / (v > 0.5 ? v : 0.5); if (yaw > cap) yaw = cap; else if (yaw < -cap) yaw = -cap; }
-    if (s.skid) yaw += steer * B.skidYaw * smooth(1.5, 6, v);
+    if (s.skid && FL.driftAngle > 0) {
+      // (round 3, THE DRIFT: the steer (and the lean, X back = wider, Z forward = tighter) ASKS a slide angle - a tap a
+      // small one, held the full driftAngle - and the tail is swung toward it; let go and the bike straightens)
+      const want = steer * FL.driftAngle * (1 + FL.driftLean * w.leanIn), cur = -s.slipAngle;
+      let e = (want - cur) / 0.15; e = e > 1.5 ? 1.5 : e < -1.5 ? -1.5 : e;
+      yaw += e * B.skidYaw * smooth(1.5, 6, v);
+    } else if (s.skid) yaw += steer * B.skidYaw * smooth(1.5, 6, v);
     if (s.contact[1] && !s.contact[0]) yaw *= 0.6;        // manual: steering by leaning only
     s.yawVel += (yaw - s.yawVel) * (1 - Math.exp(-B.yawResponse * dt));
     // (the bars as drawn: eased, and never turned faster than a kid turns them, 4 rad/s - feel round 4: a full lock at a
@@ -928,6 +1006,12 @@ function motionPhase(s, w, B) {
   fx = Math.sin(s.heading); fz = Math.cos(s.heading);
   const nlx = fz, nlz = -fx;
   vF = s.vx * fx + s.vz * fz; vL = s.vx * nlx + s.vz * nlz;
+  // (the skid drift) the front wheel, still rolling, carries the momentum round toward the heading
+  if (s.skid) s._skidT = 0; else s._skidT = (s._skidT ?? 9) + dt;
+  if (contactNow && s.skid && B.skidCarry > 0 && v > 0.5) {
+    const ang = Math.atan2(vL, vF), da = clamp(-ang, -B.skidCarry * dt, B.skidCarry * dt), c = Math.cos(da), sn = Math.sin(da);
+    const f2 = vF * c - vL * sn, l2 = vF * sn + vL * c; vF = f2; vL = l2;
+  }
   // the tyres take out the sideways slip within the grip left (friction circle)
   if (contactNow) {
     const load = Math.min(1, (fnF + fnR) / g);
@@ -937,7 +1021,7 @@ function motionPhase(s, w, B) {
     // grip away and every turn washed out)
     const longA = Math.min(mu * g, w.brakes + drive);
     let lat = Math.sqrt(Math.max(0, (mu * g) ** 2 - longA * longA)) * load;
-    if (s.skid) lat *= 0.35;
+    if (s.skid) lat *= B.skidLat * (s.surf[1] >= 2 ? B.skidLoose : 1);
     if (s.frontLock) lat *= 0.5;
     lat *= 1 - B.wobbleGrip * wob;
     vL += w.aL * dt;                    // (the park: the bank's sideways push, before the tyres take out what is left)
@@ -947,9 +1031,18 @@ function motionPhase(s, w, B) {
     s.slipAngle = Math.atan2(vL, Math.max(0.3, Math.abs(vF)));
     // washing out: sliding sideways with no skid on purpose (too much lean for the surface, or a locked front)
     // (a slide along a wall the bike is scraping is the wall's, not a wash-out: owner round 2, 40 km/h down the hill lane)
-    if (!(s.wobbleT > 0) && !s.envContacts && ((Math.abs(vL) > B.washSlip && !s.skid) || (s.frontLock && Math.abs(s.lean) > 0.25))) { s.washT += dt; if (s.washT > B.washTime) { crash(s, "washed out"); } }
+    if (!(s.wobbleT > 0) && !s.envContacts && ((Math.abs(vL) > B.washSlip && !s.skid && !(B.skidCarry > 0 && s._skidT < 0.7)) || (s.frontLock && Math.abs(s.lean) > 0.25))) { s.washT += dt; if (s.washT > B.washTime) { crash(s, "washed out"); } }
     else s.washT = Math.max(0, s.washT - dt * 2);
-    if (s.skid && Math.abs(s.slipAngle) > 1.15 && v > 4 && !(s.wobbleT > 0)) crash(s, "slid out");
+    if (s.skid && Math.abs(s.slipAngle) > B.slideOut && v > 4 && !(s.wobbleT > 0)) crash(s, "slid out");
+    // (round 3, the drift's exit boost: a slide held driftMinT, then the brake let go and the bike straight (< 15 deg)
+    // within 0.8 s: driftBoost forward - the kid stamps on the pedals out of the turn)
+    if (FL.driftBoost > 0) {
+      const fl = s.flow, sa = s.slipAngle < 0 ? -s.slipAngle : s.slipAngle;
+      if (s.skid) { if (sa > 0.35) fl.driftT += dt; fl.exitT = -0.5; }
+      else if (fl.driftT >= FL.driftMinT) { fl.exitT = 0.8; fl.exitAmt = FL.driftBoost * Math.min(1, 0.5 + 0.5 * fl.driftT / FL.driftMinT / 2); fl.driftT = 0; }
+      else fl.driftT = 0;
+      if (fl.exitT > 0 && !s.skid && sa < 0.26 && vF > 1 && !s.crashed) { vF += fl.exitAmt; fl.exitT = -0.5; fl.boosts++; }
+    }
   } else { s.slip = 0; s.slipAngle = 0; }
   s.vx = fx * vF + nlx * vL; s.vz = fz * vF + nlz * vL;
   w.fx = fx; w.fz = fz;
@@ -1062,12 +1155,22 @@ function settlePhase(s, w, env, B, S) {
   // limits are the landing's bail limits)
   if (!s.crashed && contactNow) {
     const saving = s.wobbleT > 0;
-    const loop = saving ? Math.max(B.loopOut, B.tailBail) : B.loopOut, endo = saving ? Math.max(B.endo, B.noseBail) : B.endo;
+    const dropping = s.flow.dropT > 0;
+    // (round 3: the same for the manual's loop-out - off a ramp's side the front wheel drops, the rear holds on the ramp,
+    // and the rear's slope at the edge read as a steep back slope)
+    const loop = dropping ? Math.max(B.loopOut, B.tailBail) + FL.dropNose : saving ? Math.max(B.loopOut, B.tailBail) : B.loopOut;
+    // (round 3, the drop-off: just after a wheel rolled off an edge the front is down and the rear still up because the
+    // bike is DROPPING, not pitching over its front wheel: the limit is the landing's bail limit + dropNose, judged
+    // against level at most - a face ahead of the front wheel (a kicker's landing across the gap) is not its slope.
+    // Root cause of the owner's "riding off a low box crashes": rolled off the small kicker's lip at 2.2 m/s, the front
+    // in the gap, the rear leaving the lip: nose 36 deg vs the landing's face slope = "over the bars")
+    const endo = dropping ? Math.max(B.endo, B.noseBail) + FL.dropNose : saving ? Math.max(B.endo, B.noseBail) : B.endo;
     // (judged only when the rule can fire, and the slope re-measured only on a face: stepBike is too big for V8 to
     // inline these calls, and a call with doubles boxes them: two calls a step were half the step's garbage)
     const sR = s.slope[1], sF = s.slope[0];
     if (s.manual > 0.1) {
       let jR = sR; if (!(sR > -0.6 && sR < 0.6)) { JP.x = s.x - fx * B.wheelbase / 2; JP.z = s.z - fz * B.wheelbase / 2; JP.fx = fx; JP.fz = fz; JP.sl = sR; judgeSlopeP(env); jR = JP.r; }
+      if (dropping && jR < 0) jR = 0;
       if (s.pitch - Math.atan(jR) > loop) crash(s, "looped out");
     }
     if (!s.crashed && s.contact[0] && !s.contact[1]) {
@@ -1075,7 +1178,11 @@ function settlePhase(s, w, env, B, S) {
       // (the park: an endo needs momentum or the front brake - at walking pace a bike tipped onto its front wheel, rolled
       // into a face or off a kicker's back, is put back down by the kid's foot: rolling into the small kicker's landing
       // at 1.6 m/s threw him over the bars)
-      if (s.pitch - Math.atan(jF) < -endo) { if (v > 2 || w.bF > 0.3) crash(s, "over the bars"); else { s.pitchVel = Math.max(s.pitchVel, 0.5); } }
+      if (dropping && jF > 0) jF = 0;
+      // (round 3: and only while the nose is still going OVER - a bike whose rear is already swinging back down (the
+      // front wheel set down nose first off a drop, pitchVel > endoBack) lands on both wheels; past endo + 0.5 always)
+      const over = s.pitch - Math.atan(jF) + endo;
+      if (over < 0 && (s.pitchVel < FL.endoBack || over < -0.5)) { if (v > 2 || w.bF > 0.3) crash(s, "over the bars"); else { s.pitchVel = Math.max(s.pitchVel, 0.5); } }
     }
   }
 
@@ -1109,6 +1216,9 @@ function attachPhase(s, w, B) {
   // rigid bike on a 70 deg wall: the front's normal force, under the CoM, pitched it nose down and lifted it off the
   // curve - it climbed the wall at 45 deg and flew onto the deck. It lets go where the ground stops matching (the lip, a
   // crest): from there the ordinary air (a vert air off a near-vertical wall)
+  // (round 3: just after a pop the hop is the bike's: the transition held the bike on a ramp and overwrote the pop's
+  // lift with the ramp's own - the owner's "weak hop on ramps")
+  if (s.hopT < FL.popDetach) { s.park.attached = 0; return; }
   const sF = s.slope[0], sR = s.slope[1], aF0 = sF < 0 ? -sF : sF, aR0 = sR < 0 ? -sR : sR;
   const nearF = Q[0].h - s.wheelY[0] > -0.1, nearR = Q[1].h - s.wheelY[1] > -0.1;
   let chord = 0, mode = 0;
@@ -1410,7 +1520,10 @@ function landing(s, wheel, sl, vn, vL, vF, B) {
   const side = Math.atan2(vL, Math.max(0.1, Math.abs(vF))), yawOff = Math.abs(side), moving = hyp(vF, vL) > 2;
   const R = LAND_RULES;
   const kH = clamp((vn - 3) / 4, 0, 1);         // (forgiving falls: a hard impact lowers the nose limits)
-  R[0][1] = band(-rel, B.noseSketchy - 0.4 * B.noseHard * kH, B.noseBail - B.noseHard * kH);
+  // (round 3, the drop-off: a landing from a ROLLED drop - a wheel rolled off an edge dropT ago - has the kid's weight
+  // back already: the nose limit + dropNose; a front wheel set down first off a 1.2 m box at walking pace is sketchy)
+  const dropK = s.flow.dropT > 0 ? FL.dropNose : 0;
+  R[0][1] = band(-rel, B.noseSketchy - 0.4 * B.noseHard * kH, B.noseBail - B.noseHard * kH + dropK);
   R[1][1] = band(rel, B.tailSketchy, B.tailBail);
   R[2][1] = band(Math.abs(s.lean), B.leanSketchy, B.leanBail);
   R[3][1] = moving ? band(yawOff, B.yawSketchy, B.yawBail) : 0;
@@ -1425,7 +1538,7 @@ function landing(s, wheel, sl, vn, vL, vF, B) {
     if (sev > worst) { worst = sev; why = name; }
   }
   const bandName = cause ? "bail" : worst > 0 ? "sketchy" : "clean";
-  s.lastLanding = { t: s.t, wheel: wheel === 0 ? "front" : "rear", rel, vn, yaw: yawOff, air: s.airT, height: s.airMax - s.y,
+  s.lastLanding = { t: s.t, wheel: wheel === 0 ? "front" : "rear", rel, vn, slope: sl, yaw: yawOff, air: s.airT, height: s.airMax - s.y,
     lean: s.lean, band: bandName, severity: worst, why: cause || why, cause: cause || bandName };
   s.landings++;
   s.air = false; s.park.vertT = -1;
@@ -1438,6 +1551,19 @@ function landing(s, wheel, sl, vn, vL, vF, B) {
   if (cause) { crash(s, cause); return; }
   // flat landings cost forward speed (a landing on the down slope keeps it: vn is small there)
   let loss = B.landLoss * clamp((vn - 2) / Math.max(1, B.hardBail - 2), 0, 1);
+  // (round 3, the landings) a clean landing ON A DOWN SLOPE (a transition: a kicker's landing, a roller's back) keeps all
+  // its speed and turns a little of the fall into speed (transGain per unit of slope); a FLAT landing from flatH up
+  // costs flatLoss more (from 2 x flatH all of it) and wobbles (the kid's legs take it)
+  const drop = s.airMax - s.y;
+  if (worst === 0 && sl < -0.1 && FL.transGain > 0 && vF > 1) {
+    loss = 0;
+    const gain = FL.transGain * (sl < -1 ? 1 : -sl), k = (vF + gain) / vF;
+    s.vx *= k; s.vz *= k; s.flow.transGain += gain;
+  } else if (sl > -0.12 && sl < 0.12 && drop > FL.flatH && FL.flatLoss > 0) {
+    const f = clamp((drop - FL.flatH) / FL.flatH, 0, 1);
+    loss += FL.flatLoss * (0.4 + 0.6 * f); s.flow.flats++;
+    if (worst === 0 && FL.flatWobble > 0) { s.wobble = Math.max(s.wobble, FL.flatWobble * (0.4 + 0.6 * f)); s.wobbleDur = B.wobbleTime; s.wobbleT = s.wobbleDur; }
+  }
   if (worst > 0) {
     // SKETCHY: the wobble (stepBike), speed lost, and the kid's save (weight thrown against what went wrong)
     s.sketchy++; s.saveKind = why === "looped out" ? 1 : 0;
