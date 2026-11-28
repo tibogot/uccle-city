@@ -81,7 +81,7 @@ import { addLamps } from "./lampLight.js";
 import { installWgslIntern } from "./wgslIntern.js";
 import { installPinBuilds } from "./pinBuilds.js";   // perf5: the shared materials' builds kept (rule shared-node-graph)
 import { installHeapDrop, dropAfterUpload, dropTextureData, heapOn } from "./heapDrop.js";   // heap: CPU copies let go after their upload (docs/HEAP.md)
-import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp, RETIRE_WARM, fadeVariant } from "./lodFade.js";
+import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp, RETIRE_WARM, fadeVariant, fadeShadowProxies, FADE_SHADOW_WARM, splitFadeShadow } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
@@ -185,7 +185,24 @@ let compileFor = null;
 // of every rail part (viewer/rail/railway.js railWarmData) as soon as the precompile queue exists: the play loader waits
 // for the queue, so the rail materials' first node builds (40-61 ms, at the first rail tile landing ~7 s into a police
 // drive) are done before the game starts; the stand-in is never in the scene (roSweep releases it, its builds pinned)
-let railWarmed = false, kitShadowWarmed = false;
+// (claude/perf7b: opt-in ?fadesharedfirst=1, re-timed 2026-11-28 docs/perf/QUIET_2026-11-27.md 3c: the hold no shorter
+// (the fading copies' warm-ups were never the last condition), the drive's frames no better with the late queue)
+const FADE_SHARED_FIRST = params.get("fadesharedfirst") === "1";
+/** (claude/perf7 option 2, ?fadesharedfirst=1) the play loader's tiles' OWN fading copies' shadow stand-ins: warmed after
+ *  play, one mesh a batch (warmup.js warmShadows perFrame 1: one 1-7 ms build at most per sun pass), in the order queued */
+const lateFadeQ = [];
+let lateFadeRunning = false;
+function lateFadeShadow(groups) {
+  lateFadeQ.push(...groups);
+  if (lateFadeRunning || !shadowWarmSlow) return;
+  lateFadeRunning = true;
+  (async () => {
+    while (playLoader.active) await new Promise((r) => setTimeout(r, 500));
+    while (lateFadeQ.length) await shadowWarmSlow(lateFadeQ.splice(0));
+  })().finally(() => { lateFadeRunning = false; });
+}
+let shadowWarmSlow = null;
+let railWarmed = false, kitShadowWarmed = false, fadeShadowLeft = 0;   // (fadeShadowLeft: the play loader's tiles' fading-copy shadow warm-ups still running, claude/perf7)
 const KIT_SHADOW_WARM = params.get("kitshadowwarm") !== "old";
 const RAIL_WARM = GAME_START && params.get("railwarm") !== "old";
 const preCompile = async (roots, fading) => {
@@ -204,7 +221,10 @@ const preCompile = async (roots, fading) => {
   if (fp.length) await compileFor(fp, { first: true });
   // boot3 (docs/BOOT.md section 5; ?tileshadowwarm=0: off): the tile's shadow pass too (not in compileAsync), two meshes a
   // frame far under the city (warmup.js warmShadows): its first shadow node builds were one 60-100 ms frame at its landing
-  if (shadowWarm) await shadowWarm([...[].concat(roots), ...fp]);
+  // (claude/perf7, rule fade-shadow-warm) the shadow stand-ins of EVERY fading copy not shadow-warmed yet (new or not):
+  // fp holds only the copies made now, so a shared copy made under a cover was never warmed in the shadow pass
+  const sp = FADE_SHADOW_WARM ? [].concat(roots).map(fadeShadowProxies).filter(Boolean) : fp;
+  if (shadowWarm) await shadowWarm([...[].concat(roots), ...sp]);
 };
 let shadowWarm = null;
 const dropMat = (m) => { if (!m.userData?.shared) { dropFadeVariant(m); m.dispose?.(); } };
@@ -1311,6 +1331,17 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (holdFast && compileFor && TILE_FADE) {
     const fp = Object.values(own).map(fadeProxies).filter(Boolean);
     if (fp.length) compileFor(fp, { last: true }).catch(() => {});  // (background, not awaited; perf8: behind every other job, warmup.js FADE_LAST)
+    // (claude/perf7, rule fade-shadow-warm; ?fadeshadowwarm=old: as before) and their SHADOW pass, in the background too
+    // (not awaited: the play loader does not wait for it): without it the first tile fade while driving built the
+    // shared walls' fading copy in the sun's pass in that frame ("walls:fade" SH, 29-38 ms)
+    // (the play loader waits for all of them: areaReady's fadeShadowLeft. claude/perf7 option 2, opt-in ?fadesharedfirst=1:
+    // it waits for the SHARED copies' stand-ins only (walls, roofs, details, kit, the 20-34 ms builds), a tile's own copies
+    // (1-7 ms builds) warm after play, one a batch (lateFadeShadow). Re-timed on a quiet machine 2026-11-28 (QUIET 3c):
+    // the hold no shorter (the warm-ups finish before the ring's tiles), the drive's frames no better: not the default)
+    const sp = shadowWarm ? Object.values(own).map(fadeShadowProxies).filter(Boolean) : [];
+    const [spShared, spOwn] = FADE_SHARED_FIRST ? splitFadeShadow(sp) : [sp, []];
+    if (spShared.length) { fadeShadowLeft++; shadowWarm(spShared).finally(() => { fadeShadowLeft--; }); }
+    if (spOwn.length) lateFadeShadow(spOwn);
   }
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
@@ -1496,7 +1527,7 @@ async function main() {
 
   const scene = new THREE.Scene();
   const bootPipes = params.get("warmup") !== "0" ? openBootPipelines(renderer, scene) : null;   // ?warmup=0: old boot, for A/B
-  if (params.get("tileshadowwarm") !== "0") shadowWarm = (roots) => warmShadows(renderer, scene, roots).catch(() => {});   // boot3 (preCompile)
+  if (params.get("tileshadowwarm") !== "0") { shadowWarm = (roots) => warmShadows(renderer, scene, roots).catch(() => {}); shadowWarmSlow = (roots) => warmShadows(renderer, scene, roots, { perFrame: 1 }).catch(() => {}); }   // boot3 (preCompile); perf7: the late one, one mesh a batch
   setStagedShadowWarm((roots) => warmShadows(renderer, scene, roots, { perFrame: 1 }).catch(() => {}));   // (falconstutter: a staged landmark's released parts)
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
@@ -2560,10 +2591,11 @@ async function main() {
       // (perfgame round 2, ?settlejobs=loads: the far landmarks' COMPILE jobs are not waited for: 25-37 s
       // of serial compile queue after the cover; once loaded they compile in slices and show when done, the pipelines async)
       const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000 && !(NIGHT_HOLD && cityNight?.warmPending?.()));   // (perf8 ?nighthold=old: the lamp-shadow warm-up of what the area brought done too)
-      const gpuOk = st.jobs === 0 && st.pipes === 0 && settled;
+      const gpuOk = st.jobs === 0 && st.pipes === 0 && fadeShadowLeft === 0 && settled;
       q = tilesOk && gpuOk ? q + 1 : 0;
       // (perf8 debug: when each condition first held, ms after the start of the hold: window.__areaTrace)
-      { const tr = ((window.__areaTrace ||= {})[label || "?"] ||= {}), now = Math.round(performance.now() - t0); if (tilesOk) tr.tiles ??= now; if (st.jobs === 0) tr.nearJobs ??= now; if (st.pipes === 0) tr.pipes ??= now; if (gatesPending() === 0) tr.gates ??= now; if (settled) tr.settled ??= now;
+      { const tr = ((window.__areaTrace ||= {})[label || "?"] ||= {}), now = Math.round(performance.now() - t0); if (tilesOk) tr.tiles ??= now; if (st.jobs === 0) tr.nearJobs ??= now; if (st.pipes === 0) tr.pipes ??= now; if (gatesPending() === 0) tr.gates ??= now; if (settled) tr.settled ??= now; if (fadeShadowLeft === 0) tr.fadeShadow ??= now; if (tilesOk && gpuOk) tr.all ??= now;
+        if (fadeShadowLeft) delete tr.fadeShadow; if (!(tilesOk && gpuOk)) delete tr.all;
         if (!tilesOk) delete tr.tiles; if (st.jobs) delete tr.nearJobs; if (st.pipes) delete tr.pipes; if (!settled) delete tr.settled; tr.st = { ...st }; }
       holdThrottle = HOLD_THROTTLE && !(tilesOk && gpuOk);
       // the bar: tiles 70 %, shaders 25 %, the quiet frames the rest
@@ -2578,6 +2610,7 @@ async function main() {
     const r = { ms: Math.round(performance.now() - t0), frames, full: needFull.length, lite: needLite.length, ok: q >= quiet, ...st };
     log(`area ready${label ? ` (${label})` : ""}: ${r.ms} ms, ${r.full} full + ${r.lite} far tiles, ${frames} frames${r.ok ? "" : " (time limit)"}`);
     window.__areaReady = r;
+    { const tr = window.__areaTrace?.[label || "?"]; if (tr) { tr.end = r.ms; tr.ok = r.ok; } }
     return r;
   };
   // teleport: park the camera over the target (orbit), let the streaming load the tile under it (the orbit target

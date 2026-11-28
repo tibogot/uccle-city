@@ -40,10 +40,23 @@ for (const p of parts) p.fill([], eye);
 ok(view.mesh.visible === false, "no card instance: the view hidden (no empty render object)");
 ok(P0.box.every((x) => Number.isFinite(x)), "an empty part's box stays finite");
 
+// ---- 1b. (claude/perf7, rule tile-draws-merged) a tram tile's platform slabs + kerb edges: ONE mesh, one material for every
+// tile, each part's normals as before, its colour / roughness per vertex (the old materials' linear values)
+const TR = await imp("viewer/tram.js");
+const tri = (y) => [0, y, 0, 1, y, 0, 0, y, 1];
+const g1 = new THREE.Group(), g2 = new THREE.Group();
+const pm1 = TR.platformMesh(g1, [...tri(0.25), ...tri(0.25)], tri(0.26)), pm2 = TR.platformMesh(g2, tri(0.3), [...tri(0.31), ...tri(0.31)]);
+ok(TR.PLAT_ONE && g1.children.length === 1 && pm1.name === "tram-platforms" && pm1.castShadow && pm1.receiveShadow, "tram platforms: slabs + edges in ONE casting mesh named tram-platforms (?tramplat=old: two)");
+ok(pm1.material === pm2.material && pm1.material.userData.shared === true, "... one shared material for every tile (one node build)");
+const cA = pm1.geometry.attributes.aCol.array, rA = pm1.geometry.attributes.aRough.array, slabC = new THREE.Color(0x8d8c88), edgeC = new THREE.Color(0xc9c6bd);
+ok(Math.abs(cA[0] - slabC.r) < 1e-6 && Math.abs(cA[6 * 3] - edgeC.r) < 1e-6 && Math.abs(rA[0] - 0.85) < 1e-6 && Math.abs(rA[6] - 0.7) < 1e-6, "... the slab's and the edge's colour (linear, as material.color) and roughness per vertex");
+ok(pm1.geometry.attributes.position.count === 9 && pm1.geometry.attributes.normal.count === 9, "... both parts' triangles, their own normals");
+ok(TR.platformMesh(new THREE.Group(), [], []) === null, "... no platform: no mesh");
+
 // ---- 2. text
 const src = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const F = src("viewer/features.js");
-for (const k of ["fencecards", "propshide", "propsettle"]) ok(new RegExp(`old\\("${k}"`).test(F), `viewer/features.js has the ?${k}=old row`);
+for (const k of ["fencecards", "propshide", "propsettle", "tramplat"]) ok(new RegExp(`old\\("${k}"`).test(F), `viewer/features.js has the ?${k}=old row`);
 const pf = src("viewer/parkFence.js");
 ok(/const CARD_MERGE = qs\.get\("fencecards"\) !== "old";/.test(pf) && /if \(CARD_MERGE && multiDrawOK\(\)\)/.test(pf) && /cardSet \? new CardPart\(cardSet, k,/.test(pf) && /: new Stage\(`parkfence-\$\{p\}-card`, cardGeo\[p\], card,/.test(pf), "parkFence: the cards merged with the feature, the per-card stages without it (or ?fencecards=old)");
 const cp = src("viewer/props/cityProps.js");

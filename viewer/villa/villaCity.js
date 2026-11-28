@@ -20,7 +20,7 @@ import { VILLA_DECK, makeDriveDeck } from "./villaDeck.js";
 import { buildVillaCars } from "./villaCars.js";
 import { villaInLook } from "./villaInterior.js";
 import { VILLA_DIR } from "./villaGlass.js";
-import { SMOOTH, fadeProxies } from "../lodFade.js";
+import { SMOOTH, fadeProxies, fadeShadowProxies } from "../lodFade.js";
 import { openParallelPipelines } from "../../vendor/engine/parallelPipelines.js";
 import { Heightmap } from "../heightmap.js";
 import { liteShown } from "../liteShown.js";
@@ -102,6 +102,7 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
     const tw = performance.now();
     const meshes = [];
     for (const o of [root, parts, grounds.mesh, cars?.group, fp]) o?.traverse((q) => { if (q.isMesh) meshes.push(q); });
+    for (const r of [root, parts, cars?.group]) if (r) fadeShadowProxies(r)?.traverse((q) => { if (q.isMesh) meshes.push(q); });   // (claude/perf7, rule fade-shadow-warm: every fading copy x layout)
     const warm = await warmShadowPass(renderer, scene, meshes);
     const tWarm = performance.now() - tw;
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&

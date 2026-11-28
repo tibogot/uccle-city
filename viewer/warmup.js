@@ -494,6 +494,20 @@ export async function warmLater(renderer, scene, roots, compile, { perFrame = 2,
   await warmShadows(renderer, scene, roots, { perFrame });
 }
 /** the shadow-pass half of warmLater: `perFrame` shadow-casting meshes of `roots` a frame, far under the city */
+// (claude/perf7, rule fade-shadow-warm; ?shadowdrawn=old: two rAFs a batch, as before) A STAND-IN BATCH STAYS UNTIL THE SUN'S
+// PASS HAS DRAWN IT. Under the play loader the main loop renders one rAF in three (main.js holdThrottle), so a batch held
+// for two rAFs was often taken away before any shadow pass ran: the play loader's tiles' "walls:fade" stand-in was marked
+// warmed but never built, and the first tile fade while driving built it on screen (34 ms, police drive 2026-11-27).
+// Now: two rAFs, then more until the sun's shadow node has rendered at least twice since the batch went in
+// (lighting.js sunCache.stats.frames, main.js globalThis.__sunCache), at most 40 rAFs (no sun cache: as before).
+const SHADOW_DRAWN = !(typeof location !== "undefined" && /[?&]shadowdrawn=old/.test(location.search));
+const raf = () => new Promise((r) => requestAnimationFrame(r));
+export async function shadowDrawn(min = 2, maxRafs = 40) {
+  const st = globalThis.__sunCache?.stats, f0 = st?.frames;
+  await raf(); await raf();
+  if (f0 == null) return;
+  for (let k = 0; k < maxRafs && st.frames - f0 < min; k++) await raf();
+}
 export async function warmShadows(renderer, scene, roots, { perFrame = 2 } = {}) {
   const meshes = [];
   for (const r of roots) r.traverse((o) => { if (o.isMesh && o.castShadow && !Array.isArray(o.material)) meshes.push(o); });
@@ -501,7 +515,7 @@ export async function warmShadows(renderer, scene, roots, { perFrame = 2 } = {})
   const g = new THREE.Group(); g.name = "boot3-late-warm"; g.position.set(0, -4000, 0);
   scene.add(g);
   const win = openParallelPipelines(renderer, scene);
-  const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const frame = SHADOW_DRAWN ? () => shadowDrawn() : () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   try {
     for (let i = 0; i < meshes.length; i += perFrame) {
       g.clear();
