@@ -680,6 +680,6 @@ back slope pops). Feel "new" (bikeFeel.js; ?feel=old keeps the old):
 | pumping | pumpPush 7, pumpFace 0.35, pumpStroke 0.6 s, pumpBerm 0.6, pumpVmax 9 | C pressed on the back side of a roller / bump (and stroked round a berm) pushes the bike down it; still held on the face it costs; one press pushes 0.6 s (the legs' stroke): rhythm, not holding. Pumped with no pedalling the pump track keeps 4.5 m/s for 20 s (95 m) vs 26 m coasting; C held all lap = coasting |
 | drift | driftAngle 0.8 rad, driftBoost 1.3 m/s, driftMinT 0.45 s | in a skid the steer ASKS a slide angle (full lock ~45 deg, a tap / half ~18 deg), let go and the bike straightens; a slide held 0.45 s and exited straight (< 15 deg within 0.8 s) gets the boost (the lab's banner "clean drift") |
 
-Polish: the dust puffs fade in / out with a per-puff opacity (peak 0.14, 0.3-0.8 s, softer rim); the skid marks lie in the
+Polish: the dust puffs fade in / out with a per-puff opacity (peak 0.2, 0.3-0.8 s, softer rim, a little emissive: no dark disc in shade); the skid marks lie in the
 ground's plane (debug/bikeSpotFx.js streakBasis); the hills' houses got stone cornices, capped brick chimneys and zinc
 dormers with windows (bikeSpotMeshes.js houseDetails: closed boxes sunk into the body / roof). All in `bikespot`.

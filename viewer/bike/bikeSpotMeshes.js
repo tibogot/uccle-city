@@ -138,7 +138,7 @@ function lathe(pts, x, y, z, segs = 20, aux = [0, 0, 0, 0]) {
 
 // ------------------------------------------------------------------------------------------------ houses on the hills
 /** Brussels terraces: rows of narrow houses on the far hills (ring 80-130 m). Per house a body (6 faces, aux = facade
- *  u, height over the front ground v, seed, 1 = a facade / 0 = a party wall) and a gable roof (aux.w = 2) */
+ *  u, height over the front ground v, seed, 1 + the height = a facade / the back (houseMat's H: the windows, the cornice band; round 3 - it was 1, H = 0: no windows, the whole front the cornice's stone) / 0 = a party wall) and a gable roof (aux.w = 2) */
 export function housePlan() {
   const rows = [
     { x: -40, z: 104, dx: 1, dz: 0.08, n: 12 }, { x: 24, z: 112, dx: 1, dz: -0.15, n: 9 },
@@ -181,8 +181,8 @@ function houseGeo(hs) {
   const out = [nx, 0, nz], back = [-nx, 0, -nz], right = [ux, 0, uz], left = [-ux, 0, -uz];
   const hw = w / 2;
   // (the windings: counter-clockwise seen from outside)
-  quad(pt(-hw, 0, y0, 0), pt(hw, 0, y0, w), pt(hw, 0, y1, w), pt(-hw, 0, y1, 0), out, 1);                    // the facade
-  quad(pt(hw, -d, y0, 0), pt(-hw, -d, y0, w), pt(-hw, -d, y1, w), pt(hw, -d, y1, 0), back, 1);               // the back
+  quad(pt(-hw, 0, y0, 0), pt(hw, 0, y0, w), pt(hw, 0, y1, w), pt(-hw, 0, y1, 0), out, 1 + h);                // the facade (aux.w = 1 + its height: houseMat's H)
+  quad(pt(hw, -d, y0, 0), pt(-hw, -d, y0, w), pt(-hw, -d, y1, w), pt(hw, -d, y1, 0), back, 1 + h);           // the back
   quad(pt(hw, 0, y0, 0), pt(hw, -d, y0, d), pt(hw, -d, y1, d), pt(hw, 0, y1, 0), right, 0);                  // party walls
   quad(pt(-hw, -d, y0, 0), pt(-hw, 0, y0, d), pt(-hw, 0, y1, d), pt(-hw, -d, y1, 0), left, 0);
   quad(pt(-hw, 0, y1, 0), pt(hw, 0, y1, 0), pt(hw, -d, y1, 0), pt(-hw, -d, y1, 0), [0, 1, 0], 0);           // the top (under the roof)

@@ -42,12 +42,13 @@ export function createSkidFx(scene, groundAt) {
   scene.add(marks);
   // ---- dust: a low icosphere, lit, see-through
   const dg = new THREE.IcosahedronGeometry(1, 3);
-  const dm = new THREE.MeshStandardNodeMaterial({ transparent: true, depthWrite: false, roughness: 1 });
+  // (round 3: a little emissive - dust scatters the sky: in a shadow a puff is a pale haze, not a dark disc)
+  const dm = new THREE.MeshStandardNodeMaterial({ transparent: true, depthWrite: false, roughness: 1, emissive: 0x3a3630 });
   // (a soft puff: see-through at its rim, thicker at its middle - no hard silhouette; round 3: fainter (0.14 at its
   // thickest), the rim falls off faster, and each puff fades in and out with its own opacity - a static instance
   // attribute re-sent on the frames puffs live, 48 floats)
   const alpha = new THREE.InstancedBufferAttribute(new Float32Array(PUFFS), 1);
-  dm.opacityNode = float(0.14).mul(pow(abs(normalView.z), float(3.2))).mul(instancedBufferAttribute(alpha));
+  dm.opacityNode = float(0.2).mul(pow(abs(normalView.z), float(2.8))).mul(instancedBufferAttribute(alpha));
   const dust = new THREE.InstancedMesh(dg, dm, PUFFS);
   dust.instanceMatrix.setUsage(THREE.StaticDrawUsage);
   dust.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(PUFFS * 3), 3);
@@ -69,7 +70,9 @@ export function createSkidFx(scene, groundAt) {
       if (down) {
         if (last) {
           const dx = rx - last.x, dz = rz - last.z, L = Math.hypot(dx, dz);
-          if (L > 0.12) {
+          // (a jump of more than 1 m in a frame is a reset / a spot change, not a slide: start the streak over)
+          if (L > 1) last = { x: rx, z: rz };
+          else if (L > 0.12) {
             // (round 3: in the ground's plane - on a ramp, a roller, the hill - not flat)
             const L3 = streakBasis(groundAt, last.x, last.z, rx, rz, BX, BY, BZ, Vp), w = loose ? 0.09 : 0.055;
             M.makeBasis(BX.multiplyScalar(w), BY, BZ.multiplyScalar(L3 + 0.03)).setPosition(Vp);

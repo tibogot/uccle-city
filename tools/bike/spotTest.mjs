@@ -62,6 +62,11 @@ if (!ridesOnly) {
   { const cnt = (n) => M.parts.reduce((a, p) => a + (p.pieces || []).filter((q) => q.name === n).length, 0), nh = M.houses.length;
     check("the houses have their details (a cornice each, >= 1 capped chimney each, dormers on some), closed + on what carries them", cnt("cornice") === nh && cnt("chimney") >= nh && cnt("chimney cap") === cnt("chimney") && cnt("dormer") > 0 && cnt("dormer window") === cnt("dormer"),
       `${nh} houses: ${cnt("cornice")} cornices, ${cnt("chimney")} chimneys, ${cnt("dormer")} dormers`, "all"); }
+  // (round 3) the facades carry their height (aux.w = 1 + h: houseMat paints windows up to h - 0.6 and the cornice band at
+  // h - 0.5; aux.w = 1 painted no window and the whole front in the cornice's stone: the owner's "plain houses")
+  { const hp = M.parts.find((q) => q.mat === "house"), A = hp.geo.attributes.aux; let fac = 0, bad = 0;
+    for (let k = 0; k < A.count; k++) { const w = A.getW(k); if (w < 0.5) continue; fac++; if (w - 1 < 5.5) bad++; }
+    check("every house facade carries its height for the windows / cornice (aux.w = 1 + h, h >= 6.6 m)", fac > 0 && bad === 0, `${fac} facade vertices, ${bad} without their height`, "0"); }
   // grounded: per part (each piece of a merged part carries its own footprint), the lowest vertices at or under the
   // ground: nothing floats > 2 cm
   const float = [];
@@ -118,7 +123,7 @@ if (!ridesOnly) {
     }
     const bad = worst.filter((w) => w.ang > 4 || w.off > 0.02);
     check("skid marks lie IN the ground's plane on slopes (normal within 4 deg of the ground's, corners within 2 cm)", !bad.length, worst.map((w) => `${w.name} (${f1(w.slope)} deg): ${f1(w.ang)} deg, ${(w.off * 100).toFixed(1)} cm`).join("; "), "<= 4 deg, <= 2 cm");
-    // the dust: a sliding rear wheel throws puffs; each is faint (opacity <= 0.14 at its thickest), fades in and out,
+    // the dust: a sliding rear wheel throws puffs; each is faint (opacity <= 0.2 at its thickest), fades in and out,
     // and is gone within 0.8 s of its birth
     const fx = createSkidFx({ add() {} }, spotHeight);
     const st = { wheelPos: [0, 0, 0, -16], contact: [true, true], skid: true, crashed: false, surf: [2, 2], vx: 0, vz: 6, slip: 1, heading: 0 };
@@ -128,9 +133,16 @@ if (!ridesOnly) {
       fx.update(st, 1 / 60);
       for (let i = 0; i < fx.alpha.count; i++) { const a = fx.alpha.array[i]; peak = Math.max(peak, a); if (a > 0) lastLive = t; if (a > 0.999) hard++; }
     }
-    const opMax = 0.14 * peak;
-    check("skid dust is soft and short-lived (puffs thrown, peak opacity <= 0.15, none left 0.9 s after the slide ends)", fx.S.puffs > 5 && opMax <= 0.15 && lastLive < 0.6 + 0.9,
+    const opMax = 0.2 * peak;
+    check("skid dust is soft and short-lived (puffs thrown, peak opacity <= 0.22, none left 0.9 s after the slide ends)", fx.S.puffs > 5 && opMax <= 0.22 && lastLive < 0.6 + 0.9,
       `${fx.S.puffs} puffs, peak opacity ${opMax.toFixed(3)}, the last gone ${f2(lastLive - 0.6)} s after the slide`, "soft, gone < 0.9 s");
+    // a reset / spot change while skidding (the rear 5 m on in one frame) never lays a streak across the gap
+    const fx2 = createSkidFx({ add() {} }, spotHeight), st2 = { ...st, skid: true, wheelPos: [0, 0, 0, -16] };
+    for (let k = 0; k < 20; k++) { st2.wheelPos[3] = -16 + k * 0.1; fx2.update(st2, 1 / 60); }
+    st2.wheelPos[3] = -10; fx2.update(st2, 1 / 60); st2.wheelPos[3] = -9.85; fx2.update(st2, 1 / 60);
+    let longest = 0; const ma = fx2.marks.instanceMatrix.array;
+    for (let k = 0; k < fx2.S.marks; k++) longest = Math.max(longest, Math.hypot(ma[k * 16 + 8], ma[k * 16 + 9], ma[k * 16 + 10]));
+    check("skid marks: a reset while skidding lays no streak across the jump (every streak <= 0.5 m)", fx2.S.marks > 5 && longest <= 0.5, `${fx2.S.marks} streaks, the longest ${f2(longest)} m`, "<= 0.5 m");
   }
 }
 
