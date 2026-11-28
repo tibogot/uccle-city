@@ -194,7 +194,13 @@ function houseMat() {
   const lintel = smoothstep(0.76, 0.77, cv).mul(smoothstep(0.82, 0.81, cv)).mul(smoothstep(0.16, 0.18, cu)).mul(smoothstep(0.84, 0.82, cu)).mul(step(0.0, fl)).mul(step(v, H.sub(0.6))).mul(fac);
   const door = step(u, 1.5).mul(step(0.35, u)).mul(step(v, 2.6)).mul(step(0.45, v)).mul(fac).mul(step(0.5, hash(floor(seed.mul(97))).add(0.3)));
   const winC = mix(color(0xe9e5dc), glass, inGlass.mul(one.sub(bar)));
+  // (round 2, a bit of detail) a stone cornice under the roof, a sill under each window, a stone band at each floor
+  const cornice = smoothstep(H.sub(0.5), H.sub(0.45), v).mul(fac);
+  const sill = smoothstep(0.17, 0.18, cu).mul(smoothstep(0.83, 0.82, cu)).mul(smoothstep(0.19, 0.2, cv)).mul(smoothstep(0.235, 0.225, cv)).mul(step(0.0, fl)).mul(step(v, H.sub(0.6))).mul(fac);
+  const band = smoothstep(0.955, 0.96, cv).mul(smoothstep(0.995, 0.99, cv)).mul(step(1.0, fl)).mul(fac).mul(step(0.45, seed));
+  wall = mix(wall, color(0xd8d2c4).mul(n3(4, 8).mul(0.15).add(0.85)), max(cornice, band.mul(0.8)));
   let c = mix(wall, winC, inWin.mul(one.sub(door)));
+  c = mix(c, color(0xcfc8b8), sill);
   c = mix(c, color(0x50565c), lintel.mul(one.sub(inWin)));
   c = mix(c, mix(color(0x3a2a1e), color(0x5a4030), n3(6, 1)), door);
   m.colorNode = c;

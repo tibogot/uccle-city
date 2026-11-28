@@ -22,10 +22,15 @@ import { RiderIK, RIDE, RIDE_KIDA } from "../viewer/kid/riderIK.js";
 import { MOUNT, createMount, stepMount, parkStep, ridden, mountSpot } from "../viewer/kid/kidMount.js";
 import { loadBmx } from "../viewer/kid/bmxModel.js";
 import { buildSpotLook } from "./bikeSpotLook.js";
+import { createSkidFx } from "./bikeSpotFx.js";
+import { applyFeel, FEEL } from "../viewer/bike/bikeFeel.js";
 
 const qs = new URLSearchParams(location.search);
 Object.assign(RIDE, RIDE_KIDA);
-const DEFAULTS = { ...BIKE }, PARK_DEFAULTS = { ...BIKE_PARK }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
+// (round 2) the feel: "new" (a higher charged hop, the skid drift, quicker steering, softer landings) or ?feel=old
+const FEELN = qs.get("feel") === "old" ? "old" : "new";
+applyFeel(FEELN);
+const DEFAULTS0 = { ...BIKE }, PARK_DEFAULTS = { ...BIKE_PARK }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
 document.getElementById("title").innerHTML = `<b>Bike Lab</b> <small>the BMX spot · ? controls · <a href="?lab=old" style="color:#8fb8ff">old lab</a></small>`;
 const renderer = new THREE.WebGPURenderer({ antialias: true, reversedDepthBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -62,6 +67,7 @@ const edgeLines = (() => {
 })();
 
 // ---------------------------------------------------------------- the bike + the kid
+const skidFx = createSkidFx(scene, (x, z) => W.height(x, z));
 const env = createBikeEnv({ sets: () => [COL], ground: W.ground, edges: W.edges, wallrides: null });
 const model = createBikeModel(BIKE, { rider: false });
 scene.add(model.root, model.fallen);
@@ -69,7 +75,7 @@ const groundAt = (x, z) => W.height(x, z);
 const chase = new BikeCamera(camera, BIKE_CAMERA);
 if (qs.get("cam")) BIKE_CAMERA.mode = qs.get("cam");
 let s;
-const P = { pause: false, slow: +(qs.get("slow") || 1), spot: SPOT_SPOTS[qs.get("spot")] ? qs.get("spot") : "start", info: "", card: true, edges: qs.get("edges") === "1", time: TIMES.includes(qs.get("time")) ? qs.get("time") : "golden" };
+const P = { feel: FEELN, fx: true, pause: false, slow: +(qs.get("slow") || 1), spot: SPOT_SPOTS[qs.get("spot")] ? qs.get("spot") : "start", info: "", card: true, edges: qs.get("edges") === "1", time: TIMES.includes(qs.get("time")) ? qs.get("time") : "golden" };
 const snd = new BikeSound().followGate(() => s);
 soundGate.mountButton();
 const K = { on: false, tp: null, rider: null, kid: null, E: null, snap: null, crashYaw: 0, ik: "", bmx: null };
@@ -140,9 +146,11 @@ card.textContent = [
   "pump track, dirt table, whoops, hill, drift pad",
   "",
   "W / Up       pedal      Shift  stand up + sprint",
-  "S / Down     rear brake (hold = skid)   Q  front brake",
+  "S / Down     rear brake   Q  front brake",
+  "S + A / D    SKID DRIFT: lock the rear, slide it round",
+  "             (best on the gravel pad)",
   "A D / Left Right   steer (lean)",
-  "Space        hold = crouch, release = hop",
+  "Space        hold = charge (crouch), release = HOP",
   "C            pump       Z / X  lean fwd / back",
   "F            trick in the air (let go before landing!)",
   "E            get on / off the bike",
@@ -178,12 +186,14 @@ fo.buttons(["side", "front", "back", "top", "low", "park"].map((n) => [n, () => 
 fo.buttons([["slow 0.25x", () => { P.slow = 0.25; ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }], ["normal 1x", () => { P.slow = 1; ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }],
   ["pause (P)", () => { P.pause = !P.pause; ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }]], 3);
 const fr = ui.addFolder("Ride", { id: "spot-ride", open: false });
+fr.add(P, "feel", ["new", "old"]).name("feel (new: high hop, drift)").onChange((v) => { applyFeel(v); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); banner(`feel: ${v}`); });
+fr.add(P, "fx").name("skid marks + dust").onChange((v) => { skidFx.S.on = v; if (!v) skidFx.clear(); });
 fr.add(P, "pause").name("pause (P)");
 fr.add(P, "slow", 0.05, 1, 0.05).name("time scale");
 edgeLines.visible = P.edges;
 fr.add(P, "edges").name("debug: the grind lines").onChange((v) => { edgeLines.visible = v; });
 fr.buttons([["reset bike (R)", () => place(P.spot)], ["get up (G)", () => s.crashed && getUp(s, env)], ["camera (V)", () => banner(`camera: ${chase.next()}`)],
-  ["constants to defaults", () => { Object.assign(BIKE, DEFAULTS); Object.assign(BIKE_PARK, PARK_DEFAULTS); SURFACES.forEach((x, i) => Object.assign(x, SURF_DEFAULTS[i])); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }]], 2);
+  ["constants to defaults", () => { Object.assign(BIKE, DEFAULTS0); applyFeel(P.feel); Object.assign(BIKE_PARK, PARK_DEFAULTS); SURFACES.forEach((x, i) => Object.assign(x, SURF_DEFAULTS[i])); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }]], 2);
 fr.add(P, "info").name("state").listen();
 const groups = {};
 for (const [k, [a, b, st, grp]] of Object.entries(BIKE_PARK_RANGES)) (groups[grp] ||= ui.addFolder(`Bike: ${grp}`, { id: `spot-bike-${grp}`, open: false })).add(BIKE_PARK, k, a, b, st).name(k);
@@ -202,7 +212,7 @@ tele.innerHTML = `<div class="big" id="tv">0<small> km/h</small></div>
 <div class="col"><span><span class="k">lean</span> <b id="tl">0</b>° <span class="k">pitch</span> <b id="tp">0</b>°</span><span><span class="k">grade</span> <b id="tg">0</b> % <span class="k">fps</span> <b id="tfps">0</b></span></div>
 <div class="col"><span id="tst"></span><span id="tland" class="k"></span></div>`;
 const $ = (id) => document.getElementById(id);
-window.__bike = { get state() { return s; }, camera, orbit,
+window.__bike = { fx: skidFx, applyFeel, get state() { return s; }, camera, orbit,
   /** a fixed look (orbit on, the bike paused): view([x, y, z], [tx, ty, tz]) */
   view(p, t) { if (!ORB.on) orbitToggle(true); ORB.fixed = true; camera.position.set(...p); orbit.target.set(...t); orbit.update(); }, ORB, orbitToggle, orbitPreset, look, BIKE, env, chase, place, P, K, mount, SPOT_SPOTS };
 
@@ -236,6 +246,7 @@ renderer.setAnimationLoop(() => {
   keys.apply(now);
   if (s.lastLanding && s.lastLanding.t !== landT) { landT = s.lastLanding.t; if (s.lastLanding.band === "sketchy") banner(`sketchy landing (${s.lastLanding.why})`); }
   snd.update(s, BIKE);
+  if (!P.pause) skidFx.update(s, fdt);
   bikePose(s, P.pause ? 1 : s.alpha, pose);
   model.update(s, pose, groundAt);
   K.bmx?.update(s, camera.position.distanceTo(model.root.position), groundAt);
