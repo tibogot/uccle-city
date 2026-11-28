@@ -273,9 +273,7 @@ export class GameKit {
       if (Math.cos(yaw) * dx + Math.sin(yaw) * dz < 0) yaw += Math.PI;
     }
     mark("snap / route");
-    // (claude/nightload, ?spawnpar=old: booted here first) the host's teleport boots the character at the spawn itself,
-    // beside the area hold (main.js teleport, rule spawn-hold-parallel)
-    if (mode === "third" && !this.host.getThird() && /[?&]spawnpar=old(&|$)/.test(location.search)) { await this.host.thirdPerson(); mark("third person boot"); }
+    if (mode === "third" && !this.host.getThird()) { await this.host.thirdPerson(); mark("third person boot"); }
     this.hud.toast({ title: "On your way", text: `Going to ${p.name}…` }, 0);
     try { await this.host.teleport({ x, z, yaw, exact: true, mode }); } finally { this.hud.toast(null); }
     mark("teleport (+ area)");

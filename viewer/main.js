@@ -171,7 +171,6 @@ const EARLY_PACE_OLD = params.get("earlypace") === "old";
 // perf8: the play loader also waits for the lamp shadows' by-day warm-up of the casters the area brought (cityNight.js), run at
 // once under the loader (?nighthold=old: 4 s after each was tagged, whenever that is: one ~150 ms frame ~8 s into play)
 const NIGHT_HOLD = params.get("nighthold") !== "old";
-const SPAWN_PAR = params.get("spawnpar") !== "old";   // (claude/nightload: a teleport into third person boots the character beside the area hold)
 const COVER_LIFT = params.get("coverlift") !== "old" && PLAY_LOADER && params.get("warmup") !== "0" && (GAME_START || BOOT_HOLD);
 // perf8: a ?game= boot no longer loads the start tile's ring as FAR tiles under the cover: the play loader then waits for
 // that whole ring in FULL anyway (settlering), so the far versions were built, drawn once and thrown away (the cover's
@@ -2633,18 +2632,6 @@ async function main() {
     const label = o.label ?? o.name;
     playLoader.open(playLoader.active ? {} : { title: label || "On the way", kicker: "Travelling" });
     try {
-      // (claude/nightload, rule spawn-hold-parallel; ?spawnpar=old: one after the other) a teleport INTO third person
-      // before the character exists (the police game's yard spawn): its boot (model, collision world, pipelines: 8-14 s
-      // under the loader) and the area hold (15-28 s) do not need each other: run side by side, then a short second
-      // hold so the character's own first frames / pipelines are done under the cover too (no first Get out hitch)
-      if (SPAWN_PAR && o.mode === "third" && !third && !o.after) {
-        const tq = performance.now(), near = 300;
-        const [r, first] = await Promise.all([teleportNow(o), areaReady({ x: o.x, z: o.z, label, near })]);
-        r.ready = await areaReady({ x: o.x, z: o.z, label: `${label || "?"} (third)`, near, settle: false });
-        r.ready.first = first;
-        (globalThis.__gameTimes ||= []).push(["teleport third (side by side)", Math.round(performance.now() - tq), r.ms]);
-        return r;
-      }
       const tq = performance.now();
       const r = await teleportNow(o);
       (globalThis.__gameTimes ||= []).push(["teleportNow", Math.round(performance.now() - tq), r.tileMs]);   // (claude/nightload debug)
