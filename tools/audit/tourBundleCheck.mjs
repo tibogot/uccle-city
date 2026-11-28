@@ -64,6 +64,30 @@ try {
   const old = await serveOnce(["--committed-bundle"]);
   check("--committed-bundle serves the file", !old.text.includes(marker) && old.text.includes("__TILE_CODE_HASH"), "the committed bundle, without the planted marker");
 
+  // rule serve-rebuilds-worker (claude/tooling2): a server left running while the worker's sources change (a merge, a
+  // checkout, an edit) serves the NEW build, never its start-up one (20 false tour flags, 2026-11-28)
+  {
+    const port = 18800 + Math.floor(Math.random() * 900);
+    const p = spawn(process.execPath, [path.join(HERE, "tools/tour/serve.mjs"), "--root", tmp, "--port", String(port), "--any-port", "--out", path.join(tmp, "out")], { stdio: ["ignore", "pipe", "pipe"] });
+    let log = ""; p.stdout.on("data", (d) => { log += d; }); p.stderr.on("data", (d) => { log += d; });
+    try {
+      for (let i = 0; i < 600 && !/open http/.test(log); i++) await new Promise((r) => setTimeout(r, 100));
+      const get = async () => (await fetch(`http://127.0.0.1:${port}/viewer/tileWorker.bundle.js`)).text();
+      const a = await get();
+      const marker2 = `/* tourbundle-rebuild-${Date.now()} */`;
+      fs.appendFileSync(tw, `\nself.__tourbundleMarker2 = ${JSON.stringify(marker2)};\n`);
+      await new Promise((r) => setTimeout(r, 1200));
+      const b = await get();
+      check("serve.mjs rebuilds when the worker sources change", a.includes(marker) && !a.includes(marker2) && b.includes(marker2) && /WORKER SOURCES CHANGED[^\n]*rebuilt/.test(log),
+        `a marker added to viewer/tileWorker.js while the server ran ${b.includes(marker2) ? "is" : "is NOT"} in the next /viewer/tileWorker.bundle.js; server said: ${(/WORKER SOURCES CHANGED[^\n]*/.exec(log) || ["(no rebuild line)"])[0]}`);
+      // a source that no longer builds: 503, never the stale build
+      fs.appendFileSync(tw, "\nthis is not javascript (((\n");
+      await new Promise((r) => setTimeout(r, 1200));
+      const bad = await fetch(`http://127.0.0.1:${port}/viewer/tileWorker.bundle.js`);
+      check("a failed rebuild is refused, not served stale", bad.status === 503 && /REFUSING/.test(log), `HTTP ${bad.status}`);
+    } finally { p.kill(); }
+  }
+
   // rule local-origins-capped: a port outside the pool is refused; /sw.js is the self-removing worker; --keep-sw = real
   const refused = spawnSync(process.execPath, [path.join(HERE, "tools/tour/serve.mjs"), "--root", tmp, "--port", "18999", "--committed-bundle", "--out", path.join(tmp, "out")], { encoding: "utf8", timeout: 60000 });
   check("a port outside the pool is refused", refused.status === 2 && /refused/.test(refused.stderr), `exit ${refused.status}: ${(refused.stderr || "").trim().slice(0, 120)}`);

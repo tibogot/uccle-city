@@ -13,6 +13,13 @@
 //     --jobs N            the parallel CPU budget (default: the logical cores); --mem MB the memory budget (60 % of RAM)
 //     --list              the row names, one a line
 //     --no-tile-cache     the rows build every tile fresh (TILE_CACHE=0; tools/gate/tileCache.mjs, rule tile-cache)
+//     --no-lock           do not take gate.lock (tools/merge.mjs, which holds it for the whole merge, passes it)
+//     --lock-check        take gate.lock, say so, release it, exit (the `locks` row's self-test)
+//   (rule gate-lock-held: the gate takes C:/Users/tibog/Downloads/uccle-jobs/gate.lock for its whole run through
+//   tools/gate/lock.mjs (owner, pid, start, a heartbeat a minute); a lock held by a live, beating holder is waited for
+//   (a line a minute; GATE_LOCK_WAIT_S caps it: exit 76); released on exit, a crash and Ctrl-C; a dead holder's is
+//   taken over. Rule browser-lock-helper: a row that exits 76 (its lock busy) is run again alone after the others, up
+//   to BUSY_RETRIES times BUSY_PAUSE_S apart; still busy = BUSY in the table, the gate exits 76, never a FAIL)
 // Every row runs traced (tools/gate/trace.mjs): its deps land in .cache/gate/deps/<row>.json, a PASS's memo key in
 // .cache/gate/pass/<row>.json, its full output in .cache/gate/logs/<row>.txt (docs/SPEED_PLAN.md jobs 4-7).
 import { spawn, spawnSync } from "node:child_process";
@@ -25,6 +32,7 @@ import { rawDir, collectTrace, readTrace, CACHE } from "../gate/deps.mjs";
 import { rowKey, writePass, saveHashes } from "../gate/memo.mjs";
 import { selectRows, gitChanges } from "../gate/select.mjs";
 import { withRetries, timingOnly, RETRIES, PAUSE_MS } from "../gate/retry.mjs";
+import { acquire, LOCK_BUSY_EXIT } from "../gate/lock.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const CHECKS = await loadRows(ROOT);
@@ -32,11 +40,27 @@ const BROWSER = (await loadBrowser(ROOT)).map((b) => b.text);
 const argv = process.argv.slice(2);
 if (argv.includes("--list")) { for (const c of CHECKS) console.log(c.name); process.exit(0); }
 const VALUED = new Set(["--base", "--jobs", "--mem"]);
+const BUSY_RETRIES = +(process.env.GATE_BUSY_RETRIES ?? 3), BUSY_PAUSE_S = +(process.env.GATE_BUSY_PAUSE_S ?? 120);
 const opt = (k, d = null) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
 const NO_TILE_CACHE = argv.includes("--no-tile-cache");
 const FULL = argv.includes("--full"), CHANGED = argv.includes("--changed"), SERIAL = argv.includes("--serial");
 const CPU = Math.max(1, +opt("--jobs", 0) || os.cpus().length);
 const MEM = +opt("--mem", 0) || Math.round((os.totalmem() / 2 ** 20) * 0.6);
+
+// ------------------------------------------------------------------ gate.lock (rule gate-lock-held)
+// (before the worktree links and the row pick: nothing of the run starts until the lock is ours)
+const GATE_OWNER = (process.env.UCCLE_LOCK_OWNER || `mergeGate(${path.basename(ROOT)})`).replace(/\s+/g, "_");
+let gateLock = null;
+if (!argv.includes("--no-lock")) {
+  try {
+    gateLock = await acquire("gate", { owner: GATE_OWNER, waitS: process.env.GATE_LOCK_WAIT_S ? +process.env.GATE_LOCK_WAIT_S : Infinity, pollS: 15, onWait: (m) => console.log(`[gate.lock] ${m}`) });
+    console.log(`[gate.lock] ${gateLock.nested ? "held by our caller (nested)" : `taken by ${GATE_OWNER} (pid ${process.pid})`}: ${gateLock.file}`);
+  } catch (e) {
+    if (e.code !== LOCK_BUSY_EXIT) throw e;
+    console.log(`[gate.lock] ${e.message}: the gate did not run (exit ${LOCK_BUSY_EXIT}, lock busy)`); process.exit(LOCK_BUSY_EXIT);
+  }
+}
+if (argv.includes("--lock-check")) { console.log("lock-check: gate.lock held, releasing"); gateLock?.release(); process.exit(0); }
 
 // A git worktree lacks the main checkout's untracked inputs (node_modules, the raw data): link them in (junctions),
 // so a gate in a worktree tests the code, not the folder. All are git-ignored.
@@ -105,8 +129,14 @@ function runOnce(c, { timeoutScale = 1 } = {}) {
 
 // one row: run, and while it is a timing-only failure (exit 75) and `retry`, again (alone: the caller's job), then
 // the bookkeeping. retry false: a timing-only failure is handed back ({ again: true }) for the alone phase
+const busyRows = [];
 async function runRow(c, { timeoutScale = 1, retry = true, prior = 0 } = {}) {
   const first = await runOnce(c, { timeoutScale });
+  // (rule browser-lock-helper) its lock was busy: not a verdict, run again after the others
+  if (!first.timedOut && first.code === LOCK_BUSY_EXIT) {
+    console.log(`     ${c.name.padEnd(16)} lock busy (exit ${LOCK_BUSY_EXIT}, ${first.secs.toFixed(1)} s): run again after the other rows`);
+    busyRows.push({ c, first }); return { again: false, busy: true };
+  }
   if (!retry && timingOnly(first)) {
     console.log(`     ${c.name.padEnd(16)} timing-only failure (exit 75, ${first.secs.toFixed(1)} s): re-run alone after the parallel rows`);
     return { again: true };
@@ -198,6 +228,17 @@ if (SERIAL) {
   if (again.length) console.log(`\n== timing-only failures under the parallel load, again alone: ${again.map((c) => c.name).join(" ")}`);
   for (const c of again) await runRow(c, { prior: 1 });
 }
+// (rule browser-lock-helper) the rows whose lock was busy: again, alone, BUSY_PAUSE_S apart; still busy = BUSY, not FAIL
+const BUSY = new Map();
+for (let a = 1; busyRows.length && a <= BUSY_RETRIES; a++) {
+  console.log(`\n== lock-busy rows, try ${a}/${BUSY_RETRIES} in ${BUSY_PAUSE_S} s: ${busyRows.map((b) => b.c.name).join(" ")}`);
+  await new Promise((r) => setTimeout(r, BUSY_PAUSE_S * 1000));
+  for (const b of busyRows.splice(0)) await runRow(b.c);
+}
+for (const b of busyRows) {
+  BUSY.set(b.c.name, (b.first.out.trim().split("\n").filter((l) => /busy/i.test(l)).pop() || "lock busy").trim().slice(0, 160));
+  writeFileSync(path.join(LOGS, `${b.c.name}.txt`), b.first.out);
+}
 saveHashes();
 
 // ------------------------------------------------------------------ the table (the rows' own order)
@@ -212,7 +253,8 @@ let failed = 0;
 console.log("\n| check | result | time | guards / failures |\n|---|---|---|---|");
 for (const c of CHECKS) {
   const r = results.get(c.name), s = SKIP.find((x) => x.row === c);
-  if (r) { if (!r.ok) failed++; console.log(`| ${c.name} | ${r.ok ? "PASS" : "FAIL"} | ${r.secs.toFixed(1)} s | ${r.text} |`); }
+  if (BUSY.has(c.name)) console.log(`| ${c.name} | BUSY | - | not run: ${BUSY.get(c.name)} (rule browser-lock-helper: run it again, node tools/audit/mergeGate.mjs ${c.name}) |`);
+  else if (r) { if (!r.ok) failed++; console.log(`| ${c.name} | ${r.ok ? "PASS" : "FAIL"} | ${r.secs.toFixed(1)} s | ${r.text} |`); }
   else if (s) console.log(`| ${c.name} | SKIP | - | ${s.why} |`);
 }
 console.log(`\nbrowser gates (run on a browser turn):\n  ${BROWSER.join("\n  ")}`);
@@ -222,5 +264,6 @@ console.log(`\nbrowser gates (run on a browser turn):\n  ${BROWSER.join("\n  ")}
   if (t) console.log(`\ntile cache${NO_TILE_CACHE ? " (--no-tile-cache: off)" : ""}: ${t}`);
 }
 console.log(`\n${RUN.length} run, ${SKIP.length} skipped,${((Date.now() - T0) / 1000).toFixed(0)} s wall`);
-console.log(failed ? `${failed} gate check(s) FAILED` : "all gate checks pass");
-process.exitCode = failed ? 1 : 0;
+console.log(failed ? `${failed} gate check(s) FAILED` : BUSY.size ? `no failure, but ${BUSY.size} row(s) NOT RUN, their lock busy: ${[...BUSY.keys()].join(" ")} (exit ${LOCK_BUSY_EXIT}: run them again, node tools/audit/mergeGate.mjs ${[...BUSY.keys()].join(" ")})` : "all gate checks pass");
+process.exitCode = failed ? 1 : BUSY.size ? LOCK_BUSY_EXIT : 0;
+gateLock?.release();

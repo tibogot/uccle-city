@@ -16,6 +16,19 @@ stops on an error / freeze), `Q.beat()` (heartbeat), `Q.shot(name)`. Common chec
 `?quick=1&place=stjob-street`, `place=observatory`, `place=police-yard`, `place=stjob-nest&with=falcons`,
 `place=stjob&time=night`, `place=stjob-street&wx=snow_cover`. Not for perf numbers (those: the preflight + perfRun).
 
+## Shared locks and ports (job agents on one laptop; rules gate-lock-held, browser-lock-helper)
+
+Two lock files in `C:/Users/tibog/Downloads/uccle-jobs`, both only through `tools/gate/lock.mjs` (never written by hand,
+never `rm -f`): **gate.lock** = one merge gate at a time: `tools/audit/mergeGate.mjs` takes it for its run, `tools/merge.mjs`
+for the whole merge (and runs the gate with `--no-lock`). **browser.lock** = one city page / test Chrome at a time:
+allocBudget / allocSample / gpuTrace take it themselves; an agent's browser session takes it with
+`node tools/gate/lock.mjs browser hold --owner <job>` (a holder process, its pid in the lock) and gives it back with
+`node tools/gate/lock.mjs browser release --owner <job>`; `... status` shows who holds it. The line holds owner, pid, start
+and a heartbeat rewritten every minute; it is stale only when the pid is dead or the heartbeat is > 10 min old (a legacy
+no-pid lock: 120 min). A busy lock makes a row exit 76: mergeGate retries it later and reports BUSY, never FAIL.
+Ports: the city / tour servers use only 8837-8842 (`tools/tour/serve.mjs` refuses others); **8841 is the owner's bike lab:
+never touch it.** Own-Chrome profiles come from `tools/gate/chromeProfile.mjs` and are deleted on exit + swept.
+
 ## State on 2026-11-13, morning (read this first)
 
 `claude/foundation` (PUSHED 2026-11-13 at 54f3816: Vercel deploys this branch; there is no separate `main`) has, ON by default: every landmark,

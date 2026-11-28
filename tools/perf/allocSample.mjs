@@ -11,9 +11,10 @@
 // "[lib] fn < our nearest frame": what to fix on our side). `--from raw.json` re-reads a saved --profile (no browser). Close every other
 // WebGPU tab first: two cities on one laptop GPU skew each other (MB/frame is robust to load, frame times are not).
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { writeFileSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { acquire, LOCK_BUSY_EXIT } from "../gate/lock.mjs";
+import { makeProfile, sweepProfiles } from "../gate/chromeProfile.mjs";
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(`--${k}`); return i >= 0 ? argv[i + 1] : d; };
@@ -23,7 +24,16 @@ const CHROME = opt("chrome", "C:/Program Files/Google/Chrome/Application/chrome.
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const FROM = opt("from", null);
-const prof = FROM ? null : mkdtempSync(path.join(tmpdir(), "uccle-alloc-"));
+// rule browser-lock-helper: its own Chrome is a city on the one laptop GPU: browser.lock (tools/gate/lock.mjs; nested
+// when the caller holds it under the same owner, UCCLE_LOCK_OWNER: tools/perf/allocBudget.mjs); busy -> exit 76.
+// rule chrome-profiles-removed: the temp profile goes on exit, left-overs are swept first
+let lock = null;
+if (!FROM) {
+  try { lock = await acquire("browser", { owner: process.env.UCCLE_LOCK_OWNER || "allocSample", waitS: +opt("lock-wait", process.env.UCCLE_LOCK_WAIT_S || 1800) }); }
+  catch (e) { if (e.code === LOCK_BUSY_EXIT) { console.log(`lock busy: ${e.message}`); process.exit(LOCK_BUSY_EXIT); } throw e; }
+  sweepProfiles({ log: console.log });
+}
+const profile = FROM ? null : makeProfile("alloc"), prof = profile?.dir;
 const chrome = FROM ? null : spawn(CHROME, [`--remote-debugging-port=${PORT}`, `--user-data-dir=${prof}`, "--mute-audio", "--no-first-run", "--no-default-browser-check",
   "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows", "--window-size=1600,900",
   "--enable-precise-memory-info", "about:blank"], { stdio: "ignore" });
@@ -32,13 +42,14 @@ let done = false;
 const cleanup = () => {
   if (done || FROM) return; done = true;
   if (process.platform === "win32") spawnSync("taskkill", ["/PID", String(chrome.pid), "/T", "/F"], { stdio: "ignore" }); else try { chrome.kill("SIGKILL"); } catch { /* gone */ }
-  for (let i = 0; i < 20; i++) { try { rmSync(prof, { recursive: true, force: true }); break; } catch { const t = Date.now(); while (Date.now() - t < 250); } }
+  profile.remove();
+  lock?.release();
 };
 process.on("exit", cleanup); process.on("SIGINT", () => { cleanup(); process.exit(130); });
 
 async function cdp() {
   let list = null;
-  for (let i = 0; i < 60 && !list; i++) { try { list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json(); } catch { await sleep(500); } }
+  for (let i = 0; i < 2 * +(process.env.UCCLE_CDP_WAIT_S || 30) && !list; i++) { try { list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json(); } catch { await sleep(500); } }
   const page = list?.find((t) => t.type === "page");
   if (!page) throw new Error("no page target");
   const ws = new WebSocket(page.webSocketDebuggerUrl);

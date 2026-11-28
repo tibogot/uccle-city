@@ -45,10 +45,39 @@ const MIME = {
 const SAFE = /^[A-Za-z0-9_.-]+$/;
 // rule tour-fresh-bundle: build the served checkout's tile worker from its own sources (--committed-bundle: serve the
 // committed file as before, e.g. to reproduce what the live site draws)
-const BUNDLE = process.argv.includes("--committed-bundle") ? null : await buildBundle(ROOT);
+let BUNDLE = process.argv.includes("--committed-bundle") ? null : await buildBundle(ROOT);
+// rule serve-rebuilds-worker (claude/tooling2): the build is checked against its sources on every bundle request (the
+// size + mtime of every input esbuild read, at most once a second) and REBUILT when one changed: a server left running
+// across a merge / checkout / edit served the start-up build, and the tour flagged 20 views on stale tiles
+// (2026-11-28). A rebuild that fails answers 503 (never the stale build) with a loud line.
+const sigOf = (inputs) => inputs.map((f) => { try { const st = fs.statSync(path.join(ROOT, f)); return `${f}:${st.size}:${Math.round(st.mtimeMs)}`; } catch { return `${f}:gone`; } }).join("|");
+let SIG = BUNDLE ? sigOf(BUNDLE.inputs) : "", checkedAt = Date.now(), rebuilding = null;
+let FAILED = null;   // (the last rebuild failed: refused until one builds, even inside the 1 s throttle)
+async function currentBundle() {
+  if (!BUNDLE) return null;
+  if (rebuilding) return rebuilding;
+  if (Date.now() - checkedAt < 1000) return FAILED || BUNDLE;
+  checkedAt = Date.now();
+  const now = sigOf(BUNDLE.inputs);
+  if (now === SIG) return FAILED || BUNDLE;
+  const changed = BUNDLE.inputs.filter((f, i) => now.split("|")[i] !== SIG.split("|")[i]);
+  rebuilding = (async () => {
+    try {
+      const b = await buildBundle(ROOT), was = BUNDLE.hash;
+      BUNDLE = b; SIG = sigOf(b.inputs); FAILED = null;
+      console.log(`[tour] WORKER SOURCES CHANGED since the last build (${changed.slice(0, 3).join(", ")}${changed.length > 3 ? ` +${changed.length - 3}` : ""}): rebuilt, code hash ${was} -> ${b.hash}`);
+      return b;
+    } catch (e) {
+      SIG = now; FAILED = { error: e };   // (the next change of a source builds again)
+      console.log(`[tour] WORKER SOURCES CHANGED but the rebuild FAILED: REFUSING to serve the stale build (${e.message.split("\n")[0]})`);
+      return FAILED;
+    } finally { rebuilding = null; }
+  })();
+  return rebuilding;
+}
 if (BUNDLE) {
   const was = await committedHash(ROOT);
-  console.log(`[tour] tile worker built from ${ROOT}'s sources: code hash ${BUNDLE.hash}${was === BUNDLE.hash ? " (= its committed bundle)" : ` (its committed bundle is ${was}: STALE, the tour uses the fresh build)`}`);
+  console.log(`[tour] tile worker built from ${ROOT}'s sources: code hash ${BUNDLE.hash}${was === BUNDLE.hash ? " (= its committed bundle)" : ` (its committed bundle is ${was}: STALE, the tour uses the fresh build)`}; rebuilt when they change`);
 }
 
 function save(req, res, u) {
@@ -102,8 +131,12 @@ const server = http.createServer((req, res) => {
   }
   // rule tour-fresh-bundle: the tile worker built from the SERVED checkout's sources, not its committed (stale) bundle
   if (p === "/viewer/tileWorker.bundle.js" && BUNDLE) {
-    res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-cache", etag: `"fresh-${BUNDLE.hash}"`, "content-length": Buffer.byteLength(BUNDLE.code) });
-    return res.end(req.method === "HEAD" ? undefined : BUNDLE.code);
+    return void currentBundle().then((b) => {
+      if (b.error) { res.writeHead(503, { "content-type": "text/plain" }); return res.end(`tools/tour/serve.mjs: the worker sources changed and the rebuild failed: ${b.error.message}`); }
+      if (req.headers["if-none-match"] === `"fresh-${b.hash}"`) { res.writeHead(304, { etag: `"fresh-${b.hash}"`, "cache-control": "no-cache" }); return res.end(); }
+      res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-cache", etag: `"fresh-${b.hash}"`, "content-length": Buffer.byteLength(b.code) });
+      res.end(req.method === "HEAD" ? undefined : b.code);
+    });
   }
   const base = OVERLAY.has(p) ? HERE : ROOT;
   const file = path.join(base, p);
