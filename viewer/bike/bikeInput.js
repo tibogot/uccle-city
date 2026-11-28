@@ -3,12 +3,14 @@
 // arrows); the rider's lean is on Z / X (I / K too). KEYS below is the one table (the lab's card and the tests read it).
 //   W / Up        pedal           Shift   stand up and sprint
 //   S / Down      rear brake (ramps in: a tap brakes, held = a skid)        Q   front brake
+//   S at a stop   held = walk back (claude/bikeback: the feet on the ground, A / D steer the reversing way; let go or
+//                 W = stop / pedal on). No new key: below 0.3 m/s for 0.25 s S stops being a brake (bikePhysics backMode)
 //   A D / Left Right   steer (ramped: a tap is a small lean, held = full)
 //   Space         hold = crouch / preload / absorb, release = hop (a tap on a back slope = a pump; round 3, feel new: a charged release pops there too)
 //   C             pump (extend the legs)        F   trick (held in the air; let go before landing!)
 //   Z / X         lean forward / back (I / K too): manual, nose dive, air pitch
 //   (one-shot, the lab: R reset, G get up, V camera, P pause, 1-9 spots, 0 / N / B the park's spots, ? the card, E get on / off: claude/kid)
-// Gamepad (standard mapping): left stick steer + lean, RT pedal, LT rear brake, LB front brake, A hop, B pump, X trick,
+// Gamepad (standard mapping): left stick steer + lean, RT pedal, LT rear brake (held at a stop: walk back), LB front brake, A hop, B pump, X trick,
 // RB sprint; Y = camera, Back = reset (onKey).
 // FEEL ROUND 1: no frame-latched input. Key events are queued with their timestamps; the frame driver
 // (bikePhysics advanceBike) asks sample(t, DT) once per fixed 120 Hz step, so each step sees exactly the keys down

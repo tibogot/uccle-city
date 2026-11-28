@@ -47,6 +47,8 @@ export const RIDE = {
                                              // target is within this much of the leg (+ the bike leans toward the foot:
                                              // bikePhysics footLean); any bike geometry
   footOut: 0.16, footFwd: 0.12,              // where the foot goes down: out to the side, forward of the hip joint
+  backStride: 0.11, backLift: 0.05,          // walking the bike back (bikePhysics backMode 1): the half stride, the swing's lift (m)
+  backLook: 1.0,                             // rad the head turns back over the shoulder while backing / rolling back (fakie)
   footAnkle: 0.09,                           // the ankle over the ground with the foot flat (the kid's: 7.5 cm + the sole)
   wobbleHip: 0.05, wobbleRoll: 0.30,         // a sketchy landing's wobble (s.wobbleNow): hips sideways, body counter-roll
   wobbleCrouch: 0.45,                        // and the legs soaking it up (crouch at the wobble's start)
@@ -331,11 +333,16 @@ export class RiderIK {
       // lower / higher at the crank's top / bottom): the knee opens where it closes most
       const bbW = E.bb.getWorldPosition(_e), hTop = Math.max(-1, Math.min(1, _c.copy(pe).sub(bbW).dot(_up) / crank));
       const T = pe.clone().addScaledVector(_up, P.ankleUp - (P.ankling || 0) * hTop).addScaledVector(_fwd, -P.ankleBack);
-      const fd = k === 0 ? Math.min(1, Math.max(0, ((s.footDown || 0) - 0.5) * 2)) : 0;
+      // (going backward, rule bike-backward-real: walking the bike back = BOTH feet on the ground, short alternating
+      // steps backward (s.walkPhase), each foot lifted a little as it swings)
+      const backW = s.flow?.backMode === 1;
+      const fdAll = Math.min(1, Math.max(0, ((s.footDown || 0) - 0.5) * 2));
+      const fd = k === 0 || backW ? fdAll : 0;
       if (fd > 0 && groundY !== null) {
         const hipW = th.getWorldPosition(_a);
-        const down = _e.copy(hipW).addScaledVector(_left, P.footOut).addScaledVector(_fwd, P.footFwd);
-        down.y = groundY + P.footAnkle;
+        const ph = (s.walkPhase || 0) + (k === 0 ? 0 : Math.PI), stride = backW ? P.backStride : 0;
+        const down = _e.copy(hipW).addScaledVector(_left, side * P.footOut).addScaledVector(_fwd, P.footFwd - (backW ? 0.06 : 0) + stride * Math.cos(ph));
+        down.y = groundY + P.footAnkle + (backW ? P.backLift * Math.max(0, Math.sin(ph)) : 0);
         T.lerp(down, fd);
       }
       const hipW = th.getWorldPosition(new THREE.Vector3());
@@ -357,7 +364,10 @@ export class RiderIK {
     const P = this.P, w = this._w || (this._w = { ox: 0, oy: 0, oz: 0, vx: 0, vy: 0, vz: 0, tp: 0, tr: 0, vp: 0, vr: 0, hy: 0, hp: 0, px: 0, py: 0, pz: 0, comp: 0, h: 0, dy: 0, ok: false });
     const fx = Math.sin(s.heading || 0), fz = Math.cos(s.heading || 0), v = Math.sqrt((s.vx || 0) ** 2 + (s.vz || 0) ** 2);
     const comp = (s.comp ? s.comp[0] + s.comp[1] : 0);
-    const yawPath = (v > 1 ? Math.atan2(s.vx, s.vz) : s.heading || 0) + Math.max(-0.5, Math.min(0.5, (s.yawVel || 0) * P.headLead));
+    // (going backward: the head looks back over the shoulder - the side the rear swings to - not along the path behind)
+    const backing = (s.flow?.backMode || 0) > 0, lookSide = (s.steerAngle || 0) < -0.1 ? -1 : 1;
+    const yawPath = backing ? (s.heading || 0) + lookSide * P.backLook
+      : (v > 1 ? Math.atan2(s.vx, s.vz) : s.heading || 0) + Math.max(-0.5, Math.min(0.5, (s.yawVel || 0) * P.headLead));
     const pitchPath = v > 0.5 ? Math.atan2(-(s.vy || 0), v) * P.headSlope : 0;
     if (!(dt > 0 && dt < 0.25) || !w.ok) {
       // at rest (a static pose, the first frame, a reset): no offsets, the head on its path
@@ -396,7 +406,8 @@ export class RiderIK {
     w.hy += dy * kH; w.hp += (pitchPath - w.hp) * kH;
     // (the head never turns more than 0.7 rad from the bike's heading)
     let rel = w.hy - (s.heading || 0); rel -= Math.round(rel / (Math.PI * 2)) * Math.PI * 2;
-    if (rel > 0.7) w.hy -= rel - 0.7; else if (rel < -0.7) w.hy -= rel + 0.7;
+    const relMax = backing ? P.backLook + 0.05 : 0.7;
+    if (rel > relMax) w.hy -= rel - relMax; else if (rel < -relMax) w.hy -= rel + relMax;
     const o = this._wo || (this._wo = { ox: 0, oy: 0, oz: 0, tp: 0, tr: 0, hy: 0, hp: 0 });
     o.ox = w.oxU; o.oy = w.oyU; o.oz = w.ozU; o.tp = w.tp; o.tr = w.tr; o.hy = w.hy; o.hp = w.hp;
     return o;

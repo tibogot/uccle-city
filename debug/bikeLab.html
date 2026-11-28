@@ -29,6 +29,11 @@
   #card.hidden { display: none; }
   #banner { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); font: 700 22px/1.2 system-ui, sans-serif; color: #fff;
             text-shadow: 0 2px 8px rgba(0,0,0,.6); pointer-events: none; opacity: 0; transition: opacity .25s; }
+  /* (claude/bikeback) the reversing hint: small, above the telemetry strip */
+  #hint { position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%); padding: 4px 12px; border-radius: 12px;
+          background: rgba(20, 24, 30, .78); color: #f2c12e; font: 600 13px/1.4 system-ui, sans-serif; pointer-events: none;
+          opacity: 0; transition: opacity .25s; white-space: nowrap; }
+  #hint kbd { font: 700 12px ui-monospace, Consolas, monospace; color: #fff; padding: 0 4px; border: 1px solid #667; border-radius: 3px; }
 </style>
 <script type="importmap">
 {
@@ -45,6 +50,7 @@
 <div id="title"><b>Bike Lab</b> <small>the kid's BMX, feel rounds 1-4 · docs/BIKE.md · ? controls</small></div>
 <div id="card"></div>
 <div id="banner"></div>
+<div id="hint"></div>
 <div id="tele">loading…</div>
 <script type="module">
   // bike lab 2 (2026-11-28): the BMX spot by default (debug/bikeSpot.js); ?lab=old (or ?city=) the old test ground (debug/bikeLab.js)

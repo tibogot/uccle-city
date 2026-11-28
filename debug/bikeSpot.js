@@ -149,6 +149,10 @@ card.textContent = [
   "",
   "W / Up       pedal      Shift  stand up + sprint",
   "S / Down     rear brake   Q  front brake",
+  "S at a stop  hold = WALK BACK (feet down; A / D steer it,",
+  "             let go or W: stop / pedal on)",
+  "ramp face    stop on it = roll back (fakie): A / D steer,",
+  "             S brakes",
   "S + A / D    SKID DRIFT: lock the rear, slide it round",
   "             (best on the gravel pad)",
   "A D / Left Right   steer (lean)",
@@ -169,6 +173,23 @@ card.textContent = [
 const bannerEl = document.getElementById("banner");
 let bannerT = 0;
 function banner(t) { bannerEl.textContent = t; bannerEl.style.opacity = 1; bannerT = 1.6; }
+// (claude/bikeback, rule bike-backward-real) the reversing hint: "backing up" / "rolling back" while it lasts, and
+// once per visit, after ~2 s at a stop on the bike, "hold S to back up" (gone at the first back-walk)
+const hintEl = document.getElementById("hint");
+const HINT = { text: "", stopT: 0, shown: false, t: 0 };
+function hintStep(dt, riding) {
+  const m = s.flow.backMode;
+  let t = "";
+  if (riding && m === 1) t = "backing up";
+  else if (riding && m === 2 && s.flow.backT > 0.25 && !s.air) t = "rolling back";
+  else if (riding && !HINT.shown && s.flow.backs === 0) {
+    const still = !s.crashed && !s.air && Math.abs(bikeSpeed(s)) < 0.1 && s.grindSeg < 0 && !s.pushing;
+    HINT.stopT = still ? HINT.stopT + dt : 0;
+    if (HINT.stopT > 2) { HINT.shown = true; HINT.t = 4; }
+  }
+  if (HINT.t > 0) { HINT.t -= dt; if (s.flow.backs > 0) HINT.t = 0; else if (!t) t = "hold <kbd>S</kbd> to back up"; }
+  if (t !== HINT.text) { HINT.text = t; if (t) hintEl.innerHTML = t; hintEl.style.opacity = t ? 1 : 0; }
+}
 
 // ---------------------------------------------------------------- the panel
 const ui = new Panel({ title: "Bike Lab: the spot", persist: "bikespot", search: true });
@@ -226,7 +247,8 @@ window.__bike = { fx: skidFx, applyFeel, get state() { return s; }, renderer, ca
 
 // ---------------------------------------------------------------- loop
 const pose = {};
-const NO_INPUT = { pedal: 0, sprint: false, brakeF: 0, brakeR: 1, steer: 0, lean: 0, hop: false, pump: 0, trick: false };
+// (both brakes: the bike held still - S alone at a stop would walk it back, bikePhysics backMode)
+const NO_INPUT = { pedal: 0, sprint: false, brakeF: 1, brakeR: 1, steer: 0, lean: 0, hop: false, pump: 0, trick: false };
 const ease = (x) => { const u = Math.min(1, Math.max(0, x)); return u * u * (3 - 2 * u); };
 let last = performance.now(), frames = 0, landT = -1, fps = 60, fpsT = 0, fpsN = 0;
 renderer.setAnimationLoop(() => {
@@ -292,13 +314,14 @@ renderer.setAnimationLoop(() => {
   if (bannerT > 0 && (bannerT -= dt) <= 0) bannerEl.style.opacity = 0;
   if (s.crashed && s.crashT < 0.05 && s.crashT > 0) banner(`crash: ${s.crashCause}`);
   if (s.flow.boosts !== FLOWSEEN.boosts) { if (s.flow.boosts > FLOWSEEN.boosts) banner("clean drift: + speed"); FLOWSEEN.boosts = s.flow.boosts; }
+  hintStep(fdt, riding && (!K.on || mount.state === "riding"));
   if (++frames % 6 === 0) writeTele();
 });
 const FLOWSEEN = { boosts: 0 };
 function writeTele() {
   $("tv").innerHTML = `${Math.abs(bikeSpeed(s) * 3.6).toFixed(0)}<small> km/h</small>`;
   $("tl").textContent = (s.lean * 57.3).toFixed(0); $("tp").textContent = (s.pitch * 57.3).toFixed(0); $("tg").textContent = (s.grade * 100).toFixed(0); $("tfps").textContent = fps.toFixed(0);
-  const st = s.crashed ? `<span class="warn">CRASH: ${s.crashCause}</span>` : s.grindSeg >= 0 ? `<span class="hot">${s.grindV < BIKE.grindMinSpeed ? "stall" : "grind"} ${EDGE_NAMES[s.grindType]} ${s.grindDist.toFixed(1)} m</span>` : s.air ? `<span class="hot">${s.park.vertT >= 0 ? "vert " : ""}air ${s.airT.toFixed(2)} s</span>` : s.manual > 0 ? `<span class="hot">manual ${s.manual.toFixed(1)} s</span>` : s.skid ? `<span class="hot">SKID</span>` : `<span class="ok">riding</span>`;
+  const st = s.crashed ? `<span class="warn">CRASH: ${s.crashCause}</span>` : s.grindSeg >= 0 ? `<span class="hot">${s.grindV < BIKE.grindMinSpeed ? "stall" : "grind"} ${EDGE_NAMES[s.grindType]} ${s.grindDist.toFixed(1)} m</span>` : s.air ? `<span class="hot">${s.park.vertT >= 0 ? "vert " : ""}air ${s.airT.toFixed(2)} s</span>` : s.manual > 0 ? `<span class="hot">manual ${s.manual.toFixed(1)} s</span>` : s.skid ? `<span class="hot">SKID</span>` : s.flow.backMode === 1 ? `<span class="hot">backing up</span>` : s.flow.backMode === 2 ? `<span class="hot">rolling back</span>` : `<span class="ok">riding</span>`;
   $("tst").innerHTML = st + ` <span class="k">hops ${s.hops} grinds ${s.grinds} crashes ${s.crashes} · pumped +${s.flow.pumpGain.toFixed(1)} m/s</span>`;
   const L = s.lastLanding;
   $("tland").textContent = L ? `last landing: ${L.band}${L.band === "clean" ? "" : ` (${L.why})`} (${L.air.toFixed(2)} s air)` : "";
