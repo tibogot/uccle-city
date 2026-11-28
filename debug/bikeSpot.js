@@ -7,9 +7,9 @@
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { Panel } from "../viewer/panelUI.js";
-import { DT, BIKE, BIKE_RANGES, BIKE_PARK, BIKE_PARK_RANGES, SURFACES, createBikeState, advanceBike, bikePose, bikeSpeed, getUp } from "../viewer/bike/bikePhysics.js";
+import { DT, BIKE, BIKE_RANGES, BIKE_PARK, BIKE_PARK_RANGES, BIKE_FLOW, BIKE_FLOW_RANGES, SURFACES, createBikeState, advanceBike, bikePose, bikeSpeed, getUp } from "../viewer/bike/bikePhysics.js";
 import { createBikeEnv } from "../viewer/bike/bikeEnv.js";
-import { SPOT_SPOTS, spotGround, spotHeightRamped, spotEdges, spotColliders } from "../viewer/bike/bikeSpot.js";
+import { SPOT_SPOTS, spotGround, spotHeightRamped, spotEdges, spotColliders, withOneWay } from "../viewer/bike/bikeSpot.js";
 import { EDGE_NAMES } from "../viewer/bike/bikeEdges.js";
 import { soundGate } from "../viewer/audio/soundGate.js";
 import { BikeSound, SOUND, SOUND_RANGES } from "../viewer/bike/bikeAudio.js";
@@ -30,7 +30,7 @@ Object.assign(RIDE, RIDE_KIDA);
 // (round 2) the feel: "new" (a higher charged hop, the skid drift, quicker steering, softer landings) or ?feel=old
 const FEELN = qs.get("feel") === "old" ? "old" : "new";
 applyFeel(FEELN);
-const DEFAULTS0 = { ...BIKE }, PARK_DEFAULTS = { ...BIKE_PARK }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
+const DEFAULTS0 = { ...BIKE }, FLOW_DEFAULTS = { ...BIKE_FLOW }, PARK_DEFAULTS = { ...BIKE_PARK }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
 document.getElementById("title").innerHTML = `<b>Bike Lab</b> <small>the BMX spot · ? controls · <a href="?lab=old" style="color:#8fb8ff">old lab</a></small>`;
 const renderer = new THREE.WebGPURenderer({ antialias: true, reversedDepthBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -48,7 +48,7 @@ const look = await buildSpotLook({ renderer, scene, camera, quality: qs.get("gra
 
 // ---------------------------------------------------------------- the world: ground, colliders, edges
 const CL = spotColliders(KIND);
-const COL = buildColliders(CL.polys, CL.circles, CL.bounds);
+const COL = withOneWay(buildColliders(CL.polys, CL.circles, CL.bounds), CL);
 const W = { height: spotHeightRamped, ground: spotGround, edges: spotEdges, spots: SPOT_SPOTS };
 // the edge layer drawn (debug, off by default, depth tested: never through the kid)
 const EDGE_COL = [0x9a9a9a, 0xff9a2e, 0xc77a3a, 0xffb347, 0x4fb3ff, 0x5ad16a];
@@ -151,7 +151,11 @@ card.textContent = [
   "             (best on the gravel pad)",
   "A D / Left Right   steer (lean)",
   "Space        hold = charge (crouch), release = HOP",
-  "C            pump       Z / X  lean fwd / back",
+  "C            PUMP: press on the back side of a roller /",
+  "             bump / berm, let go on the face (no pedalling)",
+  "S + steer    the drift: the steer sets the slide angle,",
+  "             let go of S clean = a speed boost",
+  "Z / X        lean fwd / back",
   "F            trick in the air (let go before landing!)",
   "E            get on / off the bike",
   "R reset  G get up  V camera  P pause  O orbit",
@@ -193,9 +197,11 @@ fr.add(P, "slow", 0.05, 1, 0.05).name("time scale");
 edgeLines.visible = P.edges;
 fr.add(P, "edges").name("debug: the grind lines").onChange((v) => { edgeLines.visible = v; });
 fr.buttons([["reset bike (R)", () => place(P.spot)], ["get up (G)", () => s.crashed && getUp(s, env)], ["camera (V)", () => banner(`camera: ${chase.next()}`)],
-  ["constants to defaults", () => { Object.assign(BIKE, DEFAULTS0); applyFeel(P.feel); Object.assign(BIKE_PARK, PARK_DEFAULTS); SURFACES.forEach((x, i) => Object.assign(x, SURF_DEFAULTS[i])); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }]], 2);
+  ["constants to defaults", () => { Object.assign(BIKE, DEFAULTS0); Object.assign(BIKE_FLOW, FLOW_DEFAULTS); applyFeel(P.feel); Object.assign(BIKE_PARK, PARK_DEFAULTS); SURFACES.forEach((x, i) => Object.assign(x, SURF_DEFAULTS[i])); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }]], 2);
 fr.add(P, "info").name("state").listen();
 const groups = {};
+// (round 3) the drop-off fixes, the landings, pumping, the drift (viewer/bike/bikePhysics.js BIKE_FLOW)
+for (const [k, [a, b, st, grp]] of Object.entries(BIKE_FLOW_RANGES)) (groups[grp] ||= ui.addFolder(`Bike: ${grp} (round 3)`, { id: `spot-bike-${grp}`, open: false })).add(BIKE_FLOW, k, a, b, st).name(k);
 for (const [k, [a, b, st, grp]] of Object.entries(BIKE_PARK_RANGES)) (groups[grp] ||= ui.addFolder(`Bike: ${grp}`, { id: `spot-bike-${grp}`, open: false })).add(BIKE_PARK, k, a, b, st).name(k);
 for (const [k, [a, b, st, grp]] of Object.entries(BIKE_RANGES)) (groups[grp] ||= ui.addFolder(`Bike: ${grp}`, { id: `spot-bike-${grp}`, open: false })).add(BIKE, k, a, b, st).name(k);
 const fs = ui.addFolder("Surfaces", { id: "spot-surf", open: false });
@@ -282,13 +288,15 @@ renderer.setAnimationLoop(() => {
   FOCUS.set(fx, fy, fz); look.update(dt, FOCUS, s); look.render();
   if (bannerT > 0 && (bannerT -= dt) <= 0) bannerEl.style.opacity = 0;
   if (s.crashed && s.crashT < 0.05 && s.crashT > 0) banner(`crash: ${s.crashCause}`);
+  if (s.flow.boosts !== FLOWSEEN.boosts) { if (s.flow.boosts > FLOWSEEN.boosts) banner("clean drift: + speed"); FLOWSEEN.boosts = s.flow.boosts; }
   if (++frames % 6 === 0) writeTele();
 });
+const FLOWSEEN = { boosts: 0 };
 function writeTele() {
   $("tv").innerHTML = `${Math.abs(bikeSpeed(s) * 3.6).toFixed(0)}<small> km/h</small>`;
   $("tl").textContent = (s.lean * 57.3).toFixed(0); $("tp").textContent = (s.pitch * 57.3).toFixed(0); $("tg").textContent = (s.grade * 100).toFixed(0); $("tfps").textContent = fps.toFixed(0);
   const st = s.crashed ? `<span class="warn">CRASH: ${s.crashCause}</span>` : s.grindSeg >= 0 ? `<span class="hot">${s.grindV < BIKE.grindMinSpeed ? "stall" : "grind"} ${EDGE_NAMES[s.grindType]} ${s.grindDist.toFixed(1)} m</span>` : s.air ? `<span class="hot">${s.park.vertT >= 0 ? "vert " : ""}air ${s.airT.toFixed(2)} s</span>` : s.manual > 0 ? `<span class="hot">manual ${s.manual.toFixed(1)} s</span>` : s.skid ? `<span class="hot">SKID</span>` : `<span class="ok">riding</span>`;
-  $("tst").innerHTML = st + ` <span class="k">hops ${s.hops} grinds ${s.grinds} crashes ${s.crashes}</span>`;
+  $("tst").innerHTML = st + ` <span class="k">hops ${s.hops} grinds ${s.grinds} crashes ${s.crashes} · pumped +${s.flow.pumpGain.toFixed(1)} m/s</span>`;
   const L = s.lastLanding;
   $("tland").textContent = L ? `last landing: ${L.band}${L.band === "clean" ? "" : ` (${L.why})`} (${L.air.toFixed(2)} s air)` : "";
   P.info = `${K.on ? mount.state + " · " : ""}${st.replace(/<[^>]+>/g, "")}`;

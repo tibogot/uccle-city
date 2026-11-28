@@ -6,7 +6,8 @@
 //   wood     the ramps: planks across the run (seams, screws, grain, a plank's own tint), plywood sides, weathered
 //   concrete cast skatepark concrete (3D noise: no stretch on the quarter pipe), saw-cut joints, dirt at the foot
 //   graffiti the wall's concrete with invented tags painted in (a canvas on its faces: no decal planes, no z-fight)
-//   houses   Brussels terraces: brick / render by seed, blue-stone plinths, windows + doors in the facade's material
+//   houses   Brussels terraces: brick / render by seed, blue-stone plinths, windows + doors in the facade's material;
+//            (round 3) stone cornices, brick chimneys with stone caps, zinc dormers (viewer/bike/bikeSpotMeshes.js houseDetails)
 // Plus the city's grass blades on the grass and its stylised trees round the spot.
 import * as THREE from "three/webgpu";
 import { positionWorld, mx_noise_float, vec2, vec3, vec4, float, mix, smoothstep, fract, floor, abs, min, max, hash, color, normalWorld, attribute, texture, step, clamp, select, transformNormalToView, cameraPosition, length } from "three/tsl";
@@ -256,6 +257,10 @@ export async function buildSpotLook({ renderer, scene, camera, quality = "high",
     fence: fenceMat(),
     fencepost: new THREE.MeshStandardNodeMaterial({ color: 0x4e3e2e, roughness: 0.9 }),
     house: houseMat(), roof: roofMat(),
+    // (round 3: the houses' details - cornices, chimney caps (a light stone), zinc dormers and their windows)
+    stone: (() => { const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.85 }); m.colorNode = color(0xd6d0c2).mul(mix(float(0.82), one, n3(3, 7))); return m; })(),
+    zinc: (() => { const m = new THREE.MeshStandardNodeMaterial({ roughness: 0.55, metalness: 0.45 }); m.colorNode = color(0x7d858c).mul(mix(float(0.85), one, n3(2, 5))); return m; })(),
+    glass: new THREE.MeshStandardNodeMaterial({ color: 0x27313b, roughness: 0.12, metalness: 0.2 }),
   };
   const gm = groundMat(G);
   const fine = new THREE.Mesh(M.ground.fine.geo, gm), far = new THREE.Mesh(M.ground.far.geo, gm);

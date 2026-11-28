@@ -321,9 +321,10 @@ export function spotColliders(KIND) {
       for (let k = 0; k <= 4; k++) h = Math.max(h, profAt(S, Math.min(S.L, s + k * step / 4)));
       if (h < 0.12) continue;
       const za = S.z0 + S.dir * s, zb = S.z0 + S.dir * Math.min(S.L, s + step);
-      polys.push({ ...box(S.x0 - 0.12, S.x0, Math.min(za, zb), Math.max(za, zb), KIND.wall, h - 0.02), what: `${S.name} side` }, { ...box(S.x1, S.x1 + 0.12, Math.min(za, zb), Math.max(za, zb), KIND.wall, h - 0.02), what: `${S.name} side` });
+      // (round 3: ONE-WAY, out = the outward normal - a wheel rolling off the solid's side falls past its panel)
+      polys.push({ ...box(S.x0 - 0.12, S.x0, Math.min(za, zb), Math.max(za, zb), KIND.wall, h - 0.02), what: `${S.name} side`, out: [-1, 0] }, { ...box(S.x1, S.x1 + 0.12, Math.min(za, zb), Math.max(za, zb), KIND.wall, h - 0.02), what: `${S.name} side`, out: [1, 0] });
     }
-    if (S.name === "quarter pipe") polys.push({ ...box(S.x0, S.x1, S.zmax, S.zmax + 0.12, KIND.wall, profAt(S, S.L) - 0.02), what: "quarter pipe back" });
+    if (S.name === "quarter pipe") polys.push({ ...box(S.x0, S.x1, S.zmax, S.zmax + 0.12, KIND.wall, profAt(S, S.L) - 0.02), what: "quarter pipe back", out: [0, 1] });
   }
   // the fence round the north and the west (beyond the lines)
   for (const f of FENCES) {
@@ -339,8 +340,14 @@ export function spotColliders(KIND) {
     ...BINS.map(([x, z]) => ({ x, z, r: 0.3, kind: KIND.post })),
     ...NEAR_TREES.map(([x, z]) => ({ x, z, r: 0.3, kind: KIND.tree })),
   ];
-  return { polys, circles, bounds: BOUNDS };
+  // (round 3) the one-way pieces' outward normals, per polygon (0, 0: an ordinary piece): set as col.oneWay on the
+  // built set (bikeEnv.js) - withOneWay below
+  const oneWay = new Float32Array(polys.length * 2);
+  polys.forEach((p, i) => { if (p.out) { oneWay[i * 2] = p.out[0]; oneWay[i * 2 + 1] = p.out[1]; } });
+  return { polys, circles, bounds: BOUNDS, oneWay };
 }
+/** a built collider set with the spot's one-way pieces marked (bikeEnv.js reads col.oneWay) */
+export function withOneWay(col, CL) { col.oneWay = CL.oneWay; return col; }
 /** the fence lines [ax, az, bx, bz] (a wooden board fence: the north behind the hill, the west behind the pump track) */
 export const FENCES = [[-46, 53, 42, 53], [-46, -26, -46, 53]];
 

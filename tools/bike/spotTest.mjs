@@ -8,8 +8,8 @@
 //   the quarter pipe (up and back down), the ledge grind, the manual pad, the stair block + handrail, both kickers over
 //   their gaps, a pump-track lap, the table jump, the whoops, the hill up and down, the drift pad; every spot level and
 //   clear of the colliders
-import { DT, BIKE, createBikeState, stepBike, bikeSpeed } from "../../viewer/bike/bikePhysics.js";
-import { SPOT, SPOT_SPOTS, SOLIDS, spotGround, spotEdges, spotColliders, spotHeight, solidAt, BOUNDS } from "../../viewer/bike/bikeSpot.js";
+import { DT, BIKE, SURF, createBikeState, stepBike, bikeSpeed, groundQuery } from "../../viewer/bike/bikePhysics.js";
+import { SPOT, SPOT_SPOTS, SOLIDS, spotGround, spotEdges, spotColliders, withOneWay, spotHeight, solidAt, BOUNDS } from "../../viewer/bike/bikeSpot.js";
 import { buildColliders, KIND } from "../../viewer/drive/colliders.js";
 import { createBikeEnv } from "../../viewer/bike/bikeEnv.js";
 import { applyFeel } from "../../viewer/bike/bikeFeel.js";
@@ -21,7 +21,7 @@ let FEELN = "";
 const check = (name, ok, got, want) => { rows.push([(FEELN ? `[feel ${FEELN}] ` : "") + name, ok ? "PASS" : "FAIL", got, want]); if (!ok) failed++; };
 const f1 = (v) => (Number.isFinite(v) ? v.toFixed(1) : String(v)), f2 = (v) => (Number.isFinite(v) ? v.toFixed(2) : String(v));
 const T0 = performance.now();
-const CL = spotColliders(KIND), COL = buildColliders(CL.polys, CL.circles, CL.bounds);
+const CL = spotColliders(KIND), COL = withOneWay(buildColliders(CL.polys, CL.circles, CL.bounds), CL);
 const env = createBikeEnv({ sets: () => [COL], ground: spotGround, edges: spotEdges, wallrides: null });
 const spawnAt = (x, z, h, v) => { const q = {}; env.ground(x, z, q); const s = createBikeState(x, z, h, q.h); s.vx = Math.sin(h) * v; s.vz = Math.cos(h) * v; return s; };
 const spot = (name, v) => { const [x, z, h, v0] = SPOT_SPOTS[name]; return spawnAt(x, z, h, v ?? v0); };
@@ -57,6 +57,11 @@ if (!ridesOnly) {
   const open = [];
   for (const p of M.parts) { if (!p.closed) continue; const r = closedReport(p.geo); if (r.open) open.push(`${p.name}: ${r.open} open edges, ${r.bad} edges with > 2 faces`); }
   check("obstacle + furniture meshes closed (each edge shared by exactly two faces: no hollow mesh, no missing top)", !open.length, open.slice(0, 6).join("; ") || `${M.parts.filter((p) => p.closed).length} closed meshes`, "0 open");
+  // (round 3, owner: "plain houses") every house carries its cornice and a chimney (capped), some a dormer + window;
+  // all of them in the closed / grounded checks above and below (each piece on its body / roof)
+  { const cnt = (n) => M.parts.reduce((a, p) => a + (p.pieces || []).filter((q) => q.name === n).length, 0), nh = M.houses.length;
+    check("the houses have their details (a cornice each, >= 1 capped chimney each, dormers on some), closed + on what carries them", cnt("cornice") === nh && cnt("chimney") >= nh && cnt("chimney cap") === cnt("chimney") && cnt("dormer") > 0 && cnt("dormer window") === cnt("dormer"),
+      `${nh} houses: ${cnt("cornice")} cornices, ${cnt("chimney")} chimneys, ${cnt("dormer")} dormers`, "all"); }
   // grounded: per part (each piece of a merged part carries its own footprint), the lowest vertices at or under the
   // ground: nothing floats > 2 cm
   const float = [];
@@ -95,6 +100,38 @@ if (!ridesOnly) {
   for (let x = F.x0; x <= F.x1; x += 0.25) border = Math.max(border, Math.abs(g.heightAt(x, F.z0)), Math.abs(g.heightAt(x, F.z1)));
   for (let z = F.z0; z <= F.z1; z += 0.25) border = Math.max(border, Math.abs(g.heightAt(F.x0, z)), Math.abs(g.heightAt(F.x1, z)));
   check("the fine ground's border is level with the far grid (no crack where they meet)", border < 1e-4, `max ${border.toExponential(1)} m`, "< 0.1 mm");
+  // (round 3) the skid's marks follow the surface (on the funbox's 25 deg ramp, the quarter pipe's transition, the hill)
+  // and its dust is soft and short-lived (owner 2026-11-28: "marks lying flat on slopes", "dust puffs too solid")
+  {
+    const { createSkidFx, streakBasis } = await import("../../debug/bikeSpotFx.js");
+    const THREE = await import("three/webgpu");
+    const X = new THREE.Vector3(), Y = new THREE.Vector3(), Z = new THREE.Vector3(), Pc = new THREE.Vector3();
+    const F = SPOT.funbox, Qp = SPOT.qp, H = SPOT.hill;
+    const worst = [];
+    for (const [name, ax, az, bx, bz] of [["funbox ramp", F.xc + 0.5, F.z0 + 0.3, F.xc + 0.55, F.z0 + 0.42], ["funbox ramp across", F.xc - 0.5, F.z0 + 0.6, F.xc - 0.38, F.z0 + 0.62], ["quarter pipe", Qp.xc, Qp.foot + 0.9, Qp.xc + 0.03, Qp.foot + 1.02], ["hill", H.x + 3, H.z - H.rz * 0.6, H.x + 3.1, H.z - H.rz * 0.6 + 0.08]]) {
+      const L = streakBasis(spotHeight, ax, az, bx, bz, X, Y, Z, Pc);
+      const q = {}; spotGround((ax + bx) / 2, (az + bz) / 2, q);
+      const ang = Math.acos(Math.min(1, Y.x * q.nx + Y.y * q.ny + Y.z * q.nz)) * 57.3;
+      let off = 0;
+      for (const [u, v] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const cx = Pc.x + X.x * 0.045 * u + Z.x * L / 2 * v, cy = Pc.y + X.y * 0.045 * u + Z.y * L / 2 * v, cz = Pc.z + X.z * 0.045 * u + Z.z * L / 2 * v; off = Math.max(off, Math.abs(cy - spotHeight(cx, cz) - 0.012)); }
+      worst.push({ name, ang, off, slope: Math.acos(q.ny) * 57.3 });
+    }
+    const bad = worst.filter((w) => w.ang > 4 || w.off > 0.02);
+    check("skid marks lie IN the ground's plane on slopes (normal within 4 deg of the ground's, corners within 2 cm)", !bad.length, worst.map((w) => `${w.name} (${f1(w.slope)} deg): ${f1(w.ang)} deg, ${(w.off * 100).toFixed(1)} cm`).join("; "), "<= 4 deg, <= 2 cm");
+    // the dust: a sliding rear wheel throws puffs; each is faint (opacity <= 0.14 at its thickest), fades in and out,
+    // and is gone within 0.8 s of its birth
+    const fx = createSkidFx({ add() {} }, spotHeight);
+    const st = { wheelPos: [0, 0, 0, -16], contact: [true, true], skid: true, crashed: false, surf: [2, 2], vx: 0, vz: 6, slip: 1, heading: 0 };
+    let peak = 0, hard = 0, t = 0, lastLive = 0;
+    for (; t < 2.5; t += 1 / 60) {
+      if (t > 0.6) st.skid = false;
+      fx.update(st, 1 / 60);
+      for (let i = 0; i < fx.alpha.count; i++) { const a = fx.alpha.array[i]; peak = Math.max(peak, a); if (a > 0) lastLive = t; if (a > 0.999) hard++; }
+    }
+    const opMax = 0.14 * peak;
+    check("skid dust is soft and short-lived (puffs thrown, peak opacity <= 0.15, none left 0.9 s after the slide ends)", fx.S.puffs > 5 && opMax <= 0.15 && lastLive < 0.6 + 0.9,
+      `${fx.S.puffs} puffs, peak opacity ${opMax.toFixed(3)}, the last gone ${f2(lastLive - 0.6)} s after the slide`, "soft, gone < 0.9 s");
+  }
 }
 
 for (FEELN of ["new", "old"]) {
@@ -110,6 +147,99 @@ applyFeel(FEELN);
     if (solidAt(x, z)) bad.push(`${name}: on an obstacle`);
   }
   check("every spot on level ground, clear of the colliders and the obstacles", !bad.length, bad.join("; ") || `${Object.keys(SPOT_SPOTS).length} spots`, "all");
+}
+// ---------------------------------------------------------------- round 3 (2026-11-28): drop-offs, the frontal face,
+// the hop on ramps, landings, pumping, the drift (rule bike-drop-off-rolls-on)
+{
+  // a BOX with a sharp 90 deg edge (x -2..2, z -10..0, height h) and its side panels ONE-WAY, as the spot's solids
+  const boxEnv = (h) => {
+    const H = (x, z) => (x >= -2 && x <= 2 && z >= -10 && z <= 0 ? h : 0);
+    const box = (x0, x1, z0, z1, top) => ({ rings: [[[x0, z0], [x1, z0], [x1, z1], [x0, z1]]], kind: KIND.wall, top, base: -1 });
+    const col = buildColliders([box(-2.12, -2, -10, 0, h - 0.02), box(2, 2.12, -10, 0, h - 0.02)], [], { x0: -60, x1: 60, z0: -60, z1: 60 });
+    col.oneWay = new Float32Array([-1, 0, 1, 0]);
+    return createBikeEnv({ sets: () => [col], ground: groundQuery(H, () => SURF.asphalt, 0.03) });
+  };
+  const rideIn = (e, x, z, h, v, secs, input = () => ({})) => {
+    const q = {}; e.ground(x, z, q); const s = createBikeState(x, z, h, q.h); s.vx = Math.sin(h) * v; s.vz = Math.cos(h) * v;
+    const L = []; let n = 0;
+    for (let i = 0, N = Math.round(secs / DT); i < N; i++) { stepBike(s, input(s, i * DT), e); if (s.landings > n) { n = s.landings; L.push(s.lastLanding); } if (s.crashed) break; }
+    s._L = L; return s;
+  };
+  const bad = [], out = [];
+  for (const h of [0.3, 0.6, 0.9, 1.2]) {
+    const e = boxEnv(h); const row = [];
+    for (const v of [1.5, 3, 5, 7]) for (const [name, x, z, hd] of [["end", 0, -2.5, 0], ["side", 0, -5, PI / 2], ["diagonal", 0, -4, PI / 4]]) {
+      const s = rideIn(e, x, z, hd, v, 4);
+      const worst = s._L.some((l) => l.band === "bail"), off = s.y < 1.2;
+      // sensible: no crash, no bail, off the box onto the ground, rolling on (>= 45 % of the speed kept, the pitch level)
+      const ok = !s.crashes && !worst && off && bikeSpeed(s) > 0.45 * v && Math.abs(s.pitch) < 0.15;
+      if (!ok) bad.push(`${h} m ${name} at ${v} m/s: ${crashTxt(s)}, ${lands(s)}, out ${f1(bikeSpeed(s))} m/s, y ${f2(s.y)}`);
+      if (name === "end") row.push(`${v}: ${s._L.map((l) => l.band).join("/") || "rolled"}`);
+    }
+    out.push(`${h} m [${row.join(", ")}]`);
+  }
+  check("DROP-OFFS: rolled off a box's sharp 90 deg edge (0.3 / 0.6 / 0.9 / 1.2 m; its end, its side, diagonally; 1.5-7 m/s): never a crash or a bail, lands and rolls on", !bad.length, bad.slice(0, 4).join("; ") || out.join("; "), "48 drops, 0 crashes");
+  // the frontal face: a face higher than the axle met square at speed still crashes; a slow one stops the bike
+  const fc = [], fbad = [];
+  for (const h of [0.3, 0.6, 0.9]) {
+    const e = boxEnv(h);
+    const fast = rideIn(e, 0, 4, PI, 6, 2), slow = rideIn(e, 0, 3, PI, 2, 2);
+    fc.push(`${h} m: at 6 m/s ${crashTxt(fast)}, at 2 m/s ${crashTxt(slow)}`);
+    if (!fast.crashes || slow.crashes) fbad.push(h);
+  }
+  const low = rideIn(boxEnv(0.22), 0, 4, PI, 6, 2);
+  check("FRONTAL FACE: a face over the axle (0.3 / 0.6 / 0.9 m) met square at 6 m/s crashes; at 2 m/s it stops the bike; a 22 cm one (under the axle) is no crash", !fbad.length && !low.crashes, `${fc.join("; ")}; 22 cm at 6 m/s: ${crashTxt(low)}`, "crash fast, not slow, not under the axle");
+  // the owner's case: rolled off the small kicker's lip too slow to clear the gap (the front in the gap)
+  const K = SPOT.kickers[1], kr = [];
+  let kbad = 0;
+  for (const v of [2, 2.5, 3, 3.5]) { const s = ride(spawnAt(K.xc, K.z0 - 1.5, 0, v), () => ({}), 4); kr.push(`${v}: ${crashTxt(s)}`); kbad += s.crashes; }
+  check("the small kicker rolled off its lip too slow for the gap (2-3.5 m/s: the front wheel drops into it): no crash", kbad === 0, kr.join("; "), "0 crashes");
+  // the side of the funbox's table (0.6 m) and of the kicker landing's deck, ridden off sideways
+  const sd = [];
+  let sbad = 0;
+  const F = SPOT.funbox, KL = SPOT.kickers[0];
+  for (const v of [2, 3.5, 5]) for (const [x, z, hd] of [[F.xc + 0.8, F.zt0 + 1.5, PI / 2], [F.xc - 0.8, F.zt0 + 1.5, -PI / 2], [KL.xc, KL.zl + 0.4, PI / 2], [KL.xc, KL.zl + 0.4, -PI / 2]]) {
+    const s = ride(spawnAt(x, z, hd, v), () => ({}), 2.5); sbad += s.crashes; if (s.crashes) sd.push(`(${f1(x)}, ${f1(z)}) at ${v}: ${crashTxt(s)}`);
+  }
+  check("ridden off the side of the funbox's table / the kicker landing's deck (2-5 m/s, square off the side): no crash (the side panels stop only a wheel from outside)", sbad === 0, sd.join("; ") || "12 rides, 0 crashes", "0 crashes");
+  // THE HOP ON RAMPS: a charged hop (Space held 0.3 s) on the funbox's up ramp and its down ramp: the wheels leave the
+  // ramp about as long as on the flat
+  const hopAir = (x, z, hd, v) => { let air = 0; ride(spawnAt(x, z, hd, v), (q, t) => ({ hop: t < 0.3 }), 2, null, (q) => { if (!q.contact[0] && !q.contact[1]) air += DT; }); return air; };
+  const flatA = hopAir(0, -16, 0, 4), upA = hopAir(F.xc + 0.9, F.z0 - 0.3, 0, 4.2), downA = hopAir(F.xc + 0.9, F.zt1 - 0.6, 0, 3.4);
+  if (FEELN === "new") check("the charged hop works on the ramps (funbox up ramp / down ramp vs the flat: >= 70 % of the flat's air time)", upA > 0.7 * flatA && downA > 0.7 * flatA, `air: flat ${f2(flatA)} s, up ramp ${f2(upA)} s, down ramp ${f2(downA)} s`, ">= 70 %");
+  if (FEELN === "new") {
+    // LANDINGS: the kicker's landing slope keeps the speed, a flat drop loses some and wobbles, nose-heavy / sideways bail
+    const k0 = SPOT.kickers[1];
+    const kk = ride(spot(k0.name, k0.v), (q) => ({ pedal: q.z < k0.z0 - 1 && bikeSpeed(q) < k0.v ? 1 : 0, sprint: true }), 6, (q) => q.z > k0.z1 + 1);
+    const KLd = airs(kk)[0];
+    const fl = rideIn(boxEnv(1.2), 0, -2, 0, 5, 1.6), FLd = fl._L[0];
+    // (dropped from 0.6 m at 2.5 m/s down, the pose set: nose down 54 deg / crossed 54 deg)
+    const dropIn = (pitch, yaw) => { const e = boxEnv(0), s = createBikeState(0, 0, yaw, 0); s.vz = 5; s.y += 0.6; s.vy = -2.5; s.pitch = pitch; s.air = true; s.airT = 0.3; s.airMax = s.y + 0.8; for (let i = 0; i < 1.5 / DT && !s.crashed; i++) stepBike(s, {}, e); return s; };
+    const nose = dropIn(-0.95, 0), side = dropIn(0, 0.95);
+    check("landings: on the small kicker's down slope the speed is kept (+ transGain), a flat 1.2 m drop loses speed + wobbles, nose-heavy (54 deg) / sideways (54 deg) bail",
+      KLd && KLd.band !== "bail" && kk.flow.transGain > 0 && FLd && FLd.band !== "bail" && fl.flow.flats > 0 && nose.crashes > 0 && side.crashes > 0,
+      `kicker: ${KLd?.band}, +${f2(kk.flow.transGain)} m/s; flat 1.2 m at 5 m/s: ${FLd?.band}, ${f1(bikeSpeed(fl))} m/s out; nose: ${crashTxt(nose)}; sideways: ${crashTxt(side)}`, "kept / lost / bail / bail");
+    // PUMPING: round the pump track with NO pedalling: C pressed on the back sides (and stroked round the berms) keeps the
+    // bike going; coasting stops it; C held all the time gains nothing (the stroke)
+    const T = SPOT.pump;
+    const follow = (s) => { const t = Math.max(0, Math.min(1, (s.x - T.ax) / (T.bx - T.ax))), px = T.ax + (T.bx - T.ax) * t; const dx = s.x - px, dz = s.z - T.z, d = Math.hypot(dx, dz) || 1; let tx = -dz / d, tz = dx / d; const back = (T.R - d) * 0.6; tx += dx / d * back; tz += dz / d * back; return steerTo(s, Math.atan2(tx, tz)); };
+    const pumpRide = (mode) => {
+      let dist = 0;
+      const s = ride(spot("pump track", 4.5), (q, t) => {
+        const on = q.contact[0] || q.contact[1], av = (q.slope[0] + q.slope[1]) / 2, bank = Math.abs(q.slope[0]) < 0.08 && Math.abs(q.yawVel) > 0.3 && t % 0.75 < 0.5;
+        return { steer: follow(q), pump: mode === 2 ? 1 : mode === 1 && on && (av < -0.04 || bank) ? 1 : 0 };
+      }, 20, null, (q) => { dist += Math.abs(bikeSpeed(q)) * DT; });
+      return { s, dist };
+    };
+    const coast = pumpRide(0), pumped = pumpRide(1), held = pumpRide(2);
+    check("PUMPING (no pedalling, 20 s round the pump track): pumped in rhythm it keeps rolling (> 3 m/s at the end, > 2.5x the coast's distance); C held all along gains nothing", pumped.s.crashes === 0 && bikeSpeed(pumped.s) > 3 && pumped.dist > 2.5 * coast.dist && held.dist < 1.3 * coast.dist,
+      `coast ${f1(coast.dist)} m; pumped ${f1(pumped.dist)} m, ${f1(bikeSpeed(pumped.s))} m/s at the end, +${f1(pumped.s.flow.pumpGain)} m/s pumped; held ${f1(held.dist)} m`, "pumped >> coast, held ~ coast");
+    // THE DRIFT: the steer sets the slide angle (half lock ~ half the angle), a clean exit boosts
+    const drift = (st) => { const q = spawnAt(SPOT.drift.x - 3, SPOT.drift.z - 3, 0.6, 6.5); let sum = 0, n = 0; ride(q, (b, t) => ({ brakeR: t > 0.2 && t < 1.0 ? 1 : 0, steer: t > 0.2 && t < 1.0 ? st : 0 }), 2.2, null, (b) => { if (b.t > 0.6 && b.t < 1.0) { sum += Math.abs(b.slipAngle); n++; } }); return { q, slide: sum / n * 57.3 }; };
+    const d1 = drift(1), dh = drift(0.5);
+    check("THE DRIFT: the steer asks the slide angle (full lock ~ driftAngle, half lock less), a clean exit gives the boost, no crash", d1.q.crashes === 0 && dh.q.crashes === 0 && d1.slide > 1.6 * dh.slide && d1.slide > 35 && d1.q.flow.boosts === 1,
+      `full lock ${f1(d1.slide)} deg, half ${f1(dh.slide)} deg; boosts ${d1.q.flow.boosts}, out ${f1(bikeSpeed(d1.q))} m/s`, "full > 1.6 x half, 1 boost");
+  }
 }
 // ---------------------------------------------------------------- the obstacles ridden
 {

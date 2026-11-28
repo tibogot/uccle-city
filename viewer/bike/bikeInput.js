@@ -4,7 +4,7 @@
 //   W / Up        pedal           Shift   stand up and sprint
 //   S / Down      rear brake (ramps in: a tap brakes, held = a skid)        Q   front brake
 //   A D / Left Right   steer (ramped: a tap is a small lean, held = full)
-//   Space         hold = crouch / preload / absorb, release = hop (or a pump on a back slope)
+//   Space         hold = crouch / preload / absorb, release = hop (a tap on a back slope = a pump; round 3, feel new: a charged release pops there too)
 //   C             pump (extend the legs)        F   trick (held in the air; let go before landing!)
 //   Z / X         lean forward / back (I / K too): manual, nose dive, air pitch
 //   (one-shot, the lab: R reset, G get up, V camera, P pause, 1-9 spots, 0 / N / B the park's spots, ? the card, E get on / off: claude/kid)

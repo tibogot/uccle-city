@@ -55,11 +55,18 @@ export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit
             // low piece is not a wall to them while they leave it)
             if (s.grindCD > 0) continue;
             let hitW = false;
+            const ow = col.oneWay;
             for (let w = 0; w < 2 && !hitW; w++) {
               HC.y = s.wheelBot[w];
               if (heightClearP(col, id)) continue;
               wheel.cos = body.cos; wheel.sin = body.sin; wheel.x = s.wheelPos[w * 2]; wheel.z = s.wheelPos[w * 2 + 1];
               hitW = itemContactB(col, id, wheel, contact);
+              // (round 3, the drop-off) a ONE-WAY piece (a ground solid's side panel: col.oneWay = its outward normal
+              // per polygon) stops only a wheel coming from outside; a wheel leaving the solid's top falls past it.
+              // Root cause: the panels caught a wheel rolling off a box's side and pushed it back in (stuck at the
+              // edge, or "hit a wall" over 4.8 m/s). Only a push OUT (within 60 deg of the normal) counts: a panel is cut in
+              // 25-50 cm pieces, and a wheel falling off diagonally was pushed out of a piece's END (along the side)
+              if (hitW && ow && (ow[id * 2] !== 0 || ow[id * 2 + 1] !== 0) && contact.nx * ow[id * 2] + contact.nz * ow[id * 2 + 1] < 0.5) hitW = false;
             }
             if (!hitW) continue;
           } else {

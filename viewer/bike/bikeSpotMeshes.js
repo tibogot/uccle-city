@@ -202,7 +202,37 @@ function houseGeo(hs) {
   rg.applyMatrix4(m);
   if (m.determinant() < 0) flipWinding(rg);
   rg.computeVertexNormals();
-  return { body, roof: rg, y0, lo };
+  return { body, roof: rg, y0, lo, y1, front, rh, ov };
+}
+/** (round 3, owner: "plain houses") the details that read from the spot, 80-130 m off: a stone CORNICE under the eaves
+ *  (its own piece, 28 cm proud, 15 cm short of each party wall: never coplanar with the neighbour's), one or two brick
+ *  CHIMNEYS on the party walls with a stone cap, and on some a zinc DORMER with its window. Every piece a closed rounded
+ *  box, sunk into what carries it (the body, the roof): welded, no floating edge, no coplanar face.
+ *  -> [{ mat, name, geo, on: "body" | "roof" | index of an earlier detail }] */
+export function houseDetails(hs, g) {
+  const { cx, cz, ux, uz, nx, nz, w, d, seed } = hs, { y1, rh, ov } = g, hw = w / 2;
+  const yaw = Math.atan2(-uz, ux);                 // rbox local x -> along the row (u)
+  const at = (a, b) => [cx + ux * a + nx * b, cz + uz * a + nz * b];
+  const roofY = (b) => y1 - 0.05 + rh * Math.max(0, Math.min(1, (b < -d / 2 ? d + b + ov : -b + ov) / (d / 2 + ov)));   // the slope over depth b (0 the facade, -d the back)
+  const out = [];
+  const box = (mat, name, sw, sh, sd, a, b, yc, on, aux = [0, 0, 0, 0], r = 0.03) => { const [x, z] = at(a, b); out.push({ mat, name, geo: rbox(sw, sh, sd, x, yc, z, yaw, r, aux), on }); return out.length - 1; };
+  // the cornice: under the eaves (the roof starts 5 cm under the body's top), 0.04 m into the facade
+  box("stone", "cornice", w - 0.3, 0.22, 0.32, 0, 0.12, y1 - 0.2, "body");
+  // chimneys: on the party walls, astride the ridge, 0.75 m over it
+  const nCh = seed < 0.35 ? 2 : 1;
+  for (let k = 0; k < nCh; k++) {
+    const sgn = k === 0 ? (hs.roof < 0.5 ? 1 : -1) : -(hs.roof < 0.5 ? 1 : -1), a = sgn * (hw - 0.5), b = -d / 2 + (seed - 0.5) * 0.8;
+    const top = roofY(b) + 0.75, base = y1 - 0.02;
+    const ch = box("house", "chimney", 0.56, top - base, 0.9, a, b, (top + base) / 2, "roof", [0, 10, seed, 0], 0.02);
+    box("stone", "chimney cap", 0.7, 0.09, 1.04, a, b, top + 0.015, ch, [0, 0, 0, 0], 0.015);
+  }
+  // a dormer on the front slope (a roof tall enough): zinc cheeks and top, its window 2 cm proud
+  if (rh > 2.7 && seed > 0.4) {
+    const bF = -d * 0.16, bB = -d / 2 + 0.3, yF = roofY(bF), top = yF + 1.25, base = y1 - 0.02, dw = Math.min(1.8, w * 0.32);
+    const dm = box("zinc", "dormer", dw, top - base, bF - bB, 0, (bF + bB) / 2, (top + base) / 2, "roof", [0, 0, 0, 0], 0.02);
+    box("glass", "dormer window", dw - 0.42, 0.85, 0.08, 0, bF + 0.02, yF + 0.6, dm, [0, 0, 0, 0], 0.01);
+  }
+  return out;
 }
 function flipWinding(g) {
   const p = g.attributes.position.array, s = g.attributes.position.itemSize;
@@ -329,7 +359,11 @@ export function buildSpotMeshes({ keepPieces = true } = {}) {
   }
   // ---- the houses
   const houses = housePlan();
-  for (const hs of houses) { const g = houseGeo(hs); const b = add("house", "house", g.body); add("roof", "roof", g.roof, [b]); }
+  for (const hs of houses) {
+    const g = houseGeo(hs); const b = add("house", "house", g.body), r = add("roof", "roof", g.roof, [b]);
+    const det = [];
+    for (const dt of houseDetails(hs, g)) det.push(add(dt.mat, dt.name, dt.geo, [dt.on === "body" ? b : dt.on === "roof" ? r : det[dt.on]]));
+  }
   // ---- merge per material
   const parts = [];
   for (const e of acc.values()) {
