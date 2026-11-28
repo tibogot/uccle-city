@@ -555,3 +555,109 @@ the bike, sunlit and backlit side; `old_*` / `new_*`; `blender\bake_*`: the Cycl
   geometry: not changed this round, only shaded (catchlight, warmth, soft hairline).
 - The new look is a little darker overall than the old (no rim / glow, AO on the sky light): check with the owner; the
   colour AO floor (0.82) is the knob.
+
+## Phase 7: the kid look, round 2: the clothes, hair and face as shapes (2026-11-28, branch claude/kidlook2)
+Round 1 (phase 6) fixed the shading. The owner wanted better clothes and a better look overall (skin, face, hair), and
+round 1's own notes said what was left was GEOMETRY. This round is scripted in Blender 5.0 headless like the rest
+(tools/blender/kidGame.py, `R2`; `--r1` rebuilds round 1 exactly) and baked by tools/blender/kidLookBake.py.
+Round 1's files stay next to it: **`?kidlook=r1`** loads models/characters/kidA_r1.glb / .json / _atlas / _detail with
+round 1's material, **`?kidlook=old`** the same mesh in the atlas material from before round 1 (features.js row
+`kidlook`, now a select). Default: round 2.
+
+### Why the shapes (rule kid-not-plastic, the "clothes are shapes too" part)
+Every garment was the body's own surface pushed out by a constant and solidified 4 mm: a shrink-wrapped mannequin with
+paper edges. The sleeves, socks and cap had 1-D colour strips (no texel to bake a fold into), the brim had 17 x 4
+segments (facets in a grazing light), the hair was a few MPFB cards pressed flat under the cap, and the full vertex AO on
+the sky light made him darker overall than the old look.
+
+### What changed
+- **Jacket** (the windbreaker): support loops (split-only cuts) 1.1 / 2.2 / 4 cm over the hem, 3 cm up each cuff and
+  1.2 cm under the collar's top give a **separate hem band** (ready for the later cloth sim of the shirt; the shells stay
+  closed). The solidify is 5.5 mm in the hem band, 85 % of that at the cuffs and the collar, 3.3 mm on the panels (a
+  vertex-group thickness). The **blouson stands off** over the elastic hem (up to 6.5 mm, dying out 8 cm up) and
+  overhangs the band (1.5 mm). The cuffs' elastic pulls in, the sleeve rolls over it (1.8 mm) and bunches a little at the
+  elbow. Only LONG shapes go into the mesh: its spacing is ~1.2 cm, and a 2 cm fold wave aliased into a crumpled
+  zig-zag (the grazing-light close-up). The short folds are baked. The jacket's decimation ratio is 0.8 (was 0.5) so the
+  shapes have vertices.
+- **Shorts**: a waistband (a support loop 3.2 cm under the top, the band 1.6 mm proud), slanted **front pocket openings**
+  (a cut along the pocket line, the edge sunk 2.5 mm, the front panel's lip raised 0.8 mm) and a **turned-up cuff** on
+  each leg: the hem's loop extruded up and out (2.6 cm, 2.6 mm off the leg) and its top edge back onto the leg. The fold
+  edge is sharp, the top rolls soft. (A first try with a separate 3 mm lip under it made long thin triangles that
+  folded: kidTest's spike row.)
+- **Socks**: support loops at the rib's foot; the rib cuff (top 2.6 cm) 0.8 mm proud, its two shells kept 2.4 / 0.6 mm
+  off the decimated leg (round 1 snapped both to 1 mm: a paper edge); the ankle's slouch rings in the mesh.
+- **Sneakers** (on the export copy's decimated shoe): the cupsole's **lip** (two support loops, the sole 2.4 mm proud);
+  **laces**: five bars across the instep and the crosses between them, each a closed flat cord ray-cast section by section
+  onto the shoe's top (straight boxes sank into the curved upper); a **tongue** rising 1.6 cm out of the collar in front
+  of the sock (4 mm thick, rounded top), weighted 85 % to the calf at the top (the shin pushes it: no poke into the sock
+  when the ankle bends). They are new objects in a small white `lace` cell, joined into the shoes slot after the atlas.
+- **Cap**: u round the crown (the seam at the back), v up from the rim. The white front panel is a real 6-panel cap's
+  front panel (a wedge to the button, anti-aliased in the cell). The sweatband rim is 5 mm thick behind a support loop.
+  **Brims**: 41 x 6 segments (were 17 x 4), with their own 2-D cell.
+- **Weighted normals** (face area, keep sharp) on the jacket, socks, cap, brims and the laces / tongue, through a `_wn`
+  vertex group on the joined LOD0. The skin, hair and MPFB cloth keep their smooth normals; the LODs take smooth normals.
+- **2-D atlas cells** (kidA_rig.json `cells`, `look: "r2"`): jk_sleeve (1664, 0, 128 x 256), socks (1792, 0, 128 x 256),
+  cap (768, 0, 256 x 256), brim (1920, 0, 128 x 256), hairshell (1408, 64, 256 x 192), lace (1408, 0, 32 x 32). u runs
+  round the limb; a face across the seam wraps past 1 with a 10 % margin, clamped in the cell. kidLookBake.py bakes into
+  them what round 1 computed in the material:
+  - the sleeves: the elbow rings, the stack above the cuff, the cuff rib, the shoulder drag, the colour-band seams, the
+    underarm seam and the cuff's channel stitches;
+  - the socks: tube-sock ribs the whole length (deeper in the cuff), the cuff's turn line, the ankle's slouch;
+  - the cap: six panel seams (welt + two stitch rows) and the sweatband's stitch line;
+  - the brims: four stitch rows and the edge's bead;
+  - the hair shell: strands and lock grooves.
+
+  kidModel.js turns the procedural folds off for this mesh (`round` 2).
+- **Hair**: an opaque **hair shell** where the short01 cards grow (the scalp within 1.4 cm of a card vertex; the face,
+  the ears and everything below the eyes except the nape left out), 4.5 mm off under the cap and 6 mm round the sides /
+  nape. Chunky locks are grooves round the head with short pointed tips at the lower edge, and the edge tapers onto the
+  skin (a soft hairline, no step). Its colour cell is the hair's brown with strand streaks. The cards stay on top for the
+  fluffy edge (alpha-tested, no new layer). The scalp under the shell is hidden, and so are the skin islands that left.
+  (A capped flood with a shared visited set first cut the face into fake islands: black holes on the cheeks in the game
+  render.)
+- **Face** (MPFB targets in kidMakeHuman.py, a2 + round 2): eyes a little larger and more open with the outer corners up,
+  the brows raised a touch, a shorter, softer nose (younger), fuller lips with a stronger smile at the corners, a cupid's
+  bow and dimples, the ears a touch bigger and further out. Same style; still clearly about 11.
+- **Brightness** (KIDLOOK.r2, tuned in the bike lab against the old look, same camera): the colour AO floor is 0.97
+  (was 0.82), the sky light is occluded to 0.8 at most (0.95 on the skin; round 1: down to the AO's 0.35 floor). The
+  creases still shade through the baked cavity and relief. Luma of the kid in the lab's shots (old / r1 / r2): body
+  sunlit 73.5 / 69.6 / 73.4, body in shade 75.2 / 70.9 / 74.5, face sunlit 112.9 / 91.6 / 102.6, face in shade
+  109.3 / 86.9 / 97.4. The body is as bright as the old look; the face is ~9 % under it (the old one had a skin glow
+  emissive, the plastic read) and ~12 % over round 1. The white tee strip in the zip gets an AO floor of 0.62: it sat in a
+  1 cm slot behind the jacket and drew a black stripe down his front in every look.
+
+### Numbers
+| | round 1 | round 2 |
+|---|---|---|
+| tris LOD0 / 1 / 2 | 21,518 / 7,999 / 1,998 | 30,036 / 9,799 / 2,373 |
+| draws | 1 per LOD (+ shadow) | same |
+| textures on disk | 1.42 + 0.18 + 0.28 = 1.86 MB | 1.49 + 0.19 + 0.28 = 1.93 MB (round 1's r1 files load only with ?kidlook=r1 / old) |
+| kidA.glb | 2.50 MB | 3.41 MB |
+
+GPU, bike lab face close-up (debug/bikeLab.html?ride=1&gputime=1, page in front, 480 frames each): round 2 4.06 / 4.09 ms
+mean (medians 4.00 / 4.06), r1 4.03 ms (median 4.00): the extra 8.5k triangles do not show in the frame.
+
+Shots (outside git): C:\Users\tibog\Downloads\uccle-jobs\kidlook2_shots\ (`cmp_*.jpg` old | r1 | r2 from the same
+camera, face and body, sunlit and shade; `old_*` / `r1_*` / `r2_*`; `r2_riding_pedalling.png`; `blender\bake_*` the
+Cycles checker + grazing-light renders).
+
+### Checks (gate row `kida`, 46 checks)
+- Budgets 35k / 10.5k / 2.6k, one primitive per LOD, LOD ratios (33 % / 24 %).
+- The look rows: map sizes and layout, all textures <= 2.5 MB, every slot in KIDLOOK, the cloth shells closed in every
+  LOD; round 1's mesh kept (kidA_r1.glb LOD0 21,518 and its files); 2-D cells (the socks / cap / brims span >= 32 texels
+  both ways; the sleeves' and the hair shell's vertices are in their cells).
+- **No poke-through in the riding poses.** In the bind pose every vertex of an inner layer (tee, shorts, skin, socks,
+  hair) that lies under an outer one (jacket, socks, shorts, shoes, cap) is paired with it: within 2 cm, behind its
+  normal, < 6 mm off its normal line, the two surfaces parallel. In the 11 riding modes on the BMX x 4 crank angles both
+  are CPU-skinned, and the inner one may not come out more than 2 mm in front (at most 0.5 % of the pairs). Round 1 and
+  round 2: 0 pairs out. (The first pairing also took the jacket's inner shell / rim vertices as covers: 5 false pokes at
+  the fly. The tongue's first weights, half calf at the top, let the sock come 1.2 cm through it when standing. Both
+  fixed.)
+- The stray-piece / spike row: the lace cords are closed hard-surface details on the shoe (allowed). "Above the waist" now
+  means the torso (|x| < 0.3): in the T-pose bind the thick cuffs' rims fold a triangle each, which is not a flake.
+
+### Left
+- The fold detail is procedural (scripted shapes + baked relief), not a cloth sim. A real sim bake (high -> low normal
+  map) is the next step, then the shirt's live sim (the hem band is its own loop for it).
+- The sock tops show small dark marks at the back in the Blender renders (already there in round 1).
+- The tongue and the shorts' cuff are still low-poly in a close-up (the shoe and shorts meshes are MPFB's, decimated).

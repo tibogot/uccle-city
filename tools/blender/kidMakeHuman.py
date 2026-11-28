@@ -64,6 +64,17 @@ CANDS["a2"] = dict(CANDS["a"], label="A v2", targets=dict(CANDS["a"]["targets"],
     shorts_above_knee=0.01)
 C = CANDS[CAND]
 GAME = "--game" in argv
+if GAME and CAND == "a2" and "--r1" not in argv:
+    # ROUND 2 of the kid look (docs/KIDCHAR.md phase 7): a friendlier, more alive face in the same style: a little
+    # larger, more open eyes with the outer corners up, brows raised, a shorter softer nose (younger), fuller lips with
+    # a stronger smile at the corners and a cupid's bow, ears a touch bigger and out (a kid's)
+    C = dict(C, targets=dict(C["targets"], **{
+        "eyes/l-eye-scale-incr|eyes/r-eye-scale-incr": 0.3, "eyes/l-eye-height2-incr|eyes/r-eye-height2-incr": 0.25,
+        "eyes/l-eye-corner1-up|eyes/r-eye-corner1-up": 0.2, "eyebrows/eyebrows-trans-up": 0.15, "eyebrows/eyebrows-angle-up": 0.2,
+        "nose/nose-scale-vert-decr": 0.2, "nose/nose-volume-decr": 0.1, "nose/nose-point-up": 0.45,
+        "mouth/mouth-angles-up": 0.65, "mouth/mouth-lowerlip-volume-incr": 0.25, "mouth/mouth-upperlip-volume-incr": 0.15,
+        "mouth/mouth-cupidsbow-incr": 0.3, "mouth/mouth-dimples-in": 0.2,
+        "ears/l-ear-flap-incr|ears/r-ear-flap-incr": 0.25, "ears/l-ear-scale-incr|ears/r-ear-scale-incr": 0.12}))
 SHORTS = "cortu_cargo_pants"     # cut to knee-length 90s shorts (cut_shorts below); cortu_jeans_shorts are hot pants on a kid
 AGE_11 = 0.1875          # MakeHuman's age macro: 0 = 1 year, 0.1875 = 11 years, 0.5 = 25 years, 1 = 90 years
 MAX_TEX = 1024

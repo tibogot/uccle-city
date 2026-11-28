@@ -109,8 +109,19 @@ export const KIDLOOK = {
     shoes: [1, 0.03, 0.08, 0.03], hair: [-1, 1, 0, 0], eyes: [-1, 1, 0, 0], brows: [-1, 1, 0, 0], lashes: [-1, 1, 0, 0] },
   hair: 0x63432a,              // the hair cell's mean (sRGB): the scalp tint under the cards
 };
-/** ?kidlook=old: the look before 2026-11-28 (kidAtlasMaterial); default: kidLookMaterial */
-export const KID_LOOK_OLD = typeof location !== "undefined" && new URLSearchParams(location.search).get("kidlook") === "old";
+/** ROUND 2 (docs/KIDCHAR.md phase 7, rule kid-not-plastic): the mesh carries the clothes' shapes (hem bands, cuffs,
+ *  the shorts' cuff / pockets, the socks' rib, the laces / tongue, a hair shell, a smoother brim) and its sleeves /
+ *  socks / cap / brims have 2-D cells, so their folds are BAKED in kidA_detail (the procedural folds below are off);
+ *  and a brighter AO: round 1 read darker than the old look overall (the colour AO floor 0.82 and the full vertex AO on
+ *  the sky light). r2 (tuned in the bike lab against old: body luma 73 / 74 vs old 74 / 75, r1 70 / 71): the colour floor 0.97, the sky light
+ *  occluded down to 0.8 at most (0.95 on the skin); the creases still shade through the baked cavity and the relief. */
+KIDLOOK.r2 = { aoColour: 0.97, aoSky: 0.8, aoSkin: 0.95 };
+KIDLOOK.r1 = { aoColour: 0.82, aoSky: 0, aoSkin: 0 };
+/** ?kidlook=old: the look before 2026-11-28 (kidAtlasMaterial, round 1's mesh); ?kidlook=r1: round 1 (kidLookMaterial on
+ *  round 1's mesh, kidA_r1.*); default "r2": round 2 */
+const LOOK_Q = typeof location !== "undefined" ? new URLSearchParams(location.search).get("kidlook") : null;
+export const KID_LOOK = LOOK_Q === "old" ? "old" : LOOK_Q === "r1" ? "r1" : "r2";
+export const KID_LOOK_OLD = KID_LOOK === "old";
 
 class KidLookLighting extends THREE.PhysicalLightingModel {
   constructor(k) { super(false, true, false, false, false, false); this.k = k; }
@@ -150,8 +161,9 @@ const bumpFromHeight = Fn(([hgt]) => {
   return det.abs().mul(normalView).sub(grad).normalize();
 });
 
-export function kidLookMaterial(slots, urls = {}, renderer = null) {
+export function kidLookMaterial(slots, urls = {}, renderer = null, round = 2) {
   const L = KIDLOOK, per = (o, d) => slots.map((n) => o[n] ?? d);
+  const R = round === 1 ? L.r1 : L.r2;
   const ph = new THREE.DataTexture(new Uint8Array([214, 170, 140, 255]), 1, 1); ph.colorSpace = THREE.SRGBColorSpace; ph.needsUpdate = true;
   const tex = texture(ph, uv());
   const det = texture(dataTex([128, 128, 255, 128]), uv());
@@ -199,7 +211,8 @@ export function kidLookMaterial(slots, urls = {}, renderer = null) {
   const groove = (d) => exp(sq(d.div(0.7)).negate()).mul(-0.8).add(exp(sq(d.sub(1.8).div(0.6)).negate()).mul(0.3));
   const capH = groove(seamF.add(select(pB.z.greaterThan(0.06), float(0), float(99)))).add(groove(seamB));
   const procH = sleeveH.mul(inSleeve).add(sockH.mul(isSocks)).add(capH.mul(isCap)).mul(mm);
-  const hgt = D.r.sub(0.5).mul(2 * L.heightMM * mm).add(micro.mul(mv.y)).add(procH);
+  // (round 2: those folds are baked into the 2-D cells: off here)
+  const hgt = round === 1 ? D.r.sub(0.5).mul(2 * L.heightMM * mm).add(micro.mul(mv.y)).add(procH) : D.r.sub(0.5).mul(2 * L.heightMM * mm).add(micro.mul(mv.y));
   const uBump = uniform(L.bump);                                    // (a tuning knob: kid.material.userData.uBump.value)
   m.normalNode = bumpFromHeight(hgt.mul(uBump));
   // colour: the atlas x cavity x a little fibre mottle; the skin warmed / the scalp toward the hair colour
@@ -208,9 +221,11 @@ export function kidLookMaterial(slots, urls = {}, renderer = null) {
   base = mix(base, base.mul(vec3(1.07, 0.86, 0.8)), warm.mul(0.7).mul(isSkin));
   const hc = new THREE.Color(L.hair);
   base = mix(base, vec3(hc.r, hc.g, hc.b).mul(0.75), hairT.mul(0.85).mul(isSkin));
-  base = base.mul(mix(float(0.82), float(1), ao));                  // a gentle contact darkening (the AO's job is below)
+  base = base.mul(mix(float(R.aoColour), float(1), ao));            // a gentle contact darkening (the AO's job is below)
   m.colorNode = base;
-  m.aoNode = ao;                                                    // the sky's light AND its reflection occluded in the creases
+  // (round 2: the skin's sky AO floor higher still: the face sits under the brim, and without round 0's glow it read
+  // ~20 % darker than the old look in the bike lab's face close-up)
+  m.aoNode = R.aoSky > 0 ? mix(mix(float(R.aoSky), float(R.aoSkin), isSkin), float(1), ao) : ao;  // the sky's light AND its reflection occluded in the creases
   m.roughnessNode = uRough.element(slot).add(D.g.sub(0.5).mul(0.8)).add(micro.mul(0.12)).clamp(0.04, 1);
   m.specularIntensityNode = uSpec.element(slot);
   m.sheenNode = base.mul(uSheen.element(slot));
@@ -219,7 +234,7 @@ export function kidLookMaterial(slots, urls = {}, renderer = null) {
   const Hc = vec3(-0.35, 0.45, 1).normalize().add(positionViewDirection).normalize();
   m.emissiveNode = vec3(1, 1, 1).mul(normalView.dot(Hc).clamp().pow(500).mul(0.7)).mul(isEyes);
   m.opacityNode = tex.a.mul(float(1).sub(uHide.element(slot)));
-  m.userData.slots = slots; m.userData.uHide = uHide; m.userData.tex = tex; m.userData.look = "new"; m.userData.uBump = uBump;
+  m.userData.slots = slots; m.userData.uHide = uHide; m.userData.tex = tex; m.userData.look = round === 1 ? "r1" : "r2"; m.userData.uBump = uBump;
   if (urls.atlas && urls.atlas !== "none" && typeof window !== "undefined") {
     import("three/addons/loaders/KTX2Loader.js").then(({ KTX2Loader }) => {
       const ktx = new KTX2Loader().setTranscoderPath(TRANSCODER);
@@ -245,7 +260,7 @@ export function kidLookMaterial(slots, urls = {}, renderer = null) {
 
 /** after GLTFLoader: the LOD meshes found, one shared palette material, LOD1/2 hidden. atlas: the MPFB kid's KTX2 (URL);
  *  detail / fabric: the kid look's maps (KTX2 URLs); look: "old" = the atlas material before the look round */
-export function prepareKid(gltf, { palette = KID_PALETTE, atlas = null, detail = null, fabric = null, renderer = null, look = KID_LOOK_OLD ? "old" : "new" } = {}) {
+export function prepareKid(gltf, { palette = KID_PALETTE, atlas = null, detail = null, fabric = null, renderer = null, look = KID_LOOK } = {}) {
   const meshes = [];
   gltf.scene.traverse((o) => { if (o.isSkinnedMesh && /kid_LOD\d/.test(o.name)) meshes.push(o); });
   meshes.sort((a, b) => a.name.localeCompare(b.name));
@@ -253,7 +268,7 @@ export function prepareKid(gltf, { palette = KID_PALETTE, atlas = null, detail =
   const slots = meshes[0].geometry.userData?.slots || gltf.parser?.json?.meshes?.[0]?.extras?.slots || Object.keys(palette);
   const material = !atlas ? kidMaterial(slots, palette)
     : look === "old" ? kidAtlasMaterial(slots, atlas, renderer)
-    : kidLookMaterial(slots, { atlas, detail: detail ?? atlas.replace(/_atlas\.ktx2$/, "_detail.ktx2"), fabric: fabric ?? atlas.replace(/[^/]*_atlas\.ktx2$/, "kid_fabric.ktx2") }, renderer);
+    : kidLookMaterial(slots, { atlas, detail: detail ?? atlas.replace(/_atlas\.ktx2$/, "_detail.ktx2"), fabric: fabric ?? atlas.replace(/[^/]*_atlas\.ktx2$/, "kid_fabric.ktx2") }, renderer, look === "r1" ? 1 : 2);
   for (const m of meshes) { m.material = material; m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
   let lod = 0;
   const kid = {
