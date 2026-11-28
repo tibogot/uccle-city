@@ -61,6 +61,9 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
    back edges (row streetslivers, the light line at the garden join).
    Reality rounds: facade-kit garage door without a real garage makes a drive (Delvaux 36: Street View shows a low plinth,
    railing and a garden gate, no garage; the facade kit paints one, so the gardens draw a drive there).
+   DONE claude/facades5 (rules garage-needs-drive, strip-square-to-edge): a garage door needs a car way in front (UrbIS CR42L /
+   ramp / OSM service; 6,621 -> 3,793 doors; Delvaux 36 itself has a real double garage, kept); the "facade-kit z-fight" at
+   Xavier De Bue 72B / Stalle 73 / Alsemberg 739 was the detail strips (city-wide 4,903 -> 3,094 pairs, 597 -> 278 m2).
 
 ## OWNER PLAYTEST 2026-11-18 (car, live site) — TOP PRIORITY
 Owner's point: don't fix these one by one; find the CLASS of each defect, fix it at the generator, and add a city-wide detector so it can't come back unseen.

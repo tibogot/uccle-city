@@ -1,1 +1,1 @@
-{"_doc":"claude/reality1 rule bldclass-evidence: tools/bldclass/build_evidence.py (urban.brussels Irismonument inventory CC BY 4.0 + OpenStreetMap ODbL)","solids":{"508903":{"apt":true,"src":["osm:w230708661"]}}}
+{"_doc":"claude/reality1 rule bldclass-evidence: tools/bldclass/build_evidence.py (urban.brussels Irismonument inventory CC BY 4.0 + OpenStreetMap ODbL)","solids":{"508903":{"apt":true,"drive":"topo","src":["osm:w230708661","topo:1977466"]},"523370":{"drive":"topo","src":["topo:1915449"]}}}

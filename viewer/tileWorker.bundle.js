@@ -1297,6 +1297,7 @@ function mergeEv(a, b) {
   if (b.inst && !o.inst) o.inst = b.inst;
   if (b.wall && !o.wall) o.wall = b.wall;
   if (b.shop) o.shop = true;
+  if (b.drive && !o.drive) o.drive = b.drive;
   if (b.era && (!o.era || ERA_RANK[b.era] < ERA_RANK[o.era])) {
     o.era = b.era;
     o.year = b.year;
@@ -1493,7 +1494,8 @@ function classify(doc, P, I2, legacyStyle) {
     const styleI = BC && g.ev?.inst && type2 === TYPE.MAITRE && !g.ev.wall ? pick(rs, [[0, 0.65], [2, 0.2], [1, 0.15]]) : null;
     const wl = BC && (type2 === TYPE.MAITRE || type2 === TYPE.DECO || type2 === TYPE.BLOCK && g.ev?.wall === "buff") ? g.ev?.wall : null;
     const styleW = wl === "brick" ? h01(key + "|klinker") < 0.15 ? 1 : 0 : wl === "stone" ? 4 : wl === "buff" ? 2 : BC && type2 === TYPE.MAITRE && (g.ev?.era === "pre" || g.ev?.era === "inter" || g.ev?.near === "old") && !g.ev?.inst ? pick(rs, [[0, 0.6], [1, 0.15], [4, 0.15], [3, 0.1]]) : null;
-    const garage2 = g.ev?.inst && BC ? 0 : type2 === TYPE.BELETAGE || type2 === TYPE.VILLA && h01(key + "|gar") < 0.45 ? 1 : 0;
+    const gEv = !BC || doc._garageOld === true || !!g.ev?.drive;
+    const garage2 = g.ev?.inst && BC ? 0 : gEv && (type2 === TYPE.BELETAGE || type2 === TYPE.VILLA && h01(key + "|gar") < 0.45) ? 1 : 0;
     T3.set(key, { type: type2, style: styleW ?? styleI ?? style2, garage: garage2, form: form2, flat, steep, row: steepRow(g, partyShare), ev: BC ? g.ev : null });
   }
   const type = new Uint8Array(n), style = new Float32Array(n), garage = new Uint8Array(n), form = new Array(n), steepS = new Float32Array(n), rowS = new Uint8Array(n);
@@ -1822,8 +1824,17 @@ function addStrip(S3, kind, A, B, yTop, h, depth, nx, nz, col2, off = 0) {
   return s;
 }
 var _dbg = { strips: null };
-function emitStrips(D, S3, stats) {
+function emitStrips(D, S3, stats, fit = true) {
   const r = (v, k) => Math.round(v * k);
+  if (fit) for (const s of S3) {
+    const ex = s.bx - s.ax, ez = s.bz - s.az, L2 = Math.hypot(ex, ez);
+    if (L2 < 0.05) continue;
+    const nx = ez / L2, nz = -ex / L2;
+    if (nx * s.nx + nz * s.nz < 0.985) continue;
+    if (nx * s.nx + nz * s.nz < 0.99999995) stats.stripSquared = (stats.stripSquared || 0) + 1;
+    s.nx = nx;
+    s.nz = nz;
+  }
   const cu = /* @__PURE__ */ new Map();
   for (const s of S3) if (s.kind === "cu") for (const [x, z] of [[s.ax, s.az], [s.bx, s.bz]]) cu.set(`${r(x, 20)},${r(z, 20)}`, s);
   const onCornice = (s) => {
@@ -1835,12 +1846,13 @@ function emitStrips(D, S3, stats) {
   stats.eavesOnCornice = before - S3.length;
   const groups = /* @__PURE__ */ new Map(), sec = /* @__PURE__ */ new Map();
   for (const s of S3) {
-    const k = `${s.kind}|${r(s.y, 100)}|${r(s.h, 100)}|${r(s.d, 100)}|${r(s.off, 100)}`;
+    const k = fit ? `${s.kind}|${r(s.h, 100)}|${r(s.d, 100)}|${r(s.off, 100)}` : `${s.kind}|${r(s.y, 100)}|${r(s.h, 100)}|${r(s.d, 100)}|${r(s.off, 100)}`;
     if (!sec.has(k)) sec.set(k, []);
     sec.get(k).push(s);
   }
   let gid = 0;
-  for (const list of sec.values()) {
+  for (const list0 of sec.values()) {
+    const list = fit ? [...list0].sort((p, q) => Math.hypot(q.bx - q.ax, q.bz - q.az) - Math.hypot(p.bx - p.ax, p.bz - p.az)) : list0;
     const cl = [];
     const near = /* @__PURE__ */ new Map(), ck = (x, z) => `${Math.floor(x / 8)},${Math.floor(z / 8)}`;
     for (const s of list) {
@@ -1852,6 +1864,10 @@ function emitStrips(D, S3, stats) {
         if (Math.abs(s.ax * c2.nx + s.az * c2.nz - c2.pl) > 0.03 || Math.abs(s.bx * c2.nx + s.bz * c2.nz - c2.pl) > 0.03) continue;
         const v0 = s.ax * -c2.nz + s.az * c2.nx, v1 = s.bx * -c2.nz + s.bz * c2.nx;
         if (Math.min(v0, v1) > c2.u1 + 0.02 || Math.max(v0, v1) < c2.u0 - 0.02) continue;
+        if (fit) {
+          const dy = Math.abs(s.y - c2.y);
+          if (dy > 5e-3 && (dy > 0.06 || Math.min(Math.max(v0, v1), c2.u1) - Math.max(Math.min(v0, v1), c2.u0) < 0.05)) continue;
+        }
         hit = c2;
         break;
       }
@@ -1862,7 +1878,7 @@ function emitStrips(D, S3, stats) {
         hit.items.push(s);
         continue;
       }
-      const c = { nx: s.nx, nz: s.nz, pl, u0, u1, items: [s] };
+      const c = { nx: s.nx, nz: s.nz, pl, u0, u1, y: s.y, items: [s] };
       cl.push(c);
       for (const [x, z] of [[s.ax, s.az], [mx, mz], [s.bx, s.bz]]) {
         const k = ck(x, z);
@@ -1877,9 +1893,10 @@ function emitStrips(D, S3, stats) {
     const s0 = g[0], tx = -s0.nz, tz = s0.nx, pl = s0.ax * s0.nx + s0.az * s0.nz;
     const iv = g.map((s) => [s.ax * tx + s.az * tz, s.bx * tx + s.bz * tz, s]).sort((a, b) => a[0] - b[0]);
     let cur = null;
+    const yG = fit ? g.reduce((m, s) => Math.hypot(s.bx - s.ax, s.bz - s.az) > m.L ? { L: Math.hypot(s.bx - s.ax, s.bz - s.az), y: s.y } : m, { L: -1, y: s0.y }).y : null;
     const flush = () => {
       if (!cur) return;
-      merged.push({ ...cur.s, ax: tx * cur.u0 + s0.nx * pl, az: tz * cur.u0 + s0.nz * pl, bx: tx * cur.u1 + s0.nx * pl, bz: tz * cur.u1 + s0.nz * pl });
+      merged.push({ ...cur.s, ...fit ? { y: yG } : {}, ax: tx * cur.u0 + s0.nx * pl, az: tz * cur.u0 + s0.nz * pl, bx: tx * cur.u1 + s0.nx * pl, bz: tz * cur.u1 + s0.nz * pl });
     };
     for (const [u0, u1, s] of iv) {
       if (cur && u0 <= cur.u1 + 0.02) {
@@ -1891,6 +1908,91 @@ function emitStrips(D, S3, stats) {
       cur = { u0, u1, s };
     }
     flush();
+  }
+  if (fit) {
+    const C2 = 8, grid = /* @__PURE__ */ new Map(), gk = (i, j) => i * 100003 + j;
+    const band = (s) => {
+      const o0 = s.off, o1 = s.off + s.d;
+      return [[s.ax + s.nx * o0, s.az + s.nz * o0], [s.bx + s.nx * o0, s.bz + s.nz * o0], [s.bx + s.nx * o1, s.bz + s.nz * o1], [s.ax + s.nx * o1, s.az + s.nz * o1]];
+    };
+    merged.forEach((s, i) => {
+      s.band = band(s);
+      const xs = s.band.map((p) => p[0]), zs = s.band.map((p) => p[1]);
+      s.bb = [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)];
+      for (let a = Math.floor(s.bb[0] / C2); a <= Math.floor(s.bb[2] / C2); a++) for (let b = Math.floor(s.bb[1] / C2); b <= Math.floor(s.bb[3] / C2); b++) {
+        const k = gk(a, b);
+        if (!grid.has(k)) grid.set(k, []);
+        grid.get(k).push(i);
+      }
+    });
+    const cuts = /* @__PURE__ */ new Map();
+    merged.forEach((s, i) => {
+      const tx = -s.nz, tz = s.nx, L2 = Math.hypot(s.bx - s.ax, s.bz - s.az);
+      const seen = /* @__PURE__ */ new Set();
+      for (let a = Math.floor(s.bb[0] / C2); a <= Math.floor(s.bb[2] / C2); a++) for (let b = Math.floor(s.bb[1] / C2); b <= Math.floor(s.bb[3] / C2); b++) for (const j of grid.get(gk(a, b)) || []) {
+        if (j === i || seen.has(j)) continue;
+        seen.add(j);
+        const q = merged[j];
+        if (s.nx * q.nx + s.nz * q.nz > -0.9) continue;
+        if (Math.min(s.y, q.y) - Math.max(s.y - s.h, q.y - q.h) < 2e-3) continue;
+        if (q.bb[0] > s.bb[2] || q.bb[2] < s.bb[0] || q.bb[1] > s.bb[3] || q.bb[3] < s.bb[1]) continue;
+        const Q = q.band.map(([x, z]) => [(x - s.ax) * tx + (z - s.az) * tz, (x - s.ax) * s.nx + (z - s.az) * s.nz]);
+        let bad = null;
+        for (let u = 0; u <= L2 + 1e-6; u += 0.05) {
+          let lo = Infinity, hi = -Infinity;
+          for (let e = 0; e < 4; e++) {
+            const [u0, v0] = Q[e], [u1, v1] = Q[(e + 1) % 4];
+            if ((u0 - u) * (u1 - u) > 0) continue;
+            const v = Math.abs(u1 - u0) < 1e-9 ? null : v0 + (v1 - v0) * (u - u0) / (u1 - u0);
+            if (v === null) {
+              lo = Math.min(lo, v0, v1);
+              hi = Math.max(hi, v0, v1);
+            } else {
+              lo = Math.min(lo, v);
+              hi = Math.max(hi, v);
+            }
+          }
+          const over = Math.min(hi, s.off + s.d) - Math.max(lo, s.off) > 2e-3;
+          if (over) {
+            if (!bad) bad = [u, u];
+            else bad[1] = u;
+          } else if (bad) {
+            (cuts.get(i) || cuts.set(i, []).get(i)).push(bad);
+            bad = null;
+          }
+        }
+        if (bad) (cuts.get(i) || cuts.set(i, []).get(i)).push(bad);
+      }
+    });
+    if (cuts.size) {
+      const keep = [];
+      merged.forEach((s, i) => {
+        const cs = cuts.get(i);
+        delete s.band;
+        delete s.bb;
+        if (!cs) {
+          keep.push(s);
+          return;
+        }
+        const tx = -s.nz, tz = s.nx, L2 = Math.hypot(s.bx - s.ax, s.bz - s.az);
+        cs.sort((p, q) => p[0] - q[0]);
+        let from = 0;
+        const run = (u0, u1) => {
+          if (u1 - u0 >= 0.1) keep.push({ ...s, ax: s.ax + tx * u0, az: s.az + tz * u0, bx: s.ax + tx * u1, bz: s.az + tz * u1 });
+        };
+        for (const [c0, c1] of cs) {
+          run(from, c0 - 0.05);
+          from = Math.max(from, c1 + 0.05);
+        }
+        run(from, L2);
+        stats.stripFacing = (stats.stripFacing || 0) + 1;
+      });
+      merged.length = 0;
+      merged.push(...keep);
+    } else for (const s of merged) {
+      delete s.band;
+      delete s.bb;
+    }
   }
   const ends = /* @__PURE__ */ new Map();
   const ek = (s, x, z) => `${s.kind}|${r(s.y, 50)}|${r(s.h, 100)}|${r(s.d, 100)}|${r(s.off, 100)}|${r(x, 20)}|${r(z, 20)}`;
@@ -2801,6 +2903,24 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         beams.push([e1.A, e1.B]);
         stats.ridges++;
       }
+      if (opts.stripFit !== false) for (let i = 0; i < beams.length; i++) for (let j = i + 1; j < beams.length; j++) {
+        const [P2, Q] = beams[i], [R3, S3] = beams[j];
+        const d = [Q[0] - P2[0], Q[1] - P2[1], Q[2] - P2[2]], L2 = Math.hypot(...d);
+        if (L2 < 1e-6) continue;
+        const u = d.map((c) => c / L2);
+        const off = (X) => {
+          const w2 = [X[0] - P2[0], X[1] - P2[1], X[2] - P2[2]], t = w2[0] * u[0] + w2[1] * u[1] + w2[2] * u[2];
+          return [t, Math.hypot(w2[0] - u[0] * t, w2[1] - u[1] * t, w2[2] - u[2] * t)];
+        };
+        const [tr, dr] = off(R3), [ts, ds] = off(S3);
+        if (dr > 0.02 || ds > 0.02) continue;
+        if (Math.min(Math.max(tr, ts), L2) - Math.max(Math.min(tr, ts), 0) < 0.05) continue;
+        const pts = [[0, P2], [L2, Q], [tr, R3], [ts, S3]].sort((a, b2) => a[0] - b2[0]);
+        beams[i] = [pts[0][1], pts[3][1]];
+        beams.splice(j, 1);
+        j = i;
+        stats.ridgeDup = (stats.ridgeDup || 0) + 1;
+      }
       const ends = /* @__PURE__ */ new Map();
       for (const [P2, Q] of beams) for (const [X, Y] of [[P2, Q], [Q, P2]]) {
         const k = kv(X);
@@ -2856,7 +2976,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
     }
   });
-  emitStrips(D, SD, stats);
+  emitStrips(D, SD, stats, opts.stripFit !== false);
   if (clean) stats.coplanar = { cut: clean.stats.cut, dropped: clean.stats.dropped, pieces: clean.stats.pieces, m2: Math.round(clean.stats.m2) };
   const f32 = (a) => new Float32Array(a);
   return {
@@ -24341,6 +24461,7 @@ async function buildTileData(entry, base) {
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;
   hideBuildings(bDoc, entry.hide);
   if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name));
+  if (entry.garageEv === false) bDoc._garageOld = true;
   roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));
   const railT = entry.railT !== false;
   const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railT ? railFences2(rail.doc, bounds, rail.heroes, roads, hm.ground, { surface: tunnelSurface(tcut, hm.surface), roadY: roadGround }) : railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
@@ -24399,7 +24520,7 @@ async function buildTileData(entry, base) {
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   const roofKit = entry.roofs !== false ? roofCollector() : null;
   const feet = entry.colFeet === false ? await feetLate() : feetEarly;
-  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, wallEmpty: entry.wallEmpty !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
+  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, stripFit: entry.stripFit !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, wallEmpty: entry.wallEmpty !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   if (feet) buildings.stats.feet = feet;
   if (entry.surfDrawn !== false && buildings.roofs?.position?.length && roofs.surf) roofs.surf = await step("roof surface (drawn)", () => roofSurfaceDrawn(buildings.roofs.position, bounds));
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
@@ -24519,6 +24640,7 @@ async function buildLiteData(entry, base) {
   const [idxS] = MeshoptSimplifier.simplify(idx2, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
   hideBuildings(bDoc, entry.hide);
   if (entry.bldclass !== false) applyBuildingEvidence(bDoc, await bldEvidence(base, entry.name));
+  if (entry.garageEv === false) bDoc._garageOld = true;
   const dv = new DataView(bBuf), V2 = dv.getUint32(0, true), T3 = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V2 * 3), I2 = new Uint32Array(bBuf, 8 + V2 * 12, T3 * 3);
   if (entry.farLook !== false) {
@@ -25011,4 +25133,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "5044ece54db60468";
+self.__TILE_CODE_HASH = "e6aa0e48fc6c574f";
