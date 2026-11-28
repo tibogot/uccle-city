@@ -19,7 +19,9 @@ it from the start menu (**P**) or with `?game=falcon` (`&gmode=free` for free fl
 
 These are the falcon flight's own controls (`viewer/falconFlight/falconInput.js`). Since **falconfix** (2026-11-16,
 `docs/falconfix/README.md`) the **flight assist** (`viewer/falconFlight/flightAssist.js`) flies the bird where the player
-points: the old raw stick controls are `?falconctl=old`.
+points: the old raw stick controls are `?falconctl=old`. Since 2026-11-27 the default controller is the Falcon Gym's
+(rule falcon-gym "the gym in the city") and the default bird the v2; `?falconctl=current` / `?falconmodel=current` keep
+the old ones.
 
 | key | action (assisted, the default) |
 |---|---|

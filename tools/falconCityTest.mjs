@@ -14,6 +14,7 @@
 //            foot bones through a 7 s carry, its Talons clip as the strike pose, its far LOD on the same skeleton
 // Self-tests: the gym on the raw city world (no pads) cannot stand on a sill (it falls: why the pads exist); the defaults
 // are current / current.
+import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
@@ -307,9 +308,26 @@ const ONLYV2 = args.includes("--v2");
 const check = (name, ok, info) => { results.push({ name, ok }); if (!QUIET || !ok) console.log(`${ok ? "PASS" : "FAIL"}  ${name}: ${info}`); };
 {
   const me = pathToFileURL(path.join(ROOT, "viewer/falconFlight/gymCity.js")).href;
-  const q = (s) => spawnSync(process.execPath, ["--input-type=module", "-e", `globalThis.location = { search: ${JSON.stringify(s)} }; const m = await import(${JSON.stringify(me)}); console.log(m.FALCON_CTL + " " + m.FALCON_MODEL);`], { encoding: "utf8" }).stdout.trim();
-  const d = q(""), on = q("?game=falcon&falconctl=gym&falconmodel=v2"), other = q("?falconctl=current&falconmodel=current"), old = q("?falconctl=old");
-  check("the switches: ?falconctl=gym|current, ?falconmodel=v2|current, both default current (?falconctl=old stays the current controller)", d === "current current" && on === "gym v2" && other === "current current" && old === "current current", `default "${d}", gym+v2 "${on}", current "${other}", old "${old}"`);
+  const q = (s) => spawnSync(process.execPath, ["--input-type=module", "-e", `globalThis.location = { search: ${JSON.stringify(s)} }; const m = await import(${JSON.stringify(me)}); console.log(m.FALCON_CTL + " " + m.FALCON_MODEL + " " + m.V2_AT_BOOT);`], { encoding: "utf8" }).stdout.trim();
+  // (the defaults flipped 2026-11-27, the owner's OK after playing ?falconctl=gym&falconmodel=v2: "far better than the
+  // old bird"; this check asserted "both default current" before)
+  const d = q(""), fg = q("?game=falcon"), pol = q("?game=police"), on = q("?game=falcon&falconctl=gym&falconmodel=v2"), other = q("?game=falcon&falconctl=current&falconmodel=current"), old = q("?falconctl=old"), v2 = q("?falconmodel=v2");
+  check("the switches: no switch = gym + v2 (the default since 2026-11-27), ?falconctl=current&falconmodel=current = the old ones, ?falconctl=old = the current controller, the explicit gym / v2 as before",
+    d.startsWith("gym v2 ") && fg.startsWith("gym v2 ") && on.startsWith("gym v2 ") && other.startsWith("current current ") && old.startsWith("current v2 "),
+    `default "${d}", ?game=falcon "${fg}", gym+v2 "${on}", current "${other}", old "${old}"`);
+  check("the v2 loads at boot only on a falcon page (?game=falcon or ?falconmodel=v2): not on the plain city, ?game=police or with ?falconmodel=current",
+    fg.endsWith(" true") && on.endsWith(" true") && v2.endsWith(" true") && d.endsWith(" false") && pol.endsWith(" false") && other.endsWith(" false"),
+    `?game=falcon ${fg.split(" ")[2]}, ?falconmodel=v2 ${v2.split(" ")[2]}, plain city ${d.split(" ")[2]}, ?game=police ${pol.split(" ")[2]}, current ${other.split(" ")[2]}`);
+  // (source) elsewhere the first falcon flight brings the v2 in: cityFlyer.js init gated by V2_AT_BOOT, ensureModel()
+  // called by main.js fly() and the falcon game's start (both its hunt and its ring courses) before the flight starts,
+  // and the far LOD + held prey warmed with the bird (warmBird) at boot and at the swap
+  const src = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
+  const CF = src("viewer/falconFlight/cityFlyer.js"), MJ = src("viewer/main.js"), GD = src("viewer/falconGame/falconGameDef.js");
+  const ens = (GD.match(/await fl\.ensureModel\?\.\(\)/g) || []).length;
+  const srcOk = /if \(V2_AT_BOOT\)/.test(CF) && /ensureModel\(\) \{[\s\S]{0,900}await this\.warmBird\(\)/.test(CF) && /await this\.warmBird\(/.test(CF.slice(CF.indexOf("async init()"), CF.indexOf("async loadV2()")))
+    && /await flyer\.ensureModel\?\.\(\)/.test(MJ.slice(MJ.indexOf("const fly = async"), MJ.indexOf("const fly = async") + 1500)) && ens >= 2;
+  check("the v2 swapped in at the first flight elsewhere: init gated by V2_AT_BOOT, ensureModel() warms the v2 (warmBird: far LOD + held prey) before the swap, called by main.js fly() and both falcon game starts",
+    srcOk, `cityFlyer V2_AT_BOOT ${/if \(V2_AT_BOOT\)/.test(CF)}, falconGameDef ensureModel x${ens}, main.js fly ${/await flyer\.ensureModel/.test(MJ)}`);
 }
 if (!ONLYV2) {
 const TS = takeoff("gym", 0, -60, 0), TC = takeoff("current", 0, -60, 0);

@@ -16,7 +16,8 @@ import { FUN_OLD } from "./falconFun.js";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
-/** ?falconctl=old: the raw stick controls of round 1 (W / S pitch, A / D bank, no assist); else the flight assist
+/** ?falconctl=old: the current controller (not the default gym one, gymCity.js) with the raw stick controls of round 1
+ *  (W / S pitch, A / D bank, no assist); else the flight assist
  *  (flightAssist.js) flies from the INTENT this input also fills (falconfix, 2026-11-16) */
 export const CTL_OLD = typeof location !== "undefined" && /[?&]falconctl=old(&|$)/.test(location.search);
 

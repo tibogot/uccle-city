@@ -87,7 +87,9 @@ function play(sd, T = 120, high = false, opt = {}) {
   const P = new Pigeons({ world, roosts: world.roosts, home: { x: 0, z: -110 }, count: 150, scale: 1.4, ground: 0.4 });
   P.flockHomes = [{ x: 0, z: -110, r: 45, h: 28, w: 0.12 }, { x: 25, z: -140, r: 38, h: 40, w: -0.14 }];
   const inp = fakeInput(), bird = fakeBird();
-  const g = new FalconGame({ world, air: still, bird, pigeons: P, fam: null, audio: null, input: inp });
+  // (ctl "current": this row measures the city's own controller with the fun layer; since 2026-11-27 the gym is the
+  // default (gymCity.js FALCON_CTL, rule falcon-gym), whose fun catch the falconcity row measures)
+  const g = new FalconGame({ world, air: still, bird, pigeons: P, fam: null, audio: null, input: inp, ctl: "current" });
   // crashes in an auto-dive (or within 1.5 s after it): the dive's pull-out / the swoop; others (a low climb-out into a
   // wall: the flight assist's own business, unchanged by this branch) counted apart
   let crashes = 0, other = 0, contacts = 0, diveEnd = -9;
@@ -308,7 +310,7 @@ function crossingLock() {
   const P = new Pigeons({ world, roosts: buildRoosts(), home: { x: 0, z: -110 }, count: 150, scale: 1.4 });
   for (let i = 0; i < P.max; i++) P.state[i] = 3;
   const j = 5; P.state[j] = 1; P.kind[j] = 1;
-  const inp = fakeInput(), g = new FalconGame({ world, air: still, bird: fakeBird(), pigeons: P, fam: null, audio: null, input: inp });
+  const inp = fakeInput(), g = new FalconGame({ world, air: still, bird: fakeBird(), pigeons: P, fam: null, audio: null, input: inp, ctl: "current" });
   g.start(0, 60, 0, 0, 15, 0);
   // 60 deg to the right of the heading (-z), 30 m, level, flying across
   P.p[j * 3] = 30 * Math.sin(1.05); P.p[j * 3 + 1] = 60; P.p[j * 3 + 2] = -30 * Math.cos(1.05); P.v[j * 3] = -8;
