@@ -219,23 +219,29 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
       new THREE.CylinderGeometry(0.02, 0.02, Math.hypot(POLE_OFF, 0.9), 5).rotateX(Math.PI / 2 - Math.atan2(0.9, POLE_OFF)).translate(0, WIRE_H + 0.8, -POLE_OFF / 2),   // stay
       new THREE.CylinderGeometry(0.015, 0.015, 0.4, 4).translate(0, WIRE_H + 0.15, -POLE_OFF),                                            // dropper
     ];
-    const same = poles.every((p) => Math.abs(p.arm - POLE_OFF) < 1e-3);
-    const pm = new THREE.InstancedMesh(geo(same ? [...poleParts, ...armParts] : poleParts), steel, poles.length);
-    const am = same ? null : new THREE.InstancedMesh(geo(armParts), steel, poles.length);
+    // (claude/reality2, rule lamp-extras) the poles of a shop street painted the lamp green (opts.decoPoles: the set of
+    // decorated pole indices; viewer/lampExtras.js hangs their lanterns), the others steel grey
+    const deco = opts.decoPoles && opts.decoMat ? opts.decoPoles(poles) : new Set();
     const one = new THREE.Vector3(1, 1, 1), sc = new THREE.Vector3();
-    poles.forEach((p, i) => {
-      // turn the arm toward the track: yaw makes local -z point along (-nx, -nz)
-      q.setFromAxisAngle(up, p.yaw);
-      const at = new THREE.Vector3(p.x, surface(p.x, p.z), p.z);
-      M.compose(at, q, one); pm.setMatrixAt(i, M);
-      if (am) { M.compose(at, q, sc.set(1, 1, p.arm / POLE_OFF)); am.setMatrixAt(i, M); }
-    });
-    for (const [m, nm] of [[pm, "tram-poles"], [am, "tram-pole-arms"]]) {
-      if (!m) continue;
-      m.castShadow = true;
-      m.computeBoundingSphere();
-      m.name = nm;
-      group.add(m);
+    for (const [list, mat, tag] of [[poles.filter((_, i) => !deco.has(i)), steel, ""], [poles.filter((_, i) => deco.has(i)), opts.decoMat, "-green"]]) {
+      if (!list.length || !mat) continue;
+      const same = list.every((p) => Math.abs(p.arm - POLE_OFF) < 1e-3);
+      const pm = new THREE.InstancedMesh(geo(same ? [...poleParts, ...armParts] : poleParts), mat, list.length);
+      const am = same ? null : new THREE.InstancedMesh(geo(armParts), mat, list.length);
+      list.forEach((p, i) => {
+        // turn the arm toward the track: yaw makes local -z point along (-nx, -nz)
+        q.setFromAxisAngle(up, p.yaw);
+        const at = new THREE.Vector3(p.x, surface(p.x, p.z), p.z);
+        M.compose(at, q, one); pm.setMatrixAt(i, M);
+        if (am) { M.compose(at, q, sc.set(1, 1, p.arm / POLE_OFF)); am.setMatrixAt(i, M); }
+      });
+      for (const [m, nm] of [[pm, "tram-poles" + tag], [am, "tram-pole-arms" + tag]]) {
+        if (!m) continue;
+        m.castShadow = true;
+        m.computeBoundingSphere();
+        m.name = nm;
+        group.add(m);
+      }
     }
   }
 
@@ -330,5 +336,6 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
     sm.computeBoundingSphere();
     group.add(sm);
   }
-  return { group, shelterSites, counts: { deckSegments: deck?.segments || 0, wireSegments: segs.length, poles: poles.length, platforms: plat.length, shelters: shelters.length } };
+  for (const p of poles) p.y = surface(p.x, p.z);
+  return { group, shelterSites, poleSites: poles, counts: { deckSegments: deck?.segments || 0, wireSegments: segs.length, poles: poles.length, platforms: plat.length, shelters: shelters.length } };
 }

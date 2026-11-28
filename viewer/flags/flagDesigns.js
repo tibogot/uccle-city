@@ -38,6 +38,18 @@ export const FLAG_DESIGNS = {
   } },
 };
 
+/** where each design comes from (the embassy flags are the Commons SVGs instead: data/flags/embassy_sources.json,
+ *  viewer/flags/flagAtlas.js): a national / official flag is not
+ *  protected by copyright (Belgian copyright law art. XI.172 excludes official acts; the designs are public domain, as
+ *  on Wikimedia Commons), drawn here in code from the legal description / construction sheet named */
+export const FLAG_SOURCES = {
+  belgium: { source: "Constitution art. 193; federal protocol colours (Pantone 116 / 032)", licence: "public domain (official design)" },
+  belgium_legal: { source: "as belgium, the legal 13:15 shape", licence: "public domain (official design)" },
+  france: { source: "Constitution of 1958 art. 2; the 2020 navy blue of the Élysée", licence: "public domain (official design)" },
+  eu: { source: "EU graphical specifications for the European emblem (europa.eu)", licence: "public domain (official emblem; reproduction allowed by the Council of Europe / EU terms)" },
+  uccle: { source: "Flags of the World be-bxluc (the commune's colours from its arms)", licence: "public domain (municipal flag, plain bicolour)" },
+};
+
 /** an upright five-pointed star (outer radius r) */
 function star(g, x, y, r) {
   const ri = r * 0.381966;                       // inner radius of a regular pentagram

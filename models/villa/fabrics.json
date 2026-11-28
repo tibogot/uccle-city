@@ -1,0 +1,22 @@
+{
+ "about": "tools/villa/fabrics_ktx2.py: CC0 Poly Haven fabric scans (models/villa/LICENCES.md)",
+ "size": 512,
+ "layers": [
+  {
+   "id": "rough_linen",
+   "tile_m": 0.271
+  },
+  {
+   "id": "knitted_fleece",
+   "tile_m": 0.268
+  },
+  {
+   "id": "terlenka",
+   "tile_m": 0.266
+  },
+  {
+   "id": "leather_white",
+   "tile_m": 0.3
+  }
+ ]
+}

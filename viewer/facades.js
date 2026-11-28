@@ -25,9 +25,10 @@
 import * as THREE from "three/webgpu";
 import {
   Fn, If, attribute, positionWorld, normalWorld, cameraPosition, color, float, vec2, vec3, vec4, mix, step, smoothstep, floor, fract,
-  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness, mod, select, varying, uint,
+  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness, mod, select, varying, uint, time,
 } from "three/tsl";
 import { lampLight } from "./lampLight.js";
+import { XMAS_WIN, xmasWin } from "./christmas/xmasWindows.js";   // (claude/xmas4: the December windows, compiled in with the layer only)
 import { hash2D, noise2D, bumpNormal, filteredPulse } from "./tslkit.js";
 import { env } from "./lighting.js";
 import { n3, band, courses } from "./roadPaint.js";
@@ -172,7 +173,30 @@ const interiorRoom = Fn(([gx, gy, winUV, cellId, bayW, storeyH, seed, litProb, f
   const col = mix(room, fabric.mul(pleat).mul(0.92), inDrape);
   const emit = mix(float(1), float(0.25), inDrape);
   const warm = mix(vec3(1), lightCol, lit.mul(0.85));
-  return vec4(col.mul(warm).mul(mix(float(0.85), float(1.35), lit)), litRoom.mul(emit));
+  if (!XMAS_WIN.on) return vec4(col.mul(warm).mul(mix(float(0.85), float(1.35), lit)), litRoom.mul(emit));
+  // ---- (claude/xmas4, plan job 7) DECEMBER WINDOWS (viewer/christmas/xmasWindows.js): compiled in only with the
+  // Christmas layer on at boot; a warm LED strand across the window head in a share of the dark rooms (their faint warm
+  // glow on the curtains: the extra warm windows) and of the lit ones. The lit rooms are unchanged (litHash.js copy).
+  const out = vec4(col.mul(warm).mul(mix(float(0.85), float(1.35), lit)), litRoom.mul(emit)).toVar();
+  If(xmasWin.greaterThan(0.5), () => {
+    const xRoom = step(float(1).sub(litProb).sub(XMAS_WIN.share), s3).mul(float(1).sub(litRoom));
+    const xLit = litRoom.mul(step(1 - XMAS_WIN.litShare, fract(s1.mul(7.31).add(s2.mul(3.7)))));
+    const on = xRoom.add(xLit).toVar();
+    // the strand: two shallow swags (7 % of the window's height) under its head, a bead every 1 / 11 of its width
+    const t = fract(winUV.x.mul(2));
+    const by = winUV.y.sub(float(0.9).sub(t.mul(float(1).sub(t)).mul(0.28))).mul(0.62);    // (the glass is ~1.6 x higher than wide)
+    const bi = floor(winUV.x.mul(XMAS_WIN.beads));
+    const bx = fract(winUV.x.mul(XMAS_WIN.beads)).sub(0.5).div(XMAS_WIN.beads);
+    const sharp = smoothstep(0.021, 0.008, length(vec2(bx, by)));
+    // far off (a bead under ~1.5 px: the window's u per pixel, drapeFw) the beads become a soft warm line (no sparkle)
+    const far = smoothstep(0.006, 0.02, drapeFw);
+    const bead = mix(sharp, smoothstep(0.035, 0.0, abs(by)).mul(0.3), far).mul(on).mul(float(1).sub(lod.mul(0.6)));
+    const tw = sin(time.mul(1.3).add(s1.mul(40.0)).add(bi.mul(2.1))).mul(0.15).add(0.85);
+    const led = color(0xffb35c).mul(5.0).mul(tw);
+    out.assign(vec4(mix(out.rgb.mul(mix(vec3(1), color(0xffa860).mul(2.2), xRoom)), led, bead),
+      max(out.a.add(xRoom.mul(emit).mul(XMAS_WIN.glow)), bead)));
+  });
+  return out;
 });
 
 /**
@@ -410,8 +434,13 @@ export function wallMaterial(opts = {}) {
     // buff, salmon, cream-white, orange-red, brown-buff (linear albedo, from photos of Brussels-periphery lotissements)
     const yb0 = wl ? SCANS.brick_yellow?.meta?.mean_albedo_linear ?? [0.4, 0.27, 0.14] : [0.4, 0.27, 0.14];
     // (5 ochre, 6 white: the rendered 1990s houses, over the cream render set)
-    const tone6 = mix(mix(mix(mix(mix(C(0.55, 0.43, 0.26), C(0.56, 0.28, 0.16), band(nTone, 1)), mix(C(0.6, 0.55, 0.43), C(0.4, 0.13, 0.06), band(nTone, 3)), step(1.5, nTone)), C(0.33, 0.19, 0.1), band(nTone, 4)), C(0.55, 0.4, 0.19), band(nTone, 5)), C(0.68, 0.68, 0.65), band(nTone, 6));
+    // (claude/places2) 7 mustard: Le Pigeon Noir's ochre-mustard render
+    const tone6 = mix(mix(mix(mix(mix(mix(C(0.55, 0.43, 0.26), C(0.56, 0.28, 0.16), band(nTone, 1)), mix(C(0.6, 0.55, 0.43), C(0.4, 0.13, 0.06), band(nTone, 3)), step(1.5, nTone)), C(0.33, 0.19, 0.1), band(nTone, 4)), C(0.55, 0.4, 0.19), band(nTone, 5)), C(0.68, 0.68, 0.65), band(nTone, 6)), C(0.64, 0.4, 0.11), band(nTone, 7));
     col = mix(col, col.mul(tone6.div(mix(C(0.56, 0.47, 0.32), C(...yb0), isBrick0(style)))), isN);
+    // (claude/places2) a curated render tone on any other rendered house (buildingTypes.js renderToneStyle: style 3 / 4 +
+    // tone x 12 / 200): the render set's detail kept, its colour moved to the tone (white 3 / cream 4 as the base)
+    const isRT = float(1).sub(isN).sub(isCW).mul(step(0.5, tcode)).mul(step(2.5, style)).mul(float(1).sub(step(4.5, style)));
+    col = mix(col, col.mul(tone6.div(mix(C(0.62, 0.6, 0.55), C(0.56, 0.47, 0.32), step(3.5, style)))), isRT);
   }
   // ---- BLIND PARTY WALLS (owner playtest 2026-11-14: "they look empty"). A Brussels gable left bare above a lower
   // neighbour is never a clean sheet: it keeps the GHOST of an older, taller neighbour (the pitched outline of its roof

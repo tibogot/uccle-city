@@ -20,6 +20,7 @@
 | **UrbIS - Topo** road markings (`CR2301L` zebra edges, `CR2302L` stop lines, `CR2303L` give-way, `CR21*`/`CR22*` lines, `CR24*P` arrows), WFS layers `bm_urbis_topo:marking_line` / `marking_point` | measured crossings, stop and give-way lines painted by paint v2 (`pipeline/build_markings.py` -> `markings.json`, `viewer/streets/measuredPaint.js`); the Road Checker | **CC0 1.0** (UrbIS Topo) | Not required. Voluntary. | 2026-11-10 |
 | **Brussels Mobility** pedestrian crossing polygons (`bm_pedestrian:pedestrian_crossing_surfaces_2d`), marking inventory (`bm_equipment:marking_line` / `marking_polygon` / `marking_point`) and traffic signs (`bm_equipment:traffic_signs`, B1 / B5), same WFS | crossing outlines and stop / give-way evidence for paint v2; the Road Checker and the Road Lab | **Not stated on the WFS**: asked, `docs/roads/brussels_mobility_request.md`. Credit "Brussels Mobility" until answered | "Brussels Mobility (Bruxelles Mobilité)" | 2026-11-10 |
 | **Brussels Mobility** street-tree inventory (`bm_public_space:trees`, same WFS), commune UCCLE | the Tree Lab's "Drève de Lorraine" layout: the 520 live copper beeches with height / crown / circumference (`data/trees/bm_copper_beech.json`, `tools/trees/copper_beech_rows.py`) and its "Avenue Winston Churchill + Avenue de Fré" layout: the 276 live horse chestnuts (`data/trees/bm_horse_chestnut.json`, `tools/trees/horse_chestnut_rows.py`); species shares in `docs/trees/SPECIES_DATA.md` | **CC0** (docs/trees/SPECIES_DATA.md) | Not required. Voluntary: "Brussels Mobility (Bruxelles Mobilité)" | 2026-11-14 |
+| **Inventaire du patrimoine architectural** (Irismonument inventory), urban.brussels, WFS gis.urban.brussels | the building types from evidence: each record's position, build year, style and typology words only (data/bldclass/, tools/bldclass/build_evidence.py, rule bldclass-evidence); no photo, no text | **CC BY 4.0** (the service's licence field; citation of the source required) | "Inventaire du patrimoine architectural, urban.brussels (CC BY 4.0)", on screen in the viewer's credit line | 2026-11-26 (owner-confirmed: kept) |
 | **UrbIS - Transport networks**, Paradigm, dataset `af847c40-848b-11ee-9a1f-00090ffe0001`. Release used: `20261002` (GPKG). | checking the OSM road graph and street names (not in any output file yet) | **CC0 1.0** (same wording). Access: "No limitations to public access". | Not required. Voluntary, as above. | 2026-11-02, https://datastore.brussels/web/data/dataset/af847c40-848b-11ee-9a1f-00090ffe0001 |
 
 The exact download URLs, the Atom feeds that list every sheet and release, and
@@ -311,3 +312,33 @@ CC BY-SA photo is shared under the same licence.
 | Fagus sylvatica (bark)1.JPG | Fraxinus Croat | CC BY-SA 3.0 |
 | Fagus sylvatica trunk TK 2022-04-30 2.jpg | T. Kebert | CC BY-SA 4.0 |
 | Fagus sylvatica TK 2021-05-22 1.jpg | T. Kebert | CC BY-SA 4.0 |
+
+## Falcon models and animations (the Falcon Gym, `labs/falcon-gym.html`, docs/FALCON_GYM.md)
+
+Licences read on 2026-11-25: the Sketchfab rows from the public API (`https://api.sketchfab.com/v3/models/<id>`), the Mesh2Motion row from the repository's own licence files. The downloads are untrusted data: only Blender's glTF importer reads them (`tools/blender/falconV2b.py`).
+
+| Asset | Author | Licence | Used for | Verified |
+|---|---|---|---|---|
+| **Falcon_ Merged Animations** (7,268 faces), https://sketchfab.com/3d-models/falcon--merged-animations-c9b736ae21644ac8ba8d8a042a0f8be4 (id `c9b736ae21644ac8ba8d8a042a0f8be4`) | Hector Bonada (sketchfab.com/HectorBonada) | **CC BY 4.0** (http://creativecommons.org/licenses/by/4.0/): "Author must be credited. Commercial use is allowed." | the falcon v2, near and far (`models/bird/v2/falcon_v2.glb`, `falcon_v2_far.glb`, `falcon_v2_juvenile*.ktx2`: re-rigged by script onto our bird rig's bone names, its own weights and motion kept; tools/blender/falconV2b.py) | 2026-11-25, Sketchfab API |
+| **Mesh2Motion** bird rig + clips (`static/assets/bird/`: model, skeleton, flap, glide, idle, walk, hop, take-off, land), https://github.com/Mesh2Motion/mesh2motion-app commit `2609e034` | Scott Petrovic and contributors (mesh2motion.org) | art assets **CC0 1.0** (`LICENSE-CC0.MD`: "All 3d models, blend files, rigs, animations"); code **MIT** (`LICENSE-MIT.MD`) | the bird rig's bone names the v2 is named after; `models/bird/v2/m2m/*.glb` (decoded copies of the clips, played on the current falcon in the gym). `models/bird/peregrine.glb` has the same 55-bone bird rig (the fly-mode bird's source, see models/bird/README.md) | 2026-11-25, both licence files and the README |
+
+Credit to show (CC BY): "Falcon_ Merged Animations by Hector Bonada (Sketchfab), CC BY 4.0", in the game's credits wherever v2 ships (the Falcon Gym's title line shows it). Changes made: re-rigged onto our bone names, its idle / take-off / glide / landing re-timed into clips, new clips (walk, hop, stoop, talons, flare), the eyes darkened, a juvenile plumage painted, textures resized, a simplified far version. The earlier v2 base, "Peregrine Falcon" by Joacooficial (Sketchfab, CC BY 4.0), is no longer shipped (2026-11-25: its separate feather cards opened gaps when folded); its build script tools/blender/falconV2.py is kept.
+
+## National flags (the embassy flags, viewer/flags/atlas/embassy_flags.png)
+
+The national flags flown in front of the embassies (rule embassy-flags) are the Wikimedia Commons SVGs below, rasterised at build time into one atlas by `tools/flags/build_atlas.mjs` (sources: `data/flags/embassy_sources.json`, the files in `data/raw/flags/commons/`, not committed). Every one is in the **public domain** (official national symbols), as its file page says; no credit is required, the authors are listed for the record.
+
+| Flag | File (Wikimedia Commons) | Author (file page) | Licence |
+|---|---|---|---|
+| eu | [Flag of Europe.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Europe.svg) | User:Verdy p, User:-xfi-, User:Paddu, User:Nightstallion, User:Funakoshi, User:Jeltz, User:Dbenbenn, User:Zscout370 | Public domain (pd) |
+| hungary | [Flag of Hungary.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Hungary.svg) | SKopp | Public domain (pd) |
+| bulgaria | [Flag of Bulgaria.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Bulgaria.svg) | SKopp | Public domain (pd) |
+| romania | [Flag of Romania.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Romania.svg) | AdiJapan | Public domain (pd) |
+| ukraine | [Flag of Ukraine.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Ukraine.svg) | Government of Ukraine | Public domain (pd) |
+| burkina_faso | [Flag of Burkina Faso.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Burkina_Faso.svg) | Drawn by SKopp, rewritten by Gabbe and Андрей Перцев | Public domain (pd) |
+| eritrea | [Flag of Eritrea.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Eritrea.svg) | Unknown authorUnknown author | Public domain (pd) |
+| kenya | [Flag of Kenya.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Kenya.svg) | User:Pumbaa80 | Public domain (pd) |
+| angola | [Flag of Angola.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Angola.svg) | Original: Henrique de Carvalho Santos Vector: SKopp | Public domain (pd) |
+| nicaragua | [Flag of Nicaragua.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Nicaragua.svg) | C records | Public domain (pd) |
+| afghanistan | [Flag of Afghanistan (2013–2021).svg](https://commons.wikimedia.org/wiki/File:Flag_of_Afghanistan_(2013%E2%80%932021).svg) | Unknown authorUnknown author | Public domain (pd) |
+| eswatini | [Flag of Eswatini.svg](https://commons.wikimedia.org/wiki/File:Flag_of_Eswatini.svg) | Sobhuza II | Public domain (pd) |

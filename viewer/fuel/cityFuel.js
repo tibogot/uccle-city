@@ -20,6 +20,7 @@ import { loadFuelKit, fuelFades, PIECES, buildStation, STATION_BAND } from "./fu
 import { pavingTextures, pavingSample, pavingNormal, regrade, LAYER, loadPavingTextures } from "../streets/paving.js";
 
 const qs = new URLSearchParams(location.search);
+import { RING_TEST, inRing as inRingFast, ringSet } from "../ringTest.js";   // allocrate (?ringtest=old)
 const DATA = new URL("../../data/fuel/", import.meta.url);
 
 /** a tile doc's instance arrays per piece (x y z yaw sx sy sz scheme) */
@@ -125,6 +126,7 @@ function colliderGeometry(cols) {
 }
 
 function inRing(r, x, z) {
+  if (RING_TEST) return inRingFast(r, x, z);         // (allocrate: no iterator garbage per vertex)
   let inside = false;
   for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
     const [xi, zi] = r[i], [xj, zj] = r[j];
@@ -140,7 +142,9 @@ export const cityFuel = {
    *  data/fuel/summary.json "clear"); the full tile and its far impostors both call it (no pop at the swap) */
   treesClear(trees) {
     if (!this.on || !this.clear.length || !trees?.length) return trees;
-    const out = trees.filter((t) => t.source !== "urbis-chm" || !this.clear.some((r) => inRing(r, t.x, t.z)));
+    // (allocrate, ?ringtest=old: every ring tested whole) the rings' bounding boxes first (viewer/ringTest.js ringSet)
+    const set = RING_TEST ? (this._clearSet && this._clearFor === this.clear ? this._clearSet : (this._clearFor = this.clear, this._clearSet = ringSet(this.clear))) : null;
+    const out = set ? trees.filter((t) => t.source !== "urbis-chm" || !set.has(t.x, t.z)) : trees.filter((t) => t.source !== "urbis-chm" || !this.clear.some((r) => inRing(r, t.x, t.z)));
     this.treesDropped += trees.length - out.length;
     return out;
   },

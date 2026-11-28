@@ -13,11 +13,16 @@ export const roofAt = (g, x, z) => {
   return i >= 0 && j >= 0 && i < g.nx && j < g.nz && g.data[j * g.nx + i] > 0;
 };
 
-/** entry: the tile entry's switches (trafpark false = ?trafpark=old, roadsR false = ?roads=old); roofs: roofGrid of
- *  the tile's buildings.json (null: no building test, the snap is off); trace: buildTrafficGraph's audit trace */
-export function tileTrafficGraph(net, roads, feats, bounds, grid, { parked = null, roofs = null, entry = {}, trace = undefined } = {}) {
+/** entry: the tile entry's switches (trafpark false = ?trafpark=old, roadsR false = ?roads=old, streetLanes false =
+ *  ?streetlanes=old); roofs: roofGrid of
+ *  the tile's buildings.json (null: no building test, the snap is off); trace: buildTrafficGraph's audit trace; noSnap
+ *  (the class R census): the roof grid for the model lanes only, the far snap off */
+export function tileTrafficGraph(net, roads, feats, bounds, grid, { parked = null, roofs = null, entry = {}, trace = undefined, noSnap = false } = {}) {
   return buildTrafficGraph(net, roads, feats, bounds, grid, {
-    parked, trace, old: entry.trafpark === false, roadsR: entry.roadsR !== false,
+    parked, trace, noSnap, old: entry.trafpark === false, roadsR: entry.roadsR !== false,
     inBuilding: roofs ? (x, z) => roofAt(roofs, x, z) : null,
+    // (claude/street4, rule street-lanes: the lanes / turns from the street model the road stage built, viewer/roadBuild.js
+    // net.streetModel; entry.streetLanes false = ?streetlanes=old, roadsR false = ?roads=old: the fitted engine lanes)
+    model: entry.streetLanes !== false && entry.roadsR !== false ? net.streetModel ?? null : null,
   });
 }

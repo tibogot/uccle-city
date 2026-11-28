@@ -45,6 +45,13 @@ export function view({ at, look, fov = null }) {
   if (fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
   controls.update?.();
   if (window.viewer.lighting) window.viewer.lighting.snapNext = true;
+  // (claude/parkfence round 2) a camera INSIDE a building sees its openings kit (double-sided frames) floating with no
+  // wall: the walls draw their front faces only (rule faces-out). A shot from there looks like a city defect and is
+  // not one (sauvagere-maingate-30m: "floating doors and windows" = the camera in UrbIS building 1716006). Flagged.
+  const t = world.at?.(at[0], at[2]), roof = t?.roofAt?.(at[0], at[2]) ?? 0;
+  const insideBuilding = roof > camera.position.y + 0.3;
+  if (insideBuilding) console.warn(`quick.view: the camera at ${at[0]}, ${at[2]} is inside a building (roof ${roof.toFixed(1)} m over it): move it out before a shot`);
+  return { insideBuilding };
 }
 
 let last = null, seenErrors = 0;
@@ -89,9 +96,9 @@ export async function waitReady({ step = 5000, limit = 120000, stopOnError = tru
 export async function shot(name, { view: v = null, frames = 30, data = false, topic = name.split("-")[0] } = {}) {
   if (!/^[a-z0-9][a-z0-9_.-]*$/.test(name)) throw new Error("shot name: lower case, digits, - _ . only");
   for (const d of document.querySelectorAll("body > div")) if (!d.querySelector("canvas")) d.style.visibility = "hidden";
-  if (v) view(v);
+  const vr = v ? view(v) : null;
   for (let i = 0; i < frames; i++) await new Promise((r) => requestAnimationFrame(() => r()));
-  const out = { name, file: `docs/${topic}/shots/${name}.png`, cam: window.viewer?.camera.position.toArray().map((x) => +x.toFixed(1)) };
+  const out = { name, file: `docs/${topic}/shots/${name}.png`, cam: window.viewer?.camera.position.toArray().map((x) => +x.toFixed(1)), ...(vr?.insideBuilding ? { insideBuilding: true } : {}) };
   if (data) {
     window.viewer.renderFrame();
     const c = window.viewer.renderer.domElement, c2 = new OffscreenCanvas(c.width, c.height);

@@ -1,10 +1,11 @@
 [
- { "hero": "augustin", "level": "*", "at": [-896.3, 142.0, -1961.2], "radius": 5, "yRange": [139.0, 146.5],
-   "why": "the tower's OPEN lantern stage (four openings between the fins under the cross; photos c01 / c15, docs/landmarks/AUGUSTIN.md): seen through by design" },
- { "hero": "stjob", "level": "*", "at": [1216.5, 113.0, 561.5], "radius": 3.5, "yRange": [111.0, 115.5],
-   "why": "the dome's lantern: an open arcade of piers under its cupola, with a railing (photos, models/stjob/NOTES.md)" },
- { "hero": "saintmarc", "level": "*", "at": [451.5, 69.6, -614.6], "radius": 16, "yRange": [68.5, 71.0],
-   "why": "the front colonnade porch: open between its columns under the slab, the glazed wall set back behind it (rendered at eye level: closed behind)" },
- { "hero": "calevoet_station", "level": "*", "at": [-1230.0, 53.6, 788.0], "radius": 22, "yRange": [52.5, 55.0],
-   "why": "the platform canopy (marquise) on cast-iron columns along the track side: open underneath by design" }
+ {"hero":"augustin", "level":"*", "at":[-896.3,142,-1961.2], "radius":5, "yRange":[139,146.5], "why":"the tower's OPEN lantern stage (four openings between the fins under the cross; photos c01 / c15, docs/landmarks/AUGUSTIN.md): seen through by design"},
+ {"hero":"stjob", "level":"*", "at":[1216.5,113,561.5], "radius":3.5, "yRange":[111,115.5], "why":"the dome's lantern: an open arcade of piers under its cupola, with a railing (photos, models/stjob/NOTES.md)"},
+ {"hero":"saintmarc", "level":"*", "at":[451.5,69.6,-614.6], "radius":16, "yRange":[68.5,71], "why":"the front colonnade porch: open between its columns under the slab, the glazed wall set back behind it (rendered at eye level: closed behind)"},
+ {"hero":"calevoet_station", "level":"*", "at":[-1230,53.6,788], "radius":22, "yRange":[52.5,55], "why":"the platform canopy (marquise) on cast-iron columns along the track side: open underneath by design"},
+ {"hero":"villa", "level":"*", "at":[903.64,118,2050.47], "to":[887.58,118,2022.21], "radius":2.5, "yRange":[115,122.2], "noBack":true, "why":"villa (docs/VILLA.md, villa2): the open undercroft under the upper box cantilevered 2 m over the front (u 12..14, soffit at 122.0 m) and the entrance canopy: rays graze along under the soffit and come out at its ends without meeting a face (open air, not a hole); noBack: a cluster that sees a wall inside is never allowed"},
+ {"hero":"villa", "level":"*", "at":[887.68,118,2022.39], "to":[865.08,118,2035.23], "radius":1.8, "yRange":[115,122.2], "noBack":true, "why":"villa (villa2): the upper box overhangs the ground floor 0.5 m on the south side and 1.5 m at the back: rays enter under its soffit at the south corners and run out under the open overhang / the pergola (open air); noBack"},
+ {"hero":"villa", "level":"*", "at":[881.9,118,2062.82], "to":[865.85,118,2034.56], "radius":1.8, "yRange":[115,122.2], "noBack":true, "why":"villa (villa2): the back overhang (u 36..37.5 under the upper box, the terrace below): open by design; noBack"},
+ {"hero":"villa", "level":"*", "at":[876.48,118,2067.34], "radius":2.0, "yRange":[117,121.5], "noBack":true, "why":"villa (villa3 job 5): the pool parasol (Villa_kit, u 43.95 w -9.75, a 2.6 m canopy on a pole): rays run under it and out over the lawn (open air). The box hedges at the plot's back used to stop them; the hedges are now the city's modules (rule villa-garden-city-kit), not part of the hero; noBack"},
+ {"hero":"villa", "level":"*", "at":[871.84,118,2046.11], "to":[866.01,118,2049.42], "radius":5.2, "yRange":[115,122.2], "noBack":true, "why":"villa (villa2): the pergola (a slab on two columns over the terrace, u 37.5..44.1, w 6.4..15.6, at 121.25 m): open underneath by design; noBack"}
 ]

@@ -18,7 +18,7 @@
 //                see (outside the frustum, or beyond the fleet's 420 m fade): never popping in sight
 //   pose         rear and front axle points on the route (smooth heading through curves, the rear cuts in like a real
 //                car), height + pitch from the ground under the axles, front-wheel steer from the path ahead
-import { signalClock, signalState, untilGreen, RED, AMBER } from "./signals.js";
+import { signalClock, signalState, untilGreen, RED, AMBER, CYCLE, CYCLE_T } from "./signals.js";
 import { CTRL } from "./trafficGraph.js";
 import { TWIN_OLD } from "./trafficWorld.js";
 import { ROLE, routeProject, routePoint } from "./trafMix.js";   // TRAFMIX (docs/TRAFMIX.md): the service roles
@@ -38,8 +38,25 @@ const TP_OLD = typeof location !== "undefined" && /[?&]trafpark=old(&|$)/.test(l
 /** the parking rate (pull-outs / reverse-ins) for a page's query string: 0 under ?still=1 (the tour), else 1 */
 export const parkRateFor = (search) => (/[?&]still=1(&|$)/.test(search || "") ? 0 : 1);
 const TP_TOUCH = 0.05;
+const ROOM_AHEAD = 0.25;   // m: a sideways move out stops when its corridor ahead (the stopping distance) comes this near a parked car (claude/street4)
 const TP_BLOCK = 0.96;          // m: a parked box this close to a lane's line blocks it (the widest traffic type: 0.975 half width; built lanes keep 0.98)          // m: a parked car's box within CAR_HALF_W - TP_TOUCH of a lane's line blocks it (built: >= 0.9 m clear)
+const FAIR_T = 20;               // s: held this long for room on an exit, a car claims it (rule junction-entry-room)
+const ROOM_GAP = 2;             // m: the room a car needs past a junction turn beyond its own length (rule junction-entry-room)
+const LOOP_T = 10, CREEP_T = 3;  // s: a wait this old is checked for a wait-for loop; a car breaking one creeps on this long
+const RUN_ROOM = 0.4, RUN_OUT = 0.5;    // m: a car pulled over this far is passed by a run, which eases this far out
+const PROGRESS = 3;             // m: moved this far since a wait began, the wait starts over (a queue, not a stuck car)
+const PATIENCE = 8, NEAR_ONC = 14;      // s refused before the far oncoming traffic lets a car out; m: the near ones still hold it
+const GAP_T = 4;                // s: a car on a conflicting turn this near the conflict point in time is in the way
+const CF_SHORT = 1.5;           // m: a standing car's front this far short of a conflict point leaves it free
+const PASS_GAP = 0.6;           // m: easing out past a parked car, the least gap kept to a car in the other half of the street
 const TP_PASS = 1.3;            // m: the most a car eases sideways to pass a parked car standing into its lane
+const RUN_SQUEEZE = 0.15, SQUEEZE_V = 2.5;   // m: a run squeezes past standing oncoming cars in a narrow stretch that its body clears by this, at most SQUEEZE_V m/s (rule service-vehicle-passage)
+const RUN_SQUEEZE_OLD = typeof location !== "undefined" && /[?&]runsqueeze=old(&|$)/.test(location.search);
+const EASE_BACK_OLD = typeof location !== "undefined" && /[?&]easeback=old(&|$)/.test(location.search);   // (trafparksim: a move back to the lane judged ahead)
+const LA_PRE_OLD = typeof location !== "undefined" && /[?&]lapre=old(&|$)/.test(location.search);   // (the look-ahead's one-body pre-test, the sim cost row)
+const SERVICE_MARGIN = 0.2;     // m each side: a service vehicle's lane must be its width + 2 x this clear (rule service-vehicle-passage)
+const CLEARW_OLD = typeof location !== "undefined" && /[?&]clearroute=old(&|$)/.test(location.search);
+const YIELD_KEEP_OLD = typeof location !== "undefined" && /[?&]yieldkeep=old(&|$)/.test(location.search);   // (rule service-vehicle-passage)
 // (carhit, docs/CARHIT.md: knocked = hit by the player, off its lane: viewer/drive/carHit.js drives its pose, the sim
 // skips it; it rejoins through rejoin() below, or stays as a wreck)
 const ST = { drive: 0, outWait: 1, out: 2, inStop: 3, inRev: 4, knocked: 5 };
@@ -50,6 +67,18 @@ const OBS_MAX = 512, OBS_ENTRIES = 8192;          // (trafpark: parked-car obsta
 const CAR_HALF_W = 0.95;          // m: a traffic car's half width (the box obstacles' lane test)
 // density (cars per km of lane at the busiest hour) per road class rank (0 alley .. 4 boulevard)
 export const DENSITY = [1.5, 10, 18, 24, 26, 26];
+/** SIGNAL APPROACH CAPACITY (claude/street4, rule signal-demand): a lane into a traffic light carries at most
+ *  SAT_FLOW x its green share (veh/h); at the peak the spawned density on it is held to DEMAND_MAX of that, as a flow
+ *  of density x the lane's speed limit: k <= DEMAND_MAX x SAT_FLOW x g / C / v. SAT_FLOW 1,800 veh/h/lane: the base
+ *  saturation flow of the Highway Capacity Manual (HCM 6th ed., ch. 19, 1,900 pc/h/ln base, ~1,800 for an urban lane
+ *  with heavy vehicles and turns); no counts of Uccle's 8 h traffic are in the data */
+export const SAT_FLOW = 1800, DEMAND_MAX = 0.9;
+export function laneDensity(g, i) {
+  const base = DENSITY[Math.min(5, g.rank[i])];
+  if (g.ctrl[i] !== 1) return base;
+  const kmh = Math.max(10, g.speed[i] * 3.6), cap = (DEMAND_MAX * SAT_FLOW * (CYCLE.green / CYCLE_T)) / kmh;
+  return Math.min(base, cap);
+}
 /** share of the peak density at hour h (0..24), Brussels weekday shape */
 export function hourFactor(h) {
   const P = [[0, 0.1], [5, 0.06], [6.5, 0.35], [8, 1], [9.5, 0.7], [12, 0.6], [16, 0.75], [17.5, 1], [19, 0.7], [21, 0.4], [23, 0.18], [24, 0.1]];
@@ -64,6 +93,10 @@ export class TrafficSim {
    *   seed }
    */
   constructor(world, { cap = 768, types, paints, ground, seed = 1 } = {}) {
+    // (claude/street4, perf: ONE type shape) the types copied into one field order (a car, a bus with zc / heavy, a
+    // two-wheeler with two / accel / speed were three hidden classes: every this.types[..].x read in the hot loop went
+    // polymorphic once the mix spawned its heavies; the trafmix "sim cost" row)
+    types = types.map((t) => Object.assign({ name: t.name, len: t.len, w: t.w, h: t.h, wb: t.wb, wheelR: t.wheelR, weight: t.weight, zc: t.zc ?? 0, heavy: !!t.heavy, two: !!t.two, accel: t.accel ?? 1, speed: t.speed ?? 1 }, t));
     this.W = world; this.cap = cap; this.types = types; this.paints = paints; this.ground = ground;
     this.rs = seed >>> 0 || 1;
     const F = (n = 1) => new Float32Array(cap * n), I = (n = 1, v = 0) => new Int32Array(cap * n).fill(v), U = (n = 1) => new Uint8Array(cap * n);
@@ -128,6 +161,16 @@ export class TrafficSim {
     this.pk = { grid: new Map(), moved: new Set(), at: -1, size: null, car: [] };
     this.pw = new Float32Array(this.cap); this.pwT = new Float32Array(this.cap);
     this.pwWait = new Float32Array(this.cap);        // a refused pass is not asked again for 0.6 s (perf)
+    this.pwSum = new Float32Array(this.cap);
+    // (claude/street4, perf: ONE object shape) every field the methods add later declared here, in one order: fields
+    // added lazily, in an order that depended on the traffic (a bus line, a wide vehicle first), gave each sim its own
+    // hidden class, and every hot method went polymorphic ("wrong map" deopts: the trafmix "sim cost" row, mix vs none)
+    this.parked = null; this.typeIndex = null; this._wver = undefined; this._rec = null; this._need = 0; this._pickAt = 0; this._oaCar = -1;
+    this._busN = null; this._busU = null; this._busUT = -1e9; this._pcF = null; this._pcR = null; this.pcOk = null; this.pwOk = null;
+    this.gapR = 0; this.gapA = null; this.gapB = null; this.gap2 = null;
+    this.claims = new Map();                         // (claude/street4) exit path gid -> the car that waited longest for room on it
+    this.wf = new Int32Array(this.cap).fill(-1); this.lastBlk = new Int32Array(this.cap).fill(-1); this.creep = new Float32Array(this.cap); this.wfMark = new Uint32Array(this.cap); this._wfM = 0; this._blk = -1;   // (claude/street4) the wait-for links and the cycle breaker
+    this.holdP = new Int32Array(this.cap).fill(-1); this.holdD = new Float32Array(this.cap);   // (claude/street4) where a car's current wait began         // (claude/street4) how long this car has been refused a pass, in a row
     this.tpLA = new Float64Array(this.cap).fill(-1); // the shifted-body look-ahead's hit (m along its route, -1 none), every 4th step   // a car's pass shift round a parked car, its timer
     this.tmp = new Float64Array(4); this.tmp2 = new Float64Array(4); this.tmp3 = new Float64Array(4);
     this.t = 0; this.acc_ = 0; this.steps = 0;
@@ -135,7 +178,9 @@ export class TrafficSim {
       runs: parkRateFor(typeof location !== "undefined" ? location.search : ""),   // (TRAFMIX: emergency runs; 0 under ?still=1, the tour)
       signals: true, maxCars: cap,
       narrow: !(typeof location !== "undefined" && /[?&]narrow=0/.test(location.search)) };   // one way at a time on narrow stretches
-    this.stats = { yielding: 0, cars: 0, target: 0, spawned: 0, removed: 0, stepMs: 0, stepMsMax: 0, holds: [0, 0, 0, 0, 0, 0, 0], pullOuts: 0, parkIns: 0, handovers: 0, laneKm: 0 };
+    this.stats = { yielding: 0, cars: 0, target: 0, spawned: 0, removed: 0, stepMs: 0, stepMsMax: 0, holds: [0, 0, 0, 0, 0, 0, 0], pullOuts: 0, parkIns: 0, handovers: 0, laneKm: 0,
+      // (claude/street4, perf: one shape) the counters the methods bump, declared here (added lazily they gave each sim its own stats map)
+      parkBorderHidden: 0, rerouted: 0, parkWaits: 0, parkPasses: 0, narrowWaits: 0, cycleBreaks: 0, parkClamped: 0, twinEntries: 0, busMissed: 0, busStops: 0, roleStops: 0, busOff: 0, busEnd: 0, busSpawned: 0, pullOutsSkipped: 0, parkInsSkipped: 0 };
     this.freeSlots = [];         // parking slots vacated by pull-outs (viewer/carFleet.js car objects)
     this._projCtx = { k: 0 };
     this._proj = (gid, along, lat, tx, tz) => this.addObsEntry(gid, along, lat, tx, tz);
@@ -153,9 +198,9 @@ export class TrafficSim {
     const i = gid & 0xffff, a = g.nextOff[i], b = g.nextOff[i + 1];
     if (a === b) return -1;
     let tot = 0;
-    for (let k = a; k < b; k++) tot += this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]) * this.busWeight(g, g.nextIdx[k]);
+    for (let k = a; k < b; k++) tot += this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]) * this.busWeight(g, g.nextIdx[k]) * this.clearWeight(g, g.nextIdx[k]);
     let r = this.rand() * tot, j = g.nextIdx[a];
-    for (let k = a; k < b; k++) { const w = this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]) * this.busWeight(g, g.nextIdx[k]); if (r < w) { j = g.nextIdx[k]; break; } r -= w; }
+    for (let k = a; k < b; k++) { const w = this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]) * this.busWeight(g, g.nextIdx[k]) * this.clearWeight(g, g.nextIdx[k]); if (r < w) { j = g.nextIdx[k]; break; } r -= w; }
     const gj = (g.slot << 16) | j;
     this._pickAt = 0;
     if (g.core[j] || g.twin[j] < 0) return gj;
@@ -196,6 +241,17 @@ export class TrafficSim {
     routePoint(r, Q[0], Q);
     const al = T[2] * Q[2] + T[3] * Q[3];
     return Math.exp(-((d / 4) ** 2)) * (al > 0.3 ? 1 : 0.02) + 1e-6;
+  }
+  /** claude/parking1 (rule service-vehicle-passage): a service vehicle (a run, a bus, a bin lorry: wider than a car)
+   *  is not routed onto a lane (or through a turn onto one) whose clear width (trafficGraph.js laneClearWidths) is under
+   *  its own width + 2 x SERVICE_MARGIN: x 0.001 (still taken when it is the only way on); 1 for everybody else */
+  clearWeight(g, j) {
+    const i = this._fi;
+    if (i < 0 || CLEARW_OLD || !g.clearW) return 1;
+    const role = this.role[i];
+    if (role !== ROLE.ambulance && role !== ROLE.fire && role !== ROLE.bus && role !== ROLE.bin) return 1;
+    const L = g.kind[j] && g.nextOff[j] < g.nextOff[j + 1] ? g.nextIdx[g.nextOff[j]] : j;
+    return g.clearW[L] < (this.types[this.type[i]]?.w ?? 1.84) + 2 * SERVICE_MARGIN ? 1e-3 : 1;
   }
   fillRoute(i) {
     this._fi = i;
@@ -238,7 +294,7 @@ export class TrafficSim {
     this.knock[i] = 0; this.dmg[i] = 0; this.kT[i] = 0;
     this.role[i] = 0; this.rst[i] = 0; this.rT[i] = 0; this.wide[i] = 0; this.bv[i] = -1; this.rp[i] = 0; this.ns[i] = 0; this.offT[i] = 0; this.indT[i] = 0;
     this.half[i] = T.len / 2 + Math.abs(T.zc || 0);         // (TRAFMIX: a long vehicle's longer end, its body off the axles' middle)
-    if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.tpLA[i] = -1; }
+    if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.pwSum[i] = 0; this.tpLA[i] = -1; this.creep[i] = 0; this.wf[i] = -1; this.lastBlk[i] = -1; }
     this.y[i] = NaN;                                 // (rule mover-ground: no height yet: pose() takes the top layer)
     this.pose(i); this.copyPrev(i);
     this.count++;
@@ -580,16 +636,21 @@ export class TrafficSim {
     const i0 = Math.floor(x0 / 8), j0 = Math.floor(z0 / 8);
     for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const c of this.pk.grid.get((i0 + di + 4096) * 8192 + j0 + dj + 4096) || []) {
       if (c.hidden || c === skip) continue;
-      const [w, l] = this.parkWL(c), reach = hl + hw + l / 2 + 0.6, ddx = c.x - x0, ddz = c.z - z0;
+      // (claude/parking1, the sim cost row: the box's size and axis kept on the car, renewed when its type or heading
+      // changes (a shove), not a new [w, l] array and two trig calls per car per probe: the mix's buses / runs probe the
+      // parked cars ~40,000 times per 4,500 steps, the plain traffic never)
+      let B = c._bc;
+      if (!B || B.t !== c.type || B.h !== c.heading) { const [w0, l0] = this.parkWL(c); B = c._bc = { t: c.type, h: c.heading, hw: w0 / 2, hl: l0 / 2, ax: Math.sin(c.heading), az: Math.cos(c.heading) }; }
+      const reach = hl + hw + B.hl + 0.6, ddx = c.x - x0, ddz = c.z - z0;
       if (ddx * ddx + ddz * ddz > reach * reach) continue;                 // (far: no test)
-      const ax = Math.sin(c.heading), az = Math.cos(c.heading);
+      const ax = B.ax, az = B.az, bl = B.hl, bw = B.hw;
       // the car's axis sampled every 0.4 m or less, each a disc of its half width, against the parked box
       const span = Math.max(0, hl - hw), nT = Math.max(1, Math.ceil((2 * span) / 0.4));
       for (let m = 0; m <= nT; m++) {
         const t = -span + (2 * span * m) / nT;
         const px = x0 + fx * t - c.x, pz = z0 + fz * t - c.z;
-        const u = Math.abs(px * ax + pz * az) - l / 2, v = Math.abs(px * az - pz * ax) - w / 2;
-        const d = Math.hypot(Math.max(u, 0), Math.max(v, 0)) + Math.min(Math.max(u, v), 0) - hw;
+        const u = Math.abs(px * ax + pz * az) - bl, v = Math.abs(px * az - pz * ax) - bw;
+        const uu = u > 0 ? u : 0, vv = v > 0 ? v : 0, d = Math.sqrt(uu * uu + vv * vv) + Math.min(u > v ? u : v, 0) - hw;
         if (d < best) best = d;
       }
     }
@@ -608,10 +669,21 @@ export class TrafficSim {
    *  of its nose at most: eased out far enough? It asks to ease out when the shifted corridor is free of other parked
    *  cars and the other side of the traffic (no oncoming car within 35 m, nobody alongside); else it waits behind it */
   passing(i, need, reach = 8) {
-    if (TP_OLD || Math.abs(need) > TP_PASS + 0.3) return false;
+    if (TP_OLD) return false;
     const sg = Math.sign(need), span = reach + 2 * this.half[i];
     // the corridor at shift s (+ left), from here to past the parked car: its body clear of every parked car by `m`
     const corridor = (sv, m) => { for (let a = 0; a <= span; a += 1.5) if (this.parkClear(i, sv, a) < m) return false; return true; };
+    // (claude/street4: the entry's need is the lane's estimate for a car's width; where this vehicle's own body already
+    // passes clear where it is (the lane keeps 1.13 m from the box: a car passes, so may anything its corridor shows
+    // clear), it is not in the way: a bus held behind a parked car it had 1.3 m from, trafmix (every 4th step))
+    // (a vehicle wider than a car may ease out by its extra half width more: the lanes keep a car's clearance)
+    const wide = Math.max(0, Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2) - 0.92), PASS = TP_PASS + wide;
+    // (only for a vehicle wider than a car: a car's own estimate is the lane's, as before; no extra cost for the cars)
+    if (wide > 0 && !(this.pwT[i] > 0)) {
+      if ((this.steps + i) % 16 && this.pcOk?.[i] !== undefined) { if (this.pcOk[i]) return true; }     // (every 16th step: perf, the mix's cost row)
+      else { const ok = corridor(this.room[i], 0.05); (this.pcOk ||= new Uint8Array(this.cap))[i] = ok ? 1 : 0; if (ok) return true; }
+    }
+    if (Math.abs(need) > PASS + 0.3) return false;
     if (this.pwT[i] > 0 && Math.sign(this.pw[i]) === sg) {
       this.pwT[i] = 1.5;                                                   // (committed: held while the car is ahead)
       if (Math.abs(this.room[i]) < Math.abs(this.pw[i]) - 0.03) return false;        // still easing out: wait behind it
@@ -626,28 +698,60 @@ export class TrafficSim {
         (this.pwOk ||= new Uint8Array(this.cap))[i] = ok ? 1 : 0;
         if (ok) return true;
         const more = this.pw[i] + sg * 0.2;
-        if (Math.abs(more) <= TP_PASS && corridor(more, 0.05)) this.pw[i] = more;
+        if (Math.abs(more) <= PASS && corridor(more, 0.05)) this.pw[i] = more;
       }
       return false;
     }
     if (this.pwWait[i] > 0) return false;
-    const refuse = () => { this.pwWait[i] = 0.6; this.stats.parkWaits = (this.stats.parkWaits || 0) + 1; return false; };
+    const refuse = () => { this.pwWait[i] = 0.6; this.pwSum[i] += 0.6; this.stats.parkWaits = (this.stats.parkWaits || 0) + 1; return false; };
+    // (claude/street4: after PATIENCE s refused, the far oncoming traffic lets it out (as drivers flash a waiting bus
+    // out past a parked car): only the near ones (within NEAR_ONC m) and anybody alongside still hold it; with steady
+    // oncoming traffic a bus behind a parked car waited for good, trafmix "removed as stuck (hold 6)")
+    const onc = this.pwSum[i] > PATIENCE ? NEAR_ONC : 35;
     // give way: no oncoming car within 35 m on that side, nobody alongside there
     const yw = this.yaw[i], fx = Math.sin(yw), fz = Math.cos(yw), lx = Math.cos(yw), lz = -Math.sin(yw);
     for (let j = 0; j < this.cap; j++) {
       if (!this.alive[j] || j === i) continue;
       const dx = this.x[j] - this.x[i], dz = this.z[j] - this.z[i], al = dx * fx + dz * fz, lat = (dx * lx + dz * lz) * sg;
-      if (al < -10 || al > 35 || lat < 0.5 || lat > Math.abs(need) + 3) continue;
+      // (claude/street4: the other car is in the way only if the eased-out body would come within PASS_GAP of it: a bus
+      // (half width 1.27) easing 0.2-0.5 m past a parked car on a street with oncoming traffic stayed in its own half and
+      // waited forever (trafmix: buses removed as stuck once the lanes kept a car's clearance, 1.13 m, from the parked
+      // cars); the widths are each vehicle's own, the rest as before)
+      const hwI = Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2), hwJ = Math.max(0.92, (this.types[this.type[j]]?.w ?? 1.84) / 2);
+      if (al < -10 || al > onc || lat < 0.5 || lat - hwI - hwJ > Math.abs(need) + PASS_GAP) continue;
       const dot = Math.sin(this.yaw[j]) * fx + Math.cos(this.yaw[j]) * fz;
       if (dot < -0.3 || (al < 8 && al > -8)) return refuse();
     }
     // the least shift whose corridor is clear (measured on the bodies: the entry's need is an estimate)
-    for (let sv = Math.max(0.1, Math.abs(need) - 0.3); sv <= TP_PASS + 1e-3; sv += 0.15) {
+    // (from the least shift up: the entry's need is the lane's estimate round the parked car's bounding disc (r = its half
+    // length), well over what a body passing beside it needs; starting there, a bus with a car parked across the street
+    // too found no clear corridor and waited for good: trafmix, D6)
+    for (let sv = wide > 0 ? 0.1 : Math.max(0.1, Math.abs(need) - 0.3); sv <= PASS + 1e-3; sv += wide > 0 ? 0.3 : 0.15) {
       if (!corridor(sg * sv, 0.08)) continue;
-      this.pw[i] = sg * sv; this.pwT[i] = 1.5; this.stats.parkPasses = (this.stats.parkPasses || 0) + 1;
+      this.pw[i] = sg * sv; this.pwT[i] = 1.5; this.pwSum[i] = 0; this.stats.parkPasses = (this.stats.parkPasses || 0) + 1;
       return false;
     }
     return refuse();
+  }
+
+  /** a run (car i on path p, a gid) and the narrow stretch [s0, s1] of p, opposed by [o0, o1] of path op (an index in
+   *  the same tile graph g): every car in the opposing interval stands (v < 0.5) and its body is RUN_SQUEEZE m or more
+   *  clear of car i's body on p beside it? */
+  runSqueeze(i, p, g, op, s0, s1, o0, o1) {
+    const T = this.tmp4, hwI = Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2);
+    let any = false;
+    for (let j = g.head[op]; j >= 0; j = this.nxt[j]) {
+      const pj = this.posOn(j), hj = this.half[j];
+      if (pj + hj < o0 || pj - hj > o1) continue;
+      if (this.v[j] >= 0.5) return false;
+      any = true;
+      // (the other way: its place on the opposing interval, mirrored onto this path's)
+      const f = o1 > o0 ? (o1 - pj) / (o1 - o0) : 0.5;
+      this.W.point(p, s0 + Math.max(0, Math.min(1, f)) * (s1 - s0), T);
+      const lat = Math.abs((this.x[j] - T[0]) * T[3] - (this.z[j] - T[1]) * T[2]);
+      if (lat - hwI - Math.max(0.92, (this.types[this.type[j]]?.w ?? 1.84) / 2) < RUN_SQUEEZE) return false;
+    }
+    return any;
   }
 
   // ------------------------------------------------------------------ junction decisions
@@ -674,7 +778,20 @@ export class TrafficSim {
       for (let k = gc.cfOff[ci]; k < gc.cfOff[ci + 1]; k++) {
         const O = (gc.slot << 16) | gc.cfOther[k], atO = gc.cfOtherAt[k], yl = gc.cfYield[k];
         // (a) somebody on the other connector who has not cleared the conflict point: never go
-        for (let j = gc.head[gc.cfOther[k]]; j >= 0; j = this.nxt[j]) if (this.posOn(j) - this.half[j] < atO + 1.2) return HOLD.busy;
+        // (claude/street4: a car STANDING on the other connector with its front still well short of the conflict point is
+        // not in the way: a queue waiting at the next junction's red light, its tail inside this junction's turn, held
+        // the crossing ambulance for good (D7 Ch. d'Alsemberg, two signals a few metres apart); a moving one, or one at
+        // the conflict point, still is)
+        // (claude/street4, GAP ACCEPTANCE: a car still short of the conflict point is in the way only if it is near it in
+        // TIME: within GAP_T s at its speed, or within CF_SHORT m standing; one entering the other turn 30 m back held a
+        // car at a priority junction for good under a steady flow, E4 / E5 (trafmix "stuck", hold 4))
+        if (!(this.creep[i] > 0)) for (let j = gc.head[gc.cfOther[k]]; j >= 0; j = this.nxt[j]) {
+          const pj = this.posOn(j);
+          if (!(pj - this.half[j] < atO + 1.2)) continue;                  // (cleared the conflict point)
+          const gapM = atO - (pj + this.half[j]);
+          if (gapM > (this.v[j] < 0.5 ? CF_SHORT : this.v[j] * GAP_T)) continue;
+          this._blk = j; return HOLD.busy;
+        }
         if (yl !== 1 || courtesy) continue;
         // (b) the ones with priority that will be there soon: cars on the other connector's entry lane heading for it
         const E = gc.prevOff[gc.cfOther[k]] < gc.prevOff[gc.cfOther[k] + 1] ? gc.prevIdx[gc.prevOff[gc.cfOther[k]]] : -1;
@@ -684,11 +801,60 @@ export class TrafficSim {
         if (tw >= 0 && this.comingTo(tw, O)) return HOLD.yield;
       }
     }
-    // (c) no room after the junction: wait at the line instead of blocking it
-    if (X >= 0 && gc.kind[ci] && this.W.slots[X >>> 16]) {
-      const gx = this.W.slots[X >>> 16];
-      const j = gx.head[X & 0xffff];
-      if (j >= 0 && j !== i && this.posOn(j) - this.half[j] < this.half[i] * 2 + 3 && this.v[j] < 2.5) return HOLD.full;
+    // (c) JUNCTION ENTRY ROOM (claude/street4, rule junction-entry-room): a car starts a junction turn only when its exit
+    // has free room for its length + ROOM_GAP after the turn, counted against the cars already in turns heading to the
+    // same exit (a reservation, released as each leaves its turn); else it waits at its line. Before, the room was
+    // judged by the exit's last car only: cars from several approaches entered at once, stopped inside their turns
+    // and blocked the crossing traffic (a gridlock at the close Ch. d'Alsemberg junctions, D6 / D7, trafmix). A run (an
+    // ambulance / fire engine) is not held by it; nor a car the cycle breaker lets creep on (below)
+    if (X >= 0 && gc.kind[ci] && this.W.slots[X >>> 16] && this.ctl[i] !== 4 && !(this.creep[i] > 0)) {
+      const gx = this.W.slots[X >>> 16], xi = X & 0xffff, need = this.half[i] * 2 + ROOM_GAP;
+      let free = 0, blk = -1;
+      // the exit's free length from its start to its last car (a moving last car leaves room growing), on along the
+      // route past an exit lane too short to hold the car; (claude/signals1, rule signal-phase-road) up to a signal's
+      // stop line showing red / amber now on the way: a car turning at D7 n150588281 into the Ch. d'Alsemberg exit
+      // stopped at the crossing signal 0 m past its turn, inside the junction (on green it goes: close signals share
+      // the phase along the road, offset 0); not past FAIR_T s held: a turn whose exit signal is red whenever its own
+      // green shows (the other phase), on a link shorter than a bus, would starve it (trafmix: a bus at E4, hold 5)
+      {
+        const R = this.route, o = i * ROUTE;
+        let k = 0; while (k < ROUTE && R[o + k] !== X) k++;
+        for (let q = k; q < ROUTE && R[o + q] >= 0 && free < need + 1; q++) {
+          const gq = this.W.slots[R[o + q] >>> 16]; if (!gq) { free = Infinity; break; }
+          const pq = R[o + q] & 0xffff;
+          let m = gq.head[pq]; if (m === i) m = this.nxt[m];
+          const red = !gq.kind[pq] && gq.ctrl[pq] === CTRL.signal && this.params.signals && this.holdT[i] <= FAIR_T && signalState(gq.phase[pq], this.t) !== 0 ? gq.holdAt[pq] : -1;
+          if (m >= 0 && !(red >= 0 && this.posOn(m) - this.half[m] > red)) {
+            // (a moving last car: room growing, or, before a red line, the room left behind it once it stands there)
+            if (this.v[m] >= 2.5) { if (red >= 0) free += Math.max(0, red - 2 * this.half[m]); else free = Infinity; }
+            else { free += this.posOn(m) - this.half[m]; blk = m; }
+            break;
+          }
+          if (red >= 0) { free += red; break; }
+          free += gq.len[pq];
+          if (q === ROUTE - 1) free = Infinity;
+          // (claude/lanes5: the route ends on this path (no next path: the car leaves the sim at its end), so nothing
+          // queues past it; counted as a finite room, a 14.6 m dead-end exit held a 13 m bus "full" for good at the D6
+          // Ch. d'Alsemberg / Engeland junction, trafmix seed 23)
+          else if (R[o + q + 1] < 0) free = Infinity;
+        }
+        if (k >= ROUTE) free = Infinity;
+      }
+      // the reservations: every car on a turn into this exit (but this one)
+      for (let n = gx.prevOff[xi]; n < gx.prevOff[xi + 1] && free < Infinity; n++) {
+        const P = gx.prevIdx[n]; if (!gx.kind[P]) continue;
+        for (let m = gx.head[P]; m >= 0; m = this.nxt[m]) if (m !== i) { free -= this.half[m] * 2 + ROOM_GAP; if (blk < 0) blk = m; }
+      }
+      // (fairness: a car held FAIR_T s for this exit claims it; the others wait behind its claim until it has gone in, so a
+      // bus needing 14 m is not starved by the cars taking every 6 m gap first)
+      const cl = this.claims.get(X);
+      const held = (c) => c !== undefined && c !== i && this.alive[c] && this.hold[c] !== 0 && this.holdT[c] > FAIR_T && this.route[c * ROUTE + 1] === X;
+      if (held(cl)) { this._blk = cl; return HOLD.full; }
+      if (free < need) {
+        if (this.holdT[i] > FAIR_T) this.claims.set(X, i);
+        this._blk = blk; return HOLD.full;
+      }
+      if (cl === i) this.claims.delete(X);
     }
     return 0;
   }
@@ -726,12 +892,13 @@ export class TrafficSim {
     const W = this.W, R = this.route, o = i * ROUTE, half = this.half[i];
     const p = this.path[i], d = this.d[i], v = this.v[i];
     const g = W.slots[p >>> 16], pi = p & 0xffff;
+    this._blk = -1;
     let v0 = g.speed[pi] * this.v0f[i] * this.params.speed * this.speedF[i];
     let gap = Infinity, vL = 0, lead = 0;
     const tmp = this.tmp;
     // POLICE GAME: control (flee / pull over / stopped) and yielding to the emergency car
     const ctl = this.ctl[i];
-    let yieldCap = Infinity, yieldHold = false;
+    let yieldCap = Infinity, yieldHold = false, runNear = false, runYield = false;
     this.yr[i] = 0;
     if (ctl === 1) { v0 = Math.max(v0 * 1.75, 15); if (this.overT[i] > 0) { this.overT[i] -= STEP; this.yr[i] = 2.7; } }
     else if (ctl === 2) { v0 = Math.max(0.05, v * 0.78); this.yr[i] = -0.9; if (v < 0.4) { this.ctl[i] = 3; this.v[i] = 0; } }
@@ -745,14 +912,20 @@ export class TrafficSim {
         else { if (this.emI[q] === i) continue; ex0 = this.emX[q]; ez0 = this.emZ[q]; eh = this.emH[q]; }
         const dx = this.x[i] - ex0, dz = this.z[i] - ez0;
         if (dx * dx + dz * dz >= 95 * 95) continue;
+        if (q >= 0) runNear = true;                                            // (a run within 95 m: the narrow stretches below)
         const ex = Math.sin(eh), ez = Math.cos(eh), along = dx * ex + dz * ez, lat = Math.abs(dx * ez - dz * ex);
         const dir = Math.sin(this.yaw[i]) * ex + Math.cos(this.yaw[i]) * ez;
+        // (claude/street4: a car INSIDE a junction turn clears the junction first, as a driver does: crawling there for an
+        // ambulance behind it held the ambulance itself, which waits until nobody stands before its conflict point
+        // (decide HOLD.busy): a deadlock the trafmix gate saw on Ch. d'Alsemberg D6 once the turns were laid anew)
+        const inTurn = g.kind[pi] === 1;
         if (dir > 0.6 && along > 2 && along < 80 && lat < 7) {                 // ahead, same way: pull right, stop
           this.yr[i] = -0.8;                                                   // (as far right as parked cars allow)
-          yieldCap = Math.min(yieldCap, along < 45 ? Math.max(0.05, v * 0.8) : 4);
+          runYield = true;
+          if (!inTurn) yieldCap = Math.min(yieldCap, along < 45 ? Math.max(0.05, v * 0.8) : 4);
           this.stats.yielding++;
         } else if (dir < -0.6 && along > 0 && along < 70 && lat < 12) {       // oncoming: slow, keep right
-          this.yr[i] = Math.min(this.yr[i], -0.5); yieldCap = Math.min(yieldCap, 3.5); this.stats.yielding++;
+          this.yr[i] = Math.min(this.yr[i], -0.5); if (!inTurn) yieldCap = Math.min(yieldCap, 3.5); this.stats.yielding++; runYield = true;
         } else if (dir <= 0.6 && dir >= -0.6 && along > -25 && along < 75) yieldHold = true;   // across: wait at the line
       }
     }
@@ -764,6 +937,10 @@ export class TrafficSim {
     // (TRAFMIX: a delivery van standing in the lane is an obstacle (rolesPre): passed like a parked car where there is
     // room, else waited behind; the car past it leads)
     if (j >= 0 && this.rst[j] === 2 && this.role[j] === ROLE.delivery) j = this.nxt[j];
+    // (claude/street4: an ambulance / fire engine on a run passes the cars that pulled over for it: a leader standing
+    // pulled right (room <= -RUN_ROOM) is passed on the left, eased out by the room it left; before, the run crawled
+    // behind a yielding car that crawled for the run, 100 s, trafmix D7)
+    if (ctl === 4) while (j >= 0 && this.v[j] < 2 && this.room[j] <= -RUN_ROOM && this.ctl[j] !== 4) { this.yr[i] = Math.max(this.yr[i], RUN_OUT); j = this.nxt[j]; }
     const over = ctl === 1 && this.overT[i] > 0;
     if (j >= 0 && !over) { gap = this.posOn(j) - d - this.half[j] - half; vL = this.v[j]; lead = 1; }
     if (ctl === 1 && j >= 0 && this.overT[i] <= 0) {
@@ -801,6 +978,15 @@ export class TrafficSim {
           if (pj + hj > o0 && pj - hj < o1) blocked = true;                                   // inside it
           else if (pj + hj <= o0 && o0 - (pj + hj) < 6 && this.v[jj] > 0.5 && jj < i) blocked = true;   // entering, has the turn
         }
+        // (claude/parking1, rule service-vehicle-passage: a run has the stretch. A car does not enter it while a run comes
+        // the other way (on the opposing lane, before or in its part of the stretch); a run does not wait for oncoming
+        // cars that STAND there (queued at a light, pulled over for it) when its own body clears every one of them by
+        // RUN_SQUEEZE m: it squeezes past at a walking pace, as drivers let an ambulance through. Before, cars kept entering toward a run
+        // waiting at a 100 m narrow street (4.75 m clear) while the queue there stood at a red light: D6, seed 11)
+        if (!blocked && runNear && !RUN_SQUEEZE_OLD) for (let jj = g.head[op]; jj >= 0; jj = this.nxt[jj]) {
+          if (this.ctl[jj] === 4 && this.posOn(jj) - this.half[jj] < o1 && this.posOn(jj) + this.half[jj] > o0 - 45) { blocked = true; break; }
+        }
+        if (blocked && ctl === 4 && !RUN_SQUEEZE_OLD && this.runSqueeze(i, p, g, op, g.nS0[k], g.nS1[k], o0, o1)) { blocked = false; v0 = Math.min(v0, SQUEEZE_V); this.stats.runSqueezes = (this.stats.runSqueezes || 0) + 1; }
         if (blocked) { gap = Math.max(0.05, dStop - 0.5); vL = 0; lead = 3; hold = HOLD.yield; this.stats.narrowWaits = (this.stats.narrowWaits || 0) + 1; break; }
       }
     }
@@ -848,9 +1034,31 @@ export class TrafficSim {
         // (TRAFMIX: a body wider than the lanes' design car is looked along at the design width: the lanes are fitted
         // round the parked cars for a car; a bus beside them would otherwise stop for good)
         const hwL = this.types[this.type[i]].w > 2.1 ? 0.95 : Infinity;
-        for (let a2 = 1; a2 <= look; a2 += 1) if (this.parkClear(i, this.room[i], a2, hwL) < 0.02) { this.tpLA[i] = d + a2; break; }
+        // (claude/parking1, the sim cost row: a straight stretch ahead (the route's heading change x the look < 0.2 m) is
+        // first judged as ONE body as long as the look; nothing within 0.3 m of it: no probe per metre; ?lapre=old)
+        let any = true;
+        if (!LA_PRE_OLD) {
+          const F = this._laF ||= new Float64Array(4), R = this._laR ||= new Float64Array(4), Q = this._laQ ||= new Float64Array(4), hw2 = this.wb[i] / 2;
+          this.routePoint(i, d + hw2, F); this.routePoint(i, d - hw2, R); this.routePoint(i, d + look + hw2, Q);
+          const y0 = Math.atan2(F[0] - R[0], F[1] - R[1]), y1 = Math.atan2(Q[0] - F[0], Q[1] - F[1]);
+          let dy = y1 - y0; dy -= Math.round(dy / 6.283185307) * 6.283185307;
+          if (Math.abs(dy) * look < 0.2) {                                    // (a bend's offset over the look < 0.2 m, inside the 0.3 m margin)
+            const lx = Math.cos(y0), lz = -Math.sin(y0), sx = Math.sin(y0), sz = Math.cos(y0), r = this.room[i];
+            const mx = (F[0] + R[0]) / 2 + sx * (look / 2) + lx * r + this.offX[i], mz = (F[1] + R[1]) / 2 + sz * (look / 2) + lz * r + this.offZ[i];
+            const hw = Math.min(hwL, Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2));
+            if (this.bodyClear(mx, mz, y0, this.half[i] + look / 2, hw) > 0.3) any = false;
+          }
+        }
+        if (any) for (let a2 = 1; a2 <= look; a2 += 1) if (this.parkClear(i, this.room[i], a2, hwL) < 0.02) { this.tpLA[i] = d + a2; break; }
       }
-      if (this.tpLA[i] >= 0) { const g2 = this.tpLA[i] - d - 1; if (g2 < gap) { gap = Math.max(0.05, g2); vL = 0; lead = 2; } }
+      // (claude/parking1, rule service-vehicle-passage: a car keeping right for a run (yr, not a pass) whose shifted body
+      // runs into a parked car ahead keeps its lane instead (the lane is clear of the parked cars) and drives on past it
+      // as the run allows: it pulls in behind the parked car, never into it. Before, it stood there shifted for good and
+      // the run waited for it to leave the narrow stretch: Dieweg E6, seed 7, ?streetlanes=old)
+      // (the look-ahead's answer is kept, not reset: a reset re-ran its 30 probes every step while the car eased back)
+      let kept = false;
+      if (this.tpLA[i] >= 0 && runYield && !YIELD_KEEP_OLD && !(this.pwT[i] > 0) && this.yr[i] * this.room[i] > 0) { this.yr[i] = 0; kept = true; this.stats.yieldKept = (this.stats.yieldKept || 0) + 1; }
+      if (this.tpLA[i] >= 0 && !kept) { const g2 = this.tpLA[i] - d - 1; if (g2 < gap) { gap = Math.max(0.05, g2); vL = 0; lead = 2; } }
     } else this.tpLA[i] = -1;
     if (ctl === 1) v0 = Math.max(v0, Math.min(15, v0 * 1.4));                // (police game: a fleeing car takes the bends faster)
     if (ctl === 4 && (g.kind[pi] || g.len[pi] - d < 25)) v0 = Math.min(v0, 7);   // (TRAFMIX: a run slows through junctions)
@@ -860,6 +1068,15 @@ export class TrafficSim {
       if (sg < gap) { gap = Math.max(0.05, sg); vL = 0; lead = 3; }
     }
     this.hold[i] = hold; this.gap[i] = gap; this.lead[i] = gap < Infinity ? lead : 0;
+    // (who this car waits for, for the cycle breaker: the car its hold names, else the stopped car it follows)
+    this.wf[i] = hold === HOLD.busy || hold === HOLD.full ? this._blk : lead === 1 && v < 0.3 ? this.nxt[i] : -1;
+    // (and the last car a hold named, kept while it waits on at the same line: a red phase between two "full" checks
+    // still waits on that queue; the audits follow it, tools/audit/trafmixGate.mjs)
+    if (this._blk >= 0) this.lastBlk[i] = this._blk; else if (!hold) this.lastBlk[i] = -1;
+    // (claude/street4: a car that has moved on PROGRESS m (or onto another path) since its wait began is in a slow queue,
+    // not stuck: the wait starts over. Before, a minute of creeping through a congested junction's queue (D6 Ch.
+    // d'Alsemberg at 8 h) counted as stuck and the car was taken away, trafmix "removed as stuck")
+    if (hold && (this.holdP[i] !== p || Math.abs(d - this.holdD[i]) > PROGRESS)) { this.holdP[i] = p; this.holdD[i] = d; this.holdT[i] = 0; }
     if (hold && v < 0.15) this.holdT[i] += STEP; else if (!hold) this.holdT[i] = 0;
     // IDM
     const a = this.aMax[i], b = IDM.b;
@@ -875,6 +1092,26 @@ export class TrafficSim {
   }
 
   /** Advance one fixed step. ctx: { visible(x, y, z, r) -> bool, fx, fz (the focus: player / camera) } */
+  /** THE CYCLE BREAKER (rule junction-entry-room, a safety net): a car waiting LOOP_T s whose wait-for chain (the car
+   *  its hold names, else the stopped car it follows) loops back to it: the car of that loop with the oldest wait,
+   *  inside a junction turn where one is, creeps on for CREEP_T s (its busy / full holds waived); counted in
+   *  stats.cycleBreaks (the trafmix gate keeps it near 0) */
+  breakCycles() {
+    for (let i = 0; i < this.cap; i++) {
+      if (!this.alive[i] || this.holdT[i] < LOOP_T || this.wf[i] < 0 || this.creep[i] > 0) continue;
+      const m = ++this._wfM;
+      let j = i, n = 0;
+      while (j >= 0 && n < 64 && this.wfMark[j] !== m) { this.wfMark[j] = m; j = this.alive[j] ? this.wf[j] : -1; n++; }
+      if (j !== i) continue;
+      let best = i, bestT = -1, k = i;
+      do {
+        const inTurn = this.W.slots[this.path[k] >>> 16]?.kind[this.path[k] & 0xffff] ? 1e6 : 0;
+        if (this.holdT[k] + inTurn > bestT) { bestT = this.holdT[k] + inTurn; best = k; }
+        k = this.wf[k];
+      } while (k !== i && k >= 0);
+      this.creep[best] = CREEP_T; this.stats.cycleBreaks = (this.stats.cycleBreaks || 0) + 1;
+    }
+  }
   step(ctx) {
     const t0 = performance.now();
     this.t = signalClock.now();
@@ -896,8 +1133,10 @@ export class TrafficSim {
       if (st === ST.knocked) continue;                   // (carhit: its pose is the rigid body's, carHit.js)
       this.copyPrev(i);
       if (this.pwWait[i] > 0) this.pwWait[i] -= STEP;
+      if (this.creep[i] > 0) this.creep[i] -= STEP;
       if (st === ST.drive || st === ST.inStop) this.accel(i);
     }
+    if (this.steps % 10 === 0) this.breakCycles();
     for (let i = 0; i < this.cap; i++) {
       if (!this.alive[i]) continue;
       const st = this.state[i];
@@ -939,7 +1178,29 @@ export class TrafficSim {
     // trafpark: easing out round a parked car standing into the lane (passing()), held 1.5 s after the last ask
     if (this.pwT[i] > 0) { this.pwT[i] -= STEP; if (driving) want = this.pw[i]; if (this.pwT[i] <= 0) this.pw[i] = 0; }
     const d = want - this.room[i], m = (want ? (this.ctl[i] === 1 ? 1.6 : 0.6) : 0.35) * STEP;
-    const next = this.room[i] + (d > m ? m : d < -m ? -m : d);
+    let next = this.room[i] + (d > m ? m : d < -m ? -m : d);
+    // (claude/street4, trafparksim: a car pulling over at 8 m/s eased 0.42 m right into a corridor with a parked car
+    // 5 m ahead, inside its stopping distance, and braked into it: the clamp below judged its position only. The
+    // shifted corridor AHEAD, half and all of its stopping distance, is judged too: no move out toward a parked car
+    // there within ROOM_AHEAD, and a car whose shifted corridor runs into one eases back toward its lane line. A run
+    // (ctl 4) keeps its line)
+    if (!TP_OLD && driving && this.pk.grid.size && this.v[i] > 1 && this.ctl[i] !== 4 && (next || this.room[i]) && (Math.abs(next) > Math.abs(this.room[i]) || ((this.steps + i) & 3) === 0)) {
+      const v = this.v[i], L = Math.min(20, (v * v) / 6 + 2);
+      // (along its heading, not its route: no routePoint per probe, the cost row; parked cars stand on straights)
+      const yw = this.yaw[i], sx = Math.sin(yw), sz = Math.cos(yw), lx = Math.cos(yw), lz = -Math.sin(yw), hw = Math.max(0.92, this.types[this.type[i]].w / 2), hl = this.half[i];
+      const x0 = this.x[i] - lx * this.room[i], z0 = this.z[i] - lz * this.room[i];
+      const ahead = (r) => Math.min(this.bodyClear(x0 + sx * L * 0.5 + lx * r, z0 + sz * L * 0.5 + lz * r, yw, hl, hw), this.bodyClear(x0 + sx * L + lx * r, z0 + sz * L + lz * r, yw, hl, hw));
+      let aR = NaN;                                                          // (ahead(room), probed once)
+      const aRoom = () => (aR === aR ? aR : (aR = ahead(this.room[i])));
+      if (Math.abs(next) > Math.abs(this.room[i]) && ahead(next) < ROOM_AHEAD) next = this.room[i];
+      if (next === this.room[i] && this.room[i] && aRoom() < TP_TOUCH) { const r = this.room[i]; next = r - Math.sign(r) * Math.min(Math.abs(r), 0.6 * STEP); }
+      // (claude/parking1, trafparksim --shove 60: a car eased out past a shoved car, its corridor ahead into a second one,
+      // eased BACK toward its lane line unchecked: back there the car it was passing stood 1.3 m ahead at 6.6 m/s and it
+      // ran 11 cm into it. A move IN is judged like a move out: not into a corridor worse than this one within
+      // ROOM_AHEAD; it holds its offset and the shifted-body look-ahead (tpLA) stops it)
+      if (!EASE_BACK_OLD && next !== this.room[i] && Math.abs(next) < Math.abs(this.room[i])) { const an = ahead(next); if (an < ROOM_AHEAD && an < aRoom()) next = this.room[i]; }
+      if (next === this.room[i]) return;
+    }
     // trafpark: no sideways move (pull over, yield right, the bike's room, back from a pass) into a parked car: a move
     // that brings the body within TP_TOUCH of one, closer than it is, waits
     if (!TP_OLD && this.pk.grid.size && next !== this.room[i]) {
@@ -1220,7 +1481,7 @@ export class TrafficSim {
         if (g.kind[i] || !g.core[i]) continue;
         const dx = g.mid[i * 2] - fx, dz = g.mid[i * 2 + 1] - fz;
         if (dx * dx + dz * dz > R * R) continue;
-        want += g.len[i] * DENSITY[Math.min(5, g.rank[i])] / 1000;
+        want += g.len[i] * laneDensity(g, i) / 1000;
         km += g.len[i] / 1000;
       }
     }
@@ -1293,7 +1554,7 @@ export class TrafficSim {
     for (let i = 0; i < g.paths; i++) {
       const m = this.W.midOf(g, i);
       g.mid[i * 2] = m[0]; g.mid[i * 2 + 1] = m[1];
-      if (!g.kind[i] && g.core[i] && g.len[i] > 12) s += g.len[i] * DENSITY[Math.min(5, g.rank[i])];
+      if (!g.kind[i] && g.core[i] && g.len[i] > 12) s += g.len[i] * laneDensity(g, i);
       g.wsum[i] = s;
     }
   }
@@ -1437,7 +1698,7 @@ export class TrafficSim {
     this.fillRoute(i);
     this.hold[i] = 0; this.holdT[i] = 0; this.stopDone[i] = -1; this.committed[i] = -1; this.waitT[i] = 0;
     this.room[i] = 0; this.offX[i] = this.offZ[i] = 0; this.yr[i] = 0; this.overT[i] = 0;
-    if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.tpLA[i] = -1; }
+    if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.pwSum[i] = 0; this.tpLA[i] = -1; this.creep[i] = 0; this.wf[i] = -1; this.lastBlk[i] = -1; }
     this.W.point(gid, at, this.tmp);
     this.bezier(i, x, z, hx, hz, this.tmp[0], this.tmp[1], this.tmp[2], this.tmp[3], 3, 3.5);
     this.manDir[i] = 1; this.manT[i] = 0; this.slot[i] = null;

@@ -24,10 +24,22 @@
 //                  drawn variant's leaf cards with a DENSE CORE (60 % of the radius, 85 % of the height: a hit, the bird
 //                  can land on top) inside a soft shell (brushing through: drag), and the trunk; built per tile in the
 //                  worker (an 8 m bucket grid), so a query is a handful of trees.
+//   (round 5, rule falcon-gym "landing on what is drawn") column() also stands on what the city DRAWS on the ground:
+//                  the drawn ground (the drive surface: the carved terrain + the road / kerb / sidewalk decks, as the car rides
+//                  it; the DTM sat up to ~15 cm off it), the drawn roofs interpolated between the 1 m grid's samples (exact on
+//                  a roof plane; the nearest sample put the bird up to 0.4 m off a pitched roof), and the FURNITURE: every
+//                  collision stand-in the city keeps (front-garden walls / pillars / gates / hedges, benches, shelters, bins,
+//                  ...: viewer/gardens/cityGardens.js, the furniture kits) as oriented boxes with their drawn top (a sloping
+//                  wall's two ends), 4 m buckets per tile, built in slices as they appear (furnStep). The owner: the falcon
+//                  "landed" on a garden wall it did not know, its feet on the pavement inside the wall.
 // Where no full tile is loaded (the falcon outran the streaming) the nearest tile's edge stands in (clamped).
-import { Vector3 } from "three/webgpu";
+import { Vector3, Matrix4 } from "three/webgpu";
+import { driveHeight, gather, pointInBuilding } from "../drive/colliders.js";
 import { PLACE, churchTop } from "./church.js";
 
+/** ?falconperch=old: the falcon's world before round 5 (the DTM ground, no furniture, the nearest roof sample; the perch
+ *  pool unchecked): the owner's "it's floating" A/B */
+export const PERCH_OLD = typeof location !== "undefined" && /[?&]falconperch=old(&|$)/.test(location.search);
 const HEAT = { pitch: 0.85, playground: 0.8, grass: 0.7, park: 0.65, meadow: 0.7, garden: 0.55, recreation_ground: 0.75, wood: 0.35, scrub: 0.5, farmland: 0.7 };
 const SLOTS = 12;
 const LIFT = { step: 4, half: 400, rebuild: 140, rad: 3 };
@@ -62,6 +74,10 @@ export class CityFalconWorld {
     this.treeStats = { tiles: 0, trees: 0, lastMs: 0 };
     this._col = { floor: 0, ceil: Infinity, brush: 0, tree: null, open: false };
     this._near = [];
+    this.furn = new Map();         // tile -> { boxes: number[], n, grid, seen: WeakSet, queue: [] } (round 5)
+    this.furnList = [];            // the tiles' furniture sets with a grid
+    this.furnStats = { boxes: 0, maxWork: 0 };
+    this._M = new Matrix4(); this._W = new Matrix4(); this._fv = new Vector3();
   }
   get tiles() { return this.city.tiles; }
 
@@ -81,10 +97,25 @@ export class CityFalconWorld {
     return best;
   }
   ground(x, z) { const t = this.tileAt(x, z) || this.nearest(x, z); return t ? t.hm.ground(x, z) : 0; }
+  /** the DRAWN ground (round 5): the drive surface as the car rides it (the carved terrain + the road / kerb / sidewalk
+   *  decks); the DTM where the tile has none */
+  drawnGround(x, z) {
+    const t = this.tileAt(x, z) || this.nearest(x, z);
+    if (!t) return 0;
+    const g = t.drive?.ground;
+    return g && t.hm?.h && t.hm?.y && !PERCH_OLD ? driveHeight(t.hm, g, x, z) : t.hm.ground(x, z);
+  }
   /** the roof grid's cell (m TAW, 0 = none), the hero models' envelopes left out */
   roof(x, z) {
     const t = this.tileAt(x, z); if (!t) return 0;
     let r = rawRoof(t, x, z);
+    // (round 5) near a tile's edge: a neighbour's building reaching over it (the drawn grids run 20 m past their tiles)
+    const bo = t.bounds;
+    if (x - bo.x0 < 20 || bo.x1 - x < 20 || z - bo.z0 < 20 || bo.z1 - z < 20) for (const u of this.city.tiles) {
+      const sf = u.roofs?.surf;
+      if (u === t || !sf || x < sf.x0 || z < sf.z0 || x >= sf.x0 + sf.nx * sf.step || z >= sf.z0 + sf.nz * sf.step) continue;
+      const v = rawRoof(u, x, z); if (v > r) r = v;
+    }
     if (r <= 0) return 0;
     // the drawn roof surface leaves the solids a model replaces out already (they are hidden before it is made): only
     // the old flat grid keeps their envelope, which the checks below take out
@@ -102,6 +133,49 @@ export class CityFalconWorld {
       if (p.env > 0 && Math.abs(r - p.env) < 0.3) return 0;
     }
     return r;
+  }
+  /** (round 5) snap (x, z) onto the drawn roof grid's sample nearest it (a cell's centre: the drawn triangle's own height
+   *  there), stepping 1 cell back along (-di, -dj) when that cell is no roof; out.x / out.z; false when no grid */
+  roofCell(x, z, out, di = 0, dj = 0) {
+    const t = this.tileAt(x, z), sf = t?.roofs?.surf;
+    if (!sf) return false;
+    for (let k = 0; k < 2; k++) {
+      const i = Math.floor((x - sf.x0) / sf.step) - (k ? Math.sign(di) : 0), j = Math.floor((z - sf.z0) / sf.step) - (k ? Math.sign(dj) : 0);
+      if (i < 0 || j < 0 || i >= sf.nx || j >= sf.nz || !sf.data[j * sf.nx + i]) continue;
+      out.x = sf.x0 + (i + 0.5) * sf.step; out.z = sf.z0 + (j + 0.5) * sf.step;
+      return true;
+    }
+    return false;
+  }
+  /** (round 5) in a building's footprint (the tile's drive colliders: UrbIS footprints, exact polygons)? the perches'
+   *  check: a thin annex, a wall classed as a building, narrower than the roof grid's 1 m cells, is in no cell */
+  inBuilding(x, z) {
+    const L = (this._gl ??= []); L.length = 0;
+    for (const t of this.city.tiles) {
+      const col = t.drive?.col, b = t.bounds;
+      if (!col || x < b.x0 - 30 || x > b.x1 + 30 || z < b.z0 - 30 || z > b.z1 + 30) continue;
+      gather(col, x, z, 0.02, L);
+    }
+    return pointInBuilding(L, x, z);
+  }
+  /** the highest drawn roof sample in the 3 x 3 cells round (x, z) (a thin building's roof is in a neighbour cell) */
+  roofNear(x, z) {
+    const t = this.tileAt(x, z), sf = t?.roofs?.surf;
+    if (!sf) return this.roof(x, z);
+    const i = Math.floor((x - sf.x0) / sf.step), j = Math.floor((z - sf.z0) / sf.step);
+    let h = 0;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const a = i + di, b = j + dj;
+      if (a >= 0 && b >= 0 && a < sf.nx && b < sf.nz) h = Math.max(h, sf.data[b * sf.nx + a] / sf.q);
+    }
+    return h;
+  }
+  /** (round 5) the drawn roof grid's own sample nearest (x, z) (m TAW; 0 = none): the drawn triangle at its cell's centre */
+  roofSample(x, z) {
+    const t = this.tileAt(x, z), sf = t?.roofs?.surf;
+    if (!sf) return this.roof(x, z);
+    const i = Math.floor((x - sf.x0) / sf.step), j = Math.floor((z - sf.z0) / sf.step);
+    return i >= 0 && j >= 0 && i < sf.nx && j < sf.nz ? sf.data[j * sf.nx + i] / sf.q : 0;
   }
   /** the replaced UrbIS solid's top: the roof grid at the model's highest point (null until its tile is in) */
   envTop(x, z) { const t = this.tileAt(x, z); return t ? rawRoof(t, x, z) : null; }
@@ -137,9 +211,9 @@ export class CityFalconWorld {
    *  a bridge) }. outer: the crowns' whole volume is solid (the camera: never inside the leaves). One shared object. */
   column(x, z, y, outer = false) {
     const o = this._col;
-    o.ceil = Infinity; o.brush = 0; o.tree = null; o.ceilTree = null; o.open = false;
+    o.ceil = Infinity; o.brush = 0; o.tree = null; o.ceilTree = null; o.open = false; o.furn = -1;
     const t = this.tileAt(x, z) || this.nearest(x, z);
-    let h = t ? t.hm.ground(x, z) : 0;
+    let h = t ? this.drawnGround(x, z) : 0;
     const r = this.roof(x, z); if (r > h) h = r;
     const c = this.churchFloor(x, z); if (c > h) h = c;
     for (const p of this.proxies) {
@@ -153,6 +227,22 @@ export class CityFalconWorld {
       if (v > h) h = v;
     }
     if (this.city.decks?.length && !(o.open && y < o.ceil)) { const d = this.city.deckY(x, z); if (d != null && d > h) h = d; }
+    // (round 5) the furniture: a box's drawn top is a floor under y (or the bird inside its height: its top, a wall), a box
+    // over y a ceiling
+    for (let f = 0, nf = PERCH_OLD ? 0 : this.furnList.length; f < nf; f++) {
+      const F = this.furnList[f], G = F.grid;
+      const ci = Math.floor((x - G.x0) / G.cell), cj = Math.floor((z - G.z0) / G.cell);
+      if (ci < 0 || cj < 0 || ci >= G.nx || cj >= G.nz) continue;
+      const q = cj * G.nx + ci, B = F.arr;
+      for (let k = G.start[q], e = G.start[q + 1]; k < e; k++) {
+        const b = G.idx[k] * FB, dx = x - B[b], dz = z - B[b + 1];
+        const u = dx * B[b + 2] + dz * B[b + 3], v = -dx * B[b + 3] + dz * B[b + 2];
+        if (u < -B[b + 4] || u > B[b + 4] || v < -B[b + 5] || v > B[b + 5]) continue;
+        const top = B[b + 6] + (B[b + 7] - B[b + 6]) * (0.5 + 0.5 * u / Math.max(B[b + 4], 1e-4)), base = B[b + 8];
+        if (base > y + 0.05) { if (base < o.ceil) o.ceil = base; continue; }
+        if (top > h) { h = top; o.furn = G.idx[k]; o.furnSet = F; }
+      }
+    }
     // the trees' crowns and trunks
     const cf = outer ? 1 : 0.6, cv = outer ? 1 : 0.85;
     for (const td of this.treeList) {
@@ -225,6 +315,73 @@ export class CityFalconWorld {
       }
     }
     return out;
+  }
+
+  // ---------------------------------------------------------------------------------------------- the furniture (round 5)
+  /** the loaded tiles' collision stand-ins (call every second or so): new ones are queued for furnStep */
+  syncFurniture() {
+    const tiles = this.city.tiles;
+    for (const [t] of this.furn) if (!tiles.includes(t)) { this.furn.delete(t); this.furnList = this.furnList.filter((F) => F.tile !== t); }
+    for (const t of tiles) {
+      let F = this.furn.get(t);
+      if (!F) this.furn.set(t, (F = { tile: t, boxes: [], n: 0, grid: null, arr: null, seen: new WeakSet(), queue: [], dirty: false }));
+      for (const g of t.groups || []) g.traverse?.((m) => {
+        if (!m.isInstancedMesh || F.seen.has(m) || !FURN_RE.test(m.name || "")) return;
+        F.seen.add(m); F.queue.push({ m, i: 0 });
+      });
+    }
+  }
+  /** at most `work` instances a frame into their tile's boxes; a tile's grid rebuilt when its queue is done */
+  furnStep(work = 300) {
+    let n = 0;
+    for (const F of this.furn.values()) {
+      while (F.queue.length && n < work) {
+        const J = F.queue[0], m = J.m;
+        if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+        const bb = m.geometry.boundingBox;
+        if (J.i === 0) m.updateWorldMatrix(true, false);
+        for (; J.i < m.count && n < work; J.i++, n++) this.addBox(F, m, J.i, bb);
+        if (J.i >= m.count) { F.queue.shift(); F.dirty = true; }
+      }
+      if (!F.queue.length && F.dirty) { this.furnGrid(F); F.dirty = false; n += 50; }
+      if (n >= work) break;
+    }
+    this.furnStats.maxWork = Math.max(this.furnStats.maxWork, n);
+    return n;
+  }
+  addBox(F, m, i, bb) {
+    const M = this._M, W = this._W, v = this._fv;
+    m.getMatrixAt(i, M); W.multiplyMatrices(m.matrixWorld, M);
+    // the top's two ends (along the box's local x) and its bottom, in world space
+    const cz = (bb.min.z + bb.max.z) / 2;
+    v.set(bb.min.x, bb.max.y, cz).applyMatrix4(W); const ax = v.x, ay = v.y, az = v.z;
+    v.set(bb.max.x, bb.max.y, cz).applyMatrix4(W); const bx = v.x, by = v.y, bz = v.z;
+    v.set((bb.min.x + bb.max.x) / 2, bb.max.y, bb.min.z).applyMatrix4(W); const sx = v.x, sz = v.z;
+    v.set((bb.min.x + bb.max.x) / 2, bb.min.y, (bb.min.z + bb.max.z) / 2).applyMatrix4(W); const base = v.y;
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    let ux = bx - ax, uz = bz - az; const L = Math.hypot(ux, uz);
+    if (L < 1e-4) { ux = 1; uz = 0; } else { ux /= L; uz /= L; }
+    const hw = Math.abs(-(sx - mx) * uz + (sz - mz) * ux);
+    F.boxes.push(mx, mz, ux, uz, Math.max(L / 2, 0.02), Math.max(hw, 0.02), ay, by, base, FURN_KIND(m.name));
+    F.n++;
+  }
+  furnGrid(F) {
+    const b = F.tile.bounds, cell = 4, M = 40, x0 = b.x0 - M, z0 = b.z0 - M;
+    const nx = Math.ceil((b.x1 - b.x0 + 2 * M) / cell), nz = Math.ceil((b.z1 - b.z0 + 2 * M) / cell);
+    const A = F.arr = new Float32Array(F.boxes), cnt = new Uint32Array(nx * nz + 1);
+    const cells = (k, fn) => {
+      const o = k * FB, r = Math.hypot(A[o + 4], A[o + 5]);
+      const i0 = Math.max(0, Math.floor((A[o] - r - x0) / cell)), i1 = Math.min(nx - 1, Math.floor((A[o] + r - x0) / cell));
+      const j0 = Math.max(0, Math.floor((A[o + 1] - r - z0) / cell)), j1 = Math.min(nz - 1, Math.floor((A[o + 1] + r - z0) / cell));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) fn(j * nx + i);
+    };
+    for (let k = 0; k < F.n; k++) cells(k, (q) => cnt[q + 1]++);
+    for (let q = 0; q < nx * nz; q++) cnt[q + 1] += cnt[q];
+    const idx = new Uint32Array(cnt[nx * nz]), fill = cnt.slice(0, nx * nz);
+    for (let k = 0; k < F.n; k++) cells(k, (q) => { idx[fill[q]++] = k; });
+    F.grid = { x0, z0, cell, nx, nz, start: cnt, idx };
+    if (!this.furnList.includes(F)) this.furnList.push(F);
+    this.furnStats.boxes = this.furnList.reduce((s, q) => s + q.n, 0);
   }
 
   /** the Saint-Job church (viewer/stjobModel.js placement: position, rotationY) */
@@ -358,6 +515,13 @@ export class CityFalconWorld {
 
   // ---------------------------------------------------------------------------------------------- roosts
   /** the roof-ridge roosts round the Place (worker), then the church's and the setts once the Place's tile is in */
+  /** (round 5) the roof ridges' points within R of (x, z) on their ridge LINES (lift 0: the falcon's perches), a worker job */
+  async ridgesNear(x, z, R = 90) {
+    const at = { x, z };
+    const near = this.manifest.tiles.filter((t) => t.status === "built" && Math.max(t.bounds.x[0] - x, 0, x - t.bounds.x[1]) < R + 40 && Math.max(t.bounds.z[0] - z, 0, z - t.bounds.z[1]) < R + 40);
+    const tiles = near.map((t) => ({ json: new URL(t.files.buildings, this.base).href, bin: new URL(t.files.buildingsBin, this.base).href, hide: this.hide }));
+    return work({ kind: "ridges", tiles, place: at, R, lift: 0 });
+  }
   async loadRoosts({ R = 170, at = PLACE } = {}) {
     const near = this.manifest.tiles.filter((t) => t.status === "built" && Math.max(t.bounds.x[0] - at.x, 0, at.x - t.bounds.x[1]) < R + 40 && Math.max(t.bounds.z[0] - at.z, 0, at.z - t.bounds.z[1]) < R + 40);
     const tiles = near.map((t) => ({ json: new URL(t.files.buildings, this.base).href, bin: new URL(t.files.buildingsBin, this.base).href, hide: this.hide }));
@@ -448,11 +612,47 @@ export class CityFalconWorld {
   }
 }
 
+/** (round 5) the furniture stand-ins the falcon stands on: their names (the kits' collision boxes, never drawn) */
+export const FURN_RE = /^furniture-(gardenwall|gardenpillar|gardengate|gardenhedge|bench|shelter|adpanel|bikebox|bin|glassbank|fuel|terrace|villo|streetprop|twowheel)$/;
+/** floats a furniture box: cx, cz, ux, uz (its length axis), half length, half width, top at -u, top at +u, base, kind */
+export const FB = 10;
+export const FURN_KINDS = ["wall", "pillar", "gate", "hedge", "furniture"];
+const FURN_KIND = (n) => (/gardenwall/.test(n) ? 0 : /gardenpillar/.test(n) ? 1 : /gardengate/.test(n) ? 2 : /gardenhedge/.test(n) ? 3 : 4);
+
 function rawRoof(t, x, z) {
   const rf = t.roofs, sf = rf?.surf;
   if (sf) {                    // the drawn roof surface (viewer/tileData.js roofSurface), 1 m: what the bird sees
-    const i = Math.floor((x - sf.x0) / sf.step), j = Math.floor((z - sf.z0) / sf.step);
-    return i >= 0 && j >= 0 && i < sf.nx && j < sf.nz ? sf.data[j * sf.nx + i] / sf.q : 0;
+    // (round 5) its samples are the drawn triangles AT the cells' centres: bilinear between the four round (x, z) when
+    // they lie on one roof plane (within 0.9 m of each other), the nearest otherwise (an edge, a ridge, a stack)
+    const fx = (x - sf.x0) / sf.step - 0.5, fz = (z - sf.z0) / sf.step - 0.5;
+    const i = Math.floor(fx), j = Math.floor(fz), D = sf.data, nx = sf.nx;
+    const ni = Math.floor((x - sf.x0) / sf.step), nj = Math.floor((z - sf.z0) / sf.step);
+    const near = ni >= 0 && nj >= 0 && ni < sf.nx && nj < sf.nz ? D[nj * sf.nx + ni] : 0;
+    if (near && i >= 0 && j >= 0 && i + 1 < nx && j + 1 < sf.nz) {
+      // the samples round (x, z) on the same roof as the nearest one (within 0.6 m of it): 4 = bilinear, 3 = their
+      // plane, 2 = along them, else the nearest (at a roof's edge the off-roof samples are 0: the slope there was lost)
+      const u = fx - i, w = fz - j, lim = 0.6 * sf.q;
+      const a = D[j * nx + i], b = D[j * nx + i + 1], c = D[(j + 1) * nx + i], d = D[(j + 1) * nx + i + 1];
+      const ka = a && Math.abs(a - near) < lim, kb = b && Math.abs(b - near) < lim, kc = c && Math.abs(c - near) < lim, kd = d && Math.abs(d - near) < lim;
+      const n = ka + kb + kc + kd;
+      if (n === 4) return ((a * (1 - u) + b * u) * (1 - w) + (c * (1 - u) + d * u) * w) / sf.q;
+      if (n === 3) {
+        // the plane through the three: v = v0 + gu u + gw w (corners a (0,0), b (1,0), c (0,1), d (1,1))
+        let v0, gu, gw;
+        if (!kd) { v0 = a; gu = b - a; gw = c - a; }
+        else if (!kc) { gu = b - a; gw = d - b; v0 = a; }
+        else if (!kb) { gw = c - a; gu = d - c; v0 = a; }
+        else { gu = d - c; gw = d - b; v0 = d - gu - gw; }
+        return (v0 + gu * u + gw * w) / sf.q;
+      }
+      if (n === 2) {
+        if (ka && kb) return (a + (b - a) * u) / sf.q;
+        if (kc && kd) return (c + (d - c) * u) / sf.q;
+        if (ka && kc) return (a + (c - a) * w) / sf.q;
+        if (kb && kd) return (b + (d - b) * w) / sf.q;
+      }
+    }
+    return near / sf.q;
   }
   if (!rf) return t.roofAt ? t.roofAt(x, z) : 0;
   const i = Math.floor((x - rf.x0) / rf.step), j = Math.floor((z - rf.z0) / rf.step);

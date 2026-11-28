@@ -61,7 +61,8 @@
  "stpierre": {
   "L0": 0,
   "L1": 0,
-  "L2": 11.8
+  "L2": 0,
+  "_note": "defects3 2026-11-26: far doors' jambs + closed surround edges, the east stub to the absolute south wall line (a 7 cm slit), LOD2 target 3000 (the SW corner pilaster collapsed at 1500): 11.8 -> 0"
  },
  "townhall": {
   "L0": 5.2,
@@ -80,5 +81,17 @@
  "heros": {
   "L0": 0,
   "L1": 0
+ },
+ "villa": {
+  "L0": 0,
+  "L1": 0,
+  "L2": 0,
+  "_note": "villa2 2026-11-23: the overhang undercrofts + pergola allowed (noBack capsules, heroShell.allow.json); the open bay closed by Villa_bay; LOD1 scripted (villa.py); far box closed with flush panes"
+ },
+ "underpass": {
+  "L0": 0,
+  "L1": 0,
+  "L2": 0,
+  "_note": "claude/underpass1 round 2: 9.9 m2 at L0 closed (the panes' two faces were coplanar: rule pane-faces-apart)"
  }
 }

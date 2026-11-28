@@ -298,11 +298,28 @@ def smart_uv_metres(o, angle=66):
     me.uv_layers["UVMap"].data.foreach_set("uv", [v * k for v in d])
 
 
-def bake_ao(objs, out_png, px=2048, samples=64, distance=1.0, spacing=14.0):
-    """one AO atlas for all objs (TEXCOORD_1 regions): each piece moved to its own spot on a ground plane, alone"""
+def gpu_optix():
+    """Cycles on the GPU through OptiX (--factory-startup leaves it on the CPU); the CPU when there is no OptiX device"""
+    scn = bpy.context.scene
+    try:
+        pr = bpy.context.preferences.addons["cycles"].preferences
+        pr.compute_device_type = "OPTIX"; pr.get_devices()
+        on = [d for d in pr.devices if d.type == "OPTIX"]
+        for d in pr.devices: d.use = d.type == "OPTIX"
+        scn.cycles.device = "GPU" if on else "CPU"
+    except Exception as e:
+        scn.cycles.device = "CPU"; on = []; print("OptiX:", e)
+    print("Cycles device:", scn.cycles.device, [d.name for d in on])
+    return scn.cycles.device
+
+
+def bake_ao(objs, out_png, px=2048, samples=64, distance=1.0, spacing=14.0, gpu=False):
+    """one AO atlas for all objs (TEXCOORD_1 regions): each piece moved to its own spot on a ground plane, alone
+    (gpu: Cycles on OptiX, else the CPU as the older kits were baked)"""
     scn = bpy.context.scene
     scn.render.engine = "CYCLES"
-    scn.cycles.device = "CPU"
+    if gpu: gpu_optix()
+    else: scn.cycles.device = "CPU"
     scn.cycles.samples = samples
     if scn.world is None: scn.world = bpy.data.worlds.new("World")
     scn.world.light_settings.distance = distance

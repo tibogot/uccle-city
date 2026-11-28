@@ -16,7 +16,13 @@
 //              samples them) |mover - drawn| > TOL
 //   tram       every 1 m of every tram track (d.feats lines kind "tram", as the worker fits them): the tram's wheel seat
 //              (viewer/tramline.js railY: the track profile's rail top, else the mover ground) |seat - drawn| > TOL
+//   underdeck  (claude/defects2, rule deck-street-under) every traffic point with a road deck over it and the mover > 1.5 m
+//              under the deck: no drawn street within 0.3 m of the mover, or no drive-grid layer within 0.15 m of it
 // Points with no drawn surface under them (a lane piece over a gap, a track on its own bed) are counted in info only.
+// (claude/defects2) the lanes are marched inside the tile only (a lane entering it starts on the top layer, as a car with
+// no height); the decks a neighbour draws over the tile are the movers' and the truth's; a deck mesh counts only by its
+// walked top; the tram platforms (tram.js) are drawn surfaces. MG_TRACE=x,z (with --child T) prints the march of the
+// paths through (x, z) to stderr.
 //
 //   node --import ./tools/road_audit/register.mjs tools/audit/census/moverGround.mjs [--all | T ...] [--out FILE]
 //        [--old] [--jobs N] [--max traffic=N,parked=N,tram=N] [--quiet] [--worst N]
@@ -31,7 +37,8 @@ const { CHILD, OUT, JOBS, WORST } = c;
 const OLD = c.flag("--old"), QUIET = c.flag("--quiet"), MAX = c.opt("--max", null);
 const TILES = c.TILES;
 const TOL = 0.05, STEP = 0.5, TRAM_STEP = 1, CARVE = 0.12;
-const KINDS = ["traffic", "parked", "tram"];
+const DECK_SINK = 0.03;                                  // viewer/streets/bridgeDecks.js SLAB.sink: the drawn top under the deck line
+const KINDS = ["traffic", "parked", "tram", "underdeck"];
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: moverGround.mjs [--all | T ...] [--old] [--max traffic=N,parked=N,tram=N] [--out FILE]"); process.exit(2); }
@@ -69,19 +76,21 @@ globalThis.fetch = async (u, o) => {
 };
 if (!globalThis.OffscreenCanvas) globalThis.OffscreenCanvas = class { constructor(w, h) { this.width = w; this.height = h; }
   getContext() { return new Proxy({}, { get: (t, k) => (k === "getImageData" ? (x, y, w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }) : () => {}), set: () => true }); } };
-const { buildTileData } = await imp("viewer/tileData.js");
+const { tileData: buildTileData } = await imp("tools/gate/tileBuild.mjs");     // (the worker build through the gate tile cache, rule tile-cache)
 const { Heightmap } = await imp("viewer/heightmap.js");
 const { deckHeight } = await imp("viewer/streets/bridgeDecks.js");
 const { deckHeightFn } = await imp("viewer/rail/roadDeck.js");
 const { heroBridgeNames } = await imp("viewer/rail/railData.js");
-const { moverGroundY } = await imp("viewer/drive/moverGround.js");
+const { moverGroundY, gridLayerY } = await imp("viewer/drive/moverGround.js");
 const { makeTrackProfile } = await imp("viewer/trackProfile.js");
+const { isTramPlatform, platformRing, TRAM_PLATFORM } = await imp("viewer/drive/colliders.js");
+const { platformWidth } = await imp("viewer/streets/tramPlatforms.js");
 
 const T = c.argv.find((a) => /^[A-Z]\d+$/i.test(a)).toUpperCase();
 const t0 = Date.now();
 const manifest = JSON.parse(readFileSync(join(ROOT, "data/tiles/manifest.json"), "utf8"));
 const entries = JSON.parse(readFileSync(join(ROOT, "tools/boot3/entries.json"), "utf8"));
-const entry = { ...entries.find((e) => !e.lite).entry, ...manifest.tiles.find((t) => t.name === T), cache: false, ...(OLD ? { movGround: false } : {}) };
+const entry = { ...entries.find((e) => !e.lite).entry, ...manifest.tiles.find((t) => t.name === T), cache: false, keepNet: true, ...(OLD ? { movGround: false } : {}), ...JSON.parse(process.env.BUILD_OVER || "{}") };   // (BUILD_OVER: entry switches, as lib_mesh.mjs buildTile)
 const realLog = console.log; console.log = () => {};
 let d;
 try { d = await buildTileData(entry, pathToFileURL(join(ROOT, "data/tiles") + "/").href); } finally { console.log = realLog; }
@@ -92,6 +101,11 @@ const inTile = (x, z) => x >= b.x0 && x < b.x1 && z >= b.z0 && z < b.z1;
 const heroNotes = heroBridgeNames(true).map((n) => { const f = join(ROOT, "models/rail", `${n}.json`); return existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : null; }).filter((h) => h?.kind === "road_over_rail");
 const decks = [];
 for (const dk of d.bridgeDecks || []) decks.push(Object.assign(deckHeight(dk, (x, z) => hm.ground(x, z), { drawn: true }), { osm: true }));
+// (claude/defects2, rule deck-owner-checks) the OSM decks a NEIGHBOUR draws over this tile (its middle is there): the city's
+// world.decks holds them, so the movers here stand on them; their drawn top (deckMesh: SLAB.sink under the deck line) is
+// the truth there. Before, E9's lanes on the Tilleuls deck (D9 draws it) had "no drawn surface" and were not counted.
+const nDecks = (d.neighbourDecks || []).map((dk) => Object.assign(deckHeight(dk, (x, z) => hm.ground(x, z), { drawn: true }), { osm: true }));
+decks.push(...nDecks);
 const heroFns = heroNotes.map((h) => deckHeightFn(h));
 decks.push(...heroFns);
 const tile = { hm, drive: d.drive };
@@ -101,7 +115,11 @@ const mover = OLD ? moverOld : moverNew;
 
 // ---- the truth: the drawn street's up-facing triangles in a 2 m grid
 const CELL = 2, grid = new Map(), key = (i, j) => i * 100003 + j, tris = [];
-const addSoup = (P, I) => {
+// (claude/defects2) of a deck's mesh only its WALKED top counts (within -0.5 / +0.25 m of the deck line the movers use): not
+// its soffit 0.9 m under it nor its parapets' copings 1 m over it. Before, they were "surfaces" and the 1.5 m layer chain ran
+// from a parapet top through the slab and its soffit down to a street 2.4 m under it (E10, the service bridge's deck over the
+// mouth of Square Maas): the truth there was the coping, 3.4 m over the street the car drives.
+const addSoup = (P, I, deckFn = null) => {
   const n = I ? I.length : P.length / 3;
   for (let q = 0; q + 2 < n; q += 3) {
     const a = (I ? I[q] : q) * 3, bb = (I ? I[q + 1] : q + 1) * 3, cc = (I ? I[q + 2] : q + 2) * 3;
@@ -111,31 +129,59 @@ const addSoup = (P, I) => {
     if (L < 1e-9 || Math.abs(ny) / L < 0.5) continue;                   // a kerb face, a wall, a fascia: not a surface
     const x0 = Math.min(ax, bx, cx), x1 = Math.max(ax, bx, cx), z0 = Math.min(az, bz, cz), z1 = Math.max(az, bz, cz);
     if (x1 < b.x0 - 4 || x0 > b.x1 + 4 || z1 < b.z0 - 4 || z0 > b.z1 + 4) continue;
-    const id = tris.push([ax, ay, az, bx, by, bz, cx, cy, cz]) - 1;
+    const id = tris.push([ax, ay, az, bx, by, bz, cx, cy, cz, deckFn]) - 1;
     for (let i = Math.floor(x0 / CELL); i <= Math.floor(x1 / CELL); i++) for (let j = Math.floor(z0 / CELL); j <= Math.floor(z1 / CELL); j++) {
       const k = key(i, j); let l = grid.get(k); if (!l) grid.set(k, (l = [])); l.push(id);
     }
   }
 };
 for (const part of Object.values(d.road?.parts || {})) if (part?.position) addSoup(part.position, part.index);
-for (const dk of d.bridgeDecks || []) if (dk.mesh?.position) addSoup(dk.mesh.position, dk.mesh.index);
-const ys = [];
-/** the drawn surface heights at (x, z) -> ys (reused), deduplicated within 2 cm */
+(d.bridgeDecks || []).forEach((dk, i) => { if (dk.mesh?.position) addSoup(dk.mesh.position, dk.mesh.index, decks[i]); });
+// the tram platforms (d.feats, fitted in the worker: tramPlatforms.js fitPlatforms) as tram.js draws them: an area's
+// polygon, a line's platformWidth band, hm.surface + CARVE + H (main.js tramSurface off the decks)
+const plats = [];
+for (const l of d.feats?.lines || []) {
+  if (!isTramPlatform(l)) continue;
+  const ring = platformRing(l), pts = ring || l.line;
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+  for (const [x, z] of pts) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
+  const hw = ring ? 0 : platformWidth(l) / 2;
+  if (x1 + hw < b.x0 - 4 || x0 - hw > b.x1 + 4 || z1 + hw < b.z0 - 4 || z0 - hw > b.z1 + 4) continue;
+  plats.push({ ring, line: l.line, hw, box: [x0 - hw, z0 - hw, x1 + hw, z1 + hw] });
+}
+const inRingXZ = (ring, x, z) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, zi] = ring[i], [xj, zj] = ring[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+const onBand = (line, hw, x, z) => { for (let k = 1; k < line.length; k++) { const [ax, az] = line[k - 1], [bx, bz] = line[k], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1e-9, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)); if (Math.hypot(ax + dx * t - x, az + dz * t - z) <= hw) return true; } return false; };
+function platformAt(x, z) {
+  for (const p of plats) {
+    if (x < p.box[0] || z < p.box[1] || x > p.box[2] || z > p.box[3]) continue;
+    if (p.ring ? inRingXZ(p.ring, x, z) : onBand(p.line, p.hw, x, z)) return hm.surface(x, z) + CARVE + TRAM_PLATFORM.H;
+  }
+  return null;
+}
+const ys = [], streetYs = [];
+/** the drawn surface heights at (x, z) -> ys (reused), deduplicated within 2 cm; streetYs: those of the drawn STREET only
+ *  (the road parts' triangles and the tram platforms: not a deck, not the terrain) */
 function drawnAt(x, z) {
-  ys.length = 0;
+  ys.length = 0; streetYs.length = 0;
   for (const id of grid.get(key(Math.floor(x / CELL), Math.floor(z / CELL))) || []) {
-    const [ax, ay, az, bx, by, bz, cx, cy, cz] = tris[id];
+    const [ax, ay, az, bx, by, bz, cx, cy, cz, deckFn] = tris[id];
     const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
     if (Math.abs(det) < 1e-9) continue;
     const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det, l3 = 1 - l1 - l2;
     if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
     const y = l1 * ay + l2 * by + l3 * cy;
+    if (deckFn) { const t = deckFn(x, z); if (t != null && (y < t - 0.5 || y > t + 0.25)) continue; }   // (the deck's soffit / copings)
+    else streetYs.push(y);
     if (!ys.some((v) => Math.abs(v - y) < 0.02)) ys.push(y);
   }
+  for (const f of nDecks) { const y0 = f(x, z); if (y0 == null) continue; const y = y0 - DECK_SINK; if (!ys.some((v) => Math.abs(v - y) < 0.02)) ys.push(y); }
   for (const f of heroFns) { const y = f(x, z); if (y != null && !ys.some((v) => Math.abs(v - y) < 0.02)) ys.push(y); }
+  // (claude/defects2) the tram platforms as viewer/tram.js draws them (25 cm slabs over the road; the drive grid has them:
+  // colliders.js tramPlatformSurface): a lane over a platform is ON what is drawn there (counted in info: trafficOnPlatform)
+  const py = platformAt(x, z); if (py != null) { streetYs.push(py); if (!ys.some((v) => Math.abs(v - py) < 0.02)) ys.push(py); }
   // the drawn terrain (the tile's 1 m grid d.y, as the terrain mesh draws it): under a street it is the same layer (carved
-  // 12 cm under it: the street is the top), where no street is drawn (a lane under a deck whose street the deck cut
-  // removed, D9) it is what the mover is seen on
+  // 12 cm under it: the street is the top), where no street is drawn (a junction mouth under a deck with no street, E10)
+  // it is what the mover is seen on
   if (ys.length && inTile(x, z)) { const y = hm.surface(x, z); if (!ys.some((v) => Math.abs(v - y) < 0.02)) ys.push(y); }
   return ys;
 }
@@ -169,8 +215,32 @@ const flag = (k, x, z, what, dy) => {
   else items.push({ k, x, z, at: at(x, z), what, dy: +dy.toFixed(3), n: 1 });
 };
 
+// ---- 0. (claude/defects2, rule deck-street-under) UNDER A DECK: where a road deck (own, a neighbour's, a hero's) is over a
+// driven point and the mover is not on it (> 1.5 m under its top: a street passing under the bridge), the lane must still
+// have (a) its STREET drawn there (a road part / tram platform within 0.3 m of the mover: not the bare terrain, the street
+// a deck cut away) and (b) its GROUND LAYER in the drive grid (the grid's layer nearest the drawn street within 0.15 m:
+// not only the deck's / another street's layer). Counted per 0.5 m point in `underdeck` (gate ceiling); info
+// trafficUnderDeck = every such point, underDeckNoStreet / underDeckNoLayer.
+function deckOver(x, z) { for (const f of decks) { const y = f(x, z); if (y != null) return y; } return null; }
+function underDeck(x, z, y, what) {
+  const dk = deckOver(x, z);
+  if (dk == null || dk - y <= 1.5) return;
+  inf("trafficUnderDeck");
+  let st = null, best = 0.3;
+  for (const v of streetYs) { const e = Math.abs(v - y); if (e <= best) { best = e; st = v; } }
+  if (st == null) { counts.underdeck++; inf("underDeckNoStreet"); flag("underdeck", x, z, `${what}: no street under the deck`, y - dk); return; }
+  const gy = gridLayerY(hm, d.drive.ground, x, z, st);
+  if (Math.abs(gy - st) > 0.15) { counts.underdeck++; inf("underDeckNoLayer"); flag("underdeck", x, z, `${what}: no grid layer at its street`, gy - st); }
+}
+
 // ---- 1. traffic: every driven path, marched like a car (near = its previous height, the truth = its previous layer)
 const g = d.traffic;
+// (MG_TRACE=x,z: the march of every path passing within 3 m of (x, z), to stderr)
+let TRACE = null;
+if (process.env.MG_TRACE && g?.xy) {
+  const [tx, tz] = process.env.MG_TRACE.split(",").map(Number); TRACE = new Set();
+  for (let p = 0; p < g.paths; p++) for (let k = g.off[p]; k < g.off[p + 1]; k++) if (Math.hypot(g.xy[k * 2] - tx, g.xy[k * 2 + 1] - tz) < 3) TRACE.add(p);
+}
 if (g?.xy) for (let p = 0; p < g.paths; p++) {
   const a = g.off[p], e = g.off[p + 1], what = g.kind?.[p] ? "connector" : "lane";
   let yPrev = NaN, tPrev = NaN;
@@ -179,13 +249,21 @@ if (g?.xy) for (let p = 0; p < g.paths; p++) {
     const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / STEP));
     for (let s = k === a + 1 ? 0 : 1; s <= n; s++) {
       const x = x0 + (x1 - x0) * s / n, z = z0 + (z1 - z0) * s / n;
+      // (claude/defects2) only inside the tile: past its edge this tile's grid clamps to its border row and has no street, so
+      // a lane marched in from a neighbour arrived on the wrong layer (D9: the Tilleuls lane entering from E9 was walked
+      // on the clamped terrain 70 m and stayed there under its own deck: "-16.8 m", the census's error, not the city's;
+      // the city's car arrives on the neighbour's ground, which that tile's census checks). A lane entering the tile starts
+      // like a car with no height yet: the top layer
+      if (!inTile(x, z)) { yPrev = NaN; tPrev = NaN; continue; }
       const y = mover(x, z, yPrev); yPrev = y;
       const L = drawnAt(x, z);
-      if (!L.length) { if (inTile(x, z)) inf("trafficNoDrawn"); tPrev = NaN; continue; }
+      if (!L.length) { inf("trafficNoDrawn"); tPrev = NaN; continue; }
       const t = nearestOf(L, tPrev === tPrev ? tPrev : y); tPrev = t;
-      if (!inTile(x, z)) continue;
       inf("trafficPoints");
       const dy = y - t;
+      if (TRACE && TRACE.has(p)) console.error(`p${p} ${x.toFixed(1)},${z.toFixed(1)} mover ${y.toFixed(2)} truth ${t.toFixed(2)} drawn [${L.map((v) => v.toFixed(2)).join(" ")}]`);
+      if (plats.length && platformAt(x, z) != null) inf("trafficOnPlatform");
+      if (!OLD) underDeck(x, z, y, what);
       if (Math.abs(dy) > TOL) { counts.traffic++; flag("traffic", x, z, what, dy); if (dy < 0) inf("trafficSinkM", STEP); else inf("trafficFloatM", STEP); }
       if (!OLD) { const o = moverOld(x, z) - t; if (Math.abs(o) > TOL) inf("trafficOld"); }
     }

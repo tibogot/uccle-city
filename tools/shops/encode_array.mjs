@@ -24,6 +24,8 @@ export async function encodeArray(slices, opts = {}) {
       isUASTC: true, uastcLDRQualityLevel: 2, needSupercompression: true, enableRDO: true, rdoQualityLevel: 1.0,
       generateMipmap: true, isKTX2File: true, isPerceptual: true, isSetKTX2SRGBTransferFunc: true, ...opts,
     }, enc);
+    // (shops7) a larger RDO dictionary (Basis default 4096 bytes back): the zstd pass finds more repeats, smaller file
+    if (opts.rdoDict && enc.setRDOUASTCDictSize) enc.setRDOUASTCDictSize(opts.rdoDict);
     enc.setTexType(slices.length > 1 ? 1 : 0);                     // cBASISTexType2DArray
     slices.forEach((s, i) => { if (enc.setSliceSourceImage(i, s.data, s.width, s.height, 0) === false) throw new Error(`slice ${i}`); });
     let cap = slices.reduce((a, s) => a + s.width * s.height * 6, 0) + 65536;
@@ -36,11 +38,19 @@ export async function encodeArray(slices, opts = {}) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const [dir, out] = process.argv.slice(2);
+  const [dir, out] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+  // (shops7) --rdo=<level>: the UASTC RDO quality (default 1.0; higher = smaller zstd file, softer; 16 variants needed
+  // more than 1.0 to fit the 12 MB download budget: docs/assets/SHOPS.md §3e)
+  const rdo = +(process.argv.find((a) => a.startsWith("--rdo="))?.slice(6) ?? 1.0);
   const info = JSON.parse(fs.readFileSync(path.join(dir, "slices.json"), "utf8"));
   const slices = info.files.map((f) => ({ width: info.width, height: info.height, data: new Uint8Array(fs.readFileSync(path.join(dir, f))) }));
   const t0 = Date.now();
-  const ktx = await encodeArray(slices);
+  const dict = +(process.argv.find((a) => a.startsWith("--dict="))?.slice(7) ?? 0);
+  // --etc1s=<quality 1-255>: ETC1S + BasisLZ instead of UASTC + zstd (about a quarter of the file; the GPU format is
+  // the transcoder's, the same 1 byte a texel as BC7)
+  const etc = +(process.argv.find((a) => a.startsWith("--etc1s="))?.slice(8) ?? 0);
+  const ktx = await encodeArray(slices, etc ? { isUASTC: false, enableRDO: false, needSupercompression: false, qualityLevel: etc, compressionLevel: 2 }
+    : { rdoQualityLevel: rdo, rdoDict: dict || undefined });
   fs.writeFileSync(out, ktx);
   const gpu = info.width * info.height * slices.length * 4 / 3;
   console.log(`${out}: ${slices.length} layers ${info.width} x ${info.height}, ${(ktx.length / 1048576).toFixed(2)} MB file, ${(gpu / 1048576).toFixed(2)} MB GPU (BC7 + mips), ${Date.now() - t0} ms`);

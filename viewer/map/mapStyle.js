@@ -20,6 +20,7 @@ export const PAL = {
   search: '#5fd0ff',
   areaLabel: 'rgba(150, 205, 160, 0.78)', waterLabel: 'rgba(130, 180, 225, 0.8)',
   hero: '#ffc94a', church: '#e9e4d8', station: '#6fb6ff', castle: '#d9b8ff',
+  enter: '#5fe3a1',                        // (claude/villamark) a place you can walk into: a door on green
 };
 
 // minimum on-screen widths (px) per road class, and the zoom below which a class is not drawn
@@ -124,6 +125,9 @@ export function drawGlyph(ctx, kind, r = 6) {
     ctx.beginPath(); ctx.moveTo(-1.6 * k, -3.6 * k); ctx.lineTo(-1.6 * k, 3.6 * k); ctx.moveTo(1.6 * k, -3.6 * k); ctx.lineTo(1.6 * k, 3.6 * k);
     for (const y of [-2.2, 0, 2.2]) { ctx.moveTo(-3 * k, y * k); ctx.lineTo(3 * k, y * k); }
     ctx.lineWidth = Math.max(1, r * 0.18); ctx.stroke();
+  } else if (kind === 'enter') {     // (claude/villamark) a place you can walk into: a door (arched leaf + knob)
+    ctx.beginPath(); ctx.moveTo(-2.6 * k, 3.8 * k); ctx.lineTo(-2.6 * k, -1.4 * k); ctx.arc(0, -1.4 * k, 2.6 * k, Math.PI, 0); ctx.lineTo(2.6 * k, 3.8 * k); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(1.3 * k, 1.2 * k, 0.75 * k, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill();
   } else if (kind === 'castle') {    // a tower
     ctx.fillRect(-3 * k, -1.5 * k, 6 * k, 4.5 * k);
     for (const x of [-3, -0.9, 1.2]) ctx.fillRect(x * k, -3.6 * k, 1.8 * k, 2.4 * k);

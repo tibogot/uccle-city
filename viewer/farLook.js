@@ -70,8 +70,10 @@ export function farBuildingMaterial() {
   // (cortenbosch2) the 1990s house's face brick (facades.js tone6: the style's code) and the curtain wall's dark glass
   const isN = band(bt, 6), isCW = band(bt, 7);
   const tcode = floor(style.sub(floor(style.add(1e-4))).mul(200.0).add(0.5)), nTone = floor(tcode.div(12.0));
-  const tone6 = mix(mix(mix(mix(mix(C(0.55, 0.43, 0.26), C(0.56, 0.28, 0.16), band(nTone, 1)), mix(C(0.6, 0.55, 0.43), C(0.4, 0.13, 0.06), band(nTone, 3)), step(1.5, nTone)), C(0.33, 0.19, 0.1), band(nTone, 4)), C(0.55, 0.4, 0.19), band(nTone, 5)), C(0.68, 0.68, 0.65), band(nTone, 6));
+  const tone6 = mix(mix(mix(mix(mix(mix(C(0.55, 0.43, 0.26), C(0.56, 0.28, 0.16), band(nTone, 1)), mix(C(0.6, 0.55, 0.43), C(0.4, 0.13, 0.06), band(nTone, 3)), step(1.5, nTone)), C(0.33, 0.19, 0.1), band(nTone, 4)), C(0.55, 0.4, 0.19), band(nTone, 5)), C(0.68, 0.68, 0.65), band(nTone, 6)), C(0.64, 0.4, 0.11), band(nTone, 7));
   col = mix(col, tone6.mul(0.92), isN);
+  // (claude/places2) a curated render tone on any other rendered house (facades.js isRT; buildingTypes.js renderToneStyle)
+  col = mix(col, tone6.mul(0.92), float(1).sub(isN).sub(isCW).mul(step(0.5, tcode)).mul(step(2.5, style)).mul(float(1).sub(step(4.5, style))));
   const cwGrid = tcode.sub(floor(tcode.div(4.0)).mul(4.0));
   const grid7 = mix(mix(C(0.26, 0.035, 0.05), C(0.07, 0.072, 0.078), band(cwGrid, 1)), mix(C(0.5, 0.51, 0.52), C(0.04, 0.09, 0.06), band(cwGrid, 3)), step(1.5, cwGrid));
   col = mix(col, mix(C(0.03, 0.033, 0.038), grid7, 0.3), isCW);

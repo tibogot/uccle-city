@@ -13,6 +13,7 @@
 import { PoliceCar, POLICE_CAR } from "./policeCar.js";
 import { Props, hazard } from "./props.js";
 import { JOBS } from "./policeMissions.js";
+import { MISSIONS_OLD } from "./missionPremise.js";
 import { warm } from "./warm.js";
 const POLICE_WARM_OLD = /[?&]policewarm=old(&|$)/.test(location.search);
 
@@ -43,6 +44,9 @@ function makeChip() {
 
 const G = {
   kit: null, car: null, props: null, spots: null, chip: null, done: {}, rams: 0, hazard: false,
+  // (claude/missions, rule mission-premise) the ONE job premise live in the world (a call on the card / queued, or the
+  // running job's): its scene stands from the call on; watched at 1 Hz (watchPremise); stats for the browser checks
+  live: null, liveT: 0, premiseStats: { made: 0, cancelled: 0, why: {} },
   shift: null, next: 0, keyFn: null, frameFn: null, lastT: 0, rng: Math.random,
   traffic: () => G.kit?.host.getTraffic() ?? null,          // (cityTraffic: .sim, .types, .T.alpha)
   tram: () => window.viewer?.tram?.() ?? null,
@@ -56,11 +60,53 @@ async function loadSpots() {
   return G.spots;
 }
 
-/** a job call: the next type in the shift's order (missions) or a random one (calls), skipping types with no place */
+/** a job call: the next type in the shift's order (missions) or a random one (calls), skipping types with no place.
+ *  New (rule mission-premise): only types whose premise can be made true here; it is made true NOW (the scene stands
+ *  while the call is on the card), one premise at a time; an ignored / expired call takes its scene away. */
 function makeCall(kit, rng, type = null) {
+  if (!MISSIONS_OLD && G.live) return null;
   const types = type ? [type, ...ORDER.filter((t) => t !== type)] : [...ORDER].sort(() => rng() - 0.5);
-  for (const t of types) { const c = JOBS[t](G, kit, rng); if (c) { c.mission.policeType = t; c.expires = 35; return c; } }
+  for (const t of types) {
+    const c = JOBS[t](G, kit, rng);
+    if (!c) continue;
+    c.mission.policeType = t; c.expires = 35;
+    if (c.premise && !MISSIONS_OLD) {
+      const p = c.premise;
+      p.setup(); G.live = p; G.liveT = kit.time + 1; G.premiseStats.made++;
+      c.onIgnore = () => releasePremise(p);
+    }
+    return c;
+  }
   return null;
+}
+function releasePremise(p = G.live) {
+  if (!p) return;
+  try { p.release(); } catch (e) { console.warn(e); }
+  if (G.live === p) G.live = null;
+}
+/** (1 Hz) the live premise still true? Else the call is cancelled, no penalty: the running job stops, or the card /
+ *  queued call goes; the next call comes soon */
+function watchPremise(kit) {
+  const p = G.live;
+  if (MISSIONS_OLD || !p || kit.time < G.liveT) return;
+  G.liveT = kit.time + 1;
+  let r;
+  try { r = p.check(kit); } catch (e) { r = { ok: false, why: e.message }; }
+  if (r.ok) return;
+  const why = r.why || "the situation changed", S = G.premiseStats;
+  S.cancelled++; S.why[`${p.type}: ${why}`] = (S.why[`${p.type}: ${why}`] || 0) + 1;
+  const m = kit.mission, d = kit.dispatch;
+  if (m && m.def.premise === p) {
+    m.abort(); kit.mission = null; kit.setWaypoint(null);
+    kit.radio("Dispatch", `Cancel that call: ${why}. Stand by.`, { icon: "radio" });
+    kit.hud.toast({ title: "Call cancelled", text: why[0].toUpperCase() + why.slice(1) }, 3500);
+    G.props.clear(); G.hazard = false;
+  } else {
+    if (d.current?.mission?.premise === p) { d.current = null; kit.hud.call(null); }
+    for (let i = d.queue.length - 1; i >= 0; i--) if (d.queue[i].mission?.premise === p) d.queue.splice(i, 1);
+  }
+  releasePremise(p);
+  if (kit.current?.mode === "missions") offerNext(kit, 6);
 }
 function offerNext(kit, delay = 0) { G.next = kit.time + delay; }
 
@@ -70,7 +116,7 @@ function newShift(kit) {
 }
 function endShift(kit) {
   const S = G.shift, r = kit.record, mins = Math.max(1, Math.round((kit.time - S.t0) / 60));
-  kit.dispatch.clear();
+  kit.dispatch.clear(); releasePremise();
   kit.hud.toast({ kind: "ok", title: "End of shift", text: `${S.done} job${S.done === 1 ? "" : "s"} done, ${S.failed} failed · ${(S.km / 1000).toFixed(1)} km driven · ${mins} min`,
     reward: `+${r.score - S.score} score   ${r.money - S.money >= 0 ? "+" : ""}€${r.money - S.money}   ${r.rep - S.rep >= 0 ? "+" : ""}${r.rep - S.rep} rep`,
     actions: [["New shift", "newshift", true], ["Quit to free roam", "quit"]] }, 0);
@@ -166,6 +212,7 @@ export const POLICE_GAME = {
     if (G.keyFn) removeEventListener("keydown", G.keyFn, true); G.keyFn = null;
     const i = kit.host.updaters.indexOf(G.frameFn); if (i >= 0) kit.host.updaters.splice(i, 1); G.frameFn = null;
     const sim = G.traffic()?.sim; if (sim) { sim.emerg.on = false; sim.extraObs.length = 0; }
+    releasePremise();
     G.tram()?.setBlock(null);
     G.props?.clear(); G.hazard = false;
     kit.markers.set("hq", null);
@@ -189,11 +236,13 @@ export const POLICE_GAME = {
       const call = makeCall(kit, G.rng, t);
       if (call) {
         S.n++;
-        call.onIgnore = () => offerNext(kit, 25);
+        const ig = call.onIgnore;
+        call.onIgnore = (k, to) => { ig?.(k, to); offerNext(kit, 25); };
         kit.dispatch.push(call);
         G.next = 0;
       } else offerNext(kit, 15);
     }
+    watchPremise(kit);
     // the end of the shift at HQ: the idle objective's E
     if (G.atHQ && !kit.mission && kit.consumeUse()) endShift(kit);
   },
@@ -208,6 +257,7 @@ export const POLICE_GAME = {
   onMissionEnd(kit, r) {
     const S = G.shift, t = r.def.policeType;
     if (r.result.ok) { S.done++; if (t) G.done[t] = (G.done[t] || 0) + 1; } else S.failed++;
+    if (!MISSIONS_OLD && r.def.premise && r.def.premise === G.live) releasePremise();
     G.props.clear(); G.hazard = false;
     G.tram()?.setBlock(null);
     if (kit.current.mode === "missions") offerNext(kit, r.result.ok ? 14 : 20);
@@ -218,3 +268,5 @@ export const POLICE_GAME = {
   },
 };
 export { G as POLICE_STATE, YARD, GATE, POLICE_CAR };
+// (browser checks, claude/missions) window.__policePremise(): the live premise and the made / cancelled counts
+if (typeof window !== "undefined") window.__policePremise = () => ({ live: G.live ? { type: G.live.type, check: G.live.check(G.kit), spot: G.live.spot ? { name: G.live.spot.name, eta: G.live.spot.eta, D: G.live.spot.D } : null } : null, ...G.premiseStats });

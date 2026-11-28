@@ -14,7 +14,7 @@
 // Frame per front: X = right along the wall seen from the street, Y = up, Z = the wall's outward normal; the kit's
 // local +z is Z. Records: SHOP_STRIDE floats (x y z yaw, dW dH ys stripes, r g b amount).
 import { W0, PIECES } from "./shopPieces.js";
-import { v2Variant } from "./shopScale.js";
+import { v2Slot } from "./shopScale.js";
 
 export const SHOP_PIECES = Object.keys(PIECES);
 
@@ -36,16 +36,33 @@ const AWNING_CATS = new Set(["greengrocer", "butcher", "florist", "deli", "chees
 const PROJECT_KINDS = new Set(["cafe", "bar", "restaurant", "hotel", "bakery", "bank", "fastfood"]);
 const TERRACE_KINDS = new Set(["cafe", "bar", "restaurant"]);
 
-/** the interior atlas type (viewer/shops/shopWindow.js INTERIOR_TYPES) of a shop */
+/** the interior atlas type (viewer/shops/shopWindow.js INTERIOR_TYPES) of a shop. (shops5) more OSM shop / amenity /
+ *  craft values (the POI's `cat`) mapped to the room they look like inside, so fewer fall to the generic shop: second
+ *  hand / department store / fabric / tailor / dry cleaning (rails of clothes) -> boutique; health food, tea, tobacco,
+ *  pet, variety store -> grocery (shelves of goods); e-cigarette, supplements, herbalist -> pharmacy (small boxes behind
+ *  a counter); phone / electronics repair, funeral directors, photographers, garages' and craftsmen's front offices,
+ *  surgeries, notaries, guest houses -> office (desks, screens, a reception); pet grooming -> salon. Bikes, books,
+ *  furniture, toys, hardware, gifts ... stay generic (shelves of goods + a counter). */
+const T_CAFE_K = new Set(["cafe", "bar", "restaurant", "fastfood"]);
+const T_CAFE = new Set(["pub", "ice_cream", "fast_food", "cafe", "restaurant", "bar", "biergarten", "food_court"]);
+const T_BAKERY = new Set(["bakery", "pastry", "chocolate", "confectionery", "butcher", "cheese", "deli", "seafood", "caterer", "beekeeper", "coffee"]);
+const T_PHARMA = new Set(["pharmacy", "optician", "cosmetics", "perfumery", "chemist", "hearing_aids", "medical_supply", "e-cigarette", "nutrition_supplements", "herbalist"]);
+const T_BOUTIQUE = new Set(["clothes", "shoes", "jewelry", "watches", "leather", "bag", "fashion_accessories", "boutique", "sports", "department_store", "second_hand", "fabric", "tailor", "dry_cleaning", "bridal", "baby_goods", "charity", "fashion"]);
+const T_GROCERY = new Set(["florist", "garden_centre", "supermarket", "convenience", "greengrocer", "general", "frozen_food", "alcohol", "wine", "newsagent", "farm", "organic", "health_food", "food", "tea", "tobacco", "pet", "variety_store", "dairy", "spices", "kiosk", "beverages"]);
+const T_OFFICE = new Set(["bank", "travel_agency", "estate_agent", "insurance", "telecommunication", "copyshop", "post_office", "driving_school", "veterinary", "employment_agency",
+  "mobile_phone", "electronics_repair", "electronics", "computer", "hifi", "radiotechnics", "appliance", "funeral_directors", "photographer", "studio", "car", "car_repair", "tyres",
+  "roofer", "metal_construction", "electrician", "plumber", "carpenter", "builder", "locksmith", "dentist", "doctors", "clinic", "lawyer", "notary", "accountant", "architect",
+  "coworking", "guest_house", "hotel", "money_lender", "bureau_de_change", "lottery"]);
+const T_SALON = new Set(["hairdresser", "beauty", "massage", "wellness", "tattoo", "nails", "pet_grooming", "hairdresser_supply"]);
 export function interiorType(p) {
   const k = p.kind, c = p.cat || "";
-  if (["cafe", "bar", "restaurant", "fastfood"].includes(k) || ["pub", "ice_cream", "fast_food", "cafe", "restaurant", "bar"].includes(c)) return 2;
-  if (k === "bakery" || ["bakery", "pastry", "chocolate", "confectionery", "butcher", "cheese", "deli", "seafood", "caterer", "beekeeper"].includes(c)) return 0;
-  if (k === "pharmacy" || ["pharmacy", "optician", "cosmetics", "perfumery", "chemist", "hearing_aids", "medical_supply"].includes(c)) return 1;
-  if (["clothes", "shoes", "jewelry", "watches", "leather", "bag", "fashion_accessories", "boutique", "sports"].includes(c)) return 3;
-  if (k === "supermarket" || ["florist", "garden_centre", "supermarket", "convenience", "greengrocer", "general", "frozen_food", "alcohol", "wine", "newsagent", "farm", "organic"].includes(c)) return 4;
-  if (k === "bank" || k === "post" || ["bank", "travel_agency", "estate_agent", "insurance", "telecommunication", "copyshop", "post_office", "driving_school", "veterinary", "employment_agency"].includes(c)) return 5;
-  if (["hairdresser", "beauty", "massage", "wellness", "tattoo", "nails"].includes(c)) return 6;
+  if (T_CAFE_K.has(k) || T_CAFE.has(c)) return 2;
+  if (k === "bakery" || T_BAKERY.has(c)) return 0;
+  if (k === "pharmacy" || T_PHARMA.has(c) || c === "optician") return 1;   // (claude/reality1: an optician's white shelves read as the pharmacy room)
+  if (T_BOUTIQUE.has(c)) return 3;
+  if (k === "supermarket" || T_GROCERY.has(c) || c === "gift" || c === "interior_decoration") return 4;   // (claude/reality1: the shelved shops of the shop-street fill)
+  if (k === "bank" || k === "post" || k === "hotel" || T_OFFICE.has(c) || c === "vacant") return 5;   // (claude/reality1: an empty shop to let: the bare office room)
+  if (T_SALON.has(c)) return 6;
   return 7;
 }
 
@@ -76,6 +93,20 @@ function steepAwning(env, at, X, Y, Z, w, y, out, deg, canvas, text, font, valan
 }
 const lumOf = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 
+/** THE DRAWN FRONT (one rule for the shop kit, viewer/streetlife/layout.js + layoutShop, and the Christmas swags,
+ *  viewer/christmas/xmasSwag.js: claude/xmas1, rule xmas-fit-current-city). f: the street life's face ({ x, z, nx, nz, w,
+ *  ... }); cf: the curated front (data/shops/terraces.json "front") or null. (claude/carrefour) a curated width (front.w:
+ *  a supermarket's glazed run) replaces the build's slot and may pass the street fronts' 9.9 m (up to 40 m); front.du
+ *  moves the front along its wall (m to the right seen from the street). Returns the face as the layout sees it (the
+ *  same object when nothing is curated) */
+export function frontFace(f, cf) {
+  if (!f || !(cf?.w || cf?.du)) return f;
+  const du = cf.du || 0;
+  return { ...f, w: cf.w ?? f.w, x: f.x + f.nz * du, z: f.z - f.nx * du };
+}
+/** the drawn width of a front (its face from frontFace): 2 m at least, 9.9 m at most unless curated wide (40) */
+export function frontWidth(f, cf) { return Math.max(2.0, Math.min(f.w, cf?.w ? 40 : 9.9)); }
+
 /** a front's family and heights (shared with viewer/christmas/xmasCity.js, which hangs garlands on the fronts):
  *  { classic, lowFloor, fasciaY (fascia bottom over the sidewalk), dH (its rise over the kit's nominal 2.55) } */
 export function frontFamily(p, f, cur, hash01) {
@@ -95,10 +126,12 @@ export function layoutShop(p, f, frame, lit, env) {
   const { box, label, prop, shop, windows, night, used, hash01, pick, add, twoLines, yawTo, WIN_STRIDE } = env;
   const { X, Y, Z } = frame;
   const base = [f.x, f.y, f.z], id = p.id;
-  const W = Math.max(2.0, Math.min(f.w, 9.9));
-  const yaw = yawTo(f.nx, f.nz);
   // curated (data/shops/terraces.json "front": checked on Street View): family, paint / canvas (palette index), awning
   const cf = env.cur?.front || {};
+  // (claude/carrefour) a curated width (front.w: a supermarket's glazed run) may pass the street fronts' 9.9 m
+  // (frontWidth: one rule with the Christmas swags, claude/xmas1)
+  const W = frontWidth(f, cf);
+  const yaw = yawTo(f.nx, f.nz);
   const { lowFloor, fasciaY, dH, classic } = frontFamily(p, f, env.cur, hash01);
   const paint = cf.paint != null ? (classic ? CLASSIC : MODERN)[cf.paint] : classic ? pick(CLASSIC, id, "p") : pick(MODERN, id, "p");
   const lightbox = cf.lightbox ?? (!classic && hash01(id + "lb") < 0.35);
@@ -132,8 +165,11 @@ export function layoutShop(p, f, frame, lit, env) {
     const m = new Float32Array(WIN_STRIDE);
     m.set([X[0] * wW, X[1] * wW, X[2] * wW, 0, 0, wH, 0, 0, Z[0], 0, Z[2], 0, o[0], o[1], o[2], 1]);
     m.set([wW, wH, hash01(id + "w"), lit], 16);
-    // (curated interior: Lefevre's office); w = the v2 variant (shopScale.js v2Variant: 0 café, 1 brasserie)
-    m.set([cf.interior ?? interiorType(p), gb, hash01(id + "m") < 0.5 ? 1 : 0, v2Variant(p.kind, p.cat || "")], 20);
+    // (curated interior: Lefevre's office); w = the v2 variant (shopScale.js v2Slot: the café type by kind, café /
+    // brasserie; (shops7) the other types one of their two rooms by a hash; the neighbour rule may change it
+    // afterwards: layout.js)
+    const itype = cf.interior ?? interiorType(p);
+    m.set([itype, gb, hash01(id + "m") < 0.5 ? 1 : 0, v2Slot(itype, p.kind, p.cat || "", hash01(id + "v"))], 20);
     windows.push(m);
     night.shops.push(o[0] + Z[0] * 0.6, f.y + 1.6, o[2] + Z[2] * 0.6);
     // ?night=1 (viewer/nightLights/cityNight.js): the lit window as a light through its opening, in the facade's own
@@ -159,10 +195,11 @@ export function layoutShop(p, f, frame, lit, env) {
   } else {
     box(at(0, fasciaY + 0.325, 0.273), X, Y, Z, W + 0.08, 0.6, 0.006, { board, ink, inkGlow, boardGlow, lab, fill: cf.signFill ?? 1.05, padX: 0.2, rough: lightbox ? 0.3 : 0.4, kind: 2 });
   }
-  // (curated) plaques on the fascia: [{ u, w, h, dy, text, board, ink, font }] (White Night's WHITE | NIGHT halves, Proxy's
-  // white panel on the black band): thin boxes 1 cm proud of the fascia face
+  // (curated) plaques on the fascia: [{ u, w, h, dy, dz, text, board, ink, font }] (White Night's WHITE | NIGHT halves, Proxy's
+  // white panel on the black band): thin boxes 1 cm proud of the fascia face; (claude/carrefour2) dz: further out (m), for
+  // a plaque running past the glazing's wall onto a wall a little forward of it (Gatti de Gamond's red line)
   for (const pl of cf.plaques || []) {
-    const zf = cf.fascia === false ? 0.02 : classic ? 0.221 + 0.009 : 0.273 + 0.009, yc = (classic ? fasciaY + 0.375 : fasciaY + 0.325) + (pl.dy ?? 0);
+    const zf = (cf.fascia === false ? 0.02 : classic ? 0.221 + 0.009 : 0.273 + 0.009) + (pl.dz ?? 0), yc = (classic ? fasciaY + 0.375 : fasciaY + 0.325) + (pl.dy ?? 0);
     const plab = pl.text ? label([].concat(pl.text), pl.font ?? "shopSans") : null;
     box(at(pl.u ?? 0, yc, zf), X, Y, Z, pl.w, pl.h ?? 0.46, 0.008, { board: pl.board ?? [0.86, 0.86, 0.84], ink: pl.ink ?? [0.02, 0.02, 0.02], lab: plab, fill: pl.fill ?? 0, pad: 0.1, rough: 0.4, kind: 2,
       inkGlow: (pl.glow ?? 0) * lit, boardGlow: (pl.boardGlow ?? 0) * lit });   // (a lit panel at night: White Night's WHITE half)
@@ -187,6 +224,20 @@ export function layoutShop(p, f, frame, lit, env) {
     const c = sign === "backlit" ? ink : sign === "lightbox" ? [0.95, 0.95, 0.92] : [1.0, 0.8, 0.55], k = sign === "spots" ? 0.8 : 1;
     const o = at(0, fasciaY + 0.35, 0.5);
     night.lights?.push(1, o[0], o[1], o[2], Z[0], Z[2], W / 2, 0.3, c[0] * k * lit, c[1] * k * lit, c[2] * k * lit);
+  }
+  // (curated) a flat cantilevered CANOPY over the whole front (a supermarket's: the Carrefour Market by Square Marlow):
+  // { out (m from the wall), y (underside, m over the shop floor), t (slab), edge (fascia band height), board (its
+  // colour), under (the soffit's) }: a slab and its front band, boxes of the layout (no new piece, no new draw)
+  // (claude/carrefour2) canopy.du: the canopy moved along the wall from the glazing's centre (m to the right seen from the
+  // street): the Carrefour Market Rue Gatti de Gamond's canopy runs the whole hall, its glazing only the west half
+  if (cf.canopy) {
+    const c = cf.canopy, out = c.out ?? 3, y0 = c.y ?? 3.1, t = c.t ?? 0.3, eh = c.edge ?? 0.55, wc = W + (c.extra ?? 0.4), cu = c.du ?? 0;
+    const down = [0, -1, 0];
+    // the slab: frame (X, Z, -Y), right-handed (X x Z = -Y for X = (nz, 0, -nx), Z = (nx, 0, nz))
+    box(at(cu, y0 + t / 2, out / 2), X, Z, down, wc, out, t, { board: c.under ?? c.board ?? [0.3, 0.28, 0.25], rough: 0.7 });
+    box(at(cu, y0 + eh / 2 - 0.05, out + 0.03), X, Y, Z, wc + 0.06, eh, 0.06, { board: c.board ?? [0.3, 0.28, 0.25], rough: 0.6, kind: 2 });
+    if (c.stripe) box(at(cu, y0 + eh / 2 - 0.05, out + 0.065), X, Y, Z, wc + 0.06, c.stripe[1] ?? 0.06, 0.01, { board: c.stripe[0], rough: 0.5, kind: 2 });
+    if (lit > 0) night.lights?.push(1, ...at(cu, y0 - 0.1, out * 0.6), Z[0], Z[2], W / 2, 0.3, 0.9 * lit, 0.88 * lit, 0.8 * lit);
   }
   // ---- awning (food and fresh shops), the name on its valance
   const awn = cf.awning ?? ((AWNING_KINDS.has(p.kind) || AWNING_CATS.has(p.cat)) && !lowFloor && hash01(id + "aw") < 0.8);

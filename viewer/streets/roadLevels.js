@@ -73,7 +73,7 @@ function laneFit(node, ground, noData) {
 
 // `noData` (optional, (x, z) -> bool): the DTM has no value there (outside the Brussels region the tile's grid holds
 // its lowest value): the engine sees a "bridge" over that fake pit, which is not a structure to keep.
-export function relevelRoads(net, ground, noData = null, { roughLanes = true, deckLevel = null } = {}) {
+export function relevelRoads(net, ground, noData = null, { roughLanes = true, deckLevel = null, edgeHold = true } = {}) {
   const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0, ...(globalThis.__levelsDebug ? { debug: true } : {}) };
   if (!net?.nodes) return st;
   const realSpan = (rr, sp) => {
@@ -134,7 +134,7 @@ export function relevelRoads(net, ground, noData = null, { roughLanes = true, de
     st.roads++;
   }
   st.maxMove = Math.round(st.maxMove * 100) / 100;
-  dropLifts(net, ground, noData, fixedRoad, st);
+  dropLifts(net, ground, noData, fixedRoad, st, edgeHold);
   return st;
 }
 
@@ -147,8 +147,22 @@ export function relevelRoads(net, ground, noData = null, { roughLanes = true, de
 // limit keeps UNDER a hump, e.g. through a cutting under a railway, stays where it is). Its end stretches stay on their
 // junction planes (pinnedProfile). Not where the DTM has no data (a fake pit, off the tile's grid).
 const LIFT_TOL = 1.0;            // m over the DTM
+const HOLD_STEP = 2;             // m: the stations along a road where heldGround looks for data
+
+/** (s) -> the DTM at the station nearest s (every HOLD_STEP m along the road) where it has data, or null when the road
+ *  has none at all: the ground a road stretch off every tile's grid is held at (dropLifts) */
+function heldGround(rr, P, ground, noData) {
+  const L = Math.max(rr.L || 0, P.s[P.s.length - 1] || 0), ks = [], gs = [];
+  for (let s = 0; s <= L + 1e-6; s += HOLD_STEP) { const e = evalAlignment(rr.al, s); if (!noData(e.x, e.z)) { ks.push(s); gs.push(ground(e.x, e.z)); } }
+  if (!ks.length) return null;
+  return (s) => {
+    let lo = 0, hi = ks.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (ks[m] <= s) lo = m; else hi = m; }
+    return Math.abs(ks[lo] - s) <= Math.abs(ks[hi] - s) ? gs[lo] : gs[hi];
+  };
+}
 const STEEP_GRADE = 0.32;        // the steepest measured lanes (Kleindalstraat, the Linkebeek trenches) climb ~30 %
-function dropLifts(net, ground, noData, fixedRoad, st) {
+function dropLifts(net, ground, noData, fixedRoad, st, edgeHold = true) {
   st.lifted = 0; st.maxLift = 0;
   for (const rr of net.roads || []) {
     const P = rr.prof;
@@ -163,8 +177,19 @@ function dropLifts(net, ground, noData, fixedRoad, st) {
     if (lift <= LIFT_TOL) continue;
     const { armA: aA, armB: aB, L, type } = rr;
     const ya = planeY(rr.A, aA.ox, aA.oz), yb = planeY(rr.B, aB.ox, aB.oz);
-    // (where the DTM has no data, off the tile's grid: the current profile, nothing to come down to)
-    const groundAt = (s) => { const e = evalAlignment(rr.al, s), y = profileAt(P, s).y; return noData && noData(e.x, e.z) ? y : Math.min(y, ground(e.x, e.z)); };
+    // (claude/defects2, rule mover-ground) where the DTM has no data (off every tile's grid: a road leaving the city): the
+    // DTM where the road last has data, held level, never over the current profile. Until 2026-11-24 the current profile
+    // was kept there ("nothing to come down to"): the engine's LIFTED one. Kleindalstraat (F10) leaves the city at z 3000
+    // into no tile: its lift out there held the profile 8.7 m over its sunken lane at the tile's edge and the 32 % grade
+    // brought it down to the DTM only 30 m in, a causeway in the air the traffic drove on (moverground F10 -458, 2999).
+    // edgeHold false (?edgelift=old, entry.edgeLift === false): the current profile, as before
+    const hold = noData && edgeHold ? heldGround(rr, P, ground, noData) : null;
+    const groundAt = (s) => {
+      const e = evalAlignment(rr.al, s), y = profileAt(P, s).y;
+      if (!noData || !noData(e.x, e.z)) return Math.min(y, ground(e.x, e.z));
+      const h = hold ? hold(s) : null;
+      return h == null ? y : Math.min(y, h);
+    };
     const np = buildProfile(rr.src, L, { ya, yb, fixed: pinnedProfile(rr) }, groundAt, Math.max(type.maxGrade, STEEP_GRADE));
     for (let i = 0; i < np.s.length; i++) { const e = evalAlignment(rr.al, np.s[i]); np.ground[i] = ground(e.x, e.z); }   // the real DTM
     rr.prof = np;

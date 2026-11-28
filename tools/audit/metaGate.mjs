@@ -15,6 +15,8 @@
 //   3. every viewer/, debug/ and tools/ .js / .mjs file parses as an ES module and its static imports link (esbuild bundles
 //      them all, bare packages external): a missing export or an unclosed comment fails here, not on the browser turn.
 //   4. docs/QUALITY_RULES.md and docs/CENSUS.md are what tools/docs/rulesIndex.mjs makes from docs/rules/, docs/census/
+//   6. no viewer/ debug/ tools/ module calls a name it never declares, imports or has as a global (tools/audit/undefRefs.mjs;
+//      claude/tramfix, rule no-undefined-refs: a moved helper left `finish(t)` in tramline.js, which parsed and linked)
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -117,6 +119,28 @@ ok(nMeta > 0, `${nMeta} rows declare meta checks`);
   }
   ok(!bad.length, `timing rows measure through tools/gate/timing.mjs, no process.cpuUsage() in a row script (rule timing-rows)${bad.length ? `: ${bad.join("; ")}` : ""}`);
 }
+// ------------------------------------------------------------------ 1c. timing rows alone, retried (rule timing-rows-alone, claude/gateflakes)
+{
+  // a row with a timing verdict exits through gateExit (75 = only timing verdicts failed: mergeGate re-runs it alone up
+  // to 3 times); a row script that measures (measure / bestOf / cleanSteps / cpuAB / calibrate of tools/gate/timing.mjs)
+  // is a timing row or marks its verdicts timed(); no verdict on a build time stored with a (cached) tile
+  const bad = [];
+  // (the measuring names imported from tools/gate/timing.mjs: a row's own function called measure is not one)
+  const measures = (code) => { const m = code.match(/import\s*\{([^}]*)\}\s*from\s*["'][^"']*gate\/timing\.mjs["']/); return !!m && /\b(measure|bestOf|cleanSteps|cpuAB|calibrate)\b/.test(m[1]); };
+  for (const r of rows) {
+    if (!existsSync(path.join(ROOT, r.script)) || r.name === "meta") continue;
+    const code = stripComments(rd(r.script)), exits = /\bgateExit\s*\(/.test(code), marks = /\btimed\s*\(/.test(code);
+    if (r.timing && !exits) bad.push(`${r.name}: a timing row whose script does not exit with gateExit(fails) (its timing-only failures are never retried)`);
+    if (marks && !exits) bad.push(`${r.name}: ${r.script} marks timed() verdicts but does not exit with gateExit(fails)`);
+    if (!r.timing && !r.alone && measures(code) && !(marks && exits)) bad.push(`${r.name}: ${r.script} measures a time but is neither a timing row nor marks its verdicts timed() + gateExit()`);
+    const stored = code.split("\n").filter((l) => /\.times\s*(\?\.)?\s*\[|\.times\?*\.\w/.test(l) && /\b(fail|check|ok)\s*\(/.test(l));
+    if (stored.length) bad.push(`${r.name}: ${r.script} judges a stored build time (${stored[0].trim().slice(0, 80)}): time the step in the row itself (a cached tile carries the time of the build that stored it)`);
+  }
+  const mg = stripComments(rd("tools/audit/mergeGate.mjs"));
+  if (!/withRetries\s*\(/.test(mg) || !/timingOnly\s*\(/.test(mg)) bad.push("tools/audit/mergeGate.mjs does not retry timing-only failures (tools/gate/retry.mjs withRetries / timingOnly)");
+  if (!rows.some((r) => r.name === "timingretry" && r.timing)) bad.push("no `timingretry` timing row (the self-test that a slowed path still fails after the retries)");
+  ok(!bad.length, `timing verdicts exit 75 through gateExit and are retried alone by mergeGate, measuring rows are timing rows or mark timed(), no verdict on a stored build time, the timingretry self-test row (rule timing-rows-alone)${bad.length ? `: ${bad.join("; ")}` : ""}`);
+}
 
 // ------------------------------------------------------------------ 3. every module parses and links
 {
@@ -139,6 +163,41 @@ ok(nMeta > 0, `${nMeta} rows declare meta checks`);
         } }] });
     } catch (e) { errors = e.errors || [{ text: e.message }]; }
     ok(!errors.length, `${files.length} viewer/ debug/ tools/ modules parse and link (${((Date.now() - t0) / 1000).toFixed(1)} s)${errors.length ? ": " + errors.slice(0, 6).map((x) => `${x.location ? `${x.location.file}:${x.location.line}` : ""} ${x.text}`).join(" / ") : ""}`);
+  }
+}
+
+// ------------------------------------------------------------------ 6. no call to a name the module never has
+// (rule no-undefined-refs, claude/tramfix: esbuild links imports but takes an unknown bare name for a global; the
+// refactor that moved tramline.js finish() to tramSched.js finishShape left one call, ReferenceError on every tram tile)
+{
+  const { scan } = await import("./undefRefs.mjs");
+  const { files, found } = scan(ROOT);
+  ok(!found.length, `${files} viewer/ debug/ tools/ modules call no name they never declare, import or have as a global (rule no-undefined-refs)${found.length ? ": " + found.slice(0, 8).map((r) => `${r.file}:${r.line} ${r.name}()`).join(", ") : ""}`);
+}
+
+// ------------------------------------------------------------------ 5. the tile cache's code key covers the worker bundle
+// (rule tile-cache: the gate's tile cache keys a worker build on the import closure of viewer/tileWorker.js,
+// tools/gate/tileCache.mjs codeClosure; every file esbuild bundles into viewer/tileWorker.bundle.js must be in it, else
+// an edit to that file would not change the key and the cache would serve a stale tile)
+{
+  const req = createRequire(path.join(ROOT, "tools/worker/package.json"));
+  let esbuild = null;
+  try { esbuild = req("esbuild"); } catch {}
+  if (esbuild) {
+    const { codeClosure } = await import("../gate/tileCache.mjs");
+    const { CODE } = await import("../gate/tileBuild.mjs");
+    const mine = codeClosure(CODE);
+    let inputs = [], err = null;
+    try {
+      const r = await esbuild.build({ entryPoints: ["viewer/tileWorker.js"], bundle: true, write: false, metafile: true, format: "esm", target: "es2022", outfile: "meta-out/w.js", nodePaths: ["tools/worker/node_modules"], logLevel: "silent", absWorkingDir: ROOT });
+      inputs = Object.keys(r.metafile.inputs).map((f) => f.split(path.sep).join("/"));
+    } catch (e) { err = e.message; }
+    // a package file counts as its package.json (the closure keys a package by its version)
+    // (tools/worker/node_modules may be a junction: esbuild names its real path; a package is "pkg:<name>" on both sides)
+    const asKey = (f) => { const i = f.lastIndexOf("node_modules/"); if (i < 0) return f; const rest = f.slice(i + 13).split("/"); return `pkg:${rest[0].startsWith("@") ? rest.slice(0, 2).join("/") : rest[0]}`; };
+    const have = new Set(mine.files.map(asKey));
+    const missing = [...new Set(inputs.map(asKey))].filter((f) => !have.has(f));
+    ok(!err && inputs.length > 0 && !missing.length && !mine.missing.length, `the tile cache's code key (tools/gate/tileBuild.mjs CODE, ${mine.files.length} files) covers all ${inputs.length} inputs of the worker bundle (rule tile-cache)${err ? `: esbuild: ${err}` : ""}${missing.length ? `: not in the key: ${missing.slice(0, 5).join(", ")}` : ""}${mine.missing.length ? `; unresolved imports: ${mine.missing.slice(0, 5).join(", ")}` : ""}`);
   }
 }
 

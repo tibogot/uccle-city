@@ -4,10 +4,11 @@
 // while a marker follows a moving target. Off the disc, a marker sits on the rim as an arrow pointing to it.
 // The route comes from the map worker (viewer/map/mapRoute.js: A* over the city's road graph).
 const TAU = Math.PI * 2;
+const FLOCK = [[0, -0.45, 0.42], [-0.75, 0.35, 0.34], [0.75, 0.35, 0.34]];   // the flock glyph: [dx, dy, radius] x r
 
 export class MapMarkers {
   constructor() {
-    this.list = [];            // [{ id, x, z, color, kind: 'goal' | 'target' | 'poi', label }]
+    this.list = [];            // [{ id, x, z, color, kind: 'goal' | 'target' | 'poi' | 'flock', label }]
     this.route = null;         // Float32Array [x, z, ...]
     this.routeColor = "#ffcc33";
     this.map = null;
@@ -34,6 +35,13 @@ export class MapMarkers {
   setRoute(pts, color = "#ffcc33") { this.route = pts; this.routeColor = color; this.redraw(); }
 
   pin(ctx, X, Y, color, kind, r = 7) {
+    if (kind === "flock") {           // a flock of birds (the falcon game's pigeons): three small dots in a V
+      for (const [dx, dy, k] of FLOCK) {
+        ctx.beginPath(); ctx.arc(X + dx * r, Y + dy * r, r * k, 0, TAU); ctx.fillStyle = color; ctx.fill();
+        ctx.lineWidth = 1.5; ctx.strokeStyle = "#10141a"; ctx.stroke();
+      }
+      return;
+    }
     if (kind === "target") {          // a moving target: a pulsing disc
       ctx.beginPath(); ctx.arc(X, Y, r, 0, TAU); ctx.fillStyle = color; ctx.fill();
       ctx.lineWidth = 2; ctx.strokeStyle = "#10141a"; ctx.stroke();

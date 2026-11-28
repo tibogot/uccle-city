@@ -20,21 +20,32 @@ import { PACK_SOURCES, packMaterial, FLEET_SOURCE, CARS_OLD, GLASS_PASS, glassGe
 import { MultiDrawSet, multiDrawOK } from "./multiDraw.js";
 import { dentFrame } from "./drive/carDent.js";
 import { HEAVY_TYPES, HEAVY_URL } from "./traffic/trafMix.js";   // TRAFMIX: the traffic's service vehicles (not parked)
+import { CARLOOK_OLD } from "./carProbe.js";                      // claude/cars1: ?carlook=old = the r0 family (no 4x4)
 
 /** ?carmerge=old: one InstancedMesh per (type, LOD, plain / fade): 26 scene + 11 shadow render objects in a street,
  *  instead of one multi-draw mesh per (material, shadow) (6 + 4; viewer/multiDraw.js, docs/perf/AUDIT.md step 13) */
 const CAR_MERGE = typeof location === "undefined" || new URLSearchParams(location.search).get("carmerge") !== "old";
 const _carBox = new Float64Array(6);
+// (allocrate, ?fleetflat=old: a [batch, car, fade] array per drawn car, the batch list and the registrations re-made on
+// every frame the camera moves) the jobs in three reused parallel lists, the batch list kept until the types change, the
+// registrations filtered in place: the parked cars' update makes no garbage a frame (docs/rules/alloc-rate.md)
+const FLEET_FLAT = typeof location === "undefined" || new URLSearchParams(location.search).get("fleetflat") !== "old";
+const _jB = [], _jC = [], _jF = [];
+// (claude/allocrate2, rule alloc-rate) the car loop in its own small function (placeCars); ?fleetopt=old = inline
+const FLEET_OPT = typeof location === "undefined" || new URLSearchParams(location.search).get("fleetopt") !== "old";
+const _setCols = { instanceMatrix: null, paint: null, lodFade: null };
 
-// the mix (a residential Brussels street): mostly hatchbacks, estates and saloons, some SUVs and compact vans, a few
-// panel vans, an occasional taxi
-export const TYPE_MIX = [["hatch_s", 0.20], ["hatch_c", 0.22], ["estate", 0.16], ["saloon", 0.13], ["suv", 0.13], ["van_c", 0.09], ["van_p", 0.035], ["taxi", 0.015]];
+// the mix (a residential Brussels street in a wealthy commune): mostly hatchbacks, estates and saloons, SUVs, the boxy
+// 4x4 (claude/cars1 round 2: Uccle's leafy streets, 6 %), compact vans, a few panel vans, an occasional taxi
+export const TYPE_MIX = [["hatch_s", 0.18], ["hatch_c", 0.195], ["estate", 0.16], ["saloon", 0.13], ["suv", 0.15], ["x4", 0.06], ["van_c", 0.085], ["van_p", 0.035], ["taxi", 0.015]];
+// ?carlook=old: the mix before round 2 (the r0 GLB has no 4x4)
+if (CARLOOK_OLD) TYPE_MIX.splice(0, TYPE_MIX.length, ["hatch_s", 0.20], ["hatch_c", 0.22], ["estate", 0.16], ["saloon", 0.13], ["suv", 0.13], ["van_c", 0.09], ["van_p", 0.035], ["taxi", 0.015]);
 // body sizes [w, h, l] (m), as tools/blender/carFaceted.py prints them (the colliders need them before the pack loads)
 // (cars2: as tools/blender/cars2.py prints them; ?cars=old: the faceted family's)
 export const SIZES = CARS_OLD ? { hatch_s: [1.74, 1.50, 4.01], hatch_c: [1.80, 1.50, 4.31], estate: [1.80, 1.51, 4.63], saloon: [1.82, 1.49, 4.73],
   suv: [1.82, 1.64, 4.41], van_c: [1.84, 1.82, 4.50], van_p: [2.02, 2.28, 5.05], taxi: [1.80, 1.61, 4.67] }
   : { hatch_s: [1.77, 1.44, 4.09], hatch_c: [1.81, 1.45, 4.31], estate: [1.85, 1.47, 4.70], saloon: [1.85, 1.44, 4.73],
-    suv: [1.84, 1.56, 4.33], van_c: [1.88, 1.84, 4.53], van_p: [1.95, 1.98, 5.03], taxi: [1.85, 1.59, 4.73], police: [1.85, 1.47, 4.70] };
+    suv: [1.84, 1.56, 4.33], van_c: [1.88, 1.84, 4.53], van_p: [1.95, 1.98, 5.03], taxi: [1.85, 1.59, 4.73], police: [1.85, 1.47, 4.70], x4: [1.84, 1.88, 4.52] };
 // paints (sRGB): Brussels car parks are mostly black, greys, silver and white
 export const PAINTS = [0x0d0e10, 0x0d0e10, 0x0d0e10, 0x1a1c1f, 0x34383d, 0x34383d, 0x4a4e53, 0x5a5e63, 0x8f959c, 0x9ea4ab, 0x9ea4ab, 0xb8bcc0,
   0xe8e8e4, 0xe8e8e4, 0xdcdcd6, 0x1d3f6e, 0x1d2c4a, 0x2e5a8a, 0x8a1414, 0x5a1010, 0x24483a, 0x6b5a48, 0x3a3226];
@@ -274,13 +285,20 @@ class CarFleet {
     const attached = (g) => { let o = g; while (o.parent) o = o.parent; return o.isScene; };
     const now = performance.now();
     const before = this.regs.length;
-    this.regs = this.regs.filter((r) => {
+    const keepReg = (r) => {
       const on = attached(r.group);
       if (on && !r.live) { r.live = true; r.t0 = now; this.dirty = true; }        // in the scene: its fade-in starts now
       return on || (!r.live && now - r.t0 < 120000);    // (a tile dropped while being built: let go after 2 min)
-    });
+    };
+    if (FLEET_FLAT) { const R = this.regs; let w = 0; for (let i = 0; i < R.length; i++) if (keepReg(R[i])) R[w++] = R[i]; R.length = w; }
+    else this.regs = this.regs.filter(keepReg);
     if (this.regs.length !== before) this.dirty = true;
-    const fadingIn = this.regs.some((r) => now - r.t0 < FADE_IN_MS) || Object.values(this.types).some((T) => !(now - T.t0 >= FADE_IN_MS));
+    let fadingIn;
+    if (FLEET_FLAT) {
+      fadingIn = false;
+      for (let i = 0; i < this.regs.length && !fadingIn; i++) if (now - this.regs[i].t0 < FADE_IN_MS) fadingIn = true;
+      if (!fadingIn) for (const k in this.types) if (!(now - this.types[k].t0 >= FADE_IN_MS)) { fadingIn = true; break; }
+    } else fadingIn = this.regs.some((r) => now - r.t0 < FADE_IN_MS) || Object.values(this.types).some((T) => !(now - T.t0 >= FADE_IN_MS));
     camera.updateMatrixWorld();
     const moved = !this.lastCam.equals(camera.matrixWorld);
     if (!moved && !fadingIn && !this.dirty) return;     // a still camera: nothing to redo
@@ -289,12 +307,21 @@ class CarFleet {
     this.frustum.setFromProjectionMatrix(this.pm, THREE.WebGPUCoordinateSystem, camera.reversedDepth);
     // pass 1: what goes where (counts first, so the batches can grow before filling)
     const L = this.lodDist, last = L.length - 1, st = this.stats;
-    st.cars = 0; st.drawn = 0; st.perLod = L.map(() => 0); st.fading = 0; st.culled = 0; st.far = 0; st.tris = 0;
-    const jobs = [];
+    st.cars = 0; st.drawn = 0; st.fading = 0; st.culled = 0; st.far = 0; st.tris = 0;
+    if (FLEET_FLAT && st.perLod?.length === L.length) st.perLod.fill(0); else st.perLod = L.map(() => 0);
+    const jobs = FLEET_FLAT ? null : [];
+    let nj = 0;
+    const job = (b, c, f) => { if (jobs) jobs.push([b, c, f]); else { _jB[nj] = b; _jC[nj] = c; _jF[nj] = f; } nj++; };
     this.frameNo = (this.frameNo || 0) + 1;
     // a camera jump (teleport, view switch) is not motion: the pop / appear counters skip that update
     const jumped = this.lastPos ? camPos.distanceTo(this.lastPos) > 5 : true;
     (this.lastPos ||= new THREE.Vector3()).copy(camPos);
+    if (FLEET_OPT && !jobs) {
+      // (claude/allocrate2, ?fleetopt=old: the loop inline) the car loop in a small function of its own: inline in this
+      // long update() it ran unoptimised (TurboFan rarely took it), so every double (d, keep, t, alpha) was a new heap
+      // number: 16-36 KB a frame. Small and called once per registration, it is optimised and boxes nothing
+      for (let ri = 0; ri < this.regs.length; ri++) { const r = this.regs[ri]; if (r.live) nj = placeCars(this, r, camPos, now, L, last, st, jumped, nj); }
+    } else
     for (const r of this.regs) {
       if (!r.live) continue;                             // its tile is still being built (not in the scene yet)
       const alpha = Math.min(1, (now - r.t0) / FADE_IN_MS);
@@ -306,7 +333,9 @@ class CarFleet {
         if (!this.frustum.intersectsSphere(this.sphere)) { st.culled++; continue; }
         const d = camPos.distanceTo(this.sphere.center);
         if (d >= FADE_TO) { st.far++; c.farAt = this.frameNo; continue; }
-        let k = L.findIndex((u) => d < u); if (k < 0) k = last;
+        let k;
+        if (FLEET_FLAT) { k = last; for (let u = 0; u < L.length; u++) if (d < L[u]) { k = u; break; } }   // (no closure a car)
+        else { k = L.findIndex((u) => d < u); if (k < 0) k = last; }
         // fraction kept by the distance fade and the streaming fade-in
         const keep = (d > FADE_FROM ? 1 - (d - FADE_FROM) / (FADE_TO - FADE_FROM) : 1) * Math.min(alpha, (now - T.t0) / FADE_IN_MS, 1);
         let near = k, far = -1, t = 0;
@@ -319,26 +348,39 @@ class CarFleet {
         if (!jumped && shown >= 0 && c.shown >= 0 && c.shown !== shown && c.seen === this.frameNo - 1) st.pops++;
         if (!jumped && c.farAt === this.frameNo - 1 && keep >= 1 && far < 0) st.appears++;    // came in from beyond the range whole
         c.shown = shown; c.seen = this.frameNo;
-        if (far >= 0 && keep >= 1) { jobs.push([T.lods[near].fade, c, t], [T.lods[far].fade, c, 1 + t]); st.fading++; }
-        else if (keep < 1) { jobs.push([T.lods[k].fade, c, 1 - keep]); st.fading++; }    // outgoing: keeps hash >= 1 - keep
-        else jobs.push([T.lods[k].plain, c, 0]);
+        if (far >= 0 && keep >= 1) { job(T.lods[near].fade, c, t); job(T.lods[far].fade, c, 1 + t); st.fading++; }
+        else if (keep < 1) { job(T.lods[k].fade, c, 1 - keep); st.fading++; }    // outgoing: keeps hash >= 1 - keep
+        else job(T.lods[k].plain, c, 0);
         st.drawn++; st.perLod[k]++;
         st.tris += T.lods[k].tris;
       }
     }
-    const all = [];
-    for (const T of Object.values(this.types)) for (const l of T.lods) all.push(l.plain, l.fade);
-    for (const b of all) b.n = 0;
-    for (const [b] of jobs) b.n++;
+    let all;
+    if (FLEET_FLAT) {
+      // the batch list: rebuilt only when a type or one of its LODs changed (a type loads late, a batch grows: same objects)
+      const seen = (this._allLods ||= []);
+      let same = !!this._all, n = 0;
+      for (const k in this.types) { const ls = this.types[k].lods; if (seen[n] !== ls || ls.length !== seen[n].__n) same = false; n++; }
+      if (n !== seen.length) same = false;
+      if (!same) {
+        this._all = []; seen.length = 0;
+        for (const T of Object.values(this.types)) { T.lods.__n = T.lods.length; seen.push(T.lods); for (const l of T.lods) this._all.push(l.plain, l.fade); }
+      }
+      all = this._all;
+    } else { all = []; for (const T of Object.values(this.types)) for (const l of T.lods) all.push(l.plain, l.fade); }
+    for (let i = 0; i < all.length; i++) all[i].n = 0;
+    for (let j = 0; j < nj; j++) (jobs ? jobs[j][0] : _jB[j]).n++;
     for (const b of all) if (b.n > b.cap) this.grow(b, Math.ceil(b.n * 1.5 / 64) * 64);
-    for (const b of all) { b.mesh.count = 0; }
-    for (const [b, c, f] of jobs) {
+    for (let i = 0; i < all.length; i++) all[i].mesh.count = 0;
+    for (let j = 0; j < nj; j++) {
+      const b = jobs ? jobs[j][0] : _jB[j], c = jobs ? jobs[j][1] : _jC[j], f = jobs ? jobs[j][2] : _jF[j];
       const m = b.mesh, i = m.count++;
       m.setMatrixAt(i, c.m);
       const T = this.types[c.type], col = T.keepPaint ? T.paint : c.col;
       b.geo.attributes.paint.setXYZ(i, col.r, col.g, col.b);
       if (b.fade) b.geo.attributes.lodFade.setX(i, f);
     }
+    if (!jobs) { _jB.fill(null, 0, nj); _jC.fill(null, 0, nj); }      // (no car or batch held past the frame)
     st.draws = 0;
     // (merged: every part into its set; the box = the drawn range round the camera, the cars being culled above)
     const B = _carBox; B[0] = camPos.x - FADE_TO; B[1] = -1000; B[2] = camPos.z - FADE_TO; B[3] = camPos.x + FADE_TO; B[4] = 5000; B[5] = camPos.z + FADE_TO;
@@ -346,7 +388,8 @@ class CarFleet {
       const m = b.mesh;
       if (b.set) {
         const n = m.count;
-        b.set.write(b.part, n, { instanceMatrix: m.instanceMatrix.array, paint: b.geo.attributes.paint.array, lodFade: b.geo.attributes.lodFade?.array }, B);
+        if (FLEET_FLAT) { _setCols.instanceMatrix = m.instanceMatrix.array; _setCols.paint = b.geo.attributes.paint.array; _setCols.lodFade = b.geo.attributes.lodFade?.array; b.set.write(b.part, n, _setCols, B); }
+        else b.set.write(b.part, n, { instanceMatrix: m.instanceMatrix.array, paint: b.geo.attributes.paint.array, lodFade: b.geo.attributes.lodFade?.array }, B);
         m.visible = n > 0;
         if (n) st.draws++;
         continue;
@@ -360,6 +403,40 @@ class CarFleet {
       if (b.fade) { const a = b.geo.attributes.lodFade; a.clearUpdateRanges(); a.addUpdateRange(0, m.count); a.needsUpdate = true; }
     }
   }
+}
+
+/** (FLEET_OPT) one registration's cars into the job lists _jB / _jC / _jF from index nj; -> the new count. The same
+ *  decisions, in the same order, as the inline loop of CarFleet.update (allocRateCheck.mjs compares them car by car). */
+function placeCars(F, r, camPos, now, L, last, st, jumped, nj) {
+  const alpha = Math.min(1, (now - r.t0) / FADE_IN_MS), cars = r.cars, frameNo = F.frameNo, sphere = F.sphere, frustum = F.frustum;
+  for (let ci = 0; ci < cars.length; ci++) {
+    const c = cars[ci];
+    st.cars++;
+    if (c.hidden) continue;
+    const T = F.types[c.type]; if (!T || T.t0 > now) continue;
+    sphere.center.set(c.x, c.y + 0.9, c.z);
+    if (!frustum.intersectsSphere(sphere)) { st.culled++; continue; }
+    const d = camPos.distanceTo(sphere.center);
+    if (d >= FADE_TO) { st.far++; c.farAt = frameNo; continue; }
+    let k = last; for (let u = 0; u < L.length; u++) if (d < L[u]) { k = u; break; }
+    const keep = (d > FADE_FROM ? 1 - (d - FADE_FROM) / (FADE_TO - FADE_FROM) : 1) * Math.min(alpha, (now - T.t0) / FADE_IN_MS, 1);
+    let near = k, far = -1, t = 0;
+    const bl = BANDS[k - 1] ?? 0, bk = BANDS[k] ?? 0;
+    if (k > 0 && d - L[k - 1] < bl * L[k - 1]) { near = k - 1; far = k; t = (d - (1 - bl) * L[k - 1]) / (2 * bl * L[k - 1]); }
+    else if (k < last && L[k] - d < bk * L[k]) { near = k; far = k + 1; t = (d - (1 - bk) * L[k]) / (2 * bk * L[k]); }
+    t = Math.min(1, Math.max(0, t));
+    const shown = far >= 0 ? -1 : k;
+    if (!jumped && shown >= 0 && c.shown >= 0 && c.shown !== shown && c.seen === frameNo - 1) st.pops++;
+    if (!jumped && c.farAt === frameNo - 1 && keep >= 1 && far < 0) st.appears++;
+    c.shown = shown; c.seen = frameNo;
+    const lods = T.lods;
+    if (far >= 0 && keep >= 1) { _jB[nj] = lods[near].fade; _jC[nj] = c; _jF[nj] = t; nj++; _jB[nj] = lods[far].fade; _jC[nj] = c; _jF[nj] = 1 + t; nj++; st.fading++; }
+    else if (keep < 1) { _jB[nj] = lods[k].fade; _jC[nj] = c; _jF[nj] = 1 - keep; nj++; st.fading++; }
+    else { _jB[nj] = lods[k].plain; _jC[nj] = c; _jF[nj] = 0; nj++; }
+    st.drawn++; st.perLod[k]++;
+    st.tris += lods[k].tris;
+  }
+  return nj;
 }
 
 export const carFleet = new CarFleet();

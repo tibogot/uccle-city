@@ -9,6 +9,7 @@ const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { buildRoadData, applyRoadOverrides } = await imp("viewer/roadBuild.js");
 const { Heightmap } = await imp("viewer/heightmap.js");
 const { roofGrid, onRoof } = await imp("viewer/tileData.js");
+const { streetModelInputsSync } = await imp("viewer/street/inputs.js");
 
 let manifest = null, overrides = null;
 export const tileEntry = (T) => {
@@ -36,9 +37,14 @@ export function loadTile(T, opts = {}) {
   applyRoadOverrides(roads, overrides);
   const roofs = roofGrid(json(join(d, "buildings.json")), bounds);
   const paint = opts.paint || "v2";
+  // the street model's inputs (claude/street2, viewer/street/inputs.js; opts.build.streetModel false = ?streetmodel=old)
+  const tm = performance.now();
+  const streetModel = paint !== "v2" || opts.build?.streetModel === false ? null : streetModelInputsSync({ readJson: (p) => (existsSync(join(ROOT, p)) ? json(join(ROOT, p)) : null), name: T, bounds, overrides });
+  const inputsMs = Math.round(performance.now() - tm);
   const t0 = performance.now();
-  const rd = buildRoadData({ roads, surf, markings: paint === "v2" ? markings : null, hm, bounds, paint, trees: feats.trees, keep: true,
+  const rd = buildRoadData({ streetModel, roads, surf, markings: paint === "v2" ? markings : null, hm, bounds, paint, trees: feats.trees, keep: true,
     onBuilding: (x, z) => onRoof(roofs, x, z), ...(opts.build || {}) });
   rd.totalMs = Math.round(performance.now() - t0);
+  rd.modelInputsMs = inputsMs;
   return { T, entry, bounds, roads, surf, markings, feats, hm, rd, paint, roofs };   // (roofs: the traffic graph's building test, viewer/traffic/tileTraffic.js)
 }

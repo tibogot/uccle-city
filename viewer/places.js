@@ -6,7 +6,7 @@
 // then put at p looking at t. Street-level ones (h <= 3) are best in walk / third person too.
 // tile: the manifest tile (only used for the boot link of a place: ?tile=..&view=stjob&at=..&cam=..).
 //
-// Add one: { id, name, group, tile, p: [x, h, z], t: [x, h, z], fov? }.
+// Add one: { id, name, group, tile, p: [x, h, z], t: [x, h, z], fov?, enter? (an enterable place's id: data/places/enterable.json) }.
 export const PLACES = [
   // Saint-Job (the start tile)
   { id: "stjob", name: "Place Saint-Job", group: "Saint-Job", tile: "I6", p: [1223, 45, 650], t: [1153, 0, 540] },
@@ -39,6 +39,10 @@ export const PLACES = [
   { id: "latourdefrein", name: "Château Latour de Frein", group: "Landmarks", tile: "G9", p: [180, 45, 2291], t: [102, 10, 2327] },
   { id: "latourdefrein-gate", name: "Latour de Frein, Rue Engeland gate", group: "Landmarks", tile: "G9", p: [166, 1.7, 2219], t: [118, 9, 2300], fov: 50 },
   { id: "latourdefrein-front", name: "Latour de Frein, the front", group: "Landmarks", tile: "G9", p: [132, 1.7, 2275], t: [112, 9, 2310], fov: 60 },
+  // places you can walk into (claude/villamark, rule enterable-places-findable): enter = the data/places/enterable.json id;
+  // p = its entry spot at eye height, t = through its door. Share link: ?place=<enter id>&view=third (docs/VILLA.md)
+  { id: "villa", name: "Villa Prince d'Orange (go inside)", group: "Go inside", tile: "H9", enter: "villa", p: [895.55, 1.7, 2022.06], t: [889.05, 3, 2032.88], fov: 60 },
+  { id: "stalle-door", name: "Stalle chapel, the west door (go inside)", group: "Go inside", tile: "D5", enter: "stalle", p: [-1154.1, 1.7, 58.71], t: [-1149.95, 2.5, 56.49], fov: 60 },
   // public art (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md)
   { id: "monolithes", name: "Dix Monolithes", group: "Public art", tile: "B5", p: [-2214, 1.7, 400], t: [-2240, 3, 376], fov: 55 },
   { id: "monolithes-air", name: "Dix Monolithes, from above", group: "Public art", tile: "B5", p: [-2205, 35, 335], t: [-2240, 2, 376] },

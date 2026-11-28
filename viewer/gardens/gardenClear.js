@@ -1,6 +1,7 @@
 // GARDEN PIECES CLEARED FROM THE STREET (three-free, shared by viewer/gardens/cityGardens.js and the node collider audit
 // tools/audit/colliderAudit.mjs): the plot restyles (data/overrides.json gardenRestyle) and the pieces standing on a
 // carriageway / in a cleared yard or gate mouth (blocked(x, z) -> true) left out of a tile's garden doc.
+import { HEDGE_WALL_H } from "../drive/colliders.js";   // (three-free: the hedge-wall height, rule hedge-wall)
 
 /** the doc without the pieces standing on a carriageway (blocked(x, z) -> true): segments and closed car gates by
  *  points every SEG_STEP m along their axis and both faces of their 0.30 m stand-in, pillars by their base and their
@@ -49,10 +50,14 @@ export function* clearRoadsGen(doc, blocked, { old = false } = {}) {
 /** (cortenbosch) data/overrides.json gardenRestyle: inside each polygon the walls / railings become clipped hedges of the
  *  polygon's species (consecutive segments chained into one run, set back half the hedge's width + 5 cm from the street:
  *  the side where blocked(x, z) answers, else the run's left), the pillars and gates go (the driveways stay open), the
- *  kit's own hedges there take the species. -> { doc, segs, hedges } | 0 */
+ *  kit's own hedges there take the species. -> { doc, segs, hedges } | 0
+ *  (claude/places2) an entry with a `line` ([[x, z], ...]) instead of a ring is a hedge the kit did not plan (the
+ *  Papenkasteel's tall beech hedge on Rue Papenkasteel, the castle's grounds have no house front): added to the tile
+ *  holding its middle point (doc.tile), { hedge, height, width } as above */
 export function restyleHedges(doc, restyle, blocked) {
   const polys = Object.entries(restyle || {}).filter(([k, v]) => !k.startsWith("_") && v?.ring?.length >= 3).map(([, v]) => v);
-  if (!polys.length) return 0;
+  const lines = Object.entries(restyle || {}).filter(([k, v]) => !k.startsWith("_") && v?.line?.length >= 2 && inTile(doc.tile, v.line[Math.floor(v.line.length / 2)])).map(([, v]) => v);
+  if (!polys.length && !lines.length) return 0;
   const inR = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
   const polyAt = (x, z) => polys.find((p) => inR(p.ring, x, z));
   const out = { ...doc, segs: [], pillars: [], gates: [], hedges: [] };
@@ -90,13 +95,21 @@ export function restyleHedges(doc, restyle, blocked) {
     const c = h.points[Math.floor(h.points.length / 2)], P = c && polyAt(c[0], c[1]);
     out.hedges.push(P ? { ...h, species: P.hedge || h.species } : h);
   }
+  for (const L of lines) { out.hedges.push({ points: L.line.map((p) => [p[0], p[1]]), species: L.hedge || "beech", height: L.height ?? 1.4, width: L.width ?? 0.6 }); nHedge++; }
   return { doc: out, segs: nSeg, hedges: nHedge };
+}
+/** is (x, z) in tile `name` (500 m tiles: E7 = x [-1000, -500), z [1000, 1500); viewer/street/model.js tileBounds) */
+function inTile(name, p) {
+  if (!name || !p) return false;
+  const i = name.charCodeAt(0) - "E".charCodeAt(0) - 2, j = parseInt(name.slice(1), 10) - 5;
+  return p[0] >= i * 500 && p[0] < (i + 1) * 500 && p[1] >= j * 500 && p[1] < (j + 1) * 500;
 }
 
 /** The plan footprints of a garden doc's collision stand-ins, as viewer/gardens/gardenKit.js gardenInstances makes them
  *  (pure data, for the node collider audit): each wall / railing segment one box 0.30 m thick over its whole height
  *  (wall + coping + railing), each pillar a PILLAR_W square (h + 0.12), each CLOSED driveway gate a box across its width
- *  (the pedestrian gates are drawn open: not solid), each hedge a band of its width (soft for the car: KIND.hedge).
+ *  (the pedestrian gates are drawn open: not solid), each hedge a band of its width (soft for the car: KIND.hedge; one
+ *  drawn over HEDGE_WALL_H a wall: KIND.hedgeWall, rule hedge-wall).
  *  -> [{ rings: [[x, z] x 4], kind, base, top, what }] (the doc's baked y, before the kit settles it on the drawn ground) */
 export function gardenPieces(doc, { CAP_T = 0.08, PILLAR_W = 0.36, T = 0.3 } = {}) {
   const out = [], styles = doc.styles || [];
@@ -121,7 +134,7 @@ export function gardenPieces(doc, { CAP_T = 0.08, PILLAR_W = 0.36, T = 0.3 } = {
   }
   for (const hd of doc.hedges || []) {
     const P = hd.points || [];
-    for (let i = 1; i < P.length; i++) out.push({ rings: [band(P[i - 1][0], P[i - 1][1], P[i][0], P[i][1], (hd.width || 0.6) / 2)], kind: 8, base: -1e4, top: 1e4, what: "hedge" });
+    for (let i = 1; i < P.length; i++) out.push({ rings: [band(P[i - 1][0], P[i - 1][1], P[i][0], P[i][1], (hd.width || 0.6) / 2)], kind: (hd.height || 1.2) > HEDGE_WALL_H ? 9 : 8, base: -1e4, top: 1e4, what: "hedge" });   // (9 = KIND.hedgeWall: rule hedge-wall)
   }
   return out;
 }

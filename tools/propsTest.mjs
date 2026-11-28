@@ -21,7 +21,7 @@
 //   ranges                  a woken prop's instance writes are update ranges (instanceStream.js StreamPool.patch,
 //                           cityProps.js proxies): no whole-buffer upload, no DynamicDrawUsage
 import { register } from "node:module";
-import { measure } from "./gate/timing.mjs";   // rule timing-rows: wall-time asserts between two calibrations, budget * k
+import { measure, bestOf, timed, gateExit, slow } from "./gate/timing.mjs";   // rule timing-rows: wall-time asserts between two calibrations, budget * k
 
 const STUB = `export class Vector3 { constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;} copy(v){this.x=v.x;this.y=v.y;this.z=v.z;return this;} distanceToSquared(v){return (this.x-v.x)**2+(this.y-v.y)**2+(this.z-v.z)**2;} distanceTo(v){return Math.sqrt(this.distanceToSquared(v));} set(x,y,z){this.x=x;this.y=y;this.z=z;return this;} }
 export class Sphere { constructor(){this.center=new Vector3();this.radius=0;} }
@@ -301,6 +301,13 @@ for (const v of [20, 50]) {
 }
 check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.bad.length, `${colTally.props} props after their hits (states ${JSON.stringify(colTally.states)}: 0 rest, 2 knocked / snapped, 3 bent): ${colTally.bad.length} with a collider where nothing is drawn${colTally.bad.length ? ": " + colTally.bad.slice(0, 3).join(" / ") : " (knocked / snapped / flattened: drive collider + walker post off; bent: at its foot, tops at the drawn lean)"}`);
 // ---------------------------------------------------------------- 9 cost + allocation: 24 awake bodies
+// (claude/gateflakes, rule timing-rows-alone) the cost's NOISE MARGIN, explicit: k is the calibration loop's slow-down
+// (a tight in-cache loop); the solver's 24 bodies walk more memory and lose more to a neighbour's cache pressure than
+// the loop does (2026-11-26 under load: 0.32 ms at k 2.70, i.e. 0.118 ms / k, vs 0.075 ms at k 1.52 = 0.049 / k alone).
+// The budget is 0.1 ms x k x COST_NOISE; a load spike beyond that is a timing-only failure (exit 75) that mergeGate
+// re-runs alone up to 3 times. The code measures 0.03-0.05 ms / k alone (0.045 ms at k 1.38 on claude/gateflakes):
+// a solver ~2.5-4 x dearer fails on every run (the timingretry row slows it 8 x)
+const COST_NOISE = 1.25;
 {
   const props = [];
   for (let i = 0; i < 24; i++) props.push({ cls: ["bin", "cone", "moto", "chair", "sign", "villo"][i % 6], x: (i % 6) * 3 - 8, z: Math.floor(i / 6) * 4 + 6, yaw: i });
@@ -315,11 +322,14 @@ check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.ba
     kick();
     for (let i = 0; i < 240; i++) w.substep(1 / 120);          // (JIT warm)
     kick();
-    const MT = await measure(() => {
-      const t0 = performance.now(), M = 2400;
+    // (claude/gateflakes, rule timing-rows-alone: the best of 3 blocks of 1 200 substeps, not one block of 2 400: one
+    // preemption lands on one block. GATE_SLOW=props: the block made GATE_SLOW_X times dearer, the self-test's regression)
+    const MT = await measure(() => bestOf(3, () => {
+      const t0 = performance.now(), M = 1200;
       for (let i = 0; i < M; i++) { if (i % 600 === 0) kick(); w.substep(1 / 120); }
+      slow("props", t0);
       return (performance.now() - t0) / M * 2;                // a 60 fps frame = 2 substeps
-    });
+    }));
     ms = MT.value; costK = MT.k; costNote = MT.note;
     const { Session } = await import("node:inspector/promises");
     const ses = new Session(); ses.connect();
@@ -339,7 +349,7 @@ check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.ba
     ses.disconnect();
   }
   check("allocation", Math.min(...bytes) < 2048, `20 000 substeps x 24 awake bodies: ${bytes.join(" / ")} bytes in propWorld / colliders / obb (V8 sampling heap profiler, 64 B)`);
-  check("cost", ms < 0.1 * costK, `24 awake bodies (ground points, walls, pairs): ${f2(ms, 3)} ms per 60 fps frame (2 substeps), budget 0.1 ms x k (${costNote})`);
+  check("cost", timed(ms < 0.1 * costK * COST_NOISE), `24 awake bodies (ground points, walls, pairs): ${f2(ms, 3)} ms per 60 fps frame (2 substeps), budget 0.1 ms x k x ${COST_NOISE} noise margin (${costNote})`);
 }
 // ---------------------------------------------------------------- 10 instance writes: update ranges only
 {
@@ -377,8 +387,10 @@ check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.ba
   if (!OLD) {
     const { spawnSync } = await import("node:child_process");
     const r = spawnSync(process.execPath, ["--import", "./tools/christmas/hook.mjs", "tools/props/glueSmoke.mjs"], { cwd: new URL("..", import.meta.url), encoding: "utf8", timeout: 120000 });
-    const lines = ((r.stdout || "") + (r.stderr || "")).trim().split(/\r?\n/);
-    ok = r.status === 0;
+    // (claude/perf6, rule settled-props-in-pool) and the old path (?propsettle=old: asleep props stay proxies)
+    const r2 = spawnSync(process.execPath, ["--import", "./tools/christmas/hook.mjs", "tools/props/glueSmoke.mjs", "--settleold"], { cwd: new URL("..", import.meta.url), encoding: "utf8", timeout: 120000 });
+    const lines = ((r.stdout || "") + (r.stderr || "") + (r2.status ? (r2.stdout || "") + (r2.stderr || "") : "")).trim().split(/\r?\n/);
+    ok = r.status === 0 && r2.status === 0 && lines.some((l) => l.startsWith("pass settled in its pool"));
     msg = ok ? `cityProps.js on real three.js pools / meshes: hide by one range, proxies draw + move (ranges), shape from the drawn geometry, sleep, reset on tile unload (${lines.filter((l) => l.startsWith("pass")).length} pass)` : lines.filter((l) => /FAIL|Error/.test(l)).slice(0, 3).join(" / ");
   }
   check("glue", ok, msg);
@@ -386,4 +398,4 @@ check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.ba
 
 console.log(`\n## propsTest${OLD ? " --old (?props=old)" : ""} (docs/PROPS.md, rule physics-props)\n| check | result | measured |\n|---|---|---|\n${out.join("\n")}`);
 if (!QUIET || fails) console.log(fails ? `\n${fails} check(s) FAILED` : "\nall checks pass");
-process.exitCode = fails ? 1 : 0;
+process.exitCode = gateExit(fails);   // (75: only timing verdicts failed, rule timing-rows-alone)

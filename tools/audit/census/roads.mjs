@@ -27,16 +27,18 @@
 //
 //   node --import ./tools/road_audit/register.mjs tools/audit/census/roads.mjs [--all | T ...] [--out FILE] [--jobs N]
 //        [--old] [--max k=v,...] [--quiet] [--worst N]
-//   --old: the city as ?roads=old builds it (entry roadsR false); --max: the gate (ceilings, exit 1 above)
+//   --old: the city as ?roads=old builds it (entry roadsR false); --lanesold: ?streetlanes=old (claude/street4: the
+//   fitted engine lanes, not the street model's); --max: the gate (ceilings, exit 1 above)
 //   the cars' own trajectories in the running sim: tools/audit/census/roadSim.mjs
 import { writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { streetTile, runTiles, cli, json, at, ROOT, imp, SC } from "./lib_street.mjs";
 import { footprintIndex } from "./lib_mesh.mjs";
 import { resample, wobble, judge, judge1, STRAIGHT_R } from "./lib_path.mjs";
+import { laneCtx } from "./laneCause.mjs";
 
 const { CHILD, TILES, OUT, JOBS, WORST, flag, opt } = cli();
-const OLD = flag("--old"), MAX = opt("--max", null), QUIET = flag("--quiet");
+const OLD = flag("--old"), LANES_OLD = flag("--lanesold"), MAX = opt("--max", null), QUIET = flag("--quiet");
 export const OFF_TOL = 0.5, PLANT_IN = 0.3;
 const H_MODEL = [0.72, 1.44, 1.29, 0.92, 0.93, 0.61, 0.48, 0.37];   // tools/plants/build_plants.py H_MODEL by type index
 const PLANT_TYPES = ["box_ball", "laurel", "rhododendron", "hydrangea", "rose", "lavender", "bulbs", "geranium"];
@@ -45,7 +47,7 @@ const r1 = (v) => Math.round(v * 10) / 10;
 // ------------------------------------------------------------------ parent
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: roads.mjs [--all | T ...] [--out FILE] [--old] [--max k=v,...]"); process.exit(2); }
-  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: OLD ? ["--old"] : [], log: !QUIET });
+  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: OLD ? ["--old"] : LANES_OLD ? ["--lanesold"] : [], log: !QUIET });
   const sum = {}, items = {}, hist = [];
   for (const r of res) {
     if (r.error) continue;
@@ -62,6 +64,10 @@ if (!CHILD) {
   console.log(`class R, ${res.length} tiles${res.some((r) => r.error) ? ` (${res.filter((r) => r.error).length} failed)` : ""}${OLD ? " (--old: ?roads=old)" : ""}`);
   console.log(JSON.stringify(sum));
   console.log("wobble / slalom metres by first stage:", JSON.stringify(byCause));
+  for (const k of ["inBuilding", "offCarriage"]) {
+    const by = {}; for (const it of items[k] || []) { const c = `${it.klass} ${it.why}`, e = (by[c] ??= { n: 0, m: 0 }); e.n++; e.m = r1(e.m + it.m); }
+    console.log(`${k} places by class / reason: ${JSON.stringify(by)}`);
+  }
   for (const k of Object.keys(items)) {
     console.log(`worst ${k} (${items[k].length}):`);
     for (const it of items[k].slice(0, WORST)) console.log(`  ${it.tile} ${JSON.stringify(it)}`);
@@ -87,9 +93,10 @@ async function graphOf(T) {
   const refined = rd.net.graph.paths.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((q) => [q[0] ?? q.x, q[1] ?? q.z]) }));
   // (the worker's own builder, viewer/traffic/tileTraffic.js: the roof grid as its building test)
   const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");
-  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roofs: S.tile.roofs, entry: OLD ? { roadsR: false } : {} });
-  // (the same graph without the far-lane snap (no building test): the places the snap creates / removes)
-  const gNo = OLD ? null : tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, roofs: null });
+  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roofs: S.tile.roofs, entry: OLD ? { roadsR: false } : LANES_OLD ? { streetLanes: false } : {} });
+  // (the same graph without the far-lane snap: the places the snap creates / removes; claude/street4: the model lanes
+  // keep their own building test there, only the snap is off)
+  const gNo = OLD ? null : tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, roofs: S.tile.roofs, noSnap: true, entry: LANES_OLD ? { streetLanes: false } : {} });
   return { S, g, gNo, trace, refined, parked };
 }
 const pathPts = (g, p) => { const out = []; for (let k = g.off[p]; k < g.off[p + 1]; k++) out.push([g.xy[k * 2], g.xy[k * 2 + 1]]); return out; };
@@ -122,7 +129,10 @@ const groupPlaces = (pts, R = 6) => {
 {
   const { roadFrameOf } = await imp("viewer/streets/lineFit.js");
   const byId = rd.net.roadsById || new Map(rd.net.roads.map((r) => [r.id, r]));
-  const stagePaths = [["refine", new Map(refined.map((p) => [p.id, p.pts]))]];
+  // (claude/street4: a path the street model built (viewer/street/lanes.js) has the model as its first stage; the
+  // engine's refined lane under it is not driven)
+  const modelIds = new Set((trace.afterModel || []).map((p) => p.id));
+  const stagePaths = [...(trace.afterModel ? [["model", new Map(trace.afterModel.map((p) => [p.id, p.pts]))]] : []), ["refine", new Map(refined.filter((p) => !modelIds.has(p.id)).map((p) => [p.id, p.pts]))]];
   if (trace.afterFit) stagePaths.push(["fit", new Map(trace.afterFit.map((p) => [p.id, p.pts]))]);
   if (trace.afterJoin) stagePaths.push(["join", new Map(trace.afterJoin.map((p) => [p.id, p.pts]))]);
   const alignFlag = new Map();      // road id -> judge() of its alignment samples (2D)
@@ -200,6 +210,7 @@ function inBuildingPts(G) {
 }
 {
   const inPts = [], offPts = [];
+  const LC = laneCtx(S, g, trace, rd.net.streetModel);
   const carrDist = (x, z) => { for (let d = 0.25; d <= 6; d += 0.25) for (let a = 0; a < 16; a++) { const th = (a / 16) * Math.PI * 2; if (driven.inside(x + Math.cos(th) * d, z + Math.sin(th) * d)) return d; } return 6; };
   for (let i = 0; i < g.paths; i++) {
     const P = pathPts(g, i), { Q } = resample(P, 0.5);
@@ -208,8 +219,8 @@ function inBuildingPts(G) {
       const a = Q[Math.max(0, q - 1)], b = Q[Math.min(Q.length - 1, q + 1)], tl = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / tl, nz = (b[0] - a[0]) / tl;
       let deep = 0, bi = -1;
       for (const w of [0, 0.9, -0.9]) { const px = x + nx * w, pz = z + nz * w, k = FI.at(px, pz); if (k >= 0) { const dd = ringDist(px, pz, blds[k].footprint[0]); if (dd > deep) { deep = dd; bi = k; } } }
-      if (deep > 0.05) inPts.push({ x, z, deep, path: i, b: blds[bi].attrs?.BU_ID ?? blds[bi].id });
-      if (!driven.inside(x, z)) { const d = carrDist(x, z); if (d > OFF_TOL) offPts.push({ x, z, deep: d, path: i }); }
+      if (deep > 0.05) inPts.push({ x, z, deep, path: i, b: blds[bi].attrs?.BU_ID ?? blds[bi].id, sd: q * 0.5, nx, nz });
+      if (!driven.inside(x, z)) { const d = carrDist(x, z); if (d > OFF_TOL) offPts.push({ x, z, deep: d, path: i, sd: q * 0.5, nx, nz }); }
     }
   }
   counts.inBuildingM = inPts.length * 0.5; counts.offCarriageM = offPts.length * 0.5;
@@ -223,11 +234,15 @@ function inBuildingPts(G) {
   }
   for (const [list, key] of [[inPts, "inBuilding"], [offPts, "offCarriage"]]) {
     const places = groupPlaces(list, 6);
-    counts[`${key}Places`] = places.length;
+    counts[`${key}Places`] = places.length; counts[`${key}CPlaces`] = 0; counts[`${key}CM`] = 0;
     for (const mem of places) {
       const w = mem.reduce((a, b) => (b.deep > a.deep ? b : a));
       const kinds = [...new Set(mem.map((q) => (g.kind[q.path] ? `turn${g.turn[q.path]}` : "lane")))].join(",");
-      items[key].push({ m: mem.length * 0.5, deep: r1(w.deep), at: at(w.x, w.z), street: nameAt(w.x, w.z), kinds, ...(w.b ? { building: String(w.b) } : {}) });
+      // (claude/lanes5: the place's cause from its points' evidence, tools/audit/census/laneCause.mjs: a source data, b the
+      // measure, c our builder)
+      const c = LC.classify(key === "inBuilding" ? "building" : "carriage", mem.map((q) => LC.at(q.x, q.z, q.path, q.sd, q.nx, q.nz)));
+      items[key].push({ m: mem.length * 0.5, deep: r1(w.deep), at: at(w.x, w.z), street: nameAt(w.x, w.z), kinds, klass: c.klass, why: c.why, ...(w.b ? { building: String(w.b) } : {}) });
+      if (c.klass === "c") { counts[`${key}CPlaces`]++; counts[`${key}CM`] += mem.length * 0.5; }
     }
   }
 }

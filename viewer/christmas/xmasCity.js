@@ -13,22 +13,17 @@
 //     the levels cross-fade per pixel (xmasKit.js bandMask): shared materials, no pop.
 // Lights are emissive only (no new light: the fixed light count). Cost and checks: docs/CHRISTMAS.md.
 import * as THREE from "three/webgpu";
-import { loadXmasKit, spanMaterial, xmasLook, FIR, XMAS_SHADOW_LAYER } from "./xmasKit.js";
+import { loadXmasKit, spanMaterial, xmasLook, FIR, XMAS_SHADOW_LAYER, XMAS_FETCH, XMAS_LIGHT } from "./xmasKit.js";
 import { lampSiteSets, lampSitesVersion } from "../lamps.js";
 import * as lampsMod from "../lamps.js";
-import { frontFamily } from "../shops/shopLayout.js";
+import { swagRun } from "./xmasSwag.js";
 import { hash01 as slHash01 } from "../streetlife/layout.js";
 
 // ------------------------------------------------------------------------------------------------ the season
-/** on from 1 Dec to 6 Jan: ?xmas=1 / ?xmas=0 force it; a simulated ?day= (day of the year) decides when given; else today */
-export function xmasActive(params = new URLSearchParams(typeof location !== "undefined" ? location.search : ""), now = new Date()) {
-  const q = params.get("xmas");
-  if (q === "1") return true;
-  if (q === "0") return false;
-  if (params.has("day")) { const d = +params.get("day"); return d >= 335 || d <= 6; }
-  const m = now.getMonth(), d = now.getDate();
-  return (m === 11 && d >= 1) || (m === 0 && d <= 6);
-}
+// (claude/xmas4) the date switch lives in xmasDate.js (three-free: the facade shader's December windows ask it too)
+import { xmasActive } from "./xmasDate.js";
+import { XMAS_WIN, xmasWin } from "./xmasWindows.js";
+export { xmasActive };
 
 const hash01 = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 100000) / 100000; };
 
@@ -73,6 +68,7 @@ export class XmasField {
             // garland and the fir's planter are inside other shadows; measured 2026-11-17: 27 -> 6 shadow draws)
             im.castShadow = !!shadows[name] && SHADOW_SLOTS.has(slot) && name !== "tree"; im.receiveShadow = true;
             im.name = `xmas ${name} lod${k} ${slot}${fade ? " fade" : ""}${cards ? " lit" : ""}`; im.userData.slot = slot;
+            im.userData.matArgs = { uvs: !!geometry.attributes.uv, instanced: true, mask: fade, pass: cards ? "colour" : null };
             this.group.add(im);
             return im;
           });
@@ -81,7 +77,7 @@ export class XmasField {
             const tw = new THREE.InstancedMesh(im.geometry, kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: fade, pass: "depth" }), cap);
             tw.instanceMatrix = mat; tw.count = 0; tw.visible = false; tw.boundingSphere = sphere; tw.frustumCulled = true;
             tw.castShadow = tw.receiveShadow = false; tw.renderOrder = -1; tw.userData.depthPrepass = true; tw.userData.slot = "fir_cards";
-            tw.name = `xmas ${name} lod${k} fir_cards${fade ? " fade" : ""} depth`;
+            tw.name = `xmas ${name} lod${k} fir_cards${fade ? " fade" : ""} depth`; tw.userData.matArgs = { uvs: true, instanced: true, mask: fade, pass: "depth" };
             this.group.add(tw); meshes.push(tw);
           }
           // the tree's shadow: shadow-only copies (this level's instances and band) of the FAR level's solid fronds +
@@ -96,6 +92,7 @@ export class XmasField {
               const sh = new THREE.InstancedMesh(g, kit.slotMaterial(slot, { uvs: !!geometry.attributes.uv, instanced: true, mask: fade }), cap);
               sh.instanceMatrix = mat; sh.count = 0; sh.visible = false; sh.boundingSphere = sphere; sh.frustumCulled = true;
               sh.castShadow = true; sh.receiveShadow = false; sh.layers.set(XMAS_SHADOW_LAYER); sh.userData.slot = slot; sh.userData.shadowOnly = true;
+              sh.userData.matArgs = { uvs: !!geometry.attributes.uv, instanced: true, mask: fade };
               sh.name = `xmas ${name} lod${k} ${slot}${fade ? " fade" : ""} shadow (${firShadow === "far" ? `lod${FIR_SHADOW_LEVEL}` : "own"})`;
               this.group.add(sh); meshes.push(sh);
             }
@@ -210,11 +207,86 @@ export function buildSpans(spans) {
   return { wire: geo(wire), bulbs: geo(bulbs), mid, counts: { spans: spans.length, bulbs: bulbs.P.length / 18 } };
 }
 
+// ------------------------------------------------------------------------------------------------ the garlands on poles (Saint-Job)
+/** (claude/xmas4, plan job 5, rule xmas-pole-garlands) a Christmas pole the garland hangs from where neither a wall nor a
+ *  drawn lamp / tram pole holds it (models/christmas/poles.json, tools/christmas/xmasPoles.mjs): a slim painted-steel
+ *  tube (7.5 cm at the foot, 6 cm at the top) on a 0.35 m base collar, a clamp ring at the hook, a small cap. ONE merged
+ *  static mesh for all of them (as the street garlands' wires). p: { x, y (the foot, on the drawn ground), z, h (the hook
+ *  over the foot) } */
+export const POLE_TOP = 0.25;
+export function buildPoleGeometry(poles) {
+  const parts = [];
+  for (const p of poles) {
+    const H = p.h + POLE_TOP;
+    const add = (g, y) => { g.deleteAttribute("uv"); g.translate(p.x, p.y + y, p.z); parts.push(g); };
+    add(new THREE.CylinderGeometry(0.11, 0.125, 0.35, 12), 0.175);                // the base collar (sunk 1 cm: joins rule)
+    add(new THREE.CylinderGeometry(0.06, 0.075, H - 0.3, 12, 1, true), 0.3 + (H - 0.3) / 2);
+    add(new THREE.CylinderGeometry(0.085, 0.085, 0.06, 12), p.h);                  // the clamp ring at the hook
+    add(new THREE.CylinderGeometry(0.02, 0.07, 0.12, 12), H + 0.06);               // the cap
+  }
+  if (!parts.length) return null;
+  const merged = new THREE.BufferGeometry();
+  let nv = 0, ni = 0;
+  for (const g of parts) { nv += g.attributes.position.count; ni += g.index.count; }
+  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), C = new Float32Array(nv * 4), I = new Uint32Array(ni);
+  let ov = 0, oi = 0;
+  for (const g of parts) {
+    P.set(g.attributes.position.array, ov * 3); N.set(g.attributes.normal.array, ov * 3);
+    for (let k = 0; k < g.attributes.position.count; k++) C.set([0.5, 0, 1, 1], (ov + k) * 4);
+    for (let k = 0; k < g.index.count; k++) I[oi + k] = g.index.array[k] + ov;
+    ov += g.attributes.position.count; oi += g.index.count; g.dispose();
+  }
+  merged.setAttribute("position", new THREE.BufferAttribute(P, 3));
+  merged.setAttribute("normal", new THREE.BufferAttribute(N, 3));
+  merged.setAttribute("color", new THREE.BufferAttribute(C, 4));
+  merged.setIndex(new THREE.BufferAttribute(I, 1));
+  merged.computeBoundingSphere(); merged.computeBoundingBox();
+  return merged;
+}
+/** the hook on a pole's surface toward the other end (the wire meets the tube, not its axis): r = 0.08 m */
+export function hookPoint(h, y, other) {
+  const dx = other.x - h.x, dz = other.z - h.z, L = Math.hypot(dx, dz) || 1;
+  return [h.x + (dx / L) * 0.08, y, h.z + (dz / L) * 0.08];
+}
+/** a stand-in geometry (one degenerate triangle, the spans' attributes): the pole meshes exist and compile with the
+ *  layer's warm-up before their tiles are in */
+function emptySpanGeometry() {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute([0, -1e4, 0, 0, -1e4, 0, 0, -1e4, 0], 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute([0.5, 0, 1, 1, 0.5, 0, 1, 1, 0.5, 0, 1, 1], 4));
+  g.setIndex(new THREE.Uint16BufferAttribute([0, 1, 2], 1));
+  g.computeBoundingSphere();
+  return g;
+}
+/** (claude/xmasreview, rule joins) the fir's foot: the LOWEST drawn ground under its planter (the octagon's corners and
+ *  edge midpoints at 1.4 m x scale, and the centre), so the planter's skirt meets the paving all round. The centre alone
+ *  left the Place de Saint-Job planter 1.7 cm in the air on its downhill side (browser review 2026-11-26) */
+export const PLANTER_R = 1.4;
+export function treeFootY(t, walkY) {
+  let y = walkY(t.x, t.z);
+  for (let k = 0; k < 16; k++) { const a = (k * Math.PI) / 8, r = PLANTER_R * t.scale; y = Math.min(y, walkY(t.x + Math.cos(a) * r, t.z + Math.sin(a) * r)); }
+  return y;
+}
+/** (claude/xmasreview, rule walker-statics) the walker's colliders of a placed fir: the octagonal planter (body + camera,
+ *  0.55 m high: you cannot climb it) and the crown as a body-only circle of WALK_CROWN x scale up to 3 m (the needles
+ *  start at the planter's rim: the walker stops at the branch tips, never inside the tree where the LED beads read as
+ *  big flat hexagons) */
+export const WALK_CROWN = 2.4;
+export function walkerFir(t) {
+  const ring = Array.from({ length: 8 }, (_, k) => { const a = Math.PI / 8 + (k * Math.PI) / 4, r = PLANTER_R * t.scale; return [t.x + Math.cos(a) * r, t.z + Math.sin(a) * r]; });
+  return [
+    { id: `xmas fir ${t.id} planter`, polys: [{ rings: [ring], base: t.y - 0.5, top: t.y + 0.6 }], tag: 4, ray: true },
+    { id: `xmas fir ${t.id} crown`, circles: [{ x: t.x, z: t.z, r: WALK_CROWN * t.scale, base: t.y - 0.5, top: t.y + 3.0 }], tag: 5, ray: false },
+  ];
+}
+export const HOOK_TOL = 0.25;      // m: a listed lamp / tram-pole hook vs the pole the city draws (tools/christmas/xmasPoles.mjs)
+
 // ------------------------------------------------------------------------------------------------ the city layer
 export async function addChristmas({ scene, updaters, world, manifest, log, compiler, renderer = null, params = new URLSearchParams(location.search) }) {
   if (!xmasActive(params)) return null;
   const t0 = performance.now();
-  const site = await fetch(new URL("../../models/christmas/site.json", import.meta.url)).then((r) => r.json()).catch(() => null);
+  const site = await fetch(new URL("../../models/christmas/site.json", import.meta.url), XMAS_FETCH).then((r) => r.json()).catch(() => null);
   if (!site) { log("christmas: models/christmas/site.json missing, no decorations"); return null; }
   const kit = await loadXmasKit(renderer).catch((e) => { log(`christmas: the kit failed to load (${e.message})`); return null; });
   if (!kit) return null;
@@ -236,17 +308,15 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
   // with): a classic front's cornice (corona 0.365 m out, its top 0.94 m over the fascia's bottom): the garland hangs
   // from the corona's edge; a modern front's fascia box (0.27 m out, 0.65 m high): from the box's face under its top.
   // Modules of 1.6 m (scaled 0.6-1.45 to the front), 0.7 high (a shallower sag over the name board). Door wreaths.
-  const curated = await fetch(new URL("../../data/shops/terraces.json", import.meta.url)).then((r) => (r.ok ? r.json() : {})).then((j) => j.terraces || {}).catch(() => ({}));
+  const curated = await fetch(new URL("../../data/shops/terraces.json", import.meta.url), XMAS_FETCH).then((r) => (r.ok ? r.json() : {})).then((j) => j.terraces || {}).catch(() => ({}));
   let nSwag = 0;
   for (const f of site.fronts ?? []) {
     if (!on(f.street, "swags")) continue;
-    const fam = frontFamily({ id: f.id, kind: f.kind, cat: f.cat }, f, curated[f.id], slHash01);
-    const W = Math.max(2.0, Math.min(f.w, 9.9)), n = Math.max(1, Math.round(W / 1.6)), sx = W / (n * 1.6);
-    const hook = f.y + fam.fasciaY + (fam.classic ? 0.94 : 0.62), out = fam.classic ? 0.3 : 0.22;
-    const yaw = Math.atan2(f.nx, f.nz), tx = -f.nz, tz = f.nx;
-    for (let k = 0; k < n; k++) {
-      const u = -W / 2 + (k + 0.5) * W / n;
-      field.add("swag", place(f.x + tx * u + f.nx * out, hook, f.z + tz * u + f.nz * out, yaw, sx, 0.7, 1), `swag ${f.id} ${k}`);
+    // (claude/xmas1) the width and centre of the DRAWN front (xmasSwag.js swagRun: shopLayout.js frontFace / frontWidth,
+    // the curated front.w / front.du; a curated canopy: along its band), never site.json's own slot width
+    const run = swagRun(f, curated[f.id], slHash01);
+    for (const [k, m] of run.modules.entries()) {
+      field.add("swag", place(m.x, m.y, m.z, run.yaw, run.sx, 0.7, 1), `swag ${f.id} ${k}`);
       nSwag++;
     }
   }
@@ -261,6 +331,71 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
 
   // ---- the square trees: on the drawn ground once their tile is in
   const tileOf = (x, z) => manifest.tiles.find((t) => x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1])?.name;
+
+  // ---- (claude/xmas4) the garlands on poles at Saint-Job (models/christmas/poles.json; ?xmaspoles=0 / config.poles =
+  // false: without): shown once BOTH hooks are drawn: a Christmas pole on the drawn ground (world.walkY), a lamp / tram
+  // pole only where the city draws it (lampSiteSets / the "tram-poles" instances, within HOOK_TOL; a pole the city moved
+  // or dropped: its garland is dropped, never hung in the air). The wires, LEDs and poles are three merged static meshes
+  // (rebuilt when a set of garlands comes in: a few times per visit), the stars instanced with the street garlands'.
+  const polesDoc = params.get("xmaspoles") === "0" || site.config?.poles === false ? null
+    : await fetch(new URL("../../models/christmas/poles.json", import.meta.url), XMAS_FETCH).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const pg = (polesDoc?.spans ?? []).filter((s) => on(s.street, "spans")).map((s) => ({ ...s, state: "wait", seen: 0, tiles: [tileOf(s.a.x, s.a.z), tileOf(s.b.x, s.b.z)] }));
+  const pgWire = new THREE.Mesh(emptySpanGeometry(), spanMaterial("wire_dark", kit));
+  const pgBulb = new THREE.Mesh(emptySpanGeometry(), spanMaterial("bulb_warm", kit));
+  const pgPole = new THREE.Mesh(emptySpanGeometry(), spanMaterial("pole_steel", kit));
+  for (const [m, nm] of [[pgWire, "wires"], [pgBulb, "bulbs"], [pgPole, "poles"]]) { m.castShadow = false; m.receiveShadow = true; m.name = `xmas pole garlands ${nm}`; m.userData.poleGarland = true; field.group.add(m); }
+  const pgStats = { listed: pg.length, shown: 0, dropped: [], poles: 0, rebuilds: 0 };
+  const drawnTramPoles = () => {
+    const out = [], Mi = new THREE.Matrix4(), v = new THREE.Vector3();
+    scene.traverse((o) => { if (o.isInstancedMesh && o.name === "tram-poles") for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, Mi); out.push(v.setFromMatrixPosition(Mi).applyMatrix4(o.matrixWorld).clone()); } });
+    return out;
+  };
+  const rebuildPoles = () => {
+    const ok = pg.filter((s) => s.state === "ok");
+    const sp = buildSpans(ok.map((s) => ({ a: hookPoint(s.a, s.ya, s.b), b: hookPoint(s.b, s.yb, s.a), sag: s.sag, motif: false })));
+    for (const [m, g] of [[pgWire, sp.wire], [pgBulb, sp.bulbs]]) { m.geometry.dispose(); m.geometry = g; }
+    const poles = ok.flatMap((s) => [[s.a, s.footA], [s.b, s.footB]]).filter(([h]) => h.kind === "pole").map(([h, y]) => ({ x: h.x, y: y - 0.01, z: h.z, h: h.h }));
+    const pgeo = buildPoleGeometry(poles);
+    if (pgeo) { pgPole.geometry.dispose(); pgPole.geometry = pgeo; }
+    pgWire.visible = pgBulb.visible = ok.length > 0; pgPole.visible = !!pgeo;
+    pgStats.shown = ok.length; pgStats.poles = poles.length; pgStats.rebuilds++;
+  };
+  const resolvePoles = () => {
+    if (!pg.some((s) => s.state === "wait")) return;
+    let lamps = null, trams = null, changed = false;
+    for (const s of pg) {
+      if (s.state !== "wait" || !s.tiles.every((T) => world.tiles.some((W) => W.name === T))) continue;
+      s.seen++;
+      const foot = [s.a, s.b].map((h) => {
+        if (h.kind === "pole") return world.walkY(h.x, h.z);
+        if (h.kind === "lamp") {
+          lamps ??= [...lampSiteSets()].flat();
+          const q = lamps.find((p) => p.y != null && Math.hypot(p.x - h.x, p.z - h.z) < HOOK_TOL);
+          return q ? q.y : null;
+        }
+        trams ??= drawnTramPoles();
+        const q = trams.find((p) => Math.hypot(p.x - h.x, p.z - h.z) < HOOK_TOL);
+        return q ? q.y : null;
+      });
+      if (foot.every((y) => y != null && Number.isFinite(y))) {
+        s.state = "ok"; s.footA = foot[0]; s.footB = foot[1]; s.ya = foot[0] + s.a.h; s.yb = foot[1] + s.b.h; changed = true;
+        if (s.motif) {
+          const mid = [(s.a.x + s.b.x) / 2, (s.ya + s.yb) / 2 - s.sag, (s.a.z + s.b.z) / 2], dx = s.b.x - s.a.x, dz = s.b.z - s.a.z;
+          field.add("spanmotif", place(mid[0], mid[1], mid[2], Math.atan2(-dz, dx), 0.75, 0.75, 0.75), `pole ${s.id}`);
+        }
+        // a Christmas pole blocks the car as a lamp does (drive colliders: an octagon of 0.1 m)
+        for (const h of [s.a, s.b].filter((q) => q.kind === "pole")) {
+          const ring = Array.from({ length: 8 }, (_, k) => [h.x + Math.cos((k * Math.PI) / 4) * 0.1, h.z + Math.sin((k * Math.PI) / 4) * 0.1]);
+          const cols = [{ rings: [ring] }];
+          if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
+        }
+      } else if (s.seen > 20) {                 // (~10 s after both tiles are in: the lamps are placed with their tile)
+        s.state = "dropped"; pgStats.dropped.push(`${s.id} ${foot[0] == null ? s.a.kind : s.b.kind}`);
+        log(`christmas: pole garland ${s.id} dropped: its ${foot[0] == null ? s.a.kind : s.b.kind} is not drawn within ${HOOK_TOL} m of the listed hook`);
+      }
+    }
+    if (changed) rebuildPoles();
+  };
   const trees = site.trees.map((t) => ({ ...t, tile: tileOf(t.x, t.z), placed: false }));
   // ---- the Christmas market on Place de Saint-Job (?xmaschalets=0 / config.chalets = false: without): each chalet on the
   // drawn ground at its centre once the tile is in, its wood tone per instance, a drive collider (3.1 x 2.1 m)
@@ -277,6 +412,7 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
       field.add("chalet", place(c.x, c.y, c.z, c.yaw), `chalet ${c.x},${c.z}`, c.tone);
       const cols = [{ rings: [ring] }];
       if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
+      (window.__walkerStatics ??= []).push({ id: `xmas chalet ${c.x},${c.z}`, polys: [{ rings: [ring], base: c.y - 0.5, top: c.y + 3.2 }], tag: 4, ray: true });
     }
     return changed;
   };
@@ -284,12 +420,15 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
     let changed = placeChalets();
     for (const t of trees) {
       if (t.placed || !world.tiles.some((T) => T.name === t.tile)) continue;
-      t.y = world.walkY(t.x, t.z) - 0.02; t.placed = true; changed = true;
+      t.y = treeFootY(t, (x, z) => world.walkY(x, z)) - 0.02; t.placed = true; changed = true;
       field.add("tree", place(t.x, t.y, t.z, t.yaw, t.scale, t.scale, t.scale), `tree ${t.id}`);
       // the octagonal planter (1.38 m) blocks the car (drive colliders, viewer/drive/driveMode.js addStatic)
       const ring = Array.from({ length: 8 }, (_, k) => { const a = Math.PI / 8 + (k * Math.PI) / 4, r = 1.4 * t.scale; return [t.x + Math.cos(a) * r, t.z + Math.sin(a) * r]; });
       const cols = [{ rings: [ring] }];
       if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
+      // (claude/xmasreview, rule walker-statics) the walker too: the planter (a wall for body and camera) and the crown
+      // (the body only, up to 3 m: the lowest branches reach 2.95 m; the camera may pass through the needles)
+      (window.__walkerStatics ??= []).push(...walkerFir(t));
     }
     return changed;
   };
@@ -328,15 +467,33 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
   for (const im of allMeshes) { im.count = 1; im.visible = true; im.frustumCulled = false; }
   try { let c = compiler?.(); for (let i = 0; !c && i < 40; i++) { await new Promise((r) => setTimeout(r, 250)); c = compiler?.(); } if (c) await c([field.group]); } catch (e) { log(`christmas: shader warm-up skipped (${e.message})`); }
   for (const im of allMeshes) { im.count = 0; im.visible = false; im.frustumCulled = true; }
+  for (const m of [pgWire, pgBulb, pgPole]) m.visible = false;      // (compiled above; shown when their garlands come in)
   const tComp = performance.now() - tc;
+  // (claude/xmas4) the December windows (xmasWindows.js; compiled into the facade shader at boot with the layer on)
+  xmasWin.value = XMAS_WIN.on ? 1 : 0;
 
   let frame = 0;
   updaters.push((eye) => {
-    if (frame++ % 30 === 0) { if (placeTrees()) field.dirty = true; decorateLamps(); sunLayer(); }
+    if (frame++ % 30 === 0) { if (placeTrees()) field.dirty = true; decorateLamps(); sunLayer(); resolvePoles(); }
     field.update(eye);
   });
-  log(`christmas: ${trees.length} trees, ${site.spans.length} street garlands (${spans.counts.bulbs} LEDs, ${spans.mid.length} stars), ${chalets.length} market chalets, ${nSwag} shopfront swags, ${site.wreaths.length} wreaths, lamp snowflakes along ${site.streets.length} street lines; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms (?xmas=0: without)`);
-  const api = { fir: { ...FIR, shadowLevel: FIR_SHADOW_LEVEL, suns: suns.length }, site, kit, field, spans, trees, chalets, look: xmasLook, group: field.group, tLoad, tComp, stats: () => field.stats };
+  log(`christmas: ${trees.length} trees, ${site.spans.length} street garlands (${spans.counts.bulbs} LEDs, ${spans.mid.length} stars), ${chalets.length} market chalets, ${nSwag} shopfront swags, ${site.wreaths.length} wreaths, lamp snowflakes along ${site.streets.length} street lines, ${pg.length} pole garlands listed (Saint-Job), December windows ${XMAS_WIN.on ? "on" : "off"}; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms (?xmas=0: without)`);
+  /** (claude/xmas3, debug/xmasPerf.js) the live A/B of the light path (xmasKit.js XMAS_LIGHT): every mesh of the layer
+   *  takes its slot's material built for `light` ({ cards }; null = the URL's); both sets compile once, then swap */
+  const setLight = (light = null) => {
+    const L = light ?? XMAS_LIGHT;
+    field.group.traverse((o) => { const a = o.userData.matArgs; if (a && o.userData.slot) o.material = kit.slotMaterial(o.userData.slot, { ...a, light: L }); });
+    wireMesh.material = spanMaterial("wire_dark", kit, 650, L); bulbMesh.material = spanMaterial("bulb_warm", kit, 650, L);
+  };
+  // (claude/xmas4) the extras, each switchable live for debug/xmasPerf.js (on = true: as the layer draws it)
+  const pgMeshes = [pgWire, pgBulb, pgPole], pgMask = pgMeshes.map((m) => m.layers.mask);
+  const extras = {
+    poles: (onOff) => pgMeshes.forEach((m, i) => { m.layers.mask = onOff ? pgMask[i] : 0; }),
+    windows: (onOff) => { xmasWin.value = onOff && XMAS_WIN.on ? 1 : 0; },
+  };
+  if (!pg.length) delete extras.poles;
+  if (!XMAS_WIN.on) delete extras.windows;
+  const api = { extras, poles: { list: pg, stats: pgStats, meshes: pgMeshes, doc: polesDoc }, windows: XMAS_WIN, setLight, light: XMAS_LIGHT, fir: { ...FIR, shadowLevel: FIR_SHADOW_LEVEL, suns: suns.length }, site, kit, field, spans, trees, chalets, look: xmasLook, group: field.group, tLoad, tComp, stats: () => field.stats };
   window.xmas = api;
   return api;
 }

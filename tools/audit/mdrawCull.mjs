@@ -17,8 +17,10 @@
 //   5. budget: indirect buffer <= 2560 B a part, a part's write uploads only its records (update range, no whole
 //      buffer, no DynamicDrawUsage); sort CPU <= 0.02 ms a frame; the whole cull (all cameras) <= 2 x the 160 m one
 import * as THREE from "three/webgpu";
-import { measure } from "../gate/timing.mjs";
-globalThis.window = globalThis; globalThis.location = { search: "" };
+import { measure, timed, gateExit } from "../gate/timing.mjs";
+// (?indpool=old: each view keeps its own indirect buffer, so records sit at k * chMax * 5 and offsets decode from 0;
+// the pooled layout (one buffer, a slot base per view) is checked by tools/audit/indirectPoolCheck.mjs, row indirectpool)
+globalThis.window = globalThis; globalThis.location = { search: "?indpool=old" };
 const MD = await import("../../viewer/multiDraw.js");
 const { MultiDrawSet, setMultiDrawViewCamera, nearBucket, CHUNK_M, CHUNK_MAX, MD_SORT } = MD;
 const QUIET = process.argv.includes("--quiet");
@@ -257,8 +259,8 @@ const R = MT.value;
 const best = (a) => Math.min(...a), us = (ms) => (ms * 1000).toFixed(1);
 if (process.env.MDRAW_DEBUG) console.log(`sort: best ${us(best(R.vS))} - ${us(best(R.vU))} us, k ${MT.k.toFixed(2)}`);
 const sortMs = Math.max(0, best(R.vS) - best(R.vU)), visible = city.reduce((s, c) => s + c.neu.set.culls.find((e) => e.cam === viewCam).all.length / 2, 0);
-ok(sortMs <= 0.02 * MT.k, `sort CPU ${us(sortMs)} us a frame (${visible} visible chunks in ${city.length} sets; target <= 20 us; ${MT.note})`);
+ok(timed(sortMs <= 0.02 * MT.k), `sort CPU ${us(sortMs)} us a frame (${visible} visible chunks in ${city.length} sets; target <= 20 us; ${MT.note})`);
 ok(best(R.neu) <= 2 * best(R.old), `whole cull a frame (view + sun + lamp, ${city.length} sets, ${chunksNew} chunks): new ${us(best(R.neu))} us (unsorted ${us(best(R.neuU))}) <= 2 x the 160 m chunks' ${us(best(R.old))} us (${chunksOld} chunks); browser target < 50 us on the real city`);
 
 console.log(fails ? `mdrawCull: ${fails} FAIL` : "mdrawCull: all pass");
-process.exitCode = fails ? 1 : 0;
+process.exitCode = gateExit(fails);   // (75: only timing verdicts failed, rule timing-rows-alone)

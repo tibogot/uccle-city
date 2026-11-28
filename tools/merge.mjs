@@ -59,8 +59,13 @@ if (dirty && !NO_MERGE && !DRY) die(`the tree has uncommitted changes:\n${dirty}
 // ------------------------------------------------------------------ 2. merge
 const base = git("rev-parse", "HEAD");
 let changed;
+// the commit the gate compares against, fixed HERE before this tool commits anything (rule merge-gate-base: with
+// --no-merge, "HEAD^1" read AFTER the bundle-rebuild commit is the merge commit itself, so the gate saw only the bundle
+// and skipped every row: claude/lanes5 went out with 68 rows skipped, 2026-11-23)
+let preMergeFixed = null;
 if (NO_MERGE) {
   if (!git("log", "-1", "--format=%P").includes(" ")) die("--no-merge: HEAD is not a merge commit (resolve and commit the merge first)");
+  preMergeFixed = git("rev-parse", `${base}^1`);
   changed = git("diff", "--name-only", "HEAD^1", "HEAD").split("\n").filter(Boolean);
 } else if (DRY) {
   changed = git("diff", "--name-only", `${INTO}...${branch}`).split("\n").filter(Boolean);
@@ -126,7 +131,8 @@ if (!DRY) {
 // skips a row whose deps are as at its last PASS here); full: every row, memo off (--full); a,b,c: those rows
 const rows = await loadRows(ROOT);
 const NAMES = ROWS === "auto" || ROWS === "full" ? [] : ROWS.split(",").map((s) => s.trim()).filter(Boolean);
-const preMerge = DRY ? git("merge-base", INTO, branch) : NO_MERGE ? git("rev-parse", "HEAD^1") : base;
+const preMerge = DRY ? git("merge-base", INTO, branch) : NO_MERGE ? preMergeFixed : base;
+step(`gate base: ${preMerge.slice(0, 8)} (${git("log", "-1", "--format=%s", preMerge).slice(0, 70)})`);
 const gateArgs = ROWS === "full" ? ["--full"] : ROWS === "auto" ? ["--changed", "--base", preMerge] : NAMES;
 if (DRY && ROWS === "auto") {
   // the gate's own pick, on the dry run's changed files

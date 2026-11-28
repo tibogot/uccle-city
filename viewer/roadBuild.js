@@ -21,6 +21,9 @@ import { trimBendFolds } from "./streets/roadBends.js";
 import { edgeField, onceEdgeList } from "./heightmap.js";
 import { retainingWalls, appendToPart } from "./streets/retainWalls.js";
 import { measureLineFit, fitLinesToStreet, laneShifter } from "./streets/lineFit.js";
+import { buildStreetModel } from "./street/model.js";
+import { measuredBridgeLanes } from "./streets/bridgeDecks.js";
+import { modelLineItems, lineQuery, engineLineCodes } from "./street/markings.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // (claude/sidewalk, ?sidewalk=old = 0) the terrain higher than a street banks down to its outer edge at this slope (m per m,
@@ -64,6 +67,11 @@ export function applyRoadOverrides(roads, ov) {
   for (const r of roads.roads) {
     const s = ov?.roadSurface?.[r.id]; if (s) (r.meta ??= {}).surface = s;
     const way = /^r(\d+)_/.exec(r.id)?.[1], c = way ? ov?.centreLine?.[way] : null;
+    // (claude/chenaie, rule deck-width-drawn) a band bridge with measured widths (bridgeWidths: the UrbIS bridge outline,
+    // the measured kerbs of its approaches): its lane stack at those widths, so the street drawn on the deck and the deck
+    // (bridgeDecks.js widths) are as wide as the real bridge (Avenue de la Chênaie over L26: 5.0 m, was 8.2 m)
+    const bw = way && r.meta?.bridge && r.meta.bridge !== "no" ? ov?.bridgeWidths?.[way] : null, bl = bw ? measuredBridgeLanes(r, bw) : null;
+    if (bl) { (r.meta ??= {}).bridgeWidth = { deck: bw.deck ?? null, carr: bw.carr ?? null }; r.lanes = bl; }
     if (c === "none" && r.lanes) r.lanes = { ...r.lanes, center: { ...(r.lanes.center || {}), kind: "none" } };   // (built roads carry their stack)
   }
 }
@@ -83,7 +91,7 @@ export function buildRoadData(o) {
   const lap = (k) => { const t = now(); times[k] = Math.round(t - t0); t0 = t; };
   // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
   const ground = o.ground ?? hm.ground;   // o.ground: e.g. the hero road bridges' decks over the cutting (rail/railData.js roadDeckGround)
-  const prep = surf ? prepareSurfaces(surf, ground, bounds, o.trees ?? null, { clampH: o.clampH === true, kerbLevel: o.kerbLevel === true }) : null;
+  const prep = surf ? prepareSurfaces(surf, ground, bounds, o.trees ?? null, { clampH: o.clampH === true, kerbLevel: o.kerbLevel === true, jointFit: o.jointFit === true, tramProfile: o.tramProfile ?? null }) : null;
   // citydefects (OPT-IN, o.recentre true = ?recentre=1): each OSM centre line moved onto the middle of its measured
   // carriageway (viewer/streets/recentre.js). Road checker on I6 / E4 / J5: "leaves the measured street" 57 -> 48, C4
   // paint off the street 36 -> 29, but folds 14 -> 23 and coplanar overlaps 134 -> 225: not default until those are 0
@@ -103,7 +111,7 @@ export function buildRoadData(o) {
   // (no DTM: outside the Brussels region the grid holds its lowest value; off the tile's grid it is clamped to its edge)
   const offGrid = (x, z) => { const h = hm.h; return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step; };
   // o.noData: the tile worker's (tileData.js paddedGround: the neighbours' grids answer past the edge)
-  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || (hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02)), { roughLanes: o.roughLanes !== false, deckLevel: o.deckLevel ?? null });
+  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || (hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02)), { roughLanes: o.roughLanes !== false, deckLevel: o.deckLevel ?? null, edgeHold: o.edgeLift !== false });
   if (ctx) ctx.zebraKerb = o.roadsR !== false;       // (class R: a surveyed zebra ending in the open road goes on to the kerb)
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
@@ -140,6 +148,21 @@ export function buildRoadData(o) {
   // (o.roadLines false = ?roadlines=old: the strips where the median width fit put them, their lines kept on sidewalks)
   const lineFit = lineFitData ? fitLinesToStreet(net, built.asphalt, lineFitData) : null;
   lap("line fit");
+  // THE STREET MODEL (claude/street2, rule street-model; o.streetModel = viewer/street/inputs.js, null = ?streetmodel=old):
+  // segments / kerbs / lanes / junctions from the unclipped measured inputs, each element as its owner builds it. Its
+  // first consumer is the paint: the lines along the roads are drawn from it (viewer/street/markings.js, into the paint
+  // decal below), so the engine strips' own line codes go (the strips stay: the paving uv and the traffic still use them)
+  let streetModel = null;
+  if (v2 && o.streetModel) {
+    streetModel = buildStreetModel({ ...o.streetModel, bounds });
+    // (the engine's own centre / edge lines kept only on roads UrbIS does not measure at all: D-engine, markings.js)
+    streetModel.stats.engine = engineLineCodes(net, built.asphalt, streetModel);
+    // (claude/street4: the traffic graph's lanes and turns come from it too, viewer/traffic/tileTraffic.js; the network
+    // stays in the worker, so the model does too)
+    net.streetModel = streetModel;
+    net.streetKerbs = [...(surf?.kerbs || []), ...(surf?.edges || []).map((e) => e.line).filter(Boolean)];   // (the measured kerb / street-edge lines the lanes keep clear of)
+    lap("street model");
+  }
   // paint v2: engine pieces that overlap get lift tiers (junction pads on top, then the higher road rank)
   let priority = null;
   if (v2) {
@@ -225,14 +248,21 @@ export function buildRoadData(o) {
   lap("terrain weld");
   if (v2) {
     // the measured paint as its own decal mesh (one draw, viewer/roadPaint.js paintMaterial)
-    const paintPart = paintMeshV2(pv.items, prep, bounds);
+    // (claude/street2) + the model's lines, the runs whose axis comes within PAD m of this tile (an edge line lies up to a
+    // half carriageway off its axis; paintMeshV2 cuts them on the tile edge)
+    const PAD = 15, inT = (x, z) => x >= bounds.x0 - PAD && x < bounds.x1 + PAD && z >= bounds.z0 - PAD && z < bounds.z1 + PAD;
+    const ml = streetModel ? modelLineItems(streetModel, { near: inT, drawn: lineQuery([...(surf.kerbs || []), ...(surf.edges || []).map((e) => e.line).filter(Boolean)]) }) : null;
+    if (ml) streetModel.stats.paint = ml.stats;
+    if (ml && o.keep) streetModel.lineItems = ml.items;          // (the audits: the drawn model strokes, tools/audit/census/markings.mjs laneP95)
+    const paintPart = paintMeshV2(ml ? pv.items.concat(ml.items) : pv.items, prep, bounds);
     if (paintPart) { parts.paint = paintPart; triangles += paintPart.index.length / 3; }
     // (cortenbosch2) words painted on the street (data/overrides.json roadTexts: "Private Weg" / "Cortenbosch")
     const textPart = o.roadTexts ? roadTextMesh(o.roadTexts, prep, bounds) : null;
     if (textPart) { parts.roadtext = textPart; triangles += textPart.index.length / 3; }
     lap("paint decal");
   }
-  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, roadBend: bend, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
-  if (o.keep) Object.assign(out, { prep, built });
+  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, roadBend: bend, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1",
+    streetModel: streetModel ? { stats: { ...streetModel.stats, engine: { ...streetModel.stats.engine, ids: undefined } }, bareRoads: streetModel.stats.engine?.ids ?? [] } : null };
+  if (o.keep) Object.assign(out, { prep, built, model: streetModel });
   return out;
 }

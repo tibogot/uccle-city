@@ -1,0 +1,23 @@
+{
+  "_": "Parc de la Sauvagère: from the OSM park relation 18270753 (and its barrier=fence way 933248394 all round), the OSM gate nodes and a look-only Street View check (Google car imagery Apr / May 2024; nothing stored, traced or shipped). Our own words and city coordinates (x, z m). tools/parkfence/build.mjs reads it.",
+  "park": "sauvagere",
+  "osm": { "polygon": "relation/18270753", "fence": "way/933248394" },
+  "default": "bars",
+  "stone": 1,
+  "fenceTypes": {
+    "bars": "a plain black steel bar fence ~1.6 m: flat-topped square bars ~12 cm apart between two rails, square posts (the Rue de Verrewinkel side, on the bank above the sidewalk)",
+    "mesh": "dark green welded mesh ~1.8 m on round posts (beside the lodge at the main entrance)",
+    "wall": "a low grey rubble-stone wall ~1.1 m with a hedge on it (south of the main entrance; z grows to the south in city coordinates)"
+  },
+  "sections": [
+    { "type": "wall", "from": [73.1, 1211.9], "to": [66, 1232], "note": "the rubble wall with a hedge on it, south of the main gate (left, seen from the avenue)" },
+    { "type": "mesh", "from": [73.1, 1211.9], "to": [64, 1196], "note": "green mesh along the lodge's garden, north of the main gate (right, seen from the avenue)" }
+  ],
+  "entrances": [
+    { "osm": "node/2194177685", "at": [73.1, 1211.9], "kind": "double", "state": "open", "width": 3.4, "pier": [0.55, 2.3], "name": "main entrance (Avenue de la Chênaie)", "note": "grey rubble-stone piers, a plain black bar double gate open, a cobbled apron in front; the park lodge beside it" },
+    { "osm": "node/1776917441", "at": [-239.4, 1322.0], "kind": "single", "state": "open", "width": 1.2, "pier": [0.45, 2.0], "name": "Rue de Verrewinkel entrance", "note": "a black bar pedestrian gate in the bar fence, open" },
+    { "osm": "node/8650666694", "at": [38.8, 1156.3], "kind": "single", "state": "open", "width": 1.2, "pier": [0.45, 2.0], "opensOnto": "way/14386609", "note": "OSM gate, not checked on Street View; no OSM path through it: it opens straight off Avenue de la Chênaie (a living street, 4 m away) onto the lawn" },
+    { "osm": "node/13874029968", "at": [53.7, 1271.4], "kind": "single", "state": "open", "width": 1.2, "pier": [0.45, 2.0], "note": "OSM gate, not checked on Street View" },
+    { "osm": "node/13874029972", "at": [56.9, 1236.8], "kind": "single", "state": "open", "width": 1.2, "pier": [0.45, 2.0], "note": "OSM gate, not checked on Street View" }
+  ]
+}

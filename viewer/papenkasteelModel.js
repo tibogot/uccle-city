@@ -25,6 +25,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { env } from "./lighting.js";
 import { fadeVariant, SMOOTH } from "./lodFade.js";
+import { wireGeometries, withWire, wireOff, THIN_SLOTS } from "./heroWires.js";   // (claude/defects3, rule 35 round 2: the thin strokes widened + dithered, docs/JITTER.md 6)
+const WIRE_SLOTS = new Set();
 import { libSource } from "./materials/libSwitch.js";
 
 import { withAOKtx2 } from "./aoTexture.js";
@@ -82,6 +84,8 @@ export function loadPapenkasteel() {
       o.geometry.userData.shared = true;
       lods[k].push({ slot: o.material.name, geometry: o.geometry });
     });
+    // (defects3) the straight thin strokes' wire data, off the main thread; the slots that carry one get the wire material
+    (await wireGeometries(lods.flat().map((l) => l.geometry))).forEach((w, i) => { if (w?.wired && THIN_SLOTS.has(lods.flat()[i].slot)) WIRE_SLOTS.add(lods.flat()[i].slot); });
     const tris = lods.map((l) => l.reduce((s, m) => s + (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3, 0));
     const materials = {};
     for (const s of PK_SLOTS) materials[s] = wrapAO(sourceMaterial(SLOT_TABLE[s], lib), aoTex, s);
@@ -177,7 +181,7 @@ function wrapAO(src, aoTex, slot) {
   const foot = length(fwidth(positionWorld));               // ~ metres per pixel (x 1.4-2)
   const k = smoothstep(0.6, 1.6, foot.div(width)).mul(pkLook.thinFar);
   // (the joinery keeps more of its share: the window frames read as a grid from 50 m)
-  const cover = mix(float(1), clamp(width.mul(2.0).div(foot), slot === "wood_frame_white" ? 0.75 : 0.35, 1.0), k);
+  const cover = mix(float(1), clamp(width.mul(2.0).div(foot), slot === "wood_frame_white" ? 0.75 : 0.35, 1.0), k.mul(wireOff()));   // (defects3: a wired stroke keeps its true coverage itself)
   if (slot !== "glass_window") {
     const base = src.colorNode ?? vec3(src.color?.r ?? 1, src.color?.g ?? 1, src.color?.b ?? 1);
     m.userData.farBase = base;                          // (perfgame round 7: farMerge.js bakes the AO-free colour)
@@ -187,6 +191,7 @@ function wrapAO(src, aoTex, slot) {
   m.userData.shared = true;
   m.userData.slot = slot;
   m.userData.farAO = { aoTex, look: pkLook };          // (perfgame round 7: the merged far LOD's AO, farMerge.js)
+  if (WIRE_SLOTS.has(slot)) withWire(m);
   return m;
 }
 

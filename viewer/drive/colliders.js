@@ -15,7 +15,14 @@
 // Sidewalk kerbs are NOT walls: the road engine says "kerbs to sidewalks are climbed"; they are in the ground grid.
 
 export const CELL = 48;
-export const KIND = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5, car: 6, furniture: 7, hedge: 8 };   // (hedge: police feel, a front-garden hedge module: soft for the car, solid on foot)
+export const KIND = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5, car: 6, furniture: 7, hedge: 8, hedgeWall: 9 };   // (hedge: police feel, a front-garden hedge module: soft for the car, solid on foot)
+/** HEDGES SOLID (owner 2026-11-20, rule hedge-wall, docs/CARHIT.md): a dense clipped garden hedge drawn taller than
+ *  HEDGE_WALL_H stops every vehicle as a wall (KIND.hedgeWall: a soft bounce, the hedge shakes, carEnv.js); a lower one
+ *  stays KIND.hedge (the car pushes through, slowed). ?hedgewall=old = every hedge module soft, as before. h = the
+ *  module's drawn height (its instance's y scale, gardenHedge.js hedgeInstancesGen Hm), not its sheared box height. */
+export const HEDGE_WALL_H = 1.18;   // (the data: 1.1 m hedges + their foot drop stay under it, 1.2 m and up are over)
+export const HEDGE_WALL_OLD = typeof location !== "undefined" && /[?&]hedgewall=old(&|$)/.test(location.search);
+export const hedgeKind = (h, old = HEDGE_WALL_OLD) => !old && h > HEDGE_WALL_H ? KIND.hedgeWall : KIND.hedge;
 
 /**
  * Build a collider set from plain lists.
@@ -317,7 +324,7 @@ export function heightClear(col, id, y) {
   // under / beside them as an infinitely tall invisible wall)
   if (id >= col.P || !Number.isFinite(y)) return false;
   const k = col.pkind[id];
-  return (k === KIND.wall || ((k === KIND.furniture || k === KIND.hedge) && !FURN_HEIGHT_OLD)) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
+  return (k === KIND.wall || ((k === KIND.furniture || k === KIND.hedge || k === KIND.hedgeWall) && !FURN_HEIGHT_OLD)) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
 }
 const FURN_HEIGHT_OLD = typeof location !== "undefined" && /[?&]furnheight=old(&|$)/.test(location.search);
 
@@ -334,7 +341,7 @@ export function heightClearP(col, id) {
   const y = HC.y;
   if (id >= col.P || !Number.isFinite(y)) return false;
   const k = col.pkind[id];
-  return (k === KIND.wall || ((k === KIND.furniture || k === KIND.hedge) && !FURN_HEIGHT_OLD)) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
+  return (k === KIND.wall || ((k === KIND.furniture || k === KIND.hedge || k === KIND.hedgeWall) && !FURN_HEIGHT_OLD)) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
 }
 
 /** Contact of the car body with item `id` of `col`. body = { hx, hz, cos, sin }. */
@@ -793,12 +800,22 @@ export function tramPlatformSurface(feats, hm, ground, bounds, carve) {
 /** Height of the drivable surface at (x, z) (bilinear over the 1 m grid): hm = the tile's Heightmap, delta from
  *  driveGround (or the { delta, delta2 } object). near = the car's height: where the grid has two layers (a street under
  *  a deck) each corner takes the layer nearer to it. */
+// (claude/allocrate2, rule alloc-rate; ?allocsmall=old: a closure v(k) a call, ~17 KB a frame flying) one grid corner of
+// driveHeight: the same expression as its v(k), a module function (no closure, no context)
+const ALLOC_SMALL = new URLSearchParams(globalThis.location?.search || "").get("allocsmall") !== "old";
+function layerY(Y, d1, d2, near, k) {
+  const a = Y[k] + d1[k] * 0.01;
+  if (!d2 || near == null || d2[k] === 65535) return a;
+  const b = Y[k] + d2[k] * 0.01;
+  return Math.abs(b - near) < Math.abs(a - near) ? b : a;
+}
 export function driveHeight(hm, delta, x, z, near = null) {
   const d2 = delta?.delta2, d1 = delta?.delta ?? delta;
   const h = hm.h, Y = hm.y;
   const c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1), r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1);
   const c0 = Math.min(Math.floor(c), h.cols - 2), r0 = Math.min(Math.floor(r), h.rows - 2);
   const fc = c - c0, fr = r - r0, i = r0 * h.cols + c0, j = i + h.cols;
+  if (ALLOC_SMALL) return (layerY(Y, d1, d2, near, i) * (1 - fc) + layerY(Y, d1, d2, near, i + 1) * fc) * (1 - fr) + (layerY(Y, d1, d2, near, j) * (1 - fc) + layerY(Y, d1, d2, near, j + 1) * fc) * fr;
   const v = (k) => {
     const a = Y[k] + d1[k] * 0.01;
     if (!d2 || near == null || d2[k] === 65535) return a;

@@ -8,7 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { measure, bestOf } from "./gate/timing.mjs";
+import { measure, bestOf, timed, gateExit } from "./gate/timing.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const imp = (f) => import(pathToFileURL(path.join(ROOT, f)).href);
 const quiet = process.argv.includes("--quiet");
@@ -151,7 +151,7 @@ const run = (m, c, kind = "car", H = null, frames = 30, after = null) => {
   check("zero allocation per update", !globalThis.gc || grow < 64 * 1024, globalThis.gc ? `heap ${(grow / 1024).toFixed(1)} KB after ${N} updates + renders` : "(run with --expose-gc to measure)");
   const MT = await measure(() => bestOf(3, updates));
   ms = Math.min(ms, MT.value);
-  check("cost < 0.05 ms per update", ms < 0.05 * MT.k, `${(ms * 1000).toFixed(2)} us per update (4 wheels marking; best of 4, ${MT.note})`);
+  check("cost < 0.05 ms per update", timed(ms < 0.05 * MT.k), `${(ms * 1000).toFixed(2)} us per update (4 wheels marking; best of 4, ${MT.note})`);
 }
 
 // ---- 5. the material compiles to WGSL (headless) with the fade
@@ -170,4 +170,4 @@ try {
 } catch (e) { check("material compiles to WGSL with the age fade", false, e.message.split("\n")[0]); }
 
 console.log(fails ? `tyremarks: ${fails} FAIL` : "tyremarks: all PASS");
-process.exit(fails ? 1 : 0);
+process.exit(gateExit(fails));   // (75: only timing verdicts failed, rule timing-rows-alone)

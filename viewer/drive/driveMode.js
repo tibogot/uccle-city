@@ -19,7 +19,7 @@ export const CARCTL_OLD = /[?&]carctl=old(&|$)/.test(location.search);
 /** ?carfeel=old: the car's handling before the police-feel round (docs/POLICE_FEEL.md): carPhysics.js stepCar, kerb
  *  islands / any rise over 0.5 m as walls, hedges solid, posts stop the car, parked cars immovable, the old camera */
 export const CARFEEL_OLD = /[?&]carfeel=old(&|$)/.test(location.search);
-import { addCircles, buildColliders, extendColliders, gather, pointInBuilding, setBox, KIND } from "./colliders.js";
+import { addCircles, buildColliders, extendColliders, gather, pointInBuilding, setBox, KIND, hedgeKind } from "./colliders.js";
 import { surfaceLayers } from "./surfaceLayers.js";
 import { moverGroundY } from "./moverGround.js";
 import { carFleet } from "../carFleet.js";
@@ -115,7 +115,7 @@ export function featureColliders(features, bounds) {
     const n = m.name || "", p = m.parent?.name || "";
     const kind = n === "parked-cars" ? "car" : /^furniture-(stopPole|signal|sign|platepost)$/.test(n) || n === "tram-poles" || n === "rail-masts" ? "pole"
       : /^furniture-(bench|bikes|shelter|adpanel|bikebox|bin|glassbank|gardenwall|gardenpillar|gardengate|gardenhedge|fuel|terrace|villo|streetprop|twowheel)$/.test(n) || (p === "tram" && !n) ? "box" : null;
-    const fkind = n === "furniture-gardenhedge" ? KIND.hedge : KIND.furniture;
+    const isHedge = n === "furniture-gardenhedge", fkind = isHedge ? KIND.hedge : KIND.furniture;
     if (!kind) return;
     if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
     const bb = m.geometry.boundingBox;
@@ -153,13 +153,14 @@ export function featureColliders(features, bounds) {
         // a plain box (garden walls / pillars / gates: 12 triangles on its bounding box): its plan rectangle, placed by
         // the instance's whole matrix, when it stands at least 0.30 m tall (the bottom of the car band)
         if (isBox(m.geometry)) {
-          if (cS.setFromMatrixColumn(W, 1).length() * (bb.max.y - bb.min.y) < BAND_LO) continue;
+          const drawnH = cS.setFromMatrixColumn(W, 1).length() * (bb.max.y - bb.min.y);
+          if (drawnH < BAND_LO) continue;
           // (at least one 0.25 m grid cell thick, as the raster made them: a thin wall is not tunnelled through)
           const sx = cS.setFromMatrixColumn(W, 0).length() || 1, sz = cS.setFromMatrixColumn(W, 2).length() || 1;
           const cx = (bb.min.x + bb.max.x) / 2, cz = (bb.min.z + bb.max.z) / 2;
           const hx = Math.max((bb.max.x - bb.min.x) / 2, MIN_HALF / sx), hz = Math.max((bb.max.z - bb.min.z) / 2, MIN_HALF / sz);
           v.set(cx, bb.min.y, cz).applyMatrix4(W); const base = v.y; v.set(cx, bb.max.y, cz).applyMatrix4(W); const top = v.y;
-          polys.push({ rings: [[[cx - hx, cz - hz], [cx + hx, cz - hz], [cx + hx, cz + hz], [cx - hx, cz + hz]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; })], kind: fkind, base, top, ref });
+          polys.push({ rings: [[[cx - hx, cz - hz], [cx + hx, cz - hz], [cx + hx, cz + hz], [cx - hx, cz + hz]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; })], kind: isHedge ? hedgeKind(drawnH) : fkind, base, top, ref });   // (a hedge over HEDGE_WALL_H: a wall, rule hedge-wall)
           counts.furniture++;
           continue;
         }
@@ -227,7 +228,9 @@ export class Driver {
     this.ground = (x, z) => moverGroundY(this.world.decks, this.world.at(x, z), x, z, this.groundHint ?? (this.on && this.state ? this.state.y : null));
     // drivecheck (rule 27 provisional): the place's surface layers with no car in them (surfaceLayers.js): what
     // the hero colliders measure their car band from (heroColliders.js; ?heroground=old: this.ground, the car's layer)
-    this.groundLayers = (x, z) => { const t = this.world.at(x, z); return surfaceLayers(this.world.decks, t.hm, t.drive?.ground, x, z); };
+    // (?surfout=old: a new answer a point; the reader, heroColliders.js layerFns, takes its fields at once)
+    const layersOut = { top: 0, low: NaN, deck: false };
+    this.groundLayers = (x, z) => { const t = this.world.at(x, z); return surfaceLayers(this.world.decks, t.hm, t.drive?.ground, x, z, layersOut); };
     this.sets = (x, z, r) => {
       const out = this._sets ||= [];
       out.length = 0;

@@ -10,12 +10,32 @@ const ok = (c, msg) => { console.log(`${c ? "PASS" : "FAIL"} ${msg}`); if (!c) f
 const { xmasActive, buildSpans, XmasField } = await import("../../viewer/christmas/xmasCity.js");
 const THREE_ = await import("three/webgpu");
 const P = (s) => new URLSearchParams(s);
-ok(xmasActive(P(""), new Date(2026, 11, 1)) === true, "1 Dec: on");
-ok(xmasActive(P(""), new Date(2026, 10, 30)) === false, "30 Nov: off");
-ok(xmasActive(P(""), new Date(2027, 0, 6)) === true, "6 Jan: on");
-ok(xmasActive(P(""), new Date(2027, 0, 7)) === false, "7 Jan: off");
+ok(xmasActive(P(""), new Date(2026, 11, 1, 12)) === true, "1 Dec: on");
+ok(xmasActive(P(""), new Date(2026, 10, 30, 12)) === false, "30 Nov: off");
+ok(xmasActive(P(""), new Date(2027, 0, 6, 12)) === true, "6 Jan: on");
+ok(xmasActive(P(""), new Date(2027, 0, 7, 12)) === false, "7 Jan: off");
 ok(xmasActive(P("xmas=1"), new Date(2026, 6, 1)) === true && xmasActive(P("xmas=0"), new Date(2026, 11, 24)) === false, "?xmas=1 / ?xmas=0 force");
 ok(xmasActive(P("day=350"), new Date(2026, 6, 1)) === true && xmasActive(P("day=200"), new Date(2026, 11, 24)) === false, "?day= decides when given");
+// (claude/xmasreview) the season follows BRUSSELS' calendar, whatever the visitor's time zone (instants in UTC)
+{
+  const U = (y, mo, d, h, mi = 0) => new Date(Date.UTC(y, mo, d, h, mi));
+  ok(xmasActive(P(""), U(2026, 10, 30, 23, 30)) === true, "30 Nov 23:30 UTC = 1 Dec 00:30 in Brussels: on");
+  ok(xmasActive(P(""), U(2026, 10, 30, 22, 30)) === false, "30 Nov 22:30 UTC = 23:30 in Brussels: still off");
+  ok(xmasActive(P(""), U(2027, 0, 6, 22, 30)) === true && xmasActive(P(""), U(2027, 0, 6, 23, 30)) === false, "6 Jan 23:30 Brussels on, 7 Jan 00:30 Brussels off");
+  ok(xmasActive(P("xmas=0"), U(2026, 11, 24, 12)) === false && xmasActive(P("xmas=1"), U(2026, 6, 1, 12)) === true, "?xmas=0 / ?xmas=1 still force it under the Brussels date");
+  const { brusselsDate } = await import("../../viewer/christmas/xmasDate.js");
+  const b = brusselsDate(U(2026, 11, 31, 23, 30));
+  ok(b.month === 0 && b.day === 1, `brusselsDate: 31 Dec 23:30 UTC is 1 Jan in Brussels (${b.month + 1}/${b.day})`);
+}
+// (claude/xmasreview, rule joins) the fir's foot is the lowest ground under its planter, not the centre's
+{
+  const { treeFootY, PLANTER_R } = await import("../../viewer/christmas/xmasCity.js");
+  const slope = (x, z) => 70 + 0.012 * x + 0.004 * z;              // a 1.3 % slope, as Place de Saint-Job's paving
+  const t = { x: 0, z: 0, scale: 1 }, y = treeFootY(t, slope);
+  let lo = Infinity; for (let k = 0; k < 64; k++) { const a = (k * Math.PI) / 32; lo = Math.min(lo, slope(Math.cos(a) * PLANTER_R, Math.sin(a) * PLANTER_R)); }
+  ok(y <= lo + 0.002 && y < slope(0, 0), `fir foot: the planter's lowest rim point on a slope (${y.toFixed(3)} vs rim min ${lo.toFixed(3)}, centre ${slope(0, 0).toFixed(3)})`);
+  ok(/t\.y = treeFootY\(t, \(x, z\) => world\.walkY\(x, z\)\) - 0\.02/.test(fs.readFileSync(new URL("../../viewer/christmas/xmasCity.js", import.meta.url), "utf8")), "the city sets each fir on treeFootY (the planter's lowest ground)");
+}
 
 // ---- the kit
 const { loadXmasKit } = await import("../../viewer/christmas/xmasKit.js");
@@ -37,6 +57,27 @@ for (const s of [...slots, ...EXTRA]) for (const uvs of [true, false]) for (cons
 ok(built === (slots.size + EXTRA.length) * 4, `${built} materials built for ${slots.size} slots + ${EXTRA.join(", ")}: ${[...slots].join(", ")}`);
 const emissive = ["bulb_warm", "led_rope", "star_glow"].every((s) => kit.slotMaterial(s, { instanced: true }).emissiveNode);
 ok(emissive, "LEDs, LED rope and the star glow (emissive only: no light added)");
+// (claude/xmasreview, rule xmas-night-glow) the LEDs' glow on the foliage and baubles: an emissive term x env.uNight
+// (0 by day) on the needle cards' LIT pass (single and colour), the solid fronds and the baubles; never on the depth twin
+{
+  const { FIR_GLOW, xmasLook: LK } = await import("../../viewer/christmas/xmasKit.js");
+  const { env } = await import("../../viewer/lighting.js");
+  const uses = (node, target, seen = new Set(), depth = 0) => {
+    if (!node || typeof node !== "object" || seen.has(node) || depth > 40) return false;
+    if (node === target) return true;
+    seen.add(node);
+    for (const v of Object.values(node)) if (v && typeof v === "object" && (v.isNode || Array.isArray(v)) && uses(v, target, seen, depth + 1)) return true;
+    return false;
+  };
+  const glowM = [kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false, pass: "colour" }), kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: true }),
+    kit.slotMaterial("fir_needles", { uvs: true, instanced: true }), kit.slotMaterial("fir_needles", { uvs: false, instanced: true }), kit.slotMaterial("bauble", { instanced: true }),
+    kit.slotMaterial("chalet_wood", { instanced: true }), kit.slotMaterial("chalet_trim", { instanced: true }), kit.slotMaterial("sign_board", { instanced: true })];
+  ok(FIR_GLOW && glowM.every((m) => m.userData.ledGlow && m.emissiveNode && uses(m.emissiveNode, env.uNight) && (uses(m.emissiveNode, LK.glow) || uses(m.emissiveNode, LK.glint) || uses(m.emissiveNode, LK.stall))),
+    "LED glow: the needle cards (lit passes), the solid fronds (near + far), the baubles and the chalets' fronts take albedo x LED warm x glow / glint / stall x env.uNight");
+  ok(!kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false, pass: "depth" }).emissiveNode, "LED glow: never on the cards' depth twin");
+  ok(/export const FIR_GLOW = QS\.get\("firglow"\) !== "0";/.test(fs.readFileSync(new URL("../../viewer/christmas/xmasKit.js", import.meta.url), "utf8")) && /on\("firglow"/.test(fs.readFileSync(new URL("../../viewer/features.js", import.meta.url), "utf8")),
+    "LED glow: ?firglow=0 = the shader of before (xmasKit.js FIR_GLOW, features row firglow)");
+}
 
 // ---- RULE 19 (needle cards): the fir's near level is alpha-tested needle cards with CANOPY normals; the far levels
 // have none. Why: the first fir was solid lumpy sleeves with a stroke pattern: lit by their own surface, they read as
@@ -83,6 +124,17 @@ ok(emissive, "LEDs, LED rope and the star glow (emissive only: no light added)")
     ok(d.maskNode && d.colorWrite === false && d.depthWrite !== false && d.side === 2 && d.contextNode?.value?.invariant === true && !d.transparent
       && !c.maskNode && c.maskShadowNode && c.depthFunc === THREE_.EqualDepth && c.depthWrite === false && c.side === 2 && c.normalNode && c.contextNode?.value?.invariant === true && !c.transparent,
       `fir cards pre-pass (${fade ? "fade" : "solid"} set): twin = depth only (alpha + band mask, no colour, @invariant), lit = EQUAL depth, no discard, no depth write, @invariant, shadow mask kept`);
+  }
+  // FIR ROUND 4 (claude/xmas3): the cards' lit materials (solid, fade, one-pass) take the foliage light path (sun / moon +
+  // sky: foliageLights), the depth twin and every other slot do not; the ?firlight=old variant is its own material
+  {
+    const { XMAS_LIGHT } = await import("../../viewer/christmas/xmasKit.js");
+    const lit = [true, false].flatMap((fade) => [kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: fade, pass: "colour" }), kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: fade })]);
+    const twin = kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false, pass: "depth" });
+    const others = ["fir_needles", "fir_bark", "bauble", "bulb_warm", "gold_metal", "star_glow", "chalet_wood"].map((s) => kit.slotMaterial(s, { instanced: true }));
+    const oldM = kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false, pass: "colour", light: { cards: false } });
+    ok(XMAS_LIGHT.cards === true && lit.every((m) => m.userData.foliageLights === true) && !twin.userData.foliageLights && others.every((m) => !m.userData.foliageLights) && oldM !== lit[2] && !oldM.userData.foliageLights,
+      "fir light: the cards' lit materials take the sun / moon + sky only (?firlight=old: every light, its own material); the twin and the other slots unchanged");
   }
   ok(FIR.prepass === true && FIR.shadow === "far" && XMAS_SHADOW_LAYER > 0 && XMAS_SHADOW_LAYER < 32, `fir switches default: pre-pass on (?firprepass=0: one pass), shadow from the far level (?firshadow=cards: each level its own), shadow layer ${XMAS_SHADOW_LAYER}`);
   // the 45 m switch: a dithered cross-fade over the band's last LOD_FADE (39.6-45 m), card crown on BOTH sides
@@ -157,5 +209,30 @@ const expect = [0, 1, 2].map((k) => { let n = 0; for (let i = 0; i < 50; i++) { 
 ok(field.stats.drawn.join() === expect.join(), `swags bucketed per level ${field.stats.drawn.join(" / ")} (expected ${expect.join(" / ")}), ${field.stats.draws} draws`);
 const empty = Object.values(field.levels).flatMap((L) => L.flatMap((lv) => [...lv.solid.meshes, ...lv.fade.meshes])).filter((im) => im.count === 0 && im.visible).length;
 ok(empty === 0, "empty instanced meshes are hidden (no draw)");
+
+// ---- (claude/xmas4, plan jobs 5 + 7) the pole garlands' poles and the December windows
+{
+  const { buildPoleGeometry, hookPoint, POLE_TOP } = await import("../../viewer/christmas/xmasCity.js");
+  const g = buildPoleGeometry([{ x: 10, y: 50, z: 20, h: 6.2 }, { x: 30, y: 52, z: 20, h: 5.5 }]);
+  const Y = g.attributes.position.array; let y0 = Infinity, y1 = -Infinity;
+  for (let i = 1; i < Y.length; i += 3) if (Math.abs(Y[i - 1] - 10) < 1) { y0 = Math.min(y0, Y[i]); y1 = Math.max(y1, Y[i]); }
+  ok(Math.abs(y0 - 50) < 1e-4 && Math.abs(y1 - (50 + 6.2 + POLE_TOP + 0.12)) < 1e-3 && g.attributes.color.itemSize === 4 && g.index.count / 3 < 600,
+    `a Christmas pole stands on its foot (${y0.toFixed(3)}) and reaches its hook + ${POLE_TOP} m + the cap (${y1.toFixed(2)}); the spans' attributes; ${g.index.count / 3} triangles for 2 poles`);
+  const hp = hookPoint({ x: 0, z: 0 }, 6, { x: 10, z: 0 });
+  ok(Math.abs(hp[0] - 0.08) < 1e-9 && hp[1] === 6, "the wire meets the pole's surface toward the other end (8 cm off the axis)");
+  const pd = JSON.parse(fs.readFileSync(new URL("../../models/christmas/poles.json", import.meta.url), "utf8"));
+  const psp = buildSpans(pd.spans.map((s) => ({ a: hookPoint(s.a, 50 + s.a.h, s.b), b: hookPoint(s.b, 50 + s.b.h, s.a), sag: s.sag, motif: false })));
+  ok(pd.spans.length >= 10 && psp.bulbs.attributes.position.count / 6 > 200, `the pole garlands build with the street garlands' code: ${pd.spans.length} garlands, ${psp.bulbs.attributes.position.count / 6} LEDs`);
+  const W = await import("../../viewer/christmas/xmasWindows.js");
+  const D = (y, mo, d) => new Date(y, mo, d, 12);
+  ok(W.xmasWinOn(P(""), D(2026, 11, 1)) && !W.xmasWinOn(P(""), D(2026, 10, 30)) && !W.xmasWinOn(P("xmas=0"), D(2026, 11, 24)) && !W.xmasWinOn(P("xmas=1&xmaswin=0"), D(2026, 11, 24)) && W.xmasWinOn(P("xmas=1"), D(2026, 6, 1)),
+    "December windows compiled in with the layer only (1 Dec on, 30 Nov off, ?xmas=0 off, ?xmaswin=0 off, ?xmas=1 on)");
+  ok(W.xmasWin.value === 0, "the December windows' uniform is 0 until the layer starts (and stays 0 when it is off)");
+  const fsrc = fs.readFileSync(new URL("../../viewer/facades.js", import.meta.url), "utf8");
+  ok(/if \(!XMAS_WIN\.on\) return vec4\(col\.mul\(warm\)\.mul\(mix\(float\(0\.85\), float\(1\.35\), lit\)\), litRoom\.mul\(emit\)\);/.test(fsrc) && /If\(xmasWin\.greaterThan\(0\.5\)/.test(fsrc),
+    "facades.js interiorRoom: the shader of before when the layer is off (an early return, the same expression), the strings behind If(xmasWin > 0.5)");
+  // (the lit set and its colour unchanged: the night's CPU copy, litHash.js, must still match the shader)
+  ok(!/XMAS|xmas/.test(fs.readFileSync(new URL("../../viewer/nightLights/litHash.js", import.meta.url), "utf8")), "litHash.js (the lit windows' CPU copy) untouched: the December strings are decorations, not lit rooms");
+}
 console.log(fails ? `${fails} FAIL` : "all PASS");
 process.exit(fails ? 1 : 0);

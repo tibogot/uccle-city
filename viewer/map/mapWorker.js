@@ -319,18 +319,18 @@ function full(m) {
   // landmarks first (their boxes keep the street names clear); heroes always, the rest when zoomed in
   ctx.font = `700 11px ${FONT}`;
   const pins = [];
-  const rank = { hero: 0, station: 1, church: 2, castle: 3 };
+  const rank = { enter: -1, hero: 0, station: 1, church: 2, castle: 3 };   // (villamark: the places you can walk into first, at every zoom)
   const lms = [...M.landmarks].sort((a, b) => rank[a.kind] - rank[b.kind]);
   for (const lm of lms) {
-    if (lm.kind !== 'hero' && s < (lm.kind === 'station' ? 0.12 : 0.35)) continue;
+    if (lm.kind !== 'hero' && lm.kind !== 'enter' && s < (lm.kind === 'station' ? 0.12 : 0.35)) continue;
     const lx = v.toX(lm.x), ly = v.toY(lm.z);
     if (Math.abs(lx) > m.w * 0.49 || Math.abs(ly) > m.h * 0.49) continue;
-    const r = lm.kind === 'hero' ? 7.5 : 6;
+    const r = lm.kind === 'hero' || lm.kind === 'enter' ? 7.5 : 6;
     pins.push({ lm, lx, ly, r, text: lang === 'nl' ? lm.nl : lm.fr, side: 0 });
   }
   for (const p of pins) placed.push([p.lx - p.r - 2, p.ly - p.r - 2, p.lx + p.r + 2, p.ly + p.r + 2]);   // every pin first
   for (const p of pins) {        // then its name, right of the pin, else left
-    if (!(p.lm.kind === 'hero' || p.lm.kind === 'station' || s > 0.5)) continue;
+    if (!(p.lm.kind === 'hero' || p.lm.kind === 'enter' || p.lm.kind === 'station' || s > 0.5)) continue;
     const lw = tw.textWidth(ctx, p.text) + 6;
     for (const side of [1, -1]) {
       const box = side > 0 ? [p.lx + p.r + 2, p.ly - 8, p.lx + p.r + 4 + lw, p.ly + 7] : [p.lx - p.r - 4 - lw, p.ly - 8, p.lx - p.r - 2, p.ly + 7];
@@ -379,7 +379,7 @@ function full(m) {
       ctx.textAlign = p.side > 0 ? 'left' : 'right';
       const tx = p.lx + p.side * (p.r + 4);
       ctx.lineWidth = 3; ctx.strokeStyle = PAL.label.halo; ctx.strokeText(p.text, tx, p.ly);
-      ctx.fillStyle = p.lm.kind === 'hero' ? PAL.hero : '#ffffff'; ctx.fillText(p.text, tx, p.ly);
+      ctx.fillStyle = p.lm.kind === 'hero' ? PAL.hero : p.lm.kind === 'enter' ? PAL.enter : '#ffffff'; ctx.fillText(p.text, tx, p.ly);
     }
   }
   const bitmap = fullCanvas.transferToImageBitmap();

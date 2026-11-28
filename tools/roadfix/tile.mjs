@@ -21,7 +21,7 @@ globalThis.fetch = async (u, o) => {
 // land cover (viewer/landcover.js) paints on an OffscreenCanvas: a no-op stand-in (the land cover is not checked here)
 if (!globalThis.OffscreenCanvas) globalThis.OffscreenCanvas = class { constructor(w, h) { this.width = w; this.height = h; }
   getContext() { return new Proxy({}, { get: (t, k) => (k === "getImageData" ? (x, y, w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }) : () => {}), set: () => true }); } };
-const { buildTileData } = await import(pathToFileURL(join(ROOT, "viewer/tileData.js")).href);
+const { tileData: buildTileData } = await import(pathToFileURL(join(ROOT, "tools/gate/tileBuild.mjs")).href);     // (the worker build through the gate tile cache, rule tile-cache)
 const manifest = JSON.parse(readFileSync(join(ROOT, "data/tiles/manifest.json"), "utf8"));
 export const tiles = manifest.tiles.filter((t) => t.status === "built");
 export const entryOf = (T) => tiles.find((t) => t.name === T);
@@ -34,6 +34,8 @@ export async function buildTile(T, opts = {}) {
   const entry = { ...e, hide: ["https://databrussels.be/id/building/1587133"], ponds: [], surface: true, pits: true, kit: false, streetlife: false, grass: false,
     rail: true, bridges2: true, railFix: true, driveLegacy: false, driveKeepHidden: false, padRoads: true,
     // JOINS2_OLD=1 (docs/JOINS2.md): the joins2 round's worker changes off (weld / clamp, street height clamp, sidewalk fill, cellar)
-    ...(process.env.JOINS2_OLD ? { groundWeld: false, surfH: false, sidewalkFill: false, cellar: false, groundSdf: false } : {}), ...opts };
+    ...(process.env.JOINS2_OLD ? { groundWeld: false, surfH: false, sidewalkFill: false, cellar: false, groundSdf: false } : {}),
+    ...(process.env.FOOTBRIDGE_OLD ? { footbridge: false } : {}),          // (claude/footbridge: ?footbridge=old for any node check)
+    ...opts };
   return buildTileData(entry, BASE);
 }

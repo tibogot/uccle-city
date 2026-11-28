@@ -43,7 +43,7 @@ const sk = json(join(ROOT, "data/streetkit", `${T}.json`)) || {};
 const r2 = (v) => Math.round(v * 100) / 100, r4 = (v) => Math.round(v * 1e4) / 1e4;
 const rise = (x0, z0, x1, z1) => (fit ? fit.lift(x1, z1) - fit.lift(x0, z0) : 0) + ground(x1, z1) - ground(x0, z0);
 const bad = (x, z) => lanes.inside(x, z, 0) || tracks.dist(x, z) < TRAM_CLEAR;
-const out = { tile: T, plates: [], posts: [], postboxes: [], villo: [], stuck: { plates: 0, postboxes: 0, villoPieces: 0 }, dropped: { docks: 0, bikes: 0, totems: 0 } };
+const out = { tile: T, plates: [], posts: [], postboxes: [], glass: [], villo: [], stuck: { plates: 0, postboxes: 0, villoPieces: 0 }, dropped: { docks: 0, bikes: 0, totems: 0 } };
 // the original spot of an item (its `was` when an earlier pass moved it)
 const orig = (p) => (p.was ? { x: p.was[0], y: p.was[1], z: p.was[2], ...(p.was.length > 3 ? { nx: p.was[3], nz: p.was[4] } : {}) } : p);
 
@@ -71,6 +71,15 @@ const posts = sk.posts || [];
   out.postboxes.push([i, r2(r.x), r2(b.y + rise(b.x, b.z, r.x, r.z)), r2(r.z), r4(r.nx), r4(r.nz)]);
 });
 
+// ---- (defects3) the street life's underground glass chutes (drawn by the street-life layer, never snapped): as the boxes
+(sl.glass || []).forEach((g0, i) => {
+  if (!g0.underground) return;                         // (the overground banks: data/furniture banks, snapped at load)
+  const g = orig(g0);
+  const r = offLane(g.x, g.z, lanes, fit, OPT);
+  if (!r.moved) { if (bad(g.x, g.z)) out.stuck.glass = (out.stuck.glass || 0) + 1; return; }
+  out.glass.push([i, r2(r.x), r2(g.y + rise(g.x, g.z, r.x, r.z)), r2(r.z), r4(r.nx), r4(r.nz)]);
+});
+
 // ---- Villo stations (rule 30, round 2): ONE straight row on paving, never bent round a corner, never on a lawn / verge.
 // A station is kept as built (build_streetkit.py place_villo, or its `alt`: turned to the nearest sidewalk) when every
 // dock and its bike stand on paving (measured sidewalk / square, or the parking lane for a "lane" station), clear of the
@@ -79,7 +88,11 @@ const posts = sk.posts || [];
 // terminal), the station's own mode first; else it is dropped (logged by build_streetkit.py).
 const PAVE = new Set([3, 4, 5]), SIDE = new Set([4, 5]), LANE = new Set([3]);
 const cls = (x, z) => (fit ? fit.classAt(x, z) : -1);
-const h01 = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h / 4294967296; };
+// (fixes4: + a finaliser when not ROW_OLD: plain FNV-1a of "<id>:<i>" barely moves with i, Vanderkindere's 8 relaid docks
+// all came out empty, 3 bikes in 23 before)
+const h01 = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  if (!process.argv.includes("--villorow-old")) { h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; h >>>= 0; }
+  return h / 4294967296; };
 const floorY = (x, z) => ground(x, z) + (fit ? fit.lift(x, z) : 0);
 // (round 3) the parking bays (tools/streetkit/parkBays.mjs: the parked cars' own slots, off the tram road): a "lane"
 // station's row may stand there (main.js's parked cars keep off its area: cityStreetKit.keepCarsClear)
@@ -88,6 +101,17 @@ const { parkBays, bayAvoid } = await import("./parkBays.mjs");
 const BAYS = fit ? parkBays(widthParking(S.roads, S.feats, S.bounds, fit).sites, cls, (x, z) => tracks.dist(x, z), TRAM_CLEAR, bayAvoid(S.feats)) : { bay: () => false };
 const okSpot = (x, z) => !bad(x, z) || BAYS.bay(x, z);           // out of the lanes / off the tracks, or in a parking bay
 const paved = (x, z) => PAVE.has(cls(x, z)) || BAYS.bay(x, z);
+// (claude/fixes4, rule villo-row-clear; ROW_OLD = --villorow-old: as before) the row's whole footprint, not 3 points on
+// each dock's centre line: every dock base's corners + both tyres on the mode's paving (a sidewalk row on sidewalk /
+// square, a lane row in the parking lane or a bay: Rond-Point Churchill's end dock hung its base over the kerb where it
+// bends away, Gare de Calevoet's over a tree pit and the bus road), and nothing the city draws standing in it (poles,
+// trunks, bollards, furniture: tools/streetkit/villoThings.mjs; the lamps keep out of the rows at load)
+const ROW_OLD = process.argv.includes("--villorow-old");
+const { villoCorners, villoObstacleHit } = await imp("viewer/streetkit/villoFootprint.js");
+const { villoThings } = await import("./villoThings.mjs");
+const THINGS = ROW_OLD ? [] : await villoThings(S, { ...sk, posts: posts.map((q, k) => { const m = out.posts.find((e) => e[0] === k); return m ? { ...q, x: m[1], z: m[3] } : q; }) });
+const onGround = (mode, x, z) => (mode === "lane" ? (LANE.has(cls(x, z)) && !bad(x, z)) || BAYS.bay(x, z) : SIDE.has(cls(x, z)) && !bad(x, z));
+const rowClear = (v, mode) => ROW_OLD || (villoCorners(v).every(([x, z]) => onGround(mode, x, z)) && !THINGS.some((t) => villoObstacleHit(v, t.x, t.z, t.r, 0.05)));
 /** the station's row as drawn: { offPaving, bent } (measured tiles only) */
 function villoQuality(v) {
   if (!fit || !v.docks.length) return { offPaving: 0, bent: false, bad: 0 };
@@ -95,8 +119,10 @@ function villoQuality(v) {
   let offPaving = 0, badN = 0;
   for (const d of v.docks) {
     if (!paved(d.x, d.z) || !paved(d.x + nx * 1.5, d.z + nz * 1.5)) offPaving++;
+    if (!ROW_OLD && !rowClear({ docks: [d] }, v.mode)) offPaving++;
     if (!okSpot(d.x, d.z)) badN++;
   }
+  if (!ROW_OLD && v.totem && !rowClear({ docks: [], totem: v.totem }, v.mode)) badN++;
   for (const b of v.bikes) if (!okSpot(b.x, b.z)) badN++;
   if (v.totem && !okSpot(v.totem.x, v.totem.z)) badN++;
   // straight: every dock within 0.3 m of the line through the row's two ends
@@ -109,7 +135,7 @@ function layout(v, anchor, totem0, R = 10) {
   // every kerb near the point (probed from it and from rings of 3 / 6 / 9 m round it): the longest row wins, then the
   // one nearest the point
   const kerbs = [];
-  for (const r of [0, 3, 6, 9, 12].filter((r) => r < R)) for (let j = 0; j < (r ? 16 : 1); j++) {
+  for (const r of [0, 3, 6, 9, 12, 15].filter((r) => r < R)) for (let j = 0; j < (r ? 16 : 1); j++) {
     const a = (j * Math.PI) / 8, k = fit.nearKerb(anchor.x + Math.cos(a) * r, anchor.z + Math.sin(a) * r, 4);
     if (k && !kerbs.some((q) => Math.hypot(q.x - k.x, q.z - k.z) < 1 && q.tx * k.tx + q.tz * k.tz > 0.95)) kerbs.push(k);
   }
@@ -126,7 +152,9 @@ function layoutOn(v, anchor, totem0, k, atLeast, R) {
   // the kerb point nearest the anchor along the kerb's line
   const s0 = (anchor.x - k.x) * k.tx + (anchor.z - k.z) * k.tz, Kx = k.x + k.tx * s0, Kz = k.z + k.tz * s0;
   const stands = Math.min(40, Math.max(6, +v.stands || 10));
-  const modes = v.mode === "lane" ? [["lane", -0.3, LANE], ["sidewalk", 1.95, SIDE], ["sidewalk", 1.6, SIDE]] : [["sidewalk", 1.95, SIDE], ["sidewalk", 1.6, SIDE], ["lane", -0.3, LANE]];
+  // (fixes4) + a sidewalk row further back (2.4 / 2.8 m: the bikes' fronts clear of a bollard / lamp line at the kerb)
+  const side = ROW_OLD ? [["sidewalk", 1.95, SIDE], ["sidewalk", 1.6, SIDE]] : [["sidewalk", 1.95, SIDE], ["sidewalk", 1.6, SIDE], ["sidewalk", 2.4, SIDE], ["sidewalk", 2.8, SIDE]];
+  const modes = v.mode === "lane" ? [["lane", -0.3, LANE], ...side] : [...side, ["lane", -0.3, LANE]];
   for (let N = stands; N >= Math.max(6, atLeast); N--) for (let ci = 0; ci <= 40; ci++) {
     const c = (ci % 2 ? 1 : -1) * Math.ceil(ci / 2) * 0.5;
     if (Math.hypot(Kx + k.tx * c - anchor.x, Kz + k.tz * c - anchor.z) > R) continue;
@@ -138,13 +166,14 @@ function layoutOn(v, anchor, totem0, k, atLeast, R) {
         fine = mode === "lane"
           ? [0, 0.42, 1.5].every((e) => { const bx = x + nx * e, bz = z + nz * e; return (LANE.has(cls(bx, bz)) && !bad(bx, bz)) || BAYS.bay(bx, bz); })
           : set.has(cls(x, z)) && !bad(x, z) && [0.42, 1.5].every((e) => { const bx = x + nx * e, bz = z + nz * e; return SIDE.has(cls(bx, bz)) && !bad(bx, bz); });
+        if (fine) fine = rowClear({ docks: [{ x, z, yaw: yawN }] }, mode);
       }
       if (!fine) continue;
       // the terminal 1 m past one end, in line
       let tot = null;
       for (const [i, sg] of [[N - 1, 1], [0, -1]]) {
         const [x, z] = at(i), px = x + k.tx * sg, pz = z + k.tz * sg;
-        if (paved(px, pz) && okSpot(px, pz)) { tot = [px, pz]; break; }
+        if (paved(px, pz) && okSpot(px, pz) && rowClear({ docks: [], totem: { x: px, z: pz, yaw: yawN } }, mode)) { tot = [px, pz]; break; }
       }
       if (!tot) continue;
       const docks = [], bikes = [];
@@ -168,10 +197,11 @@ out.villoLog = [];
   if (good(main)) { if (v0.was) out.villo.push([i, { docks: main.docks, bikes: main.bikes, totem: main.totem || null, area: main.area || null, mode: main.mode, slid: 0 }]); return; }
   if (v0.alt && good(v0.alt)) { out.villo.push([i, { docks: v0.alt.docks, bikes: v0.alt.bikes, totem: v0.alt.totem || null, area: v0.alt.area || null, mode: v0.alt.mode, alt: true, slid: 0 }]); return; }
   const wfs = (sl.villo || []).find((w) => w.id === v0.id) || { x: main.docks[0]?.x ?? main.totem.x, z: main.docks[0]?.z ?? main.totem.z };
-  // within 10 m of the point, else 14 m (round 3: Rittweger's point lies in the tram road)
+  // within 10 m of the point, else 14 m (round 3: Rittweger's point lies in the tram road), else (fixes4: the row clear
+  // of the poles too, Rittweger's 14 m held only rows through a sign / the tram stop's pole) 18 m
   let r = null, R = 0;
-  for (const rr of [10, 14]) if (!r && fit) { r = layout({ ...main, stands: main.stands ?? wfs.stands }, wfs, main.totem, rr); R = rr; }
-  if (r) { out.villo.push([i, r]); out.villoLog.push(`${v0.id} ${v0.name}: laid out again, ${r.docks.length} docks (${r.mode}${R > 10 ? ", within 14 m" : ""})`); return; }
+  for (const rr of ROW_OLD ? [10, 14] : [10, 14, 18]) if (!r && fit) { r = layout({ ...main, stands: main.stands ?? wfs.stands }, wfs, main.totem, rr); R = rr; }
+  if (r) { out.villo.push([i, r]); out.villoLog.push(`${v0.id} ${v0.name}: laid out again, ${r.docks.length} docks (${r.mode}${R > 10 ? `, within ${R} m` : ""})`); return; }
   out.dropped.stations = (out.dropped.stations || 0) + 1;
   out.villo.push([i, { docks: [], bikes: [], totem: null, area: null, slid: 0 }]);
   out.villoLog.push(`${v0.id} ${v0.name}: DROPPED (no straight row of >= 6 docks on paving / in a parking bay within 14 m)`);

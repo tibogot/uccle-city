@@ -14,7 +14,7 @@
 //              neighbour's own copy at run time, viewer/traffic/trafficWorld.js)
 //   hold       where a car waits on this lane before the junction it leads into: holdAt[i] (m along, -1 = none),
 //              ctrl[i] 0 none, 1 signal, 2 stop sign, 3 give way, 4 priority to the right (Belgian default),
-//              phase[i] (signals: 0 A / 1 B, the phase of the OSM post on this approach), jnode[i] (junction id)
+//              phase[i] (signals: 0 A / 1 B, signals.js signalPhases: the phase of this approach's road at the node), jnode[i] (junction id)
 //   conflicts  per connector, CSR (cfOff / cfOther / cfAt / cfOtherAt / cfYield): the connectors it crosses or merges
 //              with, where along each, and whether THIS one yields (1), the other yields (-1) or neither (0: the
 //              signal phases keep them apart; still never entered while the other is inside)
@@ -23,11 +23,12 @@
 // guessed stop / yield lines are NOT obeyed (no data says they exist); their stop-line stations are used as the
 // place to wait when there is one.
 import { cumulative } from "../../vendor/roads/roadMath.js";
-import { nearestRoad, phaseOfDir } from "./signals.js";
+import { signalPhases } from "./signals.js";
 import { joinLaneGraph } from "../streets/laneGraph.js";
 import { NOT_DRIVEN } from "../streets/carriageway.js";
 import { laneOffsetProfile } from "../streets/laneOffset.js";
 import { roadFrameOf } from "../streets/lineFit.js";
+import { modelLaneStage, repairTurns, blockedTest, kerbIndex, KERB_CLEAR } from "../street/lanes.js";
 
 const TURN = { straight: 0, left: 1, right: 2, uturn: 3, ring: 4 };
 export const CTRL = { none: 0, signal: 1, stop: 2, yield: 3, priority: 4 };
@@ -77,7 +78,7 @@ function crossing(A, cA, B, cB) {
  * gentle curves keep their measured centre line; true ends (dead ends, tile edges) stay put.
  */
 const KINK_DEG = 8, KINK_REACH = 3, KINK_ITER = 30, JOIN_TOL = 0.05;
-function roundKinks(paths, keep = null) {
+function roundKinks(paths, keep = null, pinned = null, pinKeep = null) {
   const P = paths.length, base = new Int32Array(P + 1);
   for (let i = 0; i < P; i++) base[i + 1] = base[i] + paths[i].pts.length;
   const N = base[P];
@@ -126,6 +127,12 @@ function roundKinks(paths, keep = null) {
       if (d <= KINK_REACH && d < dist[m]) { dist[m] = d; queue.push(m); }
     }
   }
+  // (claude/lanes5: a street-model lane's points move only as far as they keep clear of the measured kerb lines
+  // (pinKeep): the Laplacian shrank its bends toward their chords, 0.9-1.4 m inward on the winding Rue Jean d'Osta (B4)
+  // and Rue Professeur Hustin (B6), onto the kerb. Not pinned outright: it also takes the measured axis' station noise
+  // out of the lane, which the slalom census counts (pinned: 2.8x the slalom metres on C3 B4 E3 K12))
+  const pin = new Uint8Array(M);
+  if (pinned) for (let i = 0; i < P; i++) if (pinned(paths[i])) for (let k = base[i]; k < base[i + 1]; k++) pin[node[k]] = 1;
   const free = []; for (let n = 0; n < M; n++) if (dist[n] <= KINK_REACH && ins[n].length && outs[n].length) free.push(n);
   let X = Float64Array.from(x), Z = Float64Array.from(z);
   for (let it = 0; it < KINK_ITER; it++) {
@@ -135,9 +142,10 @@ function roundKinks(paths, keep = null) {
       for (const m of ins[n]) { sx += X[m]; sz += Z[m]; c++; }
       for (const m of outs[n]) { sx += X[m]; sz += Z[m]; c++; }
       nX[n] = X[n] + 0.5 * (sx / c - X[n]); nZ[n] = Z[n] + 0.5 * (sz / c - Z[n]);
-      if (keep && !keep(X[n], Z[n], nX[n], nZ[n])) {       // (trafpark: never into a parked car: as far as it stays clear)
+      const ok = pin[n] && pinKeep ? (a, b, c2, d) => (!keep || keep(a, b, c2, d)) && pinKeep(a, b, c2, d) : keep;
+      if (ok && !ok(X[n], Z[n], nX[n], nZ[n])) {       // (trafpark: never into a parked car: as far as it stays clear)
         let f = 0.5;
-        while (f > 0.1 && !keep(X[n], Z[n], X[n] + (nX[n] - X[n]) * f, Z[n] + (nZ[n] - Z[n]) * f)) f *= 0.5;
+        while (f > 0.1 && !ok(X[n], Z[n], X[n] + (nX[n] - X[n]) * f, Z[n] + (nZ[n] - Z[n]) * f)) f *= 0.5;
         if (f <= 0.1) f = 0;
         nX[n] = X[n] + (nX[n] - X[n]) * f; nZ[n] = Z[n] + (nZ[n] - Z[n]) * f;
       }
@@ -174,6 +182,19 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
       fitStatsPre.serviceLanes = off.size; fitStatsPre.serviceTurns = dropT.size;
     }
   }
+  // claude/street4 (rule street-lanes, docs/STREET_MODEL_PLAN.md job 4): on the roads the street model covers, the lanes
+  // are offset curves inside the measured carriageway and the junction turns G2 curves inside the junction polygons
+  // (viewer/street/lanes.js, clear of the parked cars by one smooth profile); those paths skip the old fit below
+  // (fitToSurface's kerb push, parked-car shifts and far snap; laneShifter / roadFollowTurns ran on the engine lanes
+  // before and are replaced). opts.model: the street model (null = ?streetlanes=old, or no model on this tile)
+  let covered = null;
+  if (opts.model) {
+    const tM = performance.now();
+    const M = modelLaneStage(net, opts.model, raw, opts.parked?.length ? opts.parked : null, net.streetKerbs ?? null, opts.inBuilding ?? null, grid ? drivableOn(grid) : null, feats?.trees ?? null);
+    raw = M.paths; covered = M.covered;
+    fitStatsPre.model = { ...M.stats, ms: Math.round(performance.now() - tM) };
+    if (opts.trace) opts.trace.afterModel = raw.filter((p) => covered.has(p.id)).map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
+  }
   const fitStats = { points: 0, moved: 0, maxShift: 0, ...fitStatsPre };
   // citydefects: the parked cars (viewer/streets/parkPlace.js widthParking, built in the worker too) are kept clear of:
   // each lane slides sideways to pass them by PARK_CLEAR where the measured carriageway lets it
@@ -181,7 +202,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   const parked = opts.parked?.length ? parkedGrid(opts.parked, TP) : null;
   const raw2 = parked && TP ? densify(raw, 1.5) : raw;
   const tF = performance.now();
-  const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP, opts.roadsR !== false, opts.inBuilding ? laneOffOf(net) : null, opts.inBuilding) : raw2;
+  const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP, opts.roadsR !== false, opts.inBuilding && !opts.noSnap ? laneOffOf(net) : null, opts.noSnap ? null : opts.inBuilding, covered) : raw2;
   fitStats.fitMs = Math.round(performance.now() - tF);
   if (opts.trace) opts.trace.afterFit = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
   // round 5: fitToSurface moves each lane on its own; lane-to-lane joins (continuations) are closed again
@@ -191,14 +212,33 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   // a node does not move closer to a parked car than the fit's clearance)
   const keepClear = parked && TP ? (x0, z0, x1, z1) => { const d1 = parked.dist(x1, z1); return d1 >= TP_HALF + TP_FIT * 0.5 || d1 >= parked.dist(x0, z0); } : null;
   const tK = performance.now();
-  const src = roundKinks(fitted, keepClear);
+  // (claude/lanes5: a model lane's point never moves nearer than KERB_CLEAR to a measured kerb line it was clear of)
+  const KI = covered && net.streetKerbs?.length ? kerbIndex(net.streetKerbs) : null;
+  // (and never into a drawn building it was clear of, a car body's half width round it: Rue de la Cueillette D8)
+  const bodyIn = opts.inBuilding ? (x, z) => [[0, 0], [0.9, 0], [-0.9, 0], [0, 0.9], [0, -0.9]].some(([a, b]) => opts.inBuilding(x + a, z + b)) : null;
+  const kerbOk = KI ? (x0, z0, x1, z1) => { const d1 = KI.dist(x1, z1, KERB_CLEAR + 0.5); return d1 >= KERB_CLEAR || d1 >= KI.dist(x0, z0, KERB_CLEAR + 0.5); } : null;
+  const kerbKeep = covered && (kerbOk || bodyIn) ? (x0, z0, x1, z1) => (!kerbOk || kerbOk(x0, z0, x1, z1)) && (!bodyIn || !bodyIn(x1, z1) || bodyIn(x0, z0)) : null;
+  const src = roundKinks(fitted, keepClear, covered ? (p) => p.kind === "lane" && covered.has(p.id) : null, kerbKeep);
   fitStats.kinkMs = Math.round(performance.now() - tK);
+  // (claude/street4: no junction turn through a building, a street tree or over the pavement, whichever fit laid it)
+  if (opts.model) fitStats.turnsRepaired = repairTurns(src.map((p, i) => (p === fitted[i] ? (src[i] = { ...p, pts: p.pts.map((v) => [v[0], v[1]]) }) : p)), blockedTest(opts.inBuilding ?? null, feats?.trees ?? null), grid ? drivableOn(grid) : null);
   if (opts.trace) { opts.trace.src = src; opts.trace.raw = raw2; }
   // trafpark: the check along every driven path, junction connectors too: a parked car any path still touches goes
   let parkedKept = opts.parked || null;
   if (parked && TP) {
     const tC = performance.now();
     const drop = new Set();
+    // (claude/lanes5, rule street-lanes: a parked car a street-model lane cannot hold PARK_CLEAR from (its station's
+    // measured room is too narrow for both) is not parked there: dropped as data, not squeezed past by the sim)
+    if (covered) for (const p of src) {
+      if (p.kind !== "lane" || !covered.has(p.id)) continue;
+      const q = p.pts;
+      for (let k = 1; k < q.length; k++) {
+        const a = q[k - 1], b = q[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / 0.5));
+        if (!parked.anyNear((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, L / 2 + 5.5)) continue;
+        for (let m = 0; m <= n; m++) { const t = m / n; parked.each(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, LANE_PARK_DROP, (ci) => { if (!drop.has(ci)) { drop.add(ci); fitStats.laneClearDropped = (fitStats.laneClearDropped || 0) + 1; } }); }
+      }
+    }
     for (const p of src) {
       const q = p.pts;
       let any = false;
@@ -218,11 +258,23 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
         parked.each(body.x, body.z, 2.6, (ci) => { if (!drop.has(ci) && boxesOverlap(body, parked.sites[ci])) drop.add(ci); });
       }
     }
+    // (claude/parking1, rule service-vehicle-passage: no parked car within MOUTH_CLEAR m of a junction, as the Belgian
+    // highway code has it (art. 24: 5 m from the crossing carriageway): measured from each junction turn's ends, the
+    // lane mouths, to the parked box. The width parking keeps 12 m off a WAY's end, but a big junction (a dual
+    // carriageway's merged node) has its mouths further out: Rue Engeland D7 had a car 1.9 m from a lane's end, inside
+    // the posed turn's sweep; the car behind waited for it for good and a bus with it (trafmix, seed 23, old lanes))
+    let mouthDropped = 0;
+    const notJunction = new Set((net.nodes || []).filter((n) => n.kind === "continuation" || n.kind === "split" || n.kind === "end").map((n) => n.id));
+    if (!MOUTH_OLD && opts.mouth !== false) for (const p of src) {
+      if (p.kind !== "connector" || p.pts.length < 2 || notJunction.has(p.nodeId)) continue;      // (a junction's turns only)
+      for (const e of [p.pts[0], p.pts[p.pts.length - 1]]) parked.within(e[0], e[1], MOUTH_CLEAR, (ci) => { if (!drop.has(ci)) { drop.add(ci); mouthDropped++; } });
+    }
+    fitStats.parkMouth = mouthDropped + (opts.mouthBefore || 0);
     fitStats.parkDropped = drop.size + (opts.droppedBefore || 0);
     fitStats.checkMs = Math.round(performance.now() - tC);
     if (drop.size) parkedKept = opts.parked.filter((c, ci) => !drop.has(ci));
     // the lanes were bent round cars that are now gone: built once more around the kept ones (then checked again)
-    if (drop.size && !opts.droppedBefore) return buildTrafficGraph(net, roads, feats, bounds, grid, { ...opts, parked: parkedKept, droppedBefore: drop.size });
+    if (drop.size && !opts.droppedBefore) return buildTrafficGraph(net, roads, feats, bounds, grid, { ...opts, parked: parkedKept, droppedBefore: drop.size, mouthBefore: mouthDropped });
   }
   const idx = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
@@ -230,7 +282,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   for (const p of src) nPts += p.pts.length;
   const xy = new Float32Array(nPts * 2), cum = new Float32Array(nPts), off = new Uint32Array(P + 1), pv = new Float32Array(nPts);
   const len = new Float32Array(P), speed = new Float32Array(P), kind = new Uint8Array(P), turn = new Uint8Array(P);
-  const rank = new Uint8Array(P), tram = new Uint8Array(P), core = new Uint8Array(P);
+  const rank = new Uint8Array(P), tram = new Uint8Array(P), core = new Uint8Array(P), model = new Uint8Array(P);
   const holdAt = new Float32Array(P).fill(-1), ctrl = new Uint8Array(P), phase = new Uint8Array(P), jnode = new Int32Array(P).fill(-1);
   const nodeOf = new Int32Array(P).fill(-1);
   const roadOf = (p) => net.roadsById.get(p.roadId);
@@ -244,6 +296,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
     len[i] = p.len;
     kind[i] = p.kind === "connector" ? 1 : 0;
     turn[i] = TURN[p.turn] ?? 0;
+    model[i] = covered?.has(p.id) ? (p.model === 2 ? 2 : 1) : 0;          // (claude/street4: 1 a model lane, 2 a G2 turn, 1 a connector between model lanes)
     const [mx, mz] = pointAt(p.pts, c, p.len / 2);
     core[i] = mx >= bounds.x0 && mx < bounds.x1 && mz >= bounds.z0 && mz < bounds.z1 ? 1 : 0;
   });
@@ -283,12 +336,9 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   });
 
   // ---- junctions: control per approach from data, conflicts between connectors
-  const N = new Map(roads.nodes.map((n) => [n.id, n]));
   const pts = (feats.points || []);
-  const sigPts = pts.filter((q) => q.kind === "traffic_signals").map((q) => {
-    const nr = nearestRoad(roads, N, q.x, q.z);
-    return { x: q.x, z: q.z, phase: nr ? phaseOfDir(nr.ux, nr.uz) : 0, road: nr?.road?.id };
-  });
+  // the phases: one table per tile's roads, the one the drawn posts read too (rule signal-phase-road, signals.js)
+  const PT = signalPhases(roads);
   const signPts = pts.filter((q) => q.kind === "stop" || q.kind === "give_way");
   const jnodes = [];
   const stats = { junctions: 0, signal: 0, stop: 0, yield: 0, priority: 0, conflicts: 0, pedSignals: 0 };
@@ -301,9 +351,9 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
       for (const a of node.arms) for (const lane of a.approach) {
         const pid = a.road.laneEnds?.[a.end]?.in[lane.laneId], i = idx.get(pid);
         if (i == null) continue;
-        const s = nearestSig(sigPts, node.x, node.z, 30);
+        if (PT.junctionOf(node.id, a.road.id)) continue;   // (coming out of the junction it is a signal of: not held, rule signal-phase-road)
         holdAt[i] = Math.max(0, len[i] - 4.5); ctrl[i] = CTRL.signal; jnode[i] = jnodes.length;
-        phase[i] = s ? s.phase : phaseOfDir(Math.cos(a.th), Math.sin(a.th));
+        phase[i] = PT.phaseAt(node.id, a.road.id, ...dirAtEnd(src[i], 20));
         stats.pedSignals++;
       }
       jnodes.push({ id: node.id, x: node.x, z: node.z, kind: "crossing", signal: true, cons: [] });
@@ -329,18 +379,27 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
     for (const li of lanes) {
       const lp = src[li];
       const arm = node.arms.find((a) => a.road.id === lp.roadId) || null;
-      let c = CTRL.priority, ph = 0;
+      let c = CTRL.priority, ph = 0, ce = 0;
       if (node.kind === "roundabout") c = CTRL.yield;
-      else if (osmSignal) {
+      else if (osmSignal && !PT.junctionOf(node.id, lp.roadId)) {
         c = CTRL.signal;
-        // the phase of the OSM post this approach passes (the signal point nearest the last 30 m of the lane);
-        // an approach with no post drawn takes the same rule from its own direction
-        const s = nearestOnLane(sigPts.filter((q) => q.road === lp.roadId), lp, 30, 14);   // a post of THIS road (its drawn head faces this approach)
-        ph = s ? s.phase : phaseOfDir(...dirAtEnd(lp, 20));
+        // the phase of the road this approach belongs to at this node: the posts facing it read the same table
+        ph = PT.phaseAt(node.id, lp.roadId, ...dirAtEnd(lp, 20));
+      } else if (osmSignal) {
+        // (rule signal-phase-road) an approach signal of the junction this lane comes FROM (D7 n11224569284 / n169231590
+        // round n150588281: its heads face the traffic going into that junction): not held here; a car that turned
+        // there stopped 0-3 m on, inside the junction's turn, at a red no head showed it (trafmix stuck, D7)
+        c = CTRL.priority;
       } else if (signOf.has(li)) c = signOf.get(li).kind === "stop" ? CTRL.stop : CTRL.yield;
+      else if (PT.approachSignal(node.id, lp.roadId)) {
+        // a junction whose signals are on its approaches: the cars from such an approach passed its green; against the
+        // other approaches they keep apart by phase (no priority-to-the-right yield across phases, the D7 car that
+        // yielded 0.4 m past the Rue du Chateau d'Or signal, inside its turn); still uncontrolled here (no second stop)
+        ce = 1; ph = PT.phaseAt(node.id, lp.roadId, ...dirAtEnd(lp, 20));
+      }
       // where to wait: the engine's stop line on this lane when it drew one, else the junction mouth
       const at = lp.stop ? lp.stop.at : Math.max(0, lp.len - 0.6);
-      entries.set(li, { arm, c, ph });
+      entries.set(li, { arm, c: ce ? CTRL.signal : c, ph });
       holdAt[li] = at; ctrl[li] = c; phase[li] = ph; jnode[li] = J;
       stats[c === CTRL.signal ? "signal" : c === CTRL.stop ? "stop" : c === CTRL.yield ? "yield" : "priority"]++;
     }
@@ -384,11 +443,13 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   cfOff[P] = list.length;
   const cfOther = Int32Array.from(list, (c) => c[0]), cfAt = Float32Array.from(list, (c) => c[1]), cfOtherAt = Float32Array.from(list, (c) => c[2]);
   const cfYield = Int8Array.from(list, (c) => c[3]);
+  const tW = performance.now(), clearW = laneClearWidths(src, P, grid, parkedKept);
+  fitStats.clearMs = Math.round(performance.now() - tW);
   return {
-    paths: P, xy, cum, off, pv, len, speed, kind, turn, rank, tram, core, nextOff, nextIdx, prevOff, prevIdx,
+    paths: P, xy, cum, off, pv, len, speed, kind, turn, rank, tram, core, model, nextOff, nextIdx, prevOff, prevIdx,
     holdAt, ctrl, phase, jnode, nodeOf, cfOff, cfOther, cfAt, cfOtherAt, cfYield,
     jnodes: jnodes.map((j) => ({ id: j.id, x: j.x, z: j.z, kind: j.kind, signal: !!j.signal })), parkedKept,
-    ...narrowStretches(src, P),
+    ...narrowStretches(src, P), clearW,
     bounds, stats: { ...stats, paths: P, fit: fitStats, ms: Math.round(performance.now() - t0) },
   };
 }
@@ -408,11 +469,6 @@ function dirAtEnd(p, back = 1) {
   const q = p.pts, n = q.length, [ax, az] = pointAt(q, p.cum, Math.max(0, p.len - back));
   return norm([q[n - 1][0] - ax, q[n - 1][1] - az]);
 }
-function nearestSig(list, x, z, r) {
-  let best = null, bd = r * r;
-  for (const s of list) { const d = (s.x - x) ** 2 + (s.z - z) ** 2; if (d < bd) { bd = d; best = s; } }
-  return best;
-}
 /** Squared distance of point q to the last `back` m of lane piece p (or its end, extended 15 m into the junction). */
 function distToLaneEnd(p, q, back) {
   let bd = Infinity;
@@ -426,20 +482,6 @@ function distToLaneEnd(p, q, back) {
   seg(pts[n - 1][0], pts[n - 1][1], pts[n - 1][0] + ux * 15, pts[n - 1][1] + uz * 15);
   return bd;
 }
-/** The point of `list` nearest the last `back` m of lane piece p, within r of it. */
-function nearestOnLane(list, p, back, r) {
-  let best = null, bd = r * r;
-  const q = p.pts, c = p.cum;
-  for (const s of list) {
-    for (let i = q.length - 1; i > 0 && c[i] > p.len - back - 10; i--) {
-      const ax = q[i - 1][0], az = q[i - 1][1], bx = q[i][0], bz = q[i][1], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9;
-      const t = Math.max(0, Math.min(1, ((s.x - ax) * dx + (s.z - az) * dz) / L2));
-      const d = (ax + dx * t - s.x) ** 2 + (az + dz * t - s.z) ** 2;
-      if (d < bd) { bd = d; best = s; }
-    }
-  }
-  return best;
-}
 
 // ---------------------------------------------------------------- lanes onto the MEASURED carriageway
 // The engine's lane stacks are fitted into the measured kerb-to-kerb widths (surfaces.js fitRoadWidths), but where
@@ -449,6 +491,8 @@ function nearestOnLane(list, p, back, r) {
 // their entry lane at their start and of their exit lane at their end, blended along their length. The graph's
 // geometry only: the drawn markings stay the engine's.
 const CARRIAGE = [true, true, false, true, false, false, false, false, false, false];
+/** (x, z) on the drawn carriageway of class raster G (off the raster: unknown, true) */
+const drivableOn = (G) => (x, z) => { const i = Math.floor((x - G.x0) / G.step), j = Math.floor((z - G.z0) / G.step); if (i < 0 || j < 0 || i >= G.nx || j >= G.nz) return true; const c = G.data[j * G.nx + i] - 1; return c >= 0 && CARRIAGE[c]; };
 
 // NARROW STRETCHES (citydefects 2026-11-16): where the two directions of a street come closer than NARROW m (a street
 // whose free width beside its parked cars is under ~5.5 m: the lanes, kept clear of the cars, overlap), the sim lets ONE
@@ -505,13 +549,66 @@ function narrowStretches(src, P) {
     nO0: Float32Array.from(list, (r) => r[3]), nO1: Float32Array.from(list, (r) => r[4]) };
 }
 
+// THE CLEAR WIDTH OF EVERY LANE (claude/parking1, rule service-vehicle-passage): what a vehicle on it can physically
+// pass through. Every CW_STEP m along a lane piece (not its first / last CW_END m: the junction mouths), the open width
+// across the lane point: rays left and right over the drawn carriageway (roadway / tram road / parking) until a class the
+// traffic does not drive on (an unsurveyed cell beside the carriageway too) or a parked car's box. The lane's clearW is
+// the least over two stations in a row of the wider one (Infinity: a junction turn, or nothing measured: a lane point off the carriageway,
+// a ray leaving the tile's raster). The router keeps
+// service vehicles (runs, buses, bin lorries) off a lane narrower than their width + 2 x 0.2 m (trafficSim.js
+// clearWeight) and the trafmix gate counts the entries into a lane narrower than the vehicle itself: 0.
+const CW_STEP = 3, CW_END = 6, CW_RAY = 8, CW_DR = 0.25;
+function laneClearWidths(src, P, grid, parkedKept) {
+  const out = new Float32Array(P).fill(Infinity);
+  if (!grid) return out;
+  const cls = (x, z) => { const i = Math.floor((x - grid.x0) / grid.step), j = Math.floor((z - grid.z0) / grid.step); if (i < 0 || j < 0 || i >= grid.nx || j >= grid.nz) return -2; return grid.data[j * grid.nx + i] - 1; };
+  // the parked cars in 8 m cells; per station the ones within reach, tested as boxes
+  const G = new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
+  for (const c of parkedKept || []) { const k = key(Math.floor(c.x / 8), Math.floor(c.z / 8)); if (!G.has(k)) G.set(k, []); G.get(k).push(c); }
+  const near = [];
+  // the open distance from (x, z) along (nx, nz): an unsurveyed cell next to the carriageway is its edge too; off the
+  // tile's raster: NaN (unknown)
+  const ray = (x, z, nx, nz) => {
+    for (let t = CW_DR; t <= CW_RAY; t += CW_DR) {
+      const px = x + nx * t, pz = z + nz * t, c = cls(px, pz);
+      if (c === -2) return NaN;
+      if (c < 0 || !CARRIAGE[c]) return t - CW_DR / 2;
+      for (let q = 0; q < near.length; q++) if (parkedBoxDist(near[q], px, pz) <= 0) return t - CW_DR / 2;
+    }
+    return CW_RAY;
+  };
+  src.forEach((p, i) => {
+    if (p.kind === "connector") return;
+    const c = p.cum || cumulative(p.pts), L = c[c.length - 1];
+    let best = Infinity, prev = NaN;
+    for (let sd = CW_END; sd <= L - CW_END; sd += CW_STEP) {
+      const A = pointAt(p.pts, c, sd - 0.5), B = pointAt(p.pts, c, sd + 0.5), x = (A[0] + B[0]) / 2, z = (A[1] + B[1]) / 2;
+      const k0 = cls(x, z); if (k0 < 0 || !CARRIAGE[k0]) continue;
+      near.length = 0;
+      const i0 = Math.floor(x / 8), j0 = Math.floor(z / 8);
+      for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) for (const q of G.get(key(i0 + di, j0 + dj)) || []) if ((q.x - x) ** 2 + (q.z - z) ** 2 < (CW_RAY + 2.5) ** 2) near.push(q);
+      const tx = B[0] - A[0], tz = B[1] - A[1], tl = Math.hypot(tx, tz) || 1, nx = tz / tl, nz = -tx / tl;
+      const w = ray(x, z, nx, nz) + ray(x, z, -nx, -nz);
+      // (a narrowing holds over two stations in a row: one 0.5 m raster cell at one station is not the street)
+      const m = Math.max(w, prev);
+      if (m < best) best = m;                                    // (NaN never wins)
+      prev = w;
+    }
+    out[i] = best;
+  });
+  return out;
+}
+
 const PARK_CLEAR = 1.95;          // m: lane centre to a parked car's centre (two half widths + 0.15)
+export const MOUTH_CLEAR = 5;     // m: a junction turn's end (a lane mouth) to the nearest parked box (rule service-vehicle-passage)
+const MOUTH_OLD = typeof location !== "undefined" && /[?&]parkmouth=old(&|$)/.test(location.search);
 // trafpark (2026-11-17, owner: "the traffic cars can go through the parked cars"): the parked car as its plan box (the
 // widest / longest common type, 1.85 x 4.73 m: viewer/carFleet.js SIZES) and the traffic car as its half width: a lane
 // point is clear when its distance to the box is >= TP_HALF + TP_FIT; the built graph is then checked along every path
 // (lanes AND junction connectors, every 0.25 m) and a car any path still comes within TP_HALF of is not parked
 // (parkedKept). tools/audit/trafParkAudit.mjs measures the same; ?trafpark=old: the point test above, no check.
 export const TP_HALF = 0.98, TP_FIT = 0.15, RAMP = 0.2, TP_BOX_HW = 0.925, TP_BOX_HL = 2.365;
+const LANE_PARK_DROP = TP_HALF + TP_FIT - 0.05;      // m: a model lane this near a parked car's box drops the car (claude/lanes5)
 export const TP_WB = 2.8, TP_BODY_HL = 2.37;   // a traffic car's wheelbase and half length (the longest common type)
 /** a traffic body (centre, unit axis ax/az, half length TP_BODY_HL, half width TP_HALF) vs a parked site's box: SAT */
 function boxesOverlap(b, c) {
@@ -550,6 +647,11 @@ function parkedGrid(sites, boxed = false) {
     },
     /** the nearest box distance (<= 4 m reach) */
     dist(x, z) { let b = Infinity; near(x, z, (c) => { const d = parkedBoxDist(c, x, z); if (d < b) b = d; return false; }); return b; },
+    /** every car whose box comes within r of (x, z), any r (the cells its centre can be in): f(ci) */
+    within(x, z, r, f) {
+      const n = Math.ceil((r + 2.5) / 4), i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
+      for (let di = -n; di <= n; di++) for (let dj = -n; dj <= n; dj++) for (const ci of g.get(key(i0 + di, j0 + dj)) || []) if (parkedBoxDist(sites[ci], x, z) < r) f(ci);
+    },
     /** every car whose box comes within r of (x, z): f(ci) */
     each(x, z, r, f) { near(x, z, (c, ci) => { if (parkedBoxDist(c, x, z) < r) f(ci); return false; }); },
     clear(x, z) {
@@ -580,7 +682,7 @@ function densify(paths, step) {
 }
 
 const FAR_SNAP = 14, FAR_RUN = 6;           // m: how far a lane off its street looks for the measured carriageway (class R)
-function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38 = false, laneOff = null, inBuilding = null) {
+function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38 = false, laneOff = null, inBuilding = null, skip = null) {
   const ok = (x, z) => {
     const i = Math.floor((x - G.x0) / G.step), j = Math.floor((z - G.z0) / G.step);
     if (i < 0 || j < 0 || i >= G.nx || j >= G.nz) return true;          // off the raster: leave it
@@ -599,7 +701,7 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
   };
   const fitsPark = (x, z, nx, nz, s) => fitsRoad(x, z, nx, nz, s) && parked.clear(x + nx * s, z + nz * s);
   for (const p of paths) {
-    if (p.kind === "connector") continue;
+    if (p.kind === "connector" || skip?.has(p.id)) continue;           // (claude/street4: a model lane is final)
     const q = p.pts, n = q.length, off = new Float32Array(n), far = new Uint8Array(n);
     const how = trace || (TP && parked) ? new Uint8Array(n) : null;          // (audit: 0 no shift, 1 shifted clear of cars, 2 road-only fit, 3 none)
     if (trace) (trace.fit ??= new Map()).set(p.id, how);
@@ -740,13 +842,14 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
     out.set(p.id, pts);
   }
   for (const p of paths) {
-    if (p.kind !== "connector") continue;
+    if (p.kind !== "connector" || skip?.has(p.id)) continue;
     const a = shift.get(p.prev[0]), b = shift.get(p.next[0]);
     const s0 = a ? [a[2], a[3]] : [0, 0], s1 = b ? [b[0], b[1]] : [0, 0];
     const c = p.cum || cumulative(p.pts), L = c[c.length - 1] || 1;
     out.set(p.id, p.pts.map((pt, k) => { const f = c[k] / L; return [pt[0] + s0[0] * (1 - f) + s1[0] * f, pt[1] + s0[1] * (1 - f) + s1[1] * f]; }));
   }
   return paths.map((p) => {
+    if (skip?.has(p.id)) return p;
     const pts = out.get(p.id) || p.pts, cum = cumulative(pts), len = cum[cum.length - 1];
     const stop = p.stop ? { ...p.stop, at: Math.max(0, len - (p.len - p.stop.at)) } : undefined;
     return { ...p, pts, cum, len, stop };

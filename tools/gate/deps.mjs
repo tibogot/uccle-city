@@ -81,9 +81,14 @@ export function rowDeps(row) {
  * does a changed path touch these deps? status: git's letter (M modified, A added, D deleted, R renamed): an added or
  * deleted file also touches a directory the row listed
  */
+// (coordinator 2026-11-23, rule gate-dir-deps: an added / deleted path touches EVERY listed ancestor directory, not just
+// its own parent: claude/villa1 added models/villa/ (a new sub-directory), which changes the listing of models/ that the
+// heroshell row scans; the old parent-only test missed it, heroshell never ran on the villa merge and failed on
+// foundation afterwards. Over-triggers a little for deep additions under a listed dir: safe)
 export const touches = (deps, p, status = "M") =>
   deps.files.has(p) || [...deps.prefixes].some((d) => p.startsWith(d)) ||
-  (status !== "M" && !!deps.dirs?.has(path.posix.dirname(p)));
+  (status !== "M" && !!deps.dirs && ancestors(p).some((d) => deps.dirs.has(d)));
+export const ancestors = (p) => { const out = []; for (let d = path.posix.dirname(p); d && d !== "."; d = path.posix.dirname(d)) { out.push(d); if (!d.includes("/")) break; } return out; };
 
 // ------------------------------------------------------------------ turning a run's raw trace into deps/<row>.json
 /** the raw trace folder of a row's run (made empty) */

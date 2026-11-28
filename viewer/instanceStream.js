@@ -23,6 +23,12 @@ import { uniformArray } from "three/tsl";
 
 /** the distance (m) every pool holds beyond its LOD bands; the camera travel (m) that starts a new gather */
 export const MARGIN = 6, TRIGGER = 2;
+// (allocrate, ?streamcopy=old: for-of + destructuring over cells / meshes / attrs and a subarray view per copied run)
+// a gather runs nearly every frame while the camera moves (TRIGGER 2 m; the falcon flies ~38 m/s): its loops read by
+// index and short runs are copied element by element, so a gather makes no garbage (tools/perf/allocSample.mjs measured
+// ~165 KB a frame of the falcon flight in gather / copy: iterator results and typed-array views; docs/rules/alloc-rate.md)
+export const STREAM_COPY = new URLSearchParams(globalThis.location?.search || "").get("streamcopy") !== "old";
+const SHORT_RUN = 96;                                    // floats: below this a loop, above it set(subarray) (a memcpy)
 
 /** ONE budget a frame (ms) for all the streaming work of the city (these pools, the façade kit's re-bucket, the tree
  *  fields' re-buckets): every participant asks left(key) each frame (a frame starts when a key comes round again) and
@@ -133,6 +139,7 @@ export class StreamPool {
   /** the gather (a generator: yields when `over()` says the frame's budget is spent): every source's instances within
    *  each mesh's [d0, d1] of c into the back arrays, then the commit */
   *gather(srcs, c, over) {
+    if (STREAM_COPY) return yield* this.gatherFlat(srcs, c, over);
     const cx = c.x, cy = c.y, cz = c.z;
     for (const m of this.meshes) { m.n = 0; m.box.fill(Infinity, 0, 3); m.box.fill(-Infinity, 3, 6); (m.logB ||= []).length = 0; }
     for (const s of srcs) {
@@ -163,6 +170,40 @@ export class StreamPool {
     this.commit(c);
     // (patch) the runs just committed are what the pools hold now
     for (const m of this.meshes) { const L = m.log || []; m.log = m.logB; m.logB = L; L.length = 0; }
+  }
+  /** the gather of STREAM_COPY: the same walk and results, index loops only (no iterator, no closure, no view) */
+  *gatherFlat(srcs, c, over) {
+    const cx = c.x, cy = c.y, cz = c.z, M = this.meshes, nm = M.length;
+    for (let q = 0; q < nm; q++) { const m = M[q]; m.n = 0; m.box.fill(Infinity, 0, 3); m.box.fill(-Infinity, 3, 6); (m.logB ||= []).length = 0; }
+    for (let si = 0; si < srcs.length; si++) {
+      const src = srcs[si].src, cells = src.cells;
+      for (let ci = 0; ci < cells.length; ci++) {
+        const cl = cells[ci];
+        const dc = Math.sqrt((cl.x - cx) ** 2 + (cl.z - cz) ** 2);
+        const dy = Math.max(Math.abs(cl.y0 - cy), Math.abs(cl.y1 - cy));
+        const far = Math.sqrt((dc + cl.r) ** 2 + dy * dy), near = dc - cl.r;
+        for (let q = 0; q < nm; q++) {
+          const m = M[q];
+          if (near - cl.h > m.d1 || far + cl.h < m.d0) continue;              // the whole cell out of the band
+          if (far <= m.d1 && near >= m.d0) { this.copy(m, src, cl.a, cl.b); this.boxAdd(m, cl.box); continue; }
+          // straddling: instance by instance, accepted runs copied at once
+          const C = src.cen;
+          let run = -1;
+          for (let i = cl.a; i < cl.b; i++) {
+            const o = i * 4, h = C[o + 3];
+            const d = Math.sqrt((C[o] - cx) ** 2 + (C[o + 1] - cy) ** 2 + (C[o + 2] - cz) ** 2);
+            const ok = d + h >= m.d0 && d - h <= m.d1;
+            if (ok && run < 0) run = i;
+            else if (!ok && run >= 0) { this.copy(m, src, run, i); run = -1; }
+          }
+          if (run >= 0) this.copy(m, src, run, cl.b);
+          this.boxAdd(m, cl.box);
+        }
+        if (over()) yield;
+      }
+    }
+    this.commit(c);
+    for (let q = 0; q < nm; q++) { const m = M[q], L = m.log || []; m.log = m.logB; m.logB = L; L.length = 0; }
   }
   /** where the pool's mesh m holds source instance j (sorted index), in log L: -> its slot or -1 */
   slotOf(L, src, j) {
@@ -197,6 +238,19 @@ export class StreamPool {
     const k = b - a; if (k <= 0) return;
     const need = m.n + k;
     (m.logB ||= []).push(src, a, b, m.n);
+    if (STREAM_COPY) {
+      const A = m.attrs;
+      for (let t = 0; t < A.length; t++) {
+        const e = A[t], name = e[0], w = e[2];
+        let B = m.back[name];
+        if (!B || B.length < need * w) { const nb = new Float32Array(Math.max(need, (B ? B.length / w : 0) * 2, 64) * w); if (B) nb.set(B.subarray(0, m.n * w)); B = m.back[name] = nb; }
+        const S = src.cols[e[1]], s0 = a * w, len = k * w, d0 = m.n * w;
+        if (len <= SHORT_RUN) for (let i = 0; i < len; i++) B[d0 + i] = S[s0 + i];
+        else B.set(S.subarray(s0, s0 + len), d0);
+      }
+      m.n = need;
+      return;
+    }
     for (const [name, col, w] of m.attrs) {
       let B = m.back[name];
       if (!B || B.length < need * w) { const nb = new Float32Array(Math.max(need, (B ? B.length / w : 0) * 2, 64) * w); if (B) nb.set(B.subarray(0, m.n * w)); B = m.back[name] = nb; }
@@ -212,7 +266,8 @@ export class StreamPool {
       mesh.count = n; mesh.visible = n > 0;
       if (!n) continue;
       this.growAttr(m, n);
-      for (const [name, , w] of m.attrs) {
+      for (let t = 0; t < m.attrs.length; t++) {
+        const name = m.attrs[t][0], w = m.attrs[t][2];
         const att = this.attr(m, name);
         att.array.set(m.back[name].subarray(0, n * w));
         att.clearUpdateRanges(); att.addUpdateRange(0, n * w); att.needsUpdate = true;

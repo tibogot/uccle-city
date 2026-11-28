@@ -28,7 +28,7 @@ const LANDMARKS = {
   stjob: [1216, 561], townhall: [-1148, -506], vanbuuren: [303, -1230], wolvendael: [-469, -366], police: [-514, -340],
   calevoet: [-1225, 790], papenkasteel: [-637, 1154], stpierre: [-709, -493], russian: [-354, -468], heros: [-533, -484],
   rosaire: [1279, -1254], observatory: [654, 60], augustin: [-896, -1961], sacrecoeur: [-264, -1631], saintmarc: [454, -620],
-  latourdefrein: [112, 2310], stalle: [-1150, 57],
+  latourdefrein: [112, 2310], stalle: [-1150, 57], villa: [881, 2056],
 };
 const OFF_VALUE = { heros: "old" };                 // ?heros=old = the setts plaza; the others: ?<name>=0 = the UrbIS solid
 const ART = [[-2240, 376], [-651, -280], [-503, -440], [1376, -1320], [1824, -90], [865, 663], [2577, 1167], [65, 1154]];
@@ -85,8 +85,10 @@ function setup() {
   for (const [k, [x, z]] of Object.entries(LANDMARKS)) { if (near(x, z, MARGIN)) lmIn.push(k); else set(k, OFF_VALUE[k] ?? "0"); }
   // the balcony flags ride on the town hall; the Lycée Français's three poles (viewer/lyceeFront.js) fly theirs too, so
   // the flags stay on when either is in the radius (claude/lycee: the Lycée's poles stood bare in a quick view)
-  const LYCEE_FLAGS = [-325.8, 1163.0];
-  if (!lmIn.includes("townhall") && !near(LYCEE_FLAGS[0], LYCEE_FLAGS[1], MARGIN)) set("flags", "0");
+  // ... and every hero whose poles fly cloth flags (its notes' flag_poles; claude/flags2: the police station's yard poles
+  // showed the model's still flags in a quick view, rule flags-are-cloth)
+  const LYCEE_FLAGS = [-325.8, 1163.0], FLAG_HEROES = ["townhall", "police"];
+  if (!FLAG_HEROES.some((k) => lmIn.includes(k)) && !near(LYCEE_FLAGS[0], LYCEE_FLAGS[1], MARGIN)) set("flags", "0");
   const artIn = ART.some(([x, z]) => near(x, z, MARGIN));
   if (!artIn) set("art", "old");
   history.replaceState(history.state, "", `${location.pathname}?${P.toString()}${location.hash}`);
@@ -156,6 +158,7 @@ export async function quickReady(host) {
     for (const n of roots) if (!found.has(n) && scene.children.some((o) => o.name === n)) found.add(n);   // (the landmarks' roots are scene children)
     const bridges = window.__bridges ? Object.keys(window.__bridges) : [];
     const missing = roots.filter((n) => !found.has(n)).concat(wantBridges.filter((n) => !bridges.includes(n)).map((n) => `bridge ${n}`));
+    if (window.__xmasPending) missing.push("christmas");   // (?xmas=1: the layer loads at low priority; its shots need it in)
     st = { tiles: tilesIn.length, want: want.length, fading: fader.list.length, jobs: jobsLeft(), pipes: window.__asyncPipes?.pending ?? 0, missing, bridges };
     const ok = tilesIn.length === want.length && !st.fading && !st.jobs && !st.pipes && !missing.length;
     q = ok ? q + 1 : 0;

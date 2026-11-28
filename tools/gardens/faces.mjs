@@ -7,6 +7,7 @@
 import fs from "fs";
 import { analyseBuildings, hash01 } from "../../viewer/facadeGeom.js";
 import { faceOpenings } from "../../viewer/interior/facadeWindows.js";
+import { applyBuildingEvidence } from "../../viewer/buildingTypes.js";
 
 import { pathToFileURL } from "url";
 const KIT_MAX_H = 16;                               // = viewer/facadeKit/placement.js MAX_H (not exported)
@@ -15,6 +16,9 @@ export function tileFaces(tile) {
 const dir = new URL(`../../data/tiles/${tile}/`, import.meta.url);
 const rd = (f) => fs.readFileSync(new URL(f, dir));
 const doc = JSON.parse(rd("buildings.json"));
+// (claude/reality1, rule bldclass-evidence) the types as the city draws them: the evidence first (data/bldclass/<T>.json)
+const evf = new URL(`../../data/bldclass/${tile}.json`, import.meta.url);
+if (process.env.BLDCLASS !== "old" && fs.existsSync(evf)) applyBuildingEvidence(doc, JSON.parse(fs.readFileSync(evf, "utf8")));
 const bin = rd("buildings.bin"), buf = bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.byteLength);
 const roads = JSON.parse(rd("roads.json")), feats = JSON.parse(rd("features.json"));
 const bi = new Map(doc.buildings.map((b, i) => [b, i]));
@@ -40,10 +44,18 @@ const kit = {
       const o = faceOpenings({ width: f.width, eaves: f.eaves, partyH: f.partyH, street: 1, rnd, landmark: f.landmark, shop: f.shopW, shopU: f.shopU }).find((q) => q.kind === "door");
       if (o) { const u = (o.u0 + o.u1) / 2, [x, z] = at(u); door = { x: +x.toFixed(2), z: +z.toFixed(2), u: +u.toFixed(2), w: +(o.u1 - o.u0).toFixed(2) }; }
     }
+    // (claude/reality2, rule garage-has-drive) the garage door the painted facade draws on this street face (facades.js isGar,
+    // facadeWindows.js faceOpenings kind garage): the garden builder cuts the boundary and paves a drive in front of it
+    let garage = null;
+    if (f.street && f.garage) {
+      const o = faceOpenings({ width: f.width, eaves: f.eaves, partyH: f.partyH, street: 1, rnd, landmark: f.landmark, type: f.type, garage: 1, shop: f.shopW, shopU: f.shopU }).find((q) => q.kind === "garage");
+      if (o) { const u = (o.u0 + o.u1) / 2, [x, z] = at(u); garage = { x: +x.toFixed(2), z: +z.toFixed(2), u: +u.toFixed(2), w: +(o.u1 - o.u0).toFixed(2) }; }
+    }
     const [ax, az] = at(0), [bx, bz] = at(f.width);
     faces.push({ bu: String(BU), bi: bi.get(b), street: f.street, partyH: +f.partyH.toFixed(2), doorFace: !!f.doorFace, landmark: !!f.landmark,
       width: +f.width.toFixed(3), a: [+ax.toFixed(3), +az.toFixed(3)], b: [+bx.toFixed(3), +bz.toFixed(3)], nx: +f.nx.toFixed(5), nz: +f.nz.toFixed(5),
-      base: +f.base.toFixed(2), eaves: +f.eaves.toFixed(2), top: +f.top.toFixed(2), style: f.wallStyle, shopW: f.shopW, door });
+      base: +f.base.toFixed(2), eaves: +f.eaves.toFixed(2), top: +f.top.toFixed(2), style: f.wallStyle, shopW: f.shopW, door,
+      type: f.type, garage: f.garage, garageAt: garage, inst: b.attrs?._ev?.inst || null, era: b.attrs?._ev?.era || b.attrs?._ev?.near || null });   // (claude/reality1, rule frontgarden-by-context) the house family for the boundary choice
     return { on: false };
   },
 };
