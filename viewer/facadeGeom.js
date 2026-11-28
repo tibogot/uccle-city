@@ -206,8 +206,22 @@ function addStrip(S, kind, A, B, yTop, h, depth, nx, nz, col, off = 0) {
 }
 
 export const _dbg = { strips: null };
-function emitStrips(D, S, stats) {
+function emitStrips(D, S, stats, fit = true) {
   const r = (v, k) => Math.round(v * k);
+  // 0. (rule strip-square-to-edge, claude/facades5) each strip's normal square to its own edge: a face's normal is the
+  // mean of its UrbIS triangles, its top edges run up to ~2 deg off it (a sliver triangle at the eaves, a near-straight
+  // run of an 18-corner footprint); with the face's normal a 2.5 m piece drifted 4 cm out of its own plane, so the
+  // merge (planes within 3 cm) left collinear pieces of one cornice overlapping, their tops / fronts coplanar (Rue
+  // Xavier De Bue 72B, Rue de Stalle 73, Chaussée d'Alsemberg 739 flickering). The box's front stays parallel to the edge
+  // as before; only the extrusion turns by that angle. ?stripfit=old: the face's normal.
+  if (fit) for (const s of S) {
+    const ex = s.bx - s.ax, ez = s.bz - s.az, L = Math.hypot(ex, ez);
+    if (L < 0.05) continue;
+    const nx = ez / L, nz = -ex / L;                              // square to A -> B, on the given normal's side (A -> B runs along t = (-nz, nx))
+    if (nx * s.nx + nz * s.nz < 0.985) continue;                  // > 10 deg off: not a near-parallel edge, keep what the caller gave
+    if (nx * s.nx + nz * s.nz < 0.99999995) stats.stripSquared = (stats.stripSquared || 0) + 1;
+    s.nx = nx; s.nz = nz;
+  }
   // THE OWNER'S "BLUE LINE + BLACK LINE" along the wall tops (2026-11-11): the hanging zinc gutter (a 13 cm strip whose
   // top and front catch the sky: a thin pale-blue line from any distance) over the dark eaves board, on every eave,
   // also over the street cornices. A Brussels terrace has no hanging gutter on its street front: the gutter is in the
@@ -227,12 +241,17 @@ function emitStrips(D, S, stats) {
   // two adjoining solids a few mm / a fraction of a degree apart; exact keys left those as overlapping twins)
   const groups = new Map(), sec = new Map();
   for (const s of S) {
-    const k = `${s.kind}|${r(s.y, 100)}|${r(s.h, 100)}|${r(s.d, 100)}|${r(s.off, 100)}`;
+    // (fit: the height is matched in the clusters below, not by a 1 cm key: one cornice whose faces' tops differ by a few
+    // mm-cm (an eave falling 5 cm over 8 m, Rue Xavier De Bue 72B) gave four collinear overlapping pieces, fronts coplanar)
+    const k = fit ? `${s.kind}|${r(s.h, 100)}|${r(s.d, 100)}|${r(s.off, 100)}` : `${s.kind}|${r(s.y, 100)}|${r(s.h, 100)}|${r(s.d, 100)}|${r(s.off, 100)}`;
     if (!sec.has(k)) sec.set(k, []);
     sec.get(k).push(s);
   }
   let gid = 0;
-  for (const list of sec.values()) {
+  for (const list0 of sec.values()) {
+    // (fit) the longest pieces seed the clusters: a short piece first could take a long one's neighbour and leave the
+    // long one in a cluster of its own over the same span
+    const list = fit ? [...list0].sort((p, q) => Math.hypot(q.bx - q.ax, q.bz - q.az) - Math.hypot(p.bx - p.ax, p.bz - p.az)) : list0;
     const cl = [];                                                 // clusters: { nx, nz, pl, u0, u1, items, cx, cz }
     const near = new Map(), ck = (x, z) => `${Math.floor(x / 8)},${Math.floor(z / 8)}`;
     for (const s of list) {
@@ -244,10 +263,13 @@ function emitStrips(D, S, stats) {
         if (Math.abs(s.ax * c.nx + s.az * c.nz - c.pl) > 0.03 || Math.abs(s.bx * c.nx + s.bz * c.nz - c.pl) > 0.03) continue;
         const v0 = s.ax * -c.nz + s.az * c.nx, v1 = s.bx * -c.nz + s.bz * c.nx;
         if (Math.min(v0, v1) > c.u1 + 0.02 || Math.max(v0, v1) < c.u0 - 0.02) continue;
+        // same height (5 mm), or up to 6 cm apart where the spans OVERLAP (one cornice given twice); pieces that only touch
+        // keep their own heights (a terrace stepping down a street)
+        if (fit) { const dy = Math.abs(s.y - c.y); if (dy > 0.005 && (dy > 0.06 || Math.min(Math.max(v0, v1), c.u1) - Math.max(Math.min(v0, v1), c.u0) < 0.05)) continue; }
         hit = c; break;
       }
       if (hit) { const v0 = s.ax * -hit.nz + s.az * hit.nx, v1 = s.bx * -hit.nz + s.bz * hit.nx; hit.u0 = Math.min(hit.u0, v0, v1); hit.u1 = Math.max(hit.u1, v0, v1); hit.items.push(s); continue; }
-      const c = { nx: s.nx, nz: s.nz, pl, u0, u1, items: [s] };
+      const c = { nx: s.nx, nz: s.nz, pl, u0, u1, y: s.y, items: [s] };
       cl.push(c);
       for (const [x, z] of [[s.ax, s.az], [mx, mz], [s.bx, s.bz]]) { const k = ck(x, z); if (!near.has(k)) near.set(k, []); if (!near.get(k).includes(c)) near.get(k).push(c); }
     }
@@ -258,12 +280,79 @@ function emitStrips(D, S, stats) {
     const s0 = g[0], tx = -s0.nz, tz = s0.nx, pl = s0.ax * s0.nx + s0.az * s0.nz;
     const iv = g.map((s) => [s.ax * tx + s.az * tz, s.bx * tx + s.bz * tz, s]).sort((a, b) => a[0] - b[0]);
     let cur = null;
-    const flush = () => { if (!cur) return; merged.push({ ...cur.s, ax: tx * cur.u0 + s0.nx * pl, az: tz * cur.u0 + s0.nz * pl, bx: tx * cur.u1 + s0.nx * pl, bz: tz * cur.u1 + s0.nz * pl }); };
+    // (fit) the cluster's height: its longest piece's
+    const yG = fit ? g.reduce((m, s) => (Math.hypot(s.bx - s.ax, s.bz - s.az) > m.L ? { L: Math.hypot(s.bx - s.ax, s.bz - s.az), y: s.y } : m), { L: -1, y: s0.y }).y : null;
+    const flush = () => { if (!cur) return; merged.push({ ...cur.s, ...(fit ? { y: yG } : {}), ax: tx * cur.u0 + s0.nx * pl, az: tz * cur.u0 + s0.nz * pl, bx: tx * cur.u1 + s0.nx * pl, bz: tz * cur.u1 + s0.nz * pl }); };
     for (const [u0, u1, s] of iv) {
       if (cur && u0 <= cur.u1 + 0.02) { if (u1 > cur.u1) cur.u1 = u1; stats.stripMerged++; continue; }
       flush(); cur = { u0, u1, s };
     }
     flush();
+  }
+  // 1b. (rule strip-square-to-edge, claude/facades5) two strips FACING each other (antiparallel) whose bands cross in
+  // plan at overlapping heights: walls a few cm apart across a slot or a thin notch (Rue Xavier De Bue 72B: two wings
+  // 15 cm apart, each cornice 34 cm deep through the other; Rue de Stalle 73: the parapets down both sides of a V-shaped
+  // notch in the flat roof, their copings one in the other near its apex). Each strip keeps only the runs of its span
+  // where the other's band does not cover its own (a cornice inside a slot no one sees).
+  if (fit) {
+    const C = 8, grid = new Map(), gk = (i, j) => i * 100003 + j;
+    const band = (s) => {                                         // plan corners of the strip's band: back A, back B, front B, front A
+      const o0 = s.off, o1 = s.off + s.d;
+      return [[s.ax + s.nx * o0, s.az + s.nz * o0], [s.bx + s.nx * o0, s.bz + s.nz * o0], [s.bx + s.nx * o1, s.bz + s.nz * o1], [s.ax + s.nx * o1, s.az + s.nz * o1]];
+    };
+    merged.forEach((s, i) => {
+      s.band = band(s);
+      const xs = s.band.map((p) => p[0]), zs = s.band.map((p) => p[1]);
+      s.bb = [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)];
+      for (let a = Math.floor(s.bb[0] / C); a <= Math.floor(s.bb[2] / C); a++) for (let b = Math.floor(s.bb[1] / C); b <= Math.floor(s.bb[3] / C); b++) {
+        const k = gk(a, b); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(i);
+      }
+    });
+    const cuts = new Map();                                        // strip index -> [[u0, u1] removed, ...] (u along its t from A)
+    merged.forEach((s, i) => {
+      const tx = -s.nz, tz = s.nx, L = Math.hypot(s.bx - s.ax, s.bz - s.az);
+      const seen = new Set();
+      for (let a = Math.floor(s.bb[0] / C); a <= Math.floor(s.bb[2] / C); a++) for (let b = Math.floor(s.bb[1] / C); b <= Math.floor(s.bb[3] / C); b++) for (const j of grid.get(gk(a, b)) || []) {
+        if (j === i || seen.has(j)) continue; seen.add(j);
+        const q = merged[j];
+        if (s.nx * q.nx + s.nz * q.nz > -0.9) continue;            // facing each other only
+        if (Math.min(s.y, q.y) - Math.max(s.y - s.h, q.y - q.h) < 0.002) continue;   // heights apart
+        if (q.bb[0] > s.bb[2] || q.bb[2] < s.bb[0] || q.bb[1] > s.bb[3] || q.bb[3] < s.bb[1]) continue;
+        // q's band in s's frame (u along t from A, v out along n from s's line), then per 5 cm of s's span the v range
+        // the band covers there
+        const Q = q.band.map(([x, z]) => [(x - s.ax) * tx + (z - s.az) * tz, (x - s.ax) * s.nx + (z - s.az) * s.nz]);
+        let bad = null;
+        for (let u = 0; u <= L + 1e-6; u += 0.05) {
+          let lo = Infinity, hi = -Infinity;
+          for (let e = 0; e < 4; e++) {
+            const [u0, v0] = Q[e], [u1, v1] = Q[(e + 1) % 4];
+            if ((u0 - u) * (u1 - u) > 0) continue;
+            const v = Math.abs(u1 - u0) < 1e-9 ? null : v0 + (v1 - v0) * (u - u0) / (u1 - u0);
+            if (v === null) { lo = Math.min(lo, v0, v1); hi = Math.max(hi, v0, v1); } else { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+          }
+          const over = Math.min(hi, s.off + s.d) - Math.max(lo, s.off) > 0.002;
+          if (over) { if (!bad) bad = [u, u]; else bad[1] = u; }
+          else if (bad) { (cuts.get(i) || cuts.set(i, []).get(i)).push(bad); bad = null; }
+        }
+        if (bad) (cuts.get(i) || cuts.set(i, []).get(i)).push(bad);
+      }
+    });
+    if (cuts.size) {
+      const keep = [];
+      merged.forEach((s, i) => {
+        const cs = cuts.get(i);
+        delete s.band; delete s.bb;
+        if (!cs) { keep.push(s); return; }
+        const tx = -s.nz, tz = s.nx, L = Math.hypot(s.bx - s.ax, s.bz - s.az);
+        cs.sort((p, q) => p[0] - q[0]);
+        let from = 0;
+        const run = (u0, u1) => { if (u1 - u0 >= 0.1) keep.push({ ...s, ax: s.ax + tx * u0, az: s.az + tz * u0, bx: s.ax + tx * u1, bz: s.az + tz * u1 }); };
+        for (const [c0, c1] of cs) { run(from, c0 - 0.05); from = Math.max(from, c1 + 0.05); }
+        run(from, L);
+        stats.stripFacing = (stats.stripFacing || 0) + 1;
+      });
+      merged.length = 0; merged.push(...keep);
+    } else for (const s of merged) { delete s.band; delete s.bb; }
   }
   // 2. ends: key by position (5 cm) + kind + section; exactly two ends of different strips there -> a mitred joint
   const ends = new Map();
@@ -1075,6 +1164,21 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         beams.push([e1.A, e1.B]);
         stats.ridges++;
       }
+      // (rule strip-square-to-edge, claude/facades5) one ridge line, one beam: overlapping roof fans (UrbIS) give the
+      // same ridge as two collinear edges with different ends (8.0 m and 6.4 m from one corner, Chaussée d'Alsemberg
+      // 739): two beams in one place, their tops and sides coplanar. Collinear overlapping beams become their union.
+      if (opts.stripFit !== false) for (let i = 0; i < beams.length; i++) for (let j = i + 1; j < beams.length; j++) {
+        const [P, Q] = beams[i], [R, S] = beams[j];
+        const d = [Q[0] - P[0], Q[1] - P[1], Q[2] - P[2]], L = Math.hypot(...d); if (L < 1e-6) continue;
+        const u = d.map((c) => c / L);
+        const off = (X) => { const w = [X[0] - P[0], X[1] - P[1], X[2] - P[2]], t = w[0] * u[0] + w[1] * u[1] + w[2] * u[2]; return [t, Math.hypot(w[0] - u[0] * t, w[1] - u[1] * t, w[2] - u[2] * t)]; };
+        const [tr, dr] = off(R), [ts, ds] = off(S);
+        if (dr > 0.02 || ds > 0.02) continue;                                              // not on P -> Q's line
+        if (Math.min(Math.max(tr, ts), L) - Math.max(Math.min(tr, ts), 0) < 0.05) continue; // no common span
+        const pts = [[0, P], [L, Q], [tr, R], [ts, S]].sort((a, b) => a[0] - b[0]);
+        beams[i] = [pts[0][1], pts[3][1]]; beams.splice(j, 1); j = i;                   // the union; look again from i
+        stats.ridgeDup = (stats.ridgeDup || 0) + 1;
+      }
       // the beams' ends: shared by two collinear beams = open (one continuous ridge), by a junction = stop short + an
       // apex block, free = an end cap
       const ends = new Map();
@@ -1126,7 +1230,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
     }
   });
-  emitStrips(D, SD, stats);
+  emitStrips(D, SD, stats, opts.stripFit !== false);
   if (clean) stats.coplanar = { cut: clean.stats.cut, dropped: clean.stats.dropped, pieces: clean.stats.pieces, m2: Math.round(clean.stats.m2) };
   const f32 = (a) => new Float32Array(a);
   return {
