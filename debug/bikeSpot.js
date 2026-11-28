@@ -32,7 +32,9 @@ const FEELN = qs.get("feel") === "old" ? "old" : "new";
 applyFeel(FEELN);
 const DEFAULTS0 = { ...BIKE }, FLOW_DEFAULTS = { ...BIKE_FLOW }, PARK_DEFAULTS = { ...BIKE_PARK }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
 document.getElementById("title").innerHTML = `<b>Bike Lab</b> <small>the BMX spot · ? controls · <a href="?lab=old" style="color:#8fb8ff">old lab</a></small>`;
-const renderer = new THREE.WebGPURenderer({ antialias: true, reversedDepthBuffer: true });
+// ?gputime=1: GPU timestamps per frame -> window.__gpuTime (the kid look A/B, docs/KIDCHAR.md phase 6)
+const GPUTIME = new URLSearchParams(location.search).get("gputime") === "1";
+const renderer = new THREE.WebGPURenderer({ antialias: true, reversedDepthBuffer: true, trackTimestamp: GPUTIME });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
@@ -218,7 +220,7 @@ tele.innerHTML = `<div class="big" id="tv">0<small> km/h</small></div>
 <div class="col"><span><span class="k">lean</span> <b id="tl">0</b>° <span class="k">pitch</span> <b id="tp">0</b>°</span><span><span class="k">grade</span> <b id="tg">0</b> % <span class="k">fps</span> <b id="tfps">0</b></span></div>
 <div class="col"><span id="tst"></span><span id="tland" class="k"></span></div>`;
 const $ = (id) => document.getElementById(id);
-window.__bike = { fx: skidFx, applyFeel, get state() { return s; }, camera, orbit,
+window.__bike = { fx: skidFx, applyFeel, get state() { return s; }, renderer, camera, orbit,
   /** a fixed look (orbit on, the bike paused): view([x, y, z], [tx, ty, tz]) */
   view(p, t) { if (!ORB.on) orbitToggle(true); ORB.fixed = true; camera.position.set(...p); orbit.target.set(...t); orbit.update(); }, ORB, orbitToggle, orbitPreset, look, BIKE, env, chase, place, P, K, mount, SPOT_SPOTS };
 
@@ -286,6 +288,7 @@ renderer.setAnimationLoop(() => {
   if (K.on) K.kid.autoLod(camera.position.distanceTo(K.tp.body.root.position));
   const fx = onFoot ? K.tp.x : pose.x, fy = onFoot ? K.tp.y : pose.y, fz = onFoot ? K.tp.z : pose.z;
   FOCUS.set(fx, fy, fz); look.update(dt, FOCUS, s); look.render();
+  if (GPUTIME) renderer.resolveTimestampsAsync(THREE.TimestampQuery.RENDER).then((ms) => { if (ms > 0) { const g = (window.__gpuTime ||= { n: 0, sum: 0, list: [] }); g.n++; g.sum += ms; g.list.push(ms); if (g.list.length > 3000) g.list.shift(); } });
   if (bannerT > 0 && (bannerT -= dt) <= 0) bannerEl.style.opacity = 0;
   if (s.crashed && s.crashT < 0.05 && s.crashT > 0) banner(`crash: ${s.crashCause}`);
   if (s.flow.boosts !== FLOWSEEN.boosts) { if (s.flow.boosts > FLOWSEEN.boosts) banner("clean drift: + speed"); FLOWSEEN.boosts = s.flow.boosts; }
