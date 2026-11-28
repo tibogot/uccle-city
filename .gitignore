@@ -108,3 +108,6 @@ models/villa/audit/*.json
 !models/villa/audit/*.allow.json
 # the Calevoet underpass (tools/blender/underpass.py): the raw exports
 models/underpass/*.raw.glb
+models/characters/kidA_detail.png
+models/characters/kid_fabric.png
+models/characters/_kidlook_tmp/

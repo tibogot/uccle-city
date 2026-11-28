@@ -57,6 +57,42 @@ if (IS_A) {
   // the LODs pop-free budget: each LOD at least ~ 1/3 of the one before (no sudden silhouette loss at a switch)
   check("LOD ratios (no popping): LOD1 >= 30 % of LOD0, LOD2 >= 20 % of LOD1", tris[1] >= 0.3 * tris[0] && tris[2] >= 0.2 * tris[1], `${(tris[1] / tris[0] * 100).toFixed(0)} % / ${(tris[2] / tris[1] * 100).toFixed(0)} %`, ">= 30 % / 20 %");
   check("one atlas (KTX2) next to the model", fs.existsSync(path.join(ROOT, "models/characters", meta.kid.atlas)), meta.kid.atlas, "exists");
+  // THE KID LOOK (docs/KIDCHAR.md phase 6, rule kid-not-plastic): the detail + fabric maps on disk, KTX2, in budget,
+  // the atlas layout (detail = the atlas at half size) and a tiling square (fabric); every slot named in the look's
+  // tables (roughness, specular, micro relief); the scripted cloth shells closed (ready for a cloth sim, no rim to see
+  // through); no triangles added by the look (it is all material)
+  const { KIDLOOK } = await import("../../viewer/kid/kidModel.js");
+  const ktxInfo = (f) => {
+    const p = path.join(ROOT, "models/characters", f);
+    if (!fs.existsSync(p)) return null;
+    const b = fs.readFileSync(p);
+    return { kb: b.length / 1024, magic: b.subarray(0, 12).toString("latin1").includes("KTX 20"), w: b.readUInt32LE(20), h: b.readUInt32LE(24), levels: b.readUInt32LE(40) };
+  };
+  const at = ktxInfo(meta.kid.atlas), dt = ktxInfo("kidA_detail.ktx2"), fb = ktxInfo("kid_fabric.ktx2");
+  check("kid look: kidA_detail.ktx2 = the atlas layout at half size, mipped, <= 400 KB", !!dt && dt.magic && !!at && dt.w * 2 === at.w && dt.h * 2 === at.h && dt.levels > 5 && dt.kb <= 400,
+    dt ? `${dt.w} x ${dt.h}, ${dt.levels} mips, ${dt.kb.toFixed(0)} KB` : "missing", `${at ? at.w / 2 : "?"} x ${at ? at.h / 2 : "?"}, mips, <= 400 KB`);
+  check("kid look: kid_fabric.ktx2 = a square tiling sheet, mipped, <= 400 KB", !!fb && fb.magic && fb.w === fb.h && fb.levels > 5 && fb.kb <= 400,
+    fb ? `${fb.w} x ${fb.h}, ${fb.levels} mips, ${fb.kb.toFixed(0)} KB` : "missing", "square, mips, <= 400 KB");
+  const total = (at?.kb || 0) + (dt?.kb || 0) + (fb?.kb || 0);
+  check("kid look: all his textures <= 2.2 MB on disk (3 KTX2, still one draw)", total <= 2250, `${(total / 1024).toFixed(2)} MB`, "<= 2.2 MB");
+  const miss = slots.filter((sl) => !(sl in KIDLOOK.rough && sl in KIDLOOK.spec && sl in KIDLOOK.micro));
+  check("kid look: every named slot has its roughness, specular and micro relief", !miss.length, miss.length ? `missing ${miss.join(",")}` : `${slots.length} slots`, "all");
+  const SHELLS = ["jacket", "socks", "cap", "brim_f", "brim_b"];
+  const open = [];
+  kid.json.meshes.forEach((m, li) => {
+    const pr = m.primitives[0], I = kid.accessor(pr.indices), Pp = kid.accessor(pr.attributes.POSITION), SL = kid.accessor(pr.attributes._SLOT);
+    const id = new Map(), wid = new Int32Array(Pp.length / 3);
+    for (let i = 0; i < wid.length; i++) { const k = `${Math.round(Pp[3 * i] * 1e4)},${Math.round(Pp[3 * i + 1] * 1e4)},${Math.round(Pp[3 * i + 2] * 1e4)}`; if (!id.has(k)) id.set(k, id.size); wid[i] = id.get(k); }
+    const E = new Map();
+    for (let t = 0; t < I.length; t += 3) {
+      const sl = slots[Math.round(SL[I[t]])]; if (!SHELLS.includes(sl)) continue;
+      for (let e = 0; e < 3; e++) { let a = wid[I[t + e]], b = wid[I[t + (e + 1) % 3]]; if (a > b) [a, b] = [b, a]; const k = `${sl}:${a}_${b}`; E.set(k, (E.get(k) || 0) + 1); }
+    }
+    const n = [...E.values()].filter((c) => c === 1).length;
+    if (n) open.push(`LOD${li} ${n}`);
+  });
+  check("kid look: no open cloth shell (jacket, socks, cap, brims closed in every LOD)", !open.length, open.join(", ") || "0 open edges", "0");
+  check("kid look: no triangles added (LOD0 21,518 as before the round)", tris[0] === 21518, `${tris[0]}`, "21518");
 }
 
 // ------------------------------------------------------------------------------------------------ stray pieces, spikes

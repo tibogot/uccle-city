@@ -480,3 +480,78 @@ The head is level in every pose (6 deg down).
 
 **Shots:** `C:\Users\tibog\Downloads\uccle-kidchar\ride\ride_sheet.png` (the lab's orbit camera at 0.25x) and the
 `r_*.png` frames.
+
+## Phase 6: the kid look (2026-11-28, branch claude/kidlook)
+The owner: kid A "looks too much like plastic"; better clothes and a better overall look (skin, face, hair, materials),
+stylised-grounded like Breath of the Wild. This round is all **material**: the mesh, the rig, the LODs and the one
+draw per LOD are unchanged (the shirt stays ready for a later cloth sim; its shells are closed). `?kidlook=old` (a
+features.js row) brings back the look before.
+
+### Why he looked like plastic (rule kid-not-plastic)
+- The MPFB normal maps were dropped at the pack, and the scripted garments (jacket, socks, cap, brims) are flat colour
+  cells: no relief anywhere to break up a highlight.
+- One roughness per slot (the jacket at 0.5, with the full dielectric F0): one smooth, even sheen over every garment.
+- The vertex AO only multiplied the colour: the sky's reflection still lit every crease.
+- An additive rim (+10 % of the base colour at every silhouette) and a skin emissive lit him evenly, even in the shade.
+
+### Build
+```
+blender -b --factory-startup -P tools/blender/kidLookBake.py -- [--renders DIR]   # -> kidA_detail.png + kid_fabric.png (+ Cycles OPTIX checks)
+python -E tools/kid/kidLookPack.py                                              # -> kidA_detail.ktx2 (179 KB) + kid_fabric.ktx2 (279 KB)
+```
+`kidLookBake.py` reads kidA.glb's LOD0 (atlas UVs, `_SLOT`, the bind pose) and the colour atlas (`ktx extract`), and
+rasterises every triangle into the atlas layout at half size (1024 x 640), so each texel knows its bind position,
+normal and slot. From those it bakes, by script:
+- **R relief** (+-1.6 mm): the jacket's panel seams at the colour-band edges and its side seams (welt + stitch groove),
+  the zip's teeth (3 mm pitch), the elastic hem's gathers and channel stitches, the blouson's sag folds above the hem,
+  the armpit drag folds, the collar's turn line; the shorts' crotch whiskers, hem folds and double hem stitch; the tee's
+  collar rib; the sneakers' cupsole grooves and foxing lip; and the high-passed luminance of the MPFB textures (the
+  shorts' painted pockets and folds, the hair's strands, the shoes' panels) as relief.
+- **G roughness offset**: oilier T-zone and lips, matte cheeks; glossier zip; matte elastic and sole rubber.
+- **B cavity / wear**: seams and grooves a little darker, dirt at the soles' ground line, a worn shorts hem.
+- **A skin tint**: warmer cheeks, nose, ears, lips, knuckles, elbows and knees; the scalp under the hair cards takes
+  the hair's colour, fading over ~1.2 cm past the last hair vertex (a soft hairline, no hard card edge).
+- **kid_fabric** (512 x 512, periodic): R jersey knit (V stitches), G ripstop (plain weave + the 5 mm grid), B 3/1 twill,
+  A skin pores + fine lines.
+
+The garments whose cell is a 1-D colour band (the jacket's sleeves, the socks, the cap) have no 2-D texels to bake
+into: their folds (elbow rings, the stack above the cuffs, the cuff rib, the socks' rib and ankle slouch, the cap's
+panel seams) are computed in the material from the bind position. Next round: give them 2-D cells in kidGame.py and
+bake them too.
+
+### The material (viewer/kid/kidModel.js `kidLookMaterial`, KIDLOOK table)
+- A MeshPhysicalNodeMaterial with its own lighting model: the skin gets a wrapped, reddened diffuse past the terminator
+  (cheap subsurface); the hair a Kajiya-Kay highlight ring (a sharp white lobe + a broad lobe in the hair colour).
+- One bump from the summed height: the baked relief, the fabric sheet triplanar in the BIND pose (it rides the skin, no
+  swimming) with each slot's own channel / tile size / depth, and the procedural folds. Screen-space derivatives, so
+  the GLB needs no tangents. Gain `KIDLOOK.bump` 2.5 (x1 read flat in the lab, x8 rough).
+- Per slot: roughness, specular intensity (cloth 0.3-0.35, skin 0.55, nylon 0.6, eyes 1), sheen on the cottons (tee,
+  socks, shorts, cap).
+- The vertex AO as `aoNode` (sky light and reflection occluded) plus a gentle colour darkening.
+- The eyes: a fixed catchlight (view space, upper left), roughness 0.06.
+- No rim, no skin emissive.
+
+### Numbers
+| | old | new |
+|---|---|---|
+| tris LOD0 / 1 / 2 | 21,518 / 7,999 / 1,998 | same |
+| draws | 1 per LOD (+ shadow) | same |
+| textures on disk | kidA_atlas.ktx2 1.42 MB | + kidA_detail.ktx2 179 KB + kid_fabric.ktx2 279 KB = 1.86 MB |
+| GPU, bike lab face close-up (whole frame) | 4.284 ms | 4.289 / 4.274 ms |
+
+GPU: `debug/bikeLab.html?gputime=1&ride=1` (bikeSpot.js resolves the render timestamps into `window.__gpuTime`), 480
+frames each, alternated new / old / new. The kid's share of the frame is too small to show.
+
+Checks: the `kida` row (tools/kid/kidTest.mjs --model kidA) now 44 checks, with the look's rows (map sizes and layout,
+the 2.2 MB texture budget, every slot in KIDLOOK, the cloth shells closed in every LOD, no triangles added).
+
+Shots (outside git): `C:\Users\tibog\Downloads\uccle-jobs\kidlook_shots\` (`cmp_*.jpg` old | new: face and body on
+the bike, sunlit and backlit side; `old_*` / `new_*`; `blender\bake_*`: the Cycles checker + grazing-light renders).
+
+### Left for the next round
+- 2-D atlas cells for the sleeves, socks, cap and brims (bake their folds instead of computing them); the brim's low
+  segment count shows facets in a grazing light (pre-existing).
+- Hair volume (the MPFB short01 cards under the cap) and the face shape (a friendlier smile, softer nose / lips) are
+  geometry: not changed this round, only shaded (catchlight, warmth, soft hairline).
+- The new look is a little darker overall than the old (no rim / glow, AO on the sky light): check with the owner; the
+  colour AO floor (0.82) is the knob.
