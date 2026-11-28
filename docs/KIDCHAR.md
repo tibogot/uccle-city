@@ -585,14 +585,20 @@ the sky light made him darker overall than the old look.
   edge is sharp, the top rolls soft. (A first try with a separate 3 mm lip under it made long thin triangles that
   folded: kidTest's spike row.)
 - **Socks**: support loops at the rib's foot; the rib cuff (top 2.6 cm) 0.8 mm proud, its two shells kept 2.4 / 0.6 mm
-  off the decimated leg (round 1 snapped both to 1 mm: a paper edge); the ankle's slouch rings in the mesh.
+  off the decimated leg (round 1 snapped both to 1 mm: a paper edge); the ankle's slouch rings in the mesh. The skin stays 3.5 cm
+  down inside the sock's top (1 cm before): the gap behind the rib at the back of the knee looked into the hidden leg
+  (small dark marks at the back of the sock tops, also in round 1).
 - **Sneakers** (on the export copy's decimated shoe): the cupsole's **lip** (two support loops, the sole 2.4 mm proud);
   **laces**: five bars across the instep and the crosses between them, each a closed flat cord ray-cast section by section
   onto the shoe's top (straight boxes sank into the curved upper); a **tongue** rising 1.6 cm out of the collar in front
-  of the sock (4 mm thick, rounded top), weighted 85 % to the calf at the top (the shin pushes it: no poke into the sock
+  of the sock (4 mm thick, rounded top, 9 x 13 vertices), weighted 85 % to the calf at the top (the shin pushes it: no poke into the sock
   when the ankle bends). They are new objects in a small white `lace` cell, joined into the shoes slot after the atlas.
 - **Cap**: u round the crown (the seam at the back), v up from the rim. The white front panel is a real 6-panel cap's
-  front panel (a wedge to the button, anti-aliased in the cell). The sweatband rim is 5 mm thick behind a support loop.
+  front panel: +-15 deg round the crown, so it narrows to the button like the seams, anti-aliased in the cell. The
+  sweatband rim is 5 mm thick behind a support loop. (Fix after review: the first panel narrowed with v while the baked
+  seams sat at a constant +-15 deg taken from the bind position, so the seams' cavity drifted onto the white up the
+  crown ("red bleeding into the white"), and a baked sweatband stitch line drew a hard horizontal line across the white
+  near the brim. The seams are now baked from the cell's own u, their welts on the coloured side, no sweatband line.)
   **Brims**: 41 x 6 segments (were 17 x 4), with their own 2-D cell.
 - **Weighted normals** (face area, keep sharp) on the jacket, socks, cap, brims and the laces / tongue, through a `_wn`
   vertex group on the joined LOD0. The skin, hair and MPFB cloth keep their smooth normals; the LODs take smooth normals.
@@ -629,10 +635,10 @@ the sky light made him darker overall than the old look.
 ### Numbers
 | | round 1 | round 2 |
 |---|---|---|
-| tris LOD0 / 1 / 2 | 21,518 / 7,999 / 1,998 | 30,036 / 9,799 / 2,373 |
+| tris LOD0 / 1 / 2 | 21,518 / 7,999 / 1,998 | 30,854 / 9,800 / 2,371 |
 | draws | 1 per LOD (+ shadow) | same |
 | textures on disk | 1.42 + 0.18 + 0.28 = 1.86 MB | 1.49 + 0.19 + 0.28 = 1.93 MB (round 1's r1 files load only with ?kidlook=r1 / old) |
-| kidA.glb | 2.50 MB | 3.41 MB |
+| kidA.glb | 2.50 MB | 3.52 MB |
 
 GPU, bike lab face close-up (debug/bikeLab.html?ride=1&gputime=1, page in front, 480 frames each): round 2 4.06 / 4.09 ms
 mean (medians 4.00 / 4.06), r1 4.03 ms (median 4.00): the extra 8.5k triangles do not show in the frame.
@@ -650,7 +656,7 @@ Cycles checker + grazing-light renders).
   hair) that lies under an outer one (jacket, socks, shorts, shoes, cap) is paired with it: within 2 cm, behind its
   normal, < 6 mm off its normal line, the two surfaces parallel. In the 11 riding modes on the BMX x 4 crank angles both
   are CPU-skinned, and the inner one may not come out more than 2 mm in front (at most 0.5 % of the pairs). Round 1 and
-  round 2: 0 pairs out. (The first pairing also took the jacket's inner shell / rim vertices as covers: 5 false pokes at
+  round 2: 0 pairs out (43 pairs in round 2: most skin under the clothes is hidden). (The first pairing also took the jacket's inner shell / rim vertices as covers: 5 false pokes at
   the fly. The tongue's first weights, half calf at the top, let the sock come 1.2 cm through it when standing. Both
   fixed.)
 - The stray-piece / spike row: the lace cords are closed hard-surface details on the shoe (allowed). "Above the waist" now
@@ -659,5 +665,4 @@ Cycles checker + grazing-light renders).
 ### Left
 - The fold detail is procedural (scripted shapes + baked relief), not a cloth sim. A real sim bake (high -> low normal
   map) is the next step, then the shirt's live sim (the hem band is its own loop for it).
-- The sock tops show small dark marks at the back in the Blender renders (already there in round 1).
-- The tongue and the shorts' cuff are still low-poly in a close-up (the shoe and shorts meshes are MPFB's, decimated).
+- The shorts' cuff is still low-poly in a close-up (the shorts mesh is MPFB's, decimated); the tongue got 9 x 13 vertices.

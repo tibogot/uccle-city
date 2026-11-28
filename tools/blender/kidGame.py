@@ -143,7 +143,7 @@ def delete_group(inner, name):
     g.add(sorted(inner), 1.0, "REPLACE")
     m = basemesh.modifiers.new(name, "MASK"); m.vertex_group = name; m.invert_vertex_group = True
 
-def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True, ratio=1.0, shape=None, hem_in=None, post=None, band=None, uv_fix=None):
+def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True, ratio=1.0, shape=None, hem_in=None, post=None, band=None, uv_fix=None, keep_in=0.01):
     """(round 2: post(bm) shapes the cut garment before the solidify: hem stand-off, folds; band(co) -> 0..1 the
     solidify's thickness factor (1 = the full `thick` at the hems / cuffs, the rest at its 0 value: band(None)); uv_fix(bm,
     uvl): the UVs mended after uv_of (a wrap-around seam))"""
@@ -164,7 +164,7 @@ def garment(name, me, region, off, cuts, uv_of, thick, smooth=2, hide_inner=True
         for cut in cuts:
             if len(cut) == 4: continue
             ok, co, no = cut[:3]
-            if (ok is None or ok(v.co, v.normal)) and (v.co - co).dot(no) > -0.01: return False
+            if (ok is None or ok(v.co, v.normal)) and (v.co - co).dot(no) > -keep_in: return False
         return True
     bm.verts.ensure_lookup_table()
     inner = {i for i in inner if inside(bm.verts[i])}
@@ -438,7 +438,9 @@ def build_outfit():
                     a = sk_ang(p) * 2 * math.pi
                     w = math.exp(-((p.z - 0.11) / 0.03) ** 2)
                     v.co = p + v.normal * w * (0.0009 + 0.0011 * math.sin(2 * math.pi * p.z / 0.019 + 1.5 * math.sin(a * 2)))
-        socks, inner_s = garment("kid_socks", me, sk_region, sk_off, sk_cuts, sk_uv2, thick=0.002, smooth=1, post=sk_post)
+        # (keep_in=0.035: the skin stays 3.5 cm down inside the sock's top: with only 1 cm, the gap behind the rib at the back of
+        # the knee looked into the hidden leg: small dark marks, also in round 1)
+        socks, inner_s = garment("kid_socks", me, sk_region, sk_off, sk_cuts, sk_uv2, thick=0.002, smooth=1, post=sk_post, keep_in=0.035)
     # ---------------- the cap: the head's skin above a tilted rim plane, lifted over the hair (the hair stays: worn
     # backwards the fringe shows), a white centre panel, + a forward and a backward brim
     brows = parts[C["brows"]]
@@ -472,10 +474,11 @@ def build_outfit():
             us = wrap_u([cap_ang(v.co) for v in f.verts])
             k = min(range(len(f.verts)), key=lambda j: (f.verts[j].co - co).length)
             return cell_uv("cap", us[k], min(1, max(0, (co.z - rim_z(co.y)) / max(0.02, ctop - rim_z(co.y)))))
-        wf = 0.042 / 1.1                       # the front panel's half width at the rim (u units / 1.1)
+        wf = (15.0 / 360.0) / 1.1              # the front panel's half width: +-15 deg round the crown (u units / 1.1)
         A_ = np.zeros((256, 256, 4), np.float32); A_[..., 3] = 1
         for j in range(256):
-            v_ = (j + 0.5) / 256; half_w = wf * (1 - 0.9 * v_)
+            v_ = (j + 0.5) / 256; half_w = wf     # (a constant angle: the seams of a 6-panel cap meet at the button;
+            #  the first try narrowed it with v, off the baked seams (kidLookBake.py, constant +-15 deg))
             for i_ in range(256):
                 u_ = (i_ + 0.5) / 256
                 cov = min(1.0, max(0.0, (half_w - abs(u_ - 0.5 / 1.1)) * 256 + 0.5))      # (anti-aliased edge: no stair-steps)
@@ -856,7 +859,7 @@ def shoes_r2(o, arm, sock):
             cb, nb = bars[-1]
             z0, z1 = cb.z - 0.004, C.get("shoe_collar", 0.105) + 0.016
             rows = []
-            NRw, NCl = 6, 9
+            NRw, NCl = 9, 13       # (6 x 9 read faceted in a close-up)
             for j in range(NRw + 1):
                 z = z0 + (z1 - z0) * j / NRw
                 yf = None
