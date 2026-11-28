@@ -465,7 +465,8 @@ pass on synthetic bakes), browser row `snowedge` (debug/snowEdge.js `audit()`: t
 | thin white zigzags on copings / shop fascias | a 30-45 cm raised ledge kept a 1-2 cell strip of the layer, drawn on the grid's triangles, on top of the coping's own cap | narrow raised kept patches (<= 2.25 cells from the cut, rim drop > 0.3 m) cut in the shape pass (narrowCut) | snow-thin-ledge, `?snowsdf=old` |
 
 Counts (debug/snowEdge.js `audit()`, 64 m window, `?quick=1&with=weather&day=350&xmas=0&wx=snow_cover&time=midday`,
-before = `&wxfill=old&wxdrawn=old&wxprops=old&snowsdf=old`): see the table in docs/CHRISTMAS.md "Snow-day fixes".
+before = `&wxfill=old&wxdrawn=old&wxprops=old&snowsdf=old`): docs/CHRISTMAS.md, season check, "Counts" (flooded shelter
+was the biggest: 44-66 % of the window under a phantom crown before).
 Images (local): `C:/Users/tibog/Downloads/uccle-jobs/snowfix_shots/` (before / after, day + night: Saint-Job paving,
 police yard pits, a young tree, a coping, a hedge front, the yard's facade foot).
 Shape pass (worker, 512^2): ~240-430 ms with the four EDTs and blurs (was ~100-350): off the main thread, once per bake.

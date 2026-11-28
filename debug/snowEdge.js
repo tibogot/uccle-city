@@ -45,7 +45,7 @@ export async function audit() {
     if (o.layers.isEnabled(20)) for (let p = o, k = 0; p && k < 4; p = p.parent, k++) if (PROP.test(p.name)) { props.add(o.name); break; }
   });
   // narrow raised kept patches (the layer's cut A = cut + 2 road): flood the kept cells, width by the cut distance
-  const cut = map.cut ?? map.cliff, sd = map.sdA;
+  const cut = map.cut ?? map.cliff, sd = map.sdA ? rawDist(cut, N, cell) : null;     // (the raw distance, as narrowCut)
   let narrow = 0;
   if (sd) {
     const seen = new Uint8Array(N * N);
@@ -54,7 +54,7 @@ export async function audit() {
       const st = [o0], cells = []; seen[o0] = 1; let maxD = 0, big = false, raised = 0, rim = 0;
       while (st.length) {
         const o = st.pop(), i = o % N, j = (o / N) | 0; cells.push(o);
-        maxD = Math.max(maxD, sd[o]); if (maxD > 0.32 || cells.length > 4000) big = true;
+        maxD = Math.max(maxD, sd[o]); if (maxD > 2.25 * cell || cells.length > 4000) big = true;   // (overheadShape NARROW)
         for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
           const ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= N || jj >= N) continue;
           const p = jj * N + ii;
@@ -66,4 +66,23 @@ export async function audit() {
     }
   }
   return { at: [Math.round(cam.position.x), Math.round(cam.position.z)], window: map.size, flooded, shelterFlood, undrawn: undrawn.length, undrawnNames: [...new Set(undrawn)].slice(0, 6), props: props.size, propNames: [...props].slice(0, 8), narrow, narrowCut: map.narrowCells ?? null, shapeMs: cw.stats.shapeMs };
+}
+
+/** exact Euclidean distance (m) of every cell to the nearest cut cell (Felzenszwalb, separable) */
+function rawDist(cut, N, cell) {
+  const INF = 1e12, f = new Float64Array(N), v = new Int32Array(N), z = new Float64Array(N + 1), g = new Float64Array(N * N);
+  for (let k = 0; k < N * N; k++) g[k] = cut[k] ? 0 : INF;
+  const pass = (base, stride) => {
+    for (let q = 0; q < N; q++) f[q] = g[base + q * stride];
+    let k = 0; v[0] = 0; z[0] = -INF; z[1] = INF;
+    for (let q = 1; q < N; q++) { let s = (f[q] + q * q - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); while (s <= z[k]) { k--; s = (f[q] + q * q - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); } k++; v[k] = q; z[k] = s; z[k + 1] = INF; }
+    k = 0; const d = new Float64Array(N);
+    for (let q = 0; q < N; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) ** 2 + f[v[k]]; }
+    for (let q = 0; q < N; q++) g[base + q * stride] = d[q];
+  };
+  for (let i = 0; i < N; i++) pass(i, N);
+  for (let j = 0; j < N; j++) pass(j * N, 1);
+  const out = new Float32Array(N * N);
+  for (let k = 0; k < N * N; k++) out[k] = Math.sqrt(g[k]) * cell;
+  return out;
 }

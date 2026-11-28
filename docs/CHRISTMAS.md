@@ -23,6 +23,12 @@ du Ham, the police yard (the police game's start). Shots: `C:/Users/tibog/Downlo
   under every hanging basket (props / lamp extras baked solid, `?wxprops=old`); (5) the coping / fascia zigzags = a
   1-2 cell strip of the layer on narrow raised ledges (rule snow-thin-ledge). Gate row `snowedge` + browser row
   `snowedge` (debug/snowEdge.js audit). Shots: `C:/Users/tibog/Downloads/uccle-jobs/snowfix_shots/`.
+- **Counts** (debug/snowEdge.js `audit()`, the 64 m window, `?quick=1&with=weather&day=350&xmas=0&wx=snow_cover`;
+  before = `&snowsdf=old&wxfill=old&wxdrawn=old&wxprops=old`), Saint-Job street / police yard:
+  flooded road cells 14 665 / 2 959 -> 0 / 0; flooded shelter cells 173 252 / 116 330 (66 % / 44 % of the window
+  thinner under a phantom crown) -> 0 / 0; meshes baked but not drawn 0 / 2 (the pond's reflection trees) -> 0 / 0;
+  props / lamp extras / poles baked solid 12 / 12 -> 0 / 0; narrow raised layer strips 800 / 2 018 cells -> 0 / 0
+  (cut: 983 / 2 053). Node row `snowedge`: the edge's largest step off its 1 m mean 10.7-12.8 cm -> <= 2.1 cm.
 - **XMASPERF re-measured (2026-11-28, claude/snowfix):** preflight YELLOW at the start (system: 2 warn, other city
   servers listening; page: CPU +1.5 %, GPU +5.8 %, boot +16 %), browser.lock held, page in front (hasFocus true before
   and after each read); render scale pinned 0.75: **layer-street 0.497 +- 0.047 ms (budget 0.30: FAIL), fir-8m
