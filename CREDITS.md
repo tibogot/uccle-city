@@ -72,6 +72,7 @@ the check dates are in `pipeline/sources.json`.
 | mrdoob/slop-newyork pedestrians (`vendor/slop-ped/pedestrians.js`: bodies, clothes shader, GPU skinning, `PersonRig` gait), commit `536a907c`; the crowd's baked clips (`models/pedestrians/clips.*`) are generated from that gait code by `tools/peds/bakeGait.mjs` | MIT, © 2026 Mr.doob | `vendor/slop-ped/LICENSE` and `ORIGIN.md`. Used by `viewer/pedestrians/` and `labs/pedestrian-lab.html`. No third-party animation clips (no Mixamo, no UAL yet) |
 | Brussels bench (`models/furniture/brussels_furniture.glb`, piece `bench`) | ours (scripted: `claude/furniture` `tools/blender/furniture.py`) | Copied from the furniture branch for the Pedestrian Lab's benches; keep one copy when the branches merge |
 | Quaternius **Universal Animation Library** (Standard, free tier; https://quaternius.com/packs/universalanimationlibrary.html, downloaded from https://quaternius.itch.io/universal-animation-library on 2026-11-11, raw in `data/raw/characters/ual1/`, git-ignored) | **CC0 1.0** (License.txt in the pack) | Clips Sitting_Idle_Loop, Sitting_Talking_Loop, Idle_Talking_Loop retargeted onto the crowd skeleton by `tools/peds/bakeGait.mjs` into `models/pedestrians/clips.bin` (sit, sitTalk, talk) |
+| **MakeHuman / MPFB 2.0.18** (Blender add-on, github.com/makehumancommunity/mpfb2) + asset packs makehuman_system_assets, hair01 (`sonntag78_junglebook_hair` by sonntag78), shirts01 (`elvs_crude_t-shirt_male` by elvs, `namuhekam_male_polo_shirt` by namuhekam), pants01 (`cortu_cargo_pants` by Cortu) from static.makehumancommunity.org, 2026-11-25 | MPFB code GPL v3 (not shipped, only run in Blender); its assets **CC0 1.0**; output: no claim by the MakeHuman team (LICENSE.md section D); every pack asset used is **CC0** (no CC-BY pack used) | The kid candidates `models/kid/candidates/kid_a|b|c.glb` (tools/blender/kidMakeHuman.py, docs/KIDCHAR.md); credit voluntary |
 | mrdoob/slop-newyork tree system (`vendor/slop-trees/`: `trees.js`, `building-collision.js`, tree material), commit `737b7691` | MIT, © Mr.doob | `vendor/slop-trees/LICENSE` and `ORIGIN.md`. Used by `viewer/treesSlop.js` |
 
 ## Material scans (CC0, Material Lab and viewer/materials/)
@@ -220,6 +221,14 @@ The free tiers hold 43 clips each (UAL1: locomotion walk / jog / sprint / crouch
 spell, emotes; UAL2: farming, combat, parkour climb / slide, zombie, idles) on the same 65-bone rig; no start / stop /
 turn / strafe / stairs clips (those are in the paid tiers): the turn on the spot is stepped with the walk, the stairs
 are synthesised offline (`ualBuild.mjs`). UAL2's female mannequin (`Mannequin_F`) shares the rig; not used yet.
+
+**The kid** (`models/characters/kid.glb`, claude/kid, docs/KID.md): made by our script `tools/characters/kid.py` FROM the UAL1
+mannequin above (CC0): its rig and skin weights, re-proportioned into an 11-12 year old, the mesh fused + re-made
+(voxel remesh, a sculpted kid head of ellipsoids), clothes / hair / cap / face built by the script; the clips are the
+same CC0 UAL1 + UAL2 clips on its joints (`ualBuild.mjs --kid`), plus Sitting_Idle_Loop, Sitting_Enter, Sitting_Exit,
+Push_Loop, PickUp_Table and Death01 (UAL1). No other source. Checked and NOT used (2026-11-18): Quaternius' **Universal
+Base Characters** (quaternius.com/packs/universalbasecharacters.html, itch.io; CC0 per both pages): its free Standard tier
+has 2 base bodies + 5 hairstyles, the TEEN bodies are in the paid Source tier only; none is a 10-13 kid.
 
 Not used: Quaternius' newer packs under the "Quaternius Asset Licence" (only the CC0 pack above is used), and
 three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL in a test, never copied).
