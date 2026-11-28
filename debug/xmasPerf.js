@@ -96,6 +96,68 @@ export async function lightAB({ old = { cards: false }, rounds = 10, settle = 1.
   return { old, rows, verdict: rows.map((r) => `${r.name} new - old ${r.costMs} +- ${r.se} ms`).join(", ") };
 }
 
+/** (claude/xmasperf4, rule xmas-pass-budget) THE LAYER'S PASSES, COUNTED: structure, not timing (the same on a hot or a
+ *  cool GPU). At each probe spot, for `seconds`, every renderer.renderObject call of a layer mesh is counted by the pass
+ *  its camera belongs to (main = the colour pass + the cards' depth twin; sun = the sun / moon map; lamp = the two
+ *  shadowed lamps' maps; other = anything else), per frame: draws, triangles (index / 3 x instances), materials, meshes.
+ *  Steady state (camera still, the night warm-up done): the sun map redraws ~1 frame in 30 (its cache), the lamp maps
+ *  never (their cache; the move refresh right after the camera jumps falls in the settle). 2026-11-28 foundation:
+ *  street main 82 draws / 607 k triangles, sun 0.46, lamp 0; fir-8m main 65 / 619 k, sun 0.2, lamp 0 (24 Nov code:
+ *  74 / 513 k and 60 / 537 k). Ceilings XMAS_PASS_BUDGET; the node row `xmasload` guards the content behind them. */
+export const XMAS_PASS_BUDGET = {
+  "layer-street": { main: { draws: 86, trisK: 640 }, sun: { draws: 1 }, lamp: { draws: 0.1 }, other: { draws: 0 } },
+  "fir-8m": { main: { draws: 68, trisK: 650 }, sun: { draws: 1 }, lamp: { draws: 0.1 }, other: { draws: 0 } },
+};
+export async function passes({ seconds = 3, settle = 2.5 } = {}) {
+  for (let i = 0; i < 120 && !(window.viewer && window.xmas); i++) await sleep(500);
+  for (let i = 0; i < 60 && (window.__night?.nightWarm?.().pending ?? 0) > 0; i++) await sleep(500);
+  const V = window.viewer, R = V.renderer, X = window.xmas, N = window.__night, sun = V.lighting?.sun ?? null;
+  const mine = new Set();
+  X.group.traverse((o) => { if (o.isMesh || o.isInstancedMesh) mine.add(o); });
+  const kind = (cam) => (cam === V.camera ? "main" : sun && cam === sun.shadow?.camera ? "sun" : N?.shadowLights?.some((L) => L.shadow?.camera === cam) ? "lamp" : "other");
+  const fir = X.site.trees.find((t) => t.id === "stjob"), fx = fir.x, fz = fir.z;
+  const spots = { "layer-street": [[fx + 31, 1.7, fz + 11], [fx, 5, fz + 2]], "fir-8m": [[fx + 8, 1.7, fz], [fx, 4, fz]] };
+  const { camera, controls } = V, back = { p: camera.position.clone(), t: controls.target.clone() };
+  const unpin = pinScale(), orig = R.renderObject, out = {}, fails = [];
+  try {
+    for (const [name, at] of Object.entries(spots)) {
+      view(...at); await sleep(settle * 1000);
+      const acc = {}; let frames = 0, live = true;
+      R.renderObject = function (object, scene, cam, geometry, material, ...rest) {
+        if (mine.has(object)) {
+          const a = (acc[kind(cam)] ??= { draws: 0, tris: 0, mats: new Set(), meshes: new Set() });
+          const g = geometry ?? object.geometry, n = g.index ? g.index.count : g.attributes.position.count;
+          a.draws++; a.tris += (n / 3) * (object.isInstancedMesh ? object.count : 1); a.mats.add(material ?? object.material); a.meshes.add(object);
+        }
+        return orig.call(this, object, scene, cam, geometry, material, ...rest);
+      };
+      const tick = () => { if (live) { frames++; requestAnimationFrame(tick); } };
+      requestAnimationFrame(tick);
+      await sleep(seconds * 1000);
+      live = false; R.renderObject = orig;
+      const row = { frames };
+      for (const k of ["main", "sun", "lamp", "other"]) {
+        const a = acc[k];
+        row[k] = a ? { draws: +(a.draws / frames).toFixed(2), trisK: +(a.tris / frames / 1000).toFixed(1), materials: a.mats.size, meshes: a.meshes.size } : { draws: 0, trisK: 0, materials: 0, meshes: 0 };
+        const b = XMAS_PASS_BUDGET[name][k];
+        if (b?.draws != null && row[k].draws > b.draws) fails.push(`${name} ${k} ${row[k].draws} draws / frame > ${b.draws}`);
+        if (b?.trisK != null && row[k].trisK > b.trisK) fails.push(`${name} ${k} ${row[k].trisK} k triangles / frame > ${b.trisK} k`);
+      }
+      out[name] = row;
+    }
+  } finally {
+    R.renderObject = orig; unpin();
+    camera.position.copy(back.p); controls.target.copy(back.t); controls.update?.();
+  }
+  return { spots: out, pass: !fails.length, verdict: fails.length ? `FAIL: ${fails.join("; ")}`
+    : `PASS: ${Object.entries(out).map(([n, r]) => `${n} main ${r.main.draws} draws ${r.main.trisK} k tris, sun ${r.sun.draws}, lamp ${r.lamp.draws}, other ${r.other.draws}`).join("; ")}` };
+}
+
+// (claude/xmasperf4, rule timing-gpu-state) the ms budgets below hold on a COOL / WARM GPU only (tools/perf/gpuWatch.mjs
+// around the run). On 2026-11-28 the laptop ran HOT (median 82 C, ~50 % of the busy seconds power / thermal capped) and
+// the 24 Nov code itself read layer-street 0.19-0.43 ms, fir-8m 0.11-0.37 ms (its 24 Nov numbers: 0.121 / 0.086): run()
+// on a HOT GPU is an upper bound, and a regression is shown only by old and new code timed alternately in one session.
+// Each row also gives its share of the frame (costPct = cost / the frame without it), steadier across clocks than ms.
 export async function run({ rounds = 10, settle = 1.2, seconds = 2.5, split = false, only = null } = {}) {
   for (let i = 0; i < 120 && !(window.viewer && window.xmas); i++) await sleep(500);
   if (!window.xmas) return { pass: false, verdict: "window.xmas missing: open the page with ?xmas=1 (and wait for the layer)" };
@@ -110,7 +172,7 @@ export async function run({ rounds = 10, settle = 1.2, seconds = 2.5, split = fa
     view(at, look); await sleep(1500);
     const r = await alternate(() => sw.set(false), () => sw.set(true), { rounds, settle, seconds });
     sw.set(true);
-    rows.push({ name, meshes: sw.n, budget, offMs: r.meanA, onMs: r.meanB, costMs: r.diff, se: r.se, p50Ms: r.diffP50, min: r.diffMin, max: r.diffMax, pass: budget == null ? null : r.diff < budget });
+    rows.push({ name, meshes: sw.n, budget, offMs: r.meanA, onMs: r.meanB, costMs: r.diff, costPct: +((100 * r.diff) / r.meanA).toFixed(2), se: r.se, p50Ms: r.diffP50, min: r.diffMin, max: r.diffMax, pass: budget == null ? null : r.diff < budget });
   };
   const scale = window.__pipe?.upscale?.scale ?? 1;          // (the pinned scale)
   try {
@@ -132,5 +194,5 @@ export async function run({ rounds = 10, settle = 1.2, seconds = 2.5, split = fa
     camera.position.copy(back.p); controls.target.copy(back.t); controls.update?.();
   }
   const judged = rows.filter((r) => r.pass != null), pass = judged.every((r) => r.pass);
-  return { rows, pass, scale, extras: Object.keys(X.extras ?? {}), verdict: `${pass ? "PASS" : "FAIL"}: ${judged.map((r) => `${r.name} ${r.costMs} +- ${r.se} ms (< ${r.budget})`).join(", ")} at render scale ${scale}${Object.keys(X.extras ?? {}).length ? "" : " (no extras registered yet)"}` };
+  return { rows, pass, scale, extras: Object.keys(X.extras ?? {}), verdict: `${pass ? "PASS" : "FAIL"}: ${judged.map((r) => `${r.name} ${r.costMs} +- ${r.se} ms (< ${r.budget}; ${r.costPct} % of the frame)`).join(", ")} at render scale ${scale}${Object.keys(X.extras ?? {}).length ? "" : " (no extras registered yet)"}` };
 }

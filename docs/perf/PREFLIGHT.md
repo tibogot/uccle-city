@@ -33,6 +33,14 @@ driver / Chrome / three.js update or a big change to the city (the fixed view's 
 Run the page check before AND after each measurement block; if they differ beyond the green band, the block in between
 does not count (the machine changed under it).
 
+## 5. During a GPU timing run (claude/xmasperf4, rule timing-gpu-state)
+
+The system check reads the GPU at rest. A city page at 60 Hz heats this laptop to 82-88 C within ~15 min and runs it
+under its 30 W power cap / thermal slowdown about half the time (2026-11-28: the same code's Christmas cost moved
+0.19-0.43 ms in one afternoon). Bracket every GPU timing with `node tools/perf/gpuWatch.mjs start` / `stop` and print
+its verdict (COOL / WARM / HOT) with the numbers; HOT numbers are an upper bound, a regression only from old and new
+code alternated in one session.
+
 ## First run (2026-11-13 ~05:30, worn machine, agents running): RED
 Free memory 1.2 / 15.7 GB, Chrome 6.2 GB in 60 processes, ~30 old dev servers listening (8801-8844, from earlier
 agents), CPU 170 % of base (not throttled), GPU 51 C, no limit active. Page: NVIDIA lovelace, CPU bench 82 ms, fixed view

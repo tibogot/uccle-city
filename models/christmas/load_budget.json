@@ -1,0 +1,14 @@
+{
+ "note": "ceilings for tools/christmas/xmasLoad.mjs (gate row xmasload, rule xmas-pass-budget): raise only with a re-measure (docs/CHRISTMAS.md 7.7)",
+ "count": {
+  "tree": 4,
+  "chalet": 8,
+  "swag": 579,
+  "wreath": 112,
+  "spanmotif": 30,
+  "spans": 55,
+  "poleSpans": 15
+ },
+ "trisLod0": 4479263,
+ "drawsMax": 162
+}
